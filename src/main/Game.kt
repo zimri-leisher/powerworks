@@ -4,6 +4,7 @@ import io.OutputManager as out
 import javax.swing.JFrame
 import io.InputManager
 import java.awt.*
+import graphics.Renderer
 
 
 fun main(args: Array<String>) {
@@ -29,7 +30,7 @@ object Game : Canvas(), Runnable {
     const val UPDATES_PER_SECOND = 60f
     const val NS_PER_UPDATE: Float = 1000000000 / UPDATES_PER_SECOND
     const val MAX_UPDATES_BEFORE_RENDER = 5
-    var FRAMES_PER_SECOND = 100000000f
+    var FRAMES_PER_SECOND = 60f
     var NS_PER_FRAME: Float = 1000000000 / FRAMES_PER_SECOND
     /* Base statistics */
     var framesCount = 0
@@ -39,7 +40,7 @@ object Game : Canvas(), Runnable {
     var running = false
 
     /* Settings */
-    var THREAD_WAITING = false
+    var THREAD_WAITING = true
 
     val frame: JFrame = JFrame()
 
@@ -83,7 +84,7 @@ object Game : Canvas(), Runnable {
             lastFrame = now
             val thisSecond = (lastUpdate / 1000000000).toInt()
             if (thisSecond > lastSecond) {
-                out.println("1 second: $updatesCount UPS, $framesCount FPS")
+                out.println("$updatesCount UPS, $framesCount FPS")
                 secondsCount++
                 lastSecond = thisSecond
                 framesCount = 0
@@ -104,7 +105,7 @@ object Game : Canvas(), Runnable {
     }
 
     fun update() {
-
+        InputManager.update()
     }
 
     fun render() {
@@ -116,6 +117,7 @@ object Game : Canvas(), Runnable {
         do {
             do {
                 val g2d = bufferStrat.drawGraphics as Graphics2D
+                Renderer.g2d = g2d
                 /* Render */
                 g2d.color = Color(255, 0, 0)
                 g2d.dispose()

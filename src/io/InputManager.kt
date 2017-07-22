@@ -42,12 +42,16 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
             if (i < keysDown.size && keysDown[i] == true) {
                 keysDown[i] = false
                 currentModifiers = k.modifiers
+                println("${k.keyChar} : RELEASED")
                 map.translateKey(i, currentModifiers).forEach { queue.add(ControlPress(it, PressType.RELEASED)) }
             }
         }
+        keyRelease.clear()
         for (key in keysDown.indices) {
-            if(keysDown[key])
+            if(keysDown[key]) {
+                println("${key} : REPEAT")
                 map.translateKey(key, currentModifiers).forEach { queue.add(ControlPress(it, PressType.REPEAT)) }
+            }
         }
         for (k in keyPress) {
             val i = k.extendedKeyCode
@@ -57,21 +61,22 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
             if (i < keysDown.size && keysDown[i] == false) {
                 keysDown[i] = true
                 currentModifiers = k.modifiers
+                println("${k.keyChar} : PRESSED")
                 map.translateKey(i, currentModifiers).forEach { queue.add(ControlPress(it, PressType.PRESSED)) }
             }
 
         }
+        keyPress.clear()
         for (p in queue) {
-
         }
+        queue.clear()
     }
 
     override fun keyTyped(e: KeyEvent) {
     }
 
     override fun keyPressed(e: KeyEvent) {
-        println(e.extendedKeyCode)
-        //keyPress.add(e)
+        keyPress.add(e)
     }
 
     override fun keyReleased(e: KeyEvent) {

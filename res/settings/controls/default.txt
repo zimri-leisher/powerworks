@@ -1,1 +1,3 @@
-control map testing
+keyCode:CONTROL_NAME
+test:testing
+1:UP
