@@ -13,7 +13,7 @@ private data class MouseWheelBind(val wheelDirection: Int, val modifier: Int, va
 enum class ControlMap private constructor(path: String) {
     DEFAULT("/settings/controls/default.txt");
 
-    private val binds: List<ControlBind> = mutableListOf()
+    private val binds = mutableListOf<ControlBind>()
 
     init {
         val text = ControlMap::class.java.getResource(path).readText()
@@ -22,9 +22,15 @@ enum class ControlMap private constructor(path: String) {
         for(s in lines) {
             if(s.contains(char=':')) {
                 val split = s.split(delimiters=':')
-                val first = split[0]
-                val second = split[1]
-                println(first + ", " + second)
+                val code = split[0]
+                val modifier = split[1]
+                val control = split[2]
+                if(mode == 0)
+                    binds.add(KeyBind(code.toInt(), modifier.toInt(), Control.valueOf(control)))
+                if(mode == 1)
+                    binds.add(MouseBind(code.toInt(), modifier.toInt(), Control.valueOf(control)))
+                if(mode == 2)
+                    binds.add(MouseWheelBind(code.toInt(), modifier.toInt(), Control.valueOf(control)))
             } else {
                 when(s) {
                     "k" -> mode = 0

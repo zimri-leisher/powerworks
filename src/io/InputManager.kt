@@ -76,6 +76,7 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
     }
 
     override fun keyPressed(e: KeyEvent) {
+        println(e.extendedKeyCode)
         keyPress.add(e)
     }
 

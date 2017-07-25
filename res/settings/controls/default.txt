@@ -1,3 +1,0 @@
-keyCode:CONTROL_NAME
-test:testing
-1:UP

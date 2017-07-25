@@ -1,7 +1,6 @@
 package level
 
-import data.LevelLocation
-
 interface CameraObject {
-    var loc: LevelLocation
+    var xPixel: Int
+    var yPixel: Int
 }

@@ -5,6 +5,7 @@ import javax.swing.JFrame
 import io.InputManager
 import java.awt.*
 import graphics.Renderer
+import screen.GUIElement
 
 
 fun main(args: Array<String>) {
