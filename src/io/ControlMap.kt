@@ -19,7 +19,10 @@ enum class ControlMap private constructor(path: String) {
         val text = ControlMap::class.java.getResource(path).readText()
         val lines = text.split(delimiters = "\n")
         var mode:Int = 0
-        for(s in lines) {
+        for(a in lines) {
+            val s = a.replace("\n", "").replace("\r", "")
+            if(s.startsWith("//"))
+                continue
             if(s.contains(char=':')) {
                 val split = s.split(delimiters=':')
                 val code = split[0]

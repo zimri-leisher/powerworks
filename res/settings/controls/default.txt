@@ -1,0 +1,7 @@
+//code:modifier or -1:CONTROL_NAME
+87:-1:UP
+65:-1:LEFT
+83:-1:DOWN
+68:-1:RIGHT
+m
+1:-1:INTERACT

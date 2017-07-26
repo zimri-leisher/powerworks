@@ -5,8 +5,9 @@ import javax.swing.JFrame
 import io.InputManager
 import java.awt.*
 import graphics.Renderer
-import screen.GUIElement
-
+import java.awt.image.BufferedImage
+import graphics.Images
+import screen.ScreenManager
 
 fun main(args: Array<String>) {
     initializeProperties()
@@ -40,6 +41,9 @@ object Game : Canvas(), Runnable {
 
     var running = false
 
+    var defaultCursor = Cursor.getDefaultCursor()
+    var clearCursor = Toolkit.getDefaultToolkit().createCustomCursor(BufferedImage(3, 3, BufferedImage.TYPE_INT_ARGB), Point(0, 0), "null")
+
     /* Settings */
     var THREAD_WAITING = true
 
@@ -58,6 +62,7 @@ object Game : Canvas(), Runnable {
         frame.setLocationRelativeTo(null)
         requestFocusInWindow()
         frame.isVisible = true
+        cursor = clearCursor
         start()
     }
 
@@ -107,6 +112,7 @@ object Game : Canvas(), Runnable {
 
     fun update() {
         InputManager.update()
+        ScreenManager.update()
     }
 
     fun render() {
@@ -120,7 +126,7 @@ object Game : Canvas(), Runnable {
                 val g2d = bufferStrat.drawGraphics as Graphics2D
                 Renderer.g2d = g2d
                 /* Render */
-                g2d.color = Color(255, 0, 0)
+                ScreenManager.render()
                 g2d.dispose()
                 bufferStrat.show()
             } while (bufferStrat.contentsRestored())
@@ -139,6 +145,14 @@ object Game : Canvas(), Runnable {
         } catch (e: InterruptedException) {
             e.printStackTrace()
         }
+    }
+
+    fun resetMouseIcon() {
+        cursor = defaultCursor
+    }
+
+    fun clearMouseIcon() {
+        cursor = clearCursor
     }
 
 }
