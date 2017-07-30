@@ -236,7 +236,7 @@ object Utils {
     }
 
     fun loadImage(path: String): BufferedImage {
-        val src = ImageIO.read(javaClass.getResource(path))
+        val src = ImageIO.read(Image::class.java.getResource(path))
         val dest = Game.graphicsConfiguration.createCompatibleImage(src.width, src.height, Transparency.TRANSLUCENT)
         val g2d = dest.createGraphics()
         g2d.composite = AlphaComposite.SrcOver

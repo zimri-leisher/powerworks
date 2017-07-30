@@ -6,8 +6,13 @@ import io.InputManager
 import java.awt.*
 import graphics.Renderer
 import java.awt.image.BufferedImage
-import graphics.Images
+import screen.MainMenuGUI
 import screen.ScreenManager
+import java.io.IOException
+import java.awt.FontFormatException
+import java.awt.GraphicsEnvironment
+import javax.imageio.ImageIO
+
 
 fun main(args: Array<String>) {
     initializeProperties()
@@ -23,9 +28,9 @@ fun initializeProperties() {
 object Game : Canvas(), Runnable {
 
     /* Dimensions */
-    const val WIDTH = 400
+    const val WIDTH = 300
     const val HEIGHT = (WIDTH.toFloat() / 16 * 9).toInt()
-    const val SCALE = 3
+    const val SCALE = 4
 
     val THREAD = Thread(this, "Powerworks Main Thread")
     /* Frame and update rates */
@@ -38,11 +43,12 @@ object Game : Canvas(), Runnable {
     var framesCount = 0
     var updatesCount = 0
     var secondsCount = 0
+    private var running = false
+    private var defaultCursor = Cursor.getDefaultCursor()
+    private var clearCursor = Toolkit.getDefaultToolkit().createCustomCursor(ImageIO.read(Game::class.java.getResource("/textures/cursor/cursor_default.png")), Point(0, 0), "Powerworks Default Cursor")
 
-    var running = false
-
-    var defaultCursor = Cursor.getDefaultCursor()
-    var clearCursor = Toolkit.getDefaultToolkit().createCustomCursor(BufferedImage(3, 3, BufferedImage.TYPE_INT_ARGB), Point(0, 0), "null")
+    private val fonts = mutableMapOf<Int, Font>()
+    private lateinit var defaultFont: Font
 
     /* Settings */
     var THREAD_WAITING = true
@@ -63,6 +69,20 @@ object Game : Canvas(), Runnable {
         requestFocusInWindow()
         frame.isVisible = true
         cursor = clearCursor
+        try {
+            val font = Font.createFont(Font.TRUETYPE_FONT, Game::class.java.getResourceAsStream("/font/MunroSmall.ttf")).deriveFont(Font.PLAIN, 28f)
+            val ge = GraphicsEnvironment.getLocalGraphicsEnvironment()
+            ge.registerFont(font)
+            defaultFont = font
+            fonts.put(28, font)
+        } catch (ex: FontFormatException) {
+            ex.printStackTrace()
+        } catch (ex: IOException) {
+            ex.printStackTrace()
+        }
+
+        MainMenuGUI.init()
+        MainMenuGUI.open = true
         start()
     }
 
@@ -90,11 +110,11 @@ object Game : Canvas(), Runnable {
             lastFrame = now
             val thisSecond = (lastUpdate / 1000000000).toInt()
             if (thisSecond > lastSecond) {
-                out.println("$updatesCount UPS, $framesCount FPS")
+                out.println("$updates UPS, $frames FPS")
                 secondsCount++
                 lastSecond = thisSecond
-                framesCount = 0
-                updatesCount = 0
+                frames = 0
+                updates = 0
             }
             if (THREAD_WAITING)
                 while (now - lastFrame < NS_PER_FRAME && now - lastUpdate < NS_PER_UPDATE) {
@@ -145,6 +165,15 @@ object Game : Canvas(), Runnable {
         } catch (e: InterruptedException) {
             e.printStackTrace()
         }
+    }
+
+    fun getFont(size: Int): Font {
+        var font = fonts.get(size)
+        if (font != null)
+            return font
+        font = defaultFont.deriveFont(size.toFloat())
+        fonts.put(size, font)
+        return font
     }
 
     fun resetMouseIcon() {

@@ -188,9 +188,13 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
     }
 
     override fun mouseMoved(e: MouseEvent) {
+        mouseXPixel = e.x / Game.SCALE
+        mouseYPixel = e.y / Game.SCALE
     }
 
     override fun mouseDragged(e: MouseEvent) {
+        mouseXPixel = e.x / Game.SCALE
+        mouseYPixel = e.y / Game.SCALE
     }
 
 }
