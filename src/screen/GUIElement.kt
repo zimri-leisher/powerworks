@@ -1,21 +1,15 @@
 package screen
 
-import graphics.Images
 import graphics.RenderParams
 import io.PressType
 import main.Game
-import java.util.stream.Collectors
 import kotlin.properties.Delegates
 
 object RootGUIElementObject : RootGUIElement()
 
-/* Constants */
-val GUI_BUTTON_DEFAULT_WIDTH = Images.GUI_BUTTON.widthPixels
-val GUI_BUTTON_DEFAULT_HEIGHT = Images.GUI_BUTTON.heightPixels
-
 private var nextID = 0
 
-abstract class RootGUIElement(val name: String = "Root GUI element object", xPixel: Int = 0, yPixel: Int = 0, var widthPixels: Int = Game.WIDTH, var heightPixels: Int = Game.HEIGHT, var layer: Int = 0, var adjustPosition: Boolean = true, var adjustDimensions: Boolean = false) {
+abstract class RootGUIElement(val name: String = "Root GUI element object", xPixel: Int = 0, yPixel: Int = 0, open var widthPixels: Int = Game.WIDTH, open var heightPixels: Int = Game.HEIGHT, var layer: Int = 0, var adjustPosition: Boolean = true, var adjustDimensions: Boolean = false) {
 
     var xPixel: Int by Delegates.observable(xPixel) { _, o, _ -> children.forEach { it.updatePosition(o, yPixel) } }
     var yPixel: Int by Delegates.observable(yPixel) { _, o, _ -> children.forEach { it.updatePosition(xPixel, o) } }
@@ -52,11 +46,10 @@ abstract class RootGUIElement(val name: String = "Root GUI element object", xPix
 
     private val _children: MutableSet<GUIElement> = mutableSetOf()
     val children = object : MutableSet<GUIElement> by _children {
-
         override fun add(element: GUIElement): Boolean {
             val result = _children.add(element)
-            if(result) {
-                if(element.parent != this@RootGUIElement) {
+            if (result) {
+                if (element.parent != this@RootGUIElement) {
                     element.layer = element.parent.layer + 1
                     element.parent = this@RootGUIElement
                 }
@@ -66,9 +59,8 @@ abstract class RootGUIElement(val name: String = "Root GUI element object", xPix
         }
     }
 
-    /** Gets a GUI element by its name from this element's children */
-    fun MutableSet<GUIElement>.get(name: String): GUIElement? {
-        return _children.firstOrNull { it.name == name }
+    fun get(name: String): GUIElement? {
+        return children.firstOrNull { it.name == name }
     }
 
     open fun onOpen() {
@@ -98,6 +90,9 @@ abstract class RootGUIElement(val name: String = "Root GUI element object", xPix
     open fun onMouseLeave() {
     }
 
+    open fun onMouseScroll(dir: Int) {
+    }
+
     open fun onParentDimensionChange(oldWidth: Int, oldHeight: Int) {
         if (adjustPosition) {
 
@@ -118,11 +113,11 @@ abstract class RootGUIElement(val name: String = "Root GUI element object", xPix
 }
 
 abstract class GUIElement(parent: RootGUIElement? = RootGUIElementObject,
-                               name: String,
-                               relXPixel: Int = 0, relYPixel: Int = 0,
-                               widthPixels: Int, heightPixels: Int,
-                               layer: Int = if (parent == null) 1 else parent.layer + 1,
-                               adjustPosition: Boolean = true, adjustDimensions: Boolean = false) :
+                          name: String,
+                          relXPixel: Int = 0, relYPixel: Int = 0,
+                          widthPixels: Int, heightPixels: Int,
+                          layer: Int = if (parent == null) 1 else parent.layer + 1,
+                          adjustPosition: Boolean = true, adjustDimensions: Boolean = false) :
         RootGUIElement(name, (parent?.xPixel ?: 0) + relXPixel, (parent?.yPixel ?: 0) + relYPixel, widthPixels, heightPixels, layer, adjustPosition, adjustDimensions) {
 
     var parent: RootGUIElement = parent ?: RootGUIElementObject

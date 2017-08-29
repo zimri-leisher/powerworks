@@ -49,7 +49,7 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
 
     fun registerControlPressHandler(h: ControlPressHandler, vararg controls: Control) {
         val m = mutableMapOf<ControlMap, Array<out Control>>()
-        for(map in ControlMap.values()) {
+        for (map in ControlMap.values()) {
             m.put(map, controls)
         }
         handlers.put(h, m)
@@ -64,7 +64,7 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
         for (k in keyRelease) {
             val i = k.extendedKeyCode
             /*
-            Check to see if it is within valid bounds and the key in question is currently held down
+            Check to see if it is within valid bounds and the key in question is currently held down. Waits to clear so key presses can check if they were also released
              */
             if (i < keysDown.size && keysDown[i]) {
                 keysDown[i] = false
@@ -74,7 +74,7 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
                 map.translateKey(i, currentModifiers).forEach { queue.add(ControlPress(it, PressType.RELEASED)) }
             }
         }
-        keyRelease.clear()
+
         for (key in keysDown.indices) {
             if (keysDown[key]) {
                 if (print)
@@ -88,11 +88,17 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
                 keysDown[i] = true
                 currentModifiers = k.modifiers
                 if (print)
-                    out.println("${k.extendedKeyCode} : PRESSED")
+                    out.println("${i} : PRESSED")
                 map.translateKey(i, currentModifiers).forEach { queue.add(ControlPress(it, PressType.PRESSED)) }
             }
-
+            if(keyRelease.stream().anyMatch { it.extendedKeyCode == i }) {
+                if (print)
+                    out.println("$i : RELEASED")
+                keysDown[i] = false
+                map.translateKey(i, currentModifiers).forEach { queue.add(ControlPress(it, PressType.RELEASED)) }
+            }
         }
+        keyRelease.clear()
         keyPress.clear()
         for (m in mouseRelease) {
             val i = m.button
@@ -124,20 +130,23 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
         }
         mousePress.clear()
         if (mouseWheelEvent != null) {
-            val i: Int = mouseWheelEvent!!.scrollAmount
+            val i: Int = mouseWheelEvent!!.wheelRotation
+            currentModifiers = mouseWheelEvent!!.modifiers
             if (print)
-                out.println("MOUSE WHEEL " + if (i == -1) "DOWN" else "UP")
+                out.println("MOUSE WHEEL " + if (i == -1) "DOWN" else if(i == 1) "UP" else "???")
             map.translateMouseWheel(i, currentModifiers).forEach { queue.add(ControlPress(it, PressType.PRESSED)) }
             mouseWheelEvent = null
         }
         /* Execute */
+        if (print)
+            out.println("QUEUE: [${queue.joinToString()}]")
         for (p in queue) {
             for ((k, v) in handlers) {
-                if(v != null) {
-                    if(v.containsKey(map)) {
+                if (v != null) {
+                    if (v.containsKey(map)) {
                         val controls = v.get(map)
-                        if(controls != null) {
-                            if(controls.contains(p.control))
+                        if (controls != null) {
+                            if (controls.contains(p.control))
                                 k.handleControlPress(p)
                         } else {
                             k.handleControlPress(p)

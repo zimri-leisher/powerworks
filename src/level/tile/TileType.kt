@@ -1,12 +1,21 @@
 package level.tile
 
 import graphics.ImageCollection
+import graphics.ImageCollections
 import graphics.Texture
 import java.util.*
 
 private var nextID = 0
 
-data class TileType(val textures: Array<Texture>) {
+object OreTileTypes {
+    val GRASS_IRON_ORE = OreTileType(ImageCollections.GRASS_IRON_ORE_TILE, 10)
+}
+
+object TileTypes {
+    val GRASS = TileType(ImageCollections.GRASS_TILE)
+}
+
+open class TileType constructor(val textures: Array<Texture>) {
 
     val id = nextID++
 
@@ -19,9 +28,5 @@ data class TileType(val textures: Array<Texture>) {
                 return true
         }
         return false
-    }
-
-    override fun hashCode(): Int {
-        return Arrays.hashCode(textures)
     }
 }

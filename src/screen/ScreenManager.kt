@@ -6,7 +6,7 @@ import misc.GeometryHelper
 object ScreenManager : ControlPressHandler {
 
     init {
-        InputManager.registerControlPressHandler(this, Control.INTERACT, Control.DEBUG)
+        InputManager.registerControlPressHandler(this, Control.DEBUG, Control.INTERACT, Control.SCROLL_UP, Control.SCROLL_DOWN)
     }
 
     val guiElements = mutableListOf<GUIElement>()
@@ -40,13 +40,23 @@ object ScreenManager : ControlPressHandler {
             val y = InputManager.mouseYPixel
             updateMouseOn()
             if (openGuiElements.size > 0) {
-                openGuiElements.stream().filter { it.mouseOn }.sorted { o2, o1 -> o1.layer.compareTo(o2.layer) }.findFirst().get().onMouseActionOn(t, x, y)
+                openGuiElements.stream().filter { it.mouseOn }.sorted { o2, o1 -> o1.layer.compareTo(o2.layer) }.findFirst().orElseGet { null }?.onMouseActionOn(t, x, y)
                 openGuiElements.stream().filter { !it.mouseOn }.forEach { it.onMouseActionOff(t, x, y) }
             }
-        } else if(p.control == Control.DEBUG && p.pressType == PressType.PRESSED) {
+        } else if (p.control == Control.SCROLL_DOWN) {
+            updateMouseOn()
+            if (openGuiElements.size > 0) {
+                openGuiElements.stream().filter { it.mouseOn }.sorted { o2, o1 -> o1.layer.compareTo(o2.layer) }.findFirst().orElseGet { null }?.onMouseScroll(-1)
+            }
+        } else if (p.control == Control.SCROLL_UP) {
+            updateMouseOn()
+            if (openGuiElements.size > 0) {
+                openGuiElements.stream().filter { it.mouseOn }.sorted { o2, o1 -> o1.layer.compareTo(o2.layer) }.findFirst().orElseGet { null }?.onMouseScroll(1)
+            }
+        } else if (p.control == Control.DEBUG && p.pressType == PressType.PRESSED) {
             fun RootGUIElement.print(spaces: String = ""): String {
                 var v = spaces + toString()
-                for(g in children)
+                for (g in children)
                     v += "\n" + g.print(spaces + "  ")
                 return v
             }

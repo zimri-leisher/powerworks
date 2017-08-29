@@ -1,7 +1,10 @@
 package level
 
-interface Collidable {
-    val hitbox: Hitbox
+import java.awt.Point
 
-    fun getCollision(moveX: Int, moveY: Int): Boolean
+abstract class Collidable(xPixel: Int, yPixel: Int, requiresUpdate: Boolean = true, /** Used to determine whether this needs rendering */ val textureCorners: Array<Point>, val hitbox: Hitbox) : LevelObject(xPixel, yPixel, requiresUpdate) {
+
+    open fun getCollision(moveX: Int, moveY: Int): Boolean {
+        return hitbox != Hitbox.NONE
+    }
 }

@@ -1,25 +1,28 @@
 package main
 
-import io.OutputManager as out
-import javax.swing.JFrame
-import io.InputManager
-import java.awt.*
 import graphics.Renderer
-import java.awt.image.BufferedImage
+import io.InputManager
+import level.Level
+import screen.DebugOverlay
+import screen.IngameDefaultGUI
 import screen.MainMenuGUI
 import screen.ScreenManager
+import java.awt.*
 import java.io.IOException
-import java.awt.FontFormatException
-import java.awt.GraphicsEnvironment
 import javax.imageio.ImageIO
+import javax.swing.JFrame
+import io.OutputManager as out
 
+const val TRACE_GRAPHICS = false
 
 fun main(args: Array<String>) {
     initializeProperties()
-    Game.init()
+    Game.poke()
 }
 
 fun initializeProperties() {
+    if (TRACE_GRAPHICS)
+        System.setProperty("sun.java2d.trace", "log,timestamp,count,help")
     System.setProperty("sun.java2d.opengl", "true")
     System.setProperty("sun.java2d.translaccel", "true")
     System.setProperty("sun.java2d.ddforcevram", "true")
@@ -53,14 +56,13 @@ object Game : Canvas(), Runnable {
     /* Settings */
     var THREAD_WAITING = true
 
+    /* Level */
+    lateinit var currentLevel: Level
+
     val frame: JFrame = JFrame()
 
-    fun init() {
+    init {
         preferredSize = Dimension(WIDTH * SCALE, HEIGHT * SCALE)
-        addKeyListener(InputManager)
-        addMouseWheelListener(InputManager)
-        addMouseMotionListener(InputManager)
-        addMouseListener(InputManager)
         frame.title = "Powerworks"
         frame.add(this)
         frame.pack()
@@ -68,6 +70,10 @@ object Game : Canvas(), Runnable {
         frame.setLocationRelativeTo(null)
         requestFocusInWindow()
         frame.isVisible = true
+        addKeyListener(InputManager)
+        addMouseWheelListener(InputManager)
+        addMouseMotionListener(InputManager)
+        addMouseListener(InputManager)
         cursor = clearCursor
         try {
             val font = Font.createFont(Font.TRUETYPE_FONT, Game::class.java.getResourceAsStream("/font/MunroSmall.ttf")).deriveFont(Font.PLAIN, 28f)
@@ -80,51 +86,57 @@ object Game : Canvas(), Runnable {
         } catch (ex: IOException) {
             ex.printStackTrace()
         }
-
-        MainMenuGUI.init()
-        MainMenuGUI.open = true
+        /* For initializations */
+        MainMenuGUI.poke()
+        IngameDefaultGUI.poke()
+        DebugOverlay.poke()
+        State.setState(State.MAIN_MENU)
         start()
     }
 
+    fun poke() {}
+
     override fun run() {
-        var lastUpdate: Float = System.nanoTime().toFloat()
-        var lastFrame: Float
-        var lastSecond = (lastUpdate / 1000000000).toInt()
-        var frames = 0
-        var updates = 0
+        var lastUpdateTime = System.nanoTime().toDouble()
+        var lastRenderTime = System.nanoTime().toDouble()
+        var lastSecondTime = (lastUpdateTime / 1000000000).toInt()
+        var frameCount = 0
+        var updateCount = 0
         while (running) {
-            var now: Float = System.nanoTime().toFloat()
-            var updatesBeforeRender = 0
-            while (now - lastUpdate > NS_PER_UPDATE && updatesBeforeRender < MAX_UPDATES_BEFORE_RENDER) {
+            var now = System.nanoTime().toDouble()
+            var updates = 0
+            while (now - lastUpdateTime > NS_PER_UPDATE && updates < MAX_UPDATES_BEFORE_RENDER) {
                 update()
-                lastUpdate += NS_PER_UPDATE
+                lastUpdateTime += NS_PER_UPDATE
                 updates++
-                updatesBeforeRender++
+                updateCount++
                 updatesCount++
             }
-            if (now - lastUpdate > NS_PER_UPDATE)
-                lastUpdate = now - NS_PER_UPDATE
+            if (now - lastUpdateTime > NS_PER_UPDATE) {
+                lastUpdateTime = now - NS_PER_UPDATE
+            }
             render()
             framesCount++
-            frames++
-            lastFrame = now
-            val thisSecond = (lastUpdate / 1000000000).toInt()
-            if (thisSecond > lastSecond) {
-                out.println("$updates UPS, $frames FPS")
+            frameCount++
+            lastRenderTime = now
+            val thisSecond = (lastUpdateTime / 1000000000).toInt()
+            if (thisSecond > lastSecondTime) {
+                DebugOverlay.setInfo("FPS", frameCount.toString())
+                DebugOverlay.setInfo("UPS", updateCount.toString())
+                lastSecondTime = thisSecond
                 secondsCount++
-                lastSecond = thisSecond
-                frames = 0
-                updates = 0
+                frameCount = 0
+                updateCount = 0
             }
             if (THREAD_WAITING)
-                while (now - lastFrame < NS_PER_FRAME && now - lastUpdate < NS_PER_UPDATE) {
+                while (now - lastRenderTime < NS_PER_FRAME && now - lastUpdateTime < NS_PER_UPDATE) {
                     Thread.yield()
                     try {
                         Thread.sleep(1)
-                    } catch(e: Exception) {
-                        e.printStackTrace()
+                    } catch (e: Exception) {
                     }
-                    now = System.nanoTime().toFloat()
+
+                    now = System.nanoTime().toDouble()
                 }
         }
         stop()
@@ -133,6 +145,9 @@ object Game : Canvas(), Runnable {
     fun update() {
         InputManager.update()
         ScreenManager.update()
+        if (State.CURRENT_STATE == State.INGAME)
+            currentLevel.update()
+        State.update()
     }
 
     fun render() {
@@ -145,7 +160,6 @@ object Game : Canvas(), Runnable {
             do {
                 val g2d = bufferStrat.drawGraphics as Graphics2D
                 Renderer.g2d = g2d
-                /* Render */
                 ScreenManager.render()
                 g2d.dispose()
                 bufferStrat.show()
@@ -182,6 +196,29 @@ object Game : Canvas(), Runnable {
 
     fun clearMouseIcon() {
         cursor = clearCursor
+    }
+
+    private fun getDeviceConfigurationString(gc: GraphicsConfiguration): String {
+        return "Bounds: " + gc.bounds + "\n" +
+                "Buffer Capabilities: " + gc.bufferCapabilities.toString() + "\n" +
+                "   Back Buffer Capabilities: " + gc.bufferCapabilities.backBufferCapabilities.toString() + "\n" +
+                "      Accelerated: " + gc.bufferCapabilities.backBufferCapabilities.isAccelerated + "\n" +
+                "      True Volatile: " + gc.bufferCapabilities.backBufferCapabilities.isTrueVolatile + "\n" +
+                "   Flip Contents: " + gc.bufferCapabilities.flipContents.toString() + "\n" +
+                "   Front Buffer Capabilities: " + gc.bufferCapabilities.frontBufferCapabilities.toString() + "\n" +
+                "      Accelerated: " + gc.bufferCapabilities.frontBufferCapabilities.isAccelerated + "\n" +
+                "      True Volatile: " + gc.bufferCapabilities.frontBufferCapabilities.isTrueVolatile + "\n" +
+                "   Is Full Screen Required: " + gc.bufferCapabilities.isFullScreenRequired + "\n" +
+                "   Is MultiBuffer Available: " + gc.bufferCapabilities.isMultiBufferAvailable + "\n" +
+                "   Is Page Flipping: " + gc.bufferCapabilities.isPageFlipping + "\n" +
+                "Device: " + gc.device.toString() + "\n" +
+                "   Available Accelerated Memory: " + gc.device.availableAcceleratedMemory + "\n" +
+                "   ID String: " + gc.device.iDstring + "\n" +
+                "   Type: " + gc.device.type + "\n" +
+                "   Display Mode: " + gc.device.displayMode + "\n" +
+                "Image Capabilities: " + gc.imageCapabilities.toString() + "\n" +
+                "      Accelerated: " + gc.imageCapabilities.isAccelerated + "\n" +
+                "      True Volatile: " + gc.imageCapabilities.isTrueVolatile + "\n"
     }
 
 }

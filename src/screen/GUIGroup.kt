@@ -2,7 +2,7 @@ package screen
 
 import java.awt.Rectangle
 
-class GUIGroup(parent: RootGUIElement? = RootGUIElementObject,
+open class GUIGroup(parent: RootGUIElement? = RootGUIElementObject,
                name: String,
                relXPixel: Int, relYPixel: Int,
                layer: Int = (parent?.layer ?: 0) + 1) :
@@ -10,7 +10,6 @@ class GUIGroup(parent: RootGUIElement? = RootGUIElementObject,
 
     override fun onAddChild(child: GUIElement) {
         updateDimensions()
-        println("Child get. new dimensions: $widthPixels, $heightPixels")
     }
 
     init {

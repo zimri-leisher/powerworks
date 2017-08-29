@@ -55,4 +55,9 @@ class GUIButton(parent: RootGUIElement? = RootGUIElementObject,
     override fun render() {
         Renderer.renderTexture(currentTexture, xPixel, yPixel, params)
     }
+
+    companion object {
+        val GUI_BUTTON_DEFAULT_WIDTH = Images.GUI_BUTTON.widthPixels
+        val GUI_BUTTON_DEFAULT_HEIGHT = Images.GUI_BUTTON.heightPixels
+    }
 }
