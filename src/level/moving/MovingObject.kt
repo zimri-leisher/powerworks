@@ -2,27 +2,31 @@ package level.moving
 
 import level.Collidable
 import level.Hitbox
+import level.MovementListener
 import main.Game
-import java.awt.Point
 
 const val DEFAULT_MAX_SPEED = 20
 const val DEFAULT_DRAG = 4
 
-abstract class MovingObject(xPixel: Int, yPixel: Int, textureCorners: Array<Point>, hitbox: Hitbox) : Collidable(xPixel, yPixel, true, textureCorners, hitbox) {
+abstract class MovingObject(xPixel: Int, yPixel: Int, hitbox: Hitbox) : Collidable(xPixel, yPixel, true, hitbox) {
 
     /* Only allow setting of pixel values because otherwise it would cause infinite loop (unless I added a lot of boilerplate private values) */
-    override var xPixel = xPixel
-        set(value) {
+    final override var xPixel = xPixel
+        protected set(value) {
+            val old = field
             field = value
             xTile = value shr 4
             xChunk = xTile shr 3
+            onMove(old, yPixel)
         }
 
-    override var yPixel = yPixel
-        set(value) {
+    final override var yPixel = yPixel
+        protected set(value) {
+            val old = field
             field = value
             yTile = value shr 4
             yChunk = yTile shr 3
+            onMove(xPixel, old)
         }
 
     final override var xTile = xPixel shr 4
@@ -53,13 +57,22 @@ abstract class MovingObject(xPixel: Int, yPixel: Int, textureCorners: Array<Poin
         }
     var dir = 0
     var currentChunk = Game.currentLevel.getChunk(xChunk, yChunk)
+    val moveListeners = mutableListOf<MovementListener>()
 
     override fun update() {
         move()
     }
 
-    open fun onMove(pXPixel: Int, pYPixel: Int) {
+    fun setPosition(xPixel: Int, yPixel: Int) {
+        val oXPixel = this.xPixel
+        val oYPixel = this.yPixel
+        this.xPixel = xPixel
+        this.yPixel = yPixel
+        onMove(oXPixel, oYPixel)
+    }
 
+    protected open fun onMove(pXPixel: Int, pYPixel: Int) {
+        moveListeners.forEach { it.onMove(this, pXPixel, pYPixel) }
     }
 
     open fun move() {
@@ -73,20 +86,23 @@ abstract class MovingObject(xPixel: Int, yPixel: Int, textureCorners: Array<Poin
             dir = 0
         val pXPixel = xPixel
         val pYPixel = yPixel
-        if (!getCollision(xVel, yVel)) {
-            xPixel += xVel
-            yPixel += yVel
-        } else {
-            if (!getCollision(xVel, 0)) {
+        if(xVel != 0 || yVel != 0) {
+            if (!getCollision(xVel, yVel)) {
                 xPixel += xVel
-            }
-            if (!getCollision(0, yVel)) {
                 yPixel += yVel
+            } else {
+                if (!getCollision(xVel, 0)) {
+                    xPixel += xVel
+                }
+                if (!getCollision(0, yVel)) {
+                    yPixel += yVel
+                }
             }
+            if (pXPixel != xPixel || pYPixel != yPixel) {
+                onMove(pXPixel, pYPixel)
+            }
+            xVel /= DEFAULT_DRAG
+            yVel /= DEFAULT_DRAG
         }
-        if (pXPixel != xPixel || pYPixel != yPixel)
-            onMove(pXPixel, pYPixel)
-        xVel /= DEFAULT_DRAG
-        yVel /= DEFAULT_DRAG
     }
 }

@@ -3,9 +3,10 @@ package screen
 import io.*
 import misc.GeometryHelper
 
-object ScreenManager : ControlPressHandler {
+object ScreenManager : ControlPressHandler, MouseMovementListener {
 
     init {
+        InputManager.mouseMovementListeners.add(this)
         InputManager.registerControlPressHandler(this, Control.DEBUG, Control.INTERACT, Control.SCROLL_UP, Control.SCROLL_DOWN)
     }
 
@@ -13,12 +14,11 @@ object ScreenManager : ControlPressHandler {
     val openGuiElements = mutableListOf<RootGUIElement>()
 
     fun update() {
-        updateMouseOn()
         openGuiElements.forEach { it.update() }
     }
 
     fun updateMouseOn() {
-        openGuiElements.stream().forEach {
+        openGuiElements.forEach {
             if (GeometryHelper.contains(it.xPixel, it.yPixel, it.widthPixels, it.heightPixels, InputManager.mouseXPixel, InputManager.mouseYPixel, 0, 0)) {
                 if (!it.mouseOn) {
                     it.mouseOn = true
@@ -29,8 +29,22 @@ object ScreenManager : ControlPressHandler {
         }
     }
 
+    fun updateMouseOn(e: RootGUIElement) {
+        if (GeometryHelper.contains(e.xPixel, e.yPixel, e.widthPixels, e.heightPixels, InputManager.mouseXPixel, InputManager.mouseYPixel, 0, 0)) {
+            if (!e.mouseOn) {
+                e.mouseOn = true
+            }
+        } else if (e.mouseOn) {
+            e.mouseOn = false
+        }
+    }
+
     fun render() {
         openGuiElements.stream().sorted { o2, o1 -> o2.layer.compareTo(o1.layer) }.forEach { it.render() }
+    }
+
+    override fun onMouseMove(pXPixel: Int, pYPixel: Int) {
+        updateMouseOn()
     }
 
     override fun handleControlPress(p: ControlPress) {
@@ -54,6 +68,7 @@ object ScreenManager : ControlPressHandler {
                 openGuiElements.stream().filter { it.mouseOn }.sorted { o2, o1 -> o1.layer.compareTo(o2.layer) }.findFirst().orElseGet { null }?.onMouseScroll(1)
             }
         } else if (p.control == Control.DEBUG && p.pressType == PressType.PRESSED) {
+            /*
             fun RootGUIElement.print(spaces: String = ""): String {
                 var v = spaces + toString()
                 for (g in children)
@@ -61,6 +76,7 @@ object ScreenManager : ControlPressHandler {
                 return v
             }
             println(RootGUIElementObject.print())
+             */
         }
     }
 }

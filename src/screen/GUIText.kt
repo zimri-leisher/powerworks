@@ -2,7 +2,6 @@ package screen
 
 import graphics.Renderer
 import main.Game
-import java.awt.Rectangle
 import java.awt.font.FontRenderContext
 
 class GUIText(parent: RootGUIElement? = RootGUIElementObject,

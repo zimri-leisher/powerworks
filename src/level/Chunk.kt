@@ -59,6 +59,7 @@ class Chunk(val parent: Level, val xChunk: Int, val yChunk: Int) {
     }
 
     fun load(blocks: Array<Block?>, tiles: Array<Tile>) {
+        println("loading chunk at $xChunk, $yChunk")
         this.blocks = blocks
         this.tiles = tiles
         this.moving = mutableListOf()
@@ -68,6 +69,7 @@ class Chunk(val parent: Level, val xChunk: Int, val yChunk: Int) {
     }
 
     fun unload() {
+        println("unloading chunk at $xChunk, $yChunk")
         blocks = null
         tiles = null
         moving = null

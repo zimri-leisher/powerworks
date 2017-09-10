@@ -3,12 +3,14 @@ package main
 import graphics.Renderer
 import io.InputManager
 import level.Level
+import player.Player
 import screen.DebugOverlay
-import screen.IngameDefaultGUI
 import screen.MainMenuGUI
 import screen.ScreenManager
 import java.awt.*
+import java.io.File
 import java.io.IOException
+import java.util.*
 import javax.imageio.ImageIO
 import javax.swing.JFrame
 import io.OutputManager as out
@@ -29,6 +31,8 @@ fun initializeProperties() {
 }
 
 object Game : Canvas(), Runnable {
+
+    val JAR_PATH = Game::class.java.protectionDomain.codeSource.location.toURI().path.substring(1)
 
     /* Dimensions */
     const val WIDTH = 300
@@ -58,6 +62,7 @@ object Game : Canvas(), Runnable {
 
     /* Level */
     lateinit var currentLevel: Level
+    lateinit var player: Player
 
     val frame: JFrame = JFrame()
 
@@ -88,12 +93,12 @@ object Game : Canvas(), Runnable {
         }
         /* For initializations */
         MainMenuGUI.poke()
-        IngameDefaultGUI.poke()
         DebugOverlay.poke()
         State.setState(State.MAIN_MENU)
         start()
     }
 
+    /* Lazy initialization makes this a requirement */
     fun poke() {}
 
     override fun run() {
@@ -161,6 +166,7 @@ object Game : Canvas(), Runnable {
                 val g2d = bufferStrat.drawGraphics as Graphics2D
                 Renderer.g2d = g2d
                 ScreenManager.render()
+
                 g2d.dispose()
                 bufferStrat.show()
             } while (bufferStrat.contentsRestored())
@@ -196,6 +202,24 @@ object Game : Canvas(), Runnable {
 
     fun clearMouseIcon() {
         cursor = clearCursor
+    }
+
+    fun takeScreenshot() {
+        val ss = graphicsConfiguration.createCompatibleImage(Game.WIDTH * Game.SCALE, Game.HEIGHT * Game.SCALE)
+        Renderer.g2d = ss.createGraphics()
+        ScreenManager.render()
+        Renderer.g2d.dispose()
+        val calInstance = Calendar.getInstance()
+        val fileName = "${JAR_PATH.substring(0..JAR_PATH.lastIndexOf("/"))}screenshots/${calInstance.get(Calendar.MONTH)}-${calInstance.get(Calendar.DATE)}-${calInstance.get(Calendar.YEAR)}"
+        var i = 0
+        println(fileName)
+        var file = File(fileName + " #$i.png")
+        while (file.exists()) {
+            i++
+            file = File(fileName + " #$i.png")
+        }
+        ImageIO.write(ss, "png", file)
+        println("Taken screenshot")
     }
 
     private fun getDeviceConfigurationString(gc: GraphicsConfiguration): String {

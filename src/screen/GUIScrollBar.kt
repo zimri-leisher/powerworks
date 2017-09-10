@@ -78,14 +78,13 @@ class GUIScrollBar(parent: GUIElement, name: String, xPixel: Int, yPixel: Int, h
     }
 
     override fun render() {
-        Renderer.renderTexture(top, xPixel, yPixel)
-        Renderer.renderTexture(mid, xPixel, yPixel + 2, 6, heightPixels - 4)
-        Renderer.renderTexture(bottom, xPixel, yPixel + heightPixels - 2)
-        Renderer.renderTexture(current[0], xPixel + 1, currentPos + 1 + yPixel)
+        Renderer.renderTexture(top, xPixel, yPixel, params)
+        Renderer.renderTexture(mid, xPixel, yPixel + 2, 6, heightPixels - 4, params)
+        Renderer.renderTexture(bottom, xPixel, yPixel + heightPixels - 2, params)
+        Renderer.renderTexture(current[0], xPixel + 1, currentPos + 1 + yPixel, params)
         for (i in current[0].heightPixels..scrollBarHeight - current[2].heightPixels - 1)
-            Renderer.renderTexture(current[1], xPixel + 1, i + currentPos + 1 + yPixel)
-        Renderer.renderTexture(current[2], xPixel + 1, scrollBarHeight - current[2].heightPixels + yPixel + currentPos + 1)
-        super.render()
+            Renderer.renderTexture(current[1], xPixel + 1, i + currentPos + 1 + yPixel, params)
+        Renderer.renderTexture(current[2], xPixel + 1, scrollBarHeight - current[2].heightPixels + yPixel + currentPos + 1, params)
     }
 
     override fun onMouseActionOff(type: PressType, xPixel: Int, yPixel: Int) {

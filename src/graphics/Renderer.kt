@@ -11,7 +11,15 @@ object Renderer {
     var xPixelOffset = 0
     var yPixelOffset = 0
 
+    private val defaultParams = RenderParams()
+
+    var params = defaultParams
+
     lateinit var g2d: Graphics2D
+
+    fun resetParams() {
+        params = defaultParams
+    }
 
     fun feed(graphics2D: Graphics2D) {
         g2d = graphics2D

@@ -1,7 +1,11 @@
 package level
 
 import level.block.Block
-import level.tile.*
+import level.tile.OreTile
+import level.tile.OreTileTypes
+import level.tile.Tile
+import level.tile.TileTypes
+import java.util.*
 
 
 class SimplexLevel(width: Int, height: Int, seed: Long) : Level(seed, width, height) {
@@ -16,14 +20,8 @@ class SimplexLevel(width: Int, height: Int, seed: Long) : Level(seed, width, hei
         return ((seed / 7).toDouble() * (seed2 % 31).toDouble() * 0.55349).toLong()
     }
 
-    private fun scatter(scatter: Int): Boolean {
-        if (rand.nextInt(scatter) == 0) {
-            return true
-        }
-        return false
-    }
-
     override fun genTiles(xChunk: Int, yChunk: Int): Array<Tile> {
+        val rand = Random(genRandom(xChunk.toLong(), yChunk.toLong()))
         val tiles = arrayOfNulls<Tile>(CHUNK_SIZE * CHUNK_SIZE)
         val xTile = xChunk shl 3
         val yTile = yChunk shl 3
@@ -33,7 +31,7 @@ class SimplexLevel(width: Int, height: Int, seed: Long) : Level(seed, width, hei
                 if (singleOreNoise < IRON_ORE_THRESHOLD) {
                     tiles[x + y * CHUNK_SIZE] = Tile(TileTypes.GRASS, x + xTile, y + yTile)
                 } else if (singleOreNoise < IRON_ORE_MAX_THRESHOLD) {
-                    if (scatter(IRON_ORE_SCATTER)) {
+                    if (rand.nextInt(IRON_ORE_SCATTER) == 0) {
                         tiles[x + y * CHUNK_SIZE] = OreTile(OreTileTypes.GRASS_IRON_ORE, x + xTile, y + yTile)
                     } else {
                         tiles[x + y * CHUNK_SIZE] = Tile(TileTypes.GRASS, x + xTile, y + yTile)

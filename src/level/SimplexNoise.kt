@@ -1,9 +1,9 @@
 package level
 
-import java.util.Random
+import java.util.*
 
 
-class SimplexNoise(largestFeature: Int, internal var persistence: Double, seed: Long) {
+class SimplexNoise(largestFeature: Int, private var persistence: Double, seed: Long) {
 
     internal var octaves: Array<SimplexNoise_octave>
     internal var frequencys: DoubleArray

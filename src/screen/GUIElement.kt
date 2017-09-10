@@ -24,11 +24,13 @@ abstract class RootGUIElement(val name: String = "Root GUI element object", xPix
             if (!value && field) {
                 field = false
                 ScreenManager.openGuiElements.remove(this)
+                mouseOn = false
                 onClose()
                 children.forEach { it.open = false }
             } else if (value && !field) {
                 field = true
                 ScreenManager.openGuiElements.add(this)
+                ScreenManager.updateMouseOn(this)
                 onOpen()
                 children.forEach { it.open = true }
             }
@@ -59,16 +61,21 @@ abstract class RootGUIElement(val name: String = "Root GUI element object", xPix
         }
     }
 
-    fun get(name: String): GUIElement? {
-        return children.firstOrNull { it.name == name }
+    fun get(name: String, checkChildren: Boolean = true): GUIElement? {
+        var r = children.firstOrNull { it.name == name }
+        if (checkChildren) {
+            val i = children.iterator()
+            while (r == null && i.hasNext()) {
+                r = i.next().get(name)
+            }
+        }
+        return r
     }
 
     open fun onOpen() {
-
     }
 
     open fun onClose() {
-
     }
 
     fun toggle() {
@@ -136,6 +143,7 @@ abstract class GUIElement(parent: RootGUIElement? = RootGUIElementObject,
 
     init {
         this.parent.children.add(this)
+        open = this.parent.open
         ScreenManager.guiElements.add(this)
     }
 

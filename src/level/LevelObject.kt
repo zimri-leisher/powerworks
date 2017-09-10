@@ -3,8 +3,10 @@ package level
 import main.Game
 import java.io.DataOutputStream
 
-abstract class LevelObject protected constructor(open val xPixel: Int, open val yPixel: Int, requiresUpdate: Boolean = true) {
+abstract class LevelObject protected constructor(xPixel: Int, yPixel: Int, requiresUpdate: Boolean = true) {
 
+    open val xPixel: Int = xPixel
+    open val yPixel: Int = yPixel
     open val xTile = xPixel shr 4
     open val yTile = yPixel shr 4
     open val xChunk = xTile shr 3

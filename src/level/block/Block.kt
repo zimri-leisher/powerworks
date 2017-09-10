@@ -3,15 +3,9 @@ package level.block
 import graphics.Renderer
 import level.Collidable
 import main.Game
-import java.awt.Point
 import java.io.DataOutputStream
 
-class Block(xTile: Int, yTile: Int, val type: BlockType) : Collidable(xTile shl 4, yTile shl 4, type.requiresUpdate, arrayOf<Point>(
-        Point(type.textureXPixelOffset + type.getTexture(0).widthPixels, type.textureYPixelOffset),
-        Point(type.textureXPixelOffset + type.getTexture(0).widthPixels, type.textureYPixelOffset + type.getTexture(0).heightPixels),
-        Point(type.textureXPixelOffset, type.textureYPixelOffset),
-        Point(type.textureXPixelOffset, type.textureYPixelOffset + type.getTexture(0).heightPixels)
-), type.hitbox) {
+class Block(xTile: Int, yTile: Int, val type: BlockType) : Collidable(xTile shl 4, yTile shl 4, type.requiresUpdate, type.hitbox) {
 
     val rotation = 0
 
