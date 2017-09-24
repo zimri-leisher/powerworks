@@ -1,20 +1,22 @@
 package level.tile
 
+import graphics.RenderParams
 import graphics.Renderer
-import level.LevelObject
-import java.io.DataOutputStream
+import level.CHUNK_TILE_EXP
 
 // Default argument for type is present here
-open class Tile(type: TileType = TileTypes.GRASS, xTile: Int, yTile: Int) : LevelObject(xTile shl 4, yTile shl 4, false) {
+open class Tile(type: TileType = TileTypes.GRASS, val xTile: Int, val yTile: Int) {
+
+    val xPixel = xTile shl 4
+    val yPixel = yTile shl 4
+    val xChunk = xTile shr CHUNK_TILE_EXP
+    val yChunk = yTile shr CHUNK_TILE_EXP
 
     open val type = type
     val texture = type.textures[(Math.random() * type.textures.size).toInt()]
+    val rotation = (Math.random() * 4).toInt()
 
-    override fun render() {
-        Renderer.renderTexture(texture, xPixel, yPixel)
+    fun render() {
+        Renderer.renderTexture(texture, xPixel, yPixel, RenderParams(rotation = rotation))
     }
-
-    override fun save(out: DataOutputStream) {
-    }
-
 }

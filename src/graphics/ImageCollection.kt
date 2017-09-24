@@ -1,7 +1,7 @@
 package graphics
 
-import java.awt.image.BufferedImage
 import java.awt.GraphicsEnvironment
+import java.awt.image.BufferedImage
 import javax.imageio.ImageIO
 
 object ImageCollections {
@@ -19,9 +19,13 @@ class ImageCollection(path: String, numberOfImages: Int) {
     var width: Int
     var height: Int
 
+    operator fun get(i: Int): Texture {
+        return textures[i]
+    }
+
     init {
         val image = ImageIO.read(ImageCollection::class.java.getResource(path))
-        if(image.width % numberOfImages != 0)
+        if (image.width % numberOfImages != 0)
             throw Exception("Image is not properly formatted")
         width = image.width / numberOfImages
         height = image.height

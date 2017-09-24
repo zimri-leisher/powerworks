@@ -1,11 +1,11 @@
 package graphics
 
-import java.awt.AlphaComposite
-import java.awt.Transparency
 import main.Game
+import java.awt.AlphaComposite
+import java.awt.Color
+import java.awt.Transparency
 import java.awt.image.BufferedImage
 import javax.imageio.ImageIO
-import java.awt.Color
 
 object Images {
 

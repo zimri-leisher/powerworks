@@ -1,6 +1,7 @@
 package screen
 
 import graphics.Renderer
+import io.PressType
 import level.LevelObject
 import level.MovementListener
 import level.moving.MovingObject
@@ -15,7 +16,7 @@ class GUIView(parent: RootGUIElement? = RootGUIElementObject,
               widthPixels: Int, heightPixels: Int,
               camera: LevelObject, zoomLevel: Int = 10) : GUIElement(parent, name, relXPixel, relYPixel, widthPixels, heightPixels), MovementListener {
 
-    var camera: LevelObject = camera
+    var camera = camera
         set(value) {
             val old = field
             if (old is MovingObject)
@@ -28,29 +29,18 @@ class GUIView(parent: RootGUIElement? = RootGUIElementObject,
             }
         }
 
-    private var zoomMultiplier = zoomLevel * ZOOM_INCREMENT
+    var zoomMultiplier = zoomLevel * ZOOM_INCREMENT
 
     private var viewWidthPixels = (widthPixels / zoomMultiplier).toInt()
 
     private var viewHeightPixels = (heightPixels / zoomMultiplier).toInt()
 
-    override var widthPixels = widthPixels
-        set(value) {
-            field = value
-            fillPregenBuffers()
-            updateView()
-        }
-    override var heightPixels = heightPixels
-        set(value) {
-            field = value
-            fillPregenBuffers()
-            updateView()
-        }
     var zoomLevel = zoomLevel
         set(value) {
             field = value
             zoomMultiplier = value * ZOOM_INCREMENT
             updateView()
+            onCameraMove(camera.xPixel, camera.yPixel)
         }
 
     val moveListeners = mutableListOf<CameraMovementListener>()
@@ -63,7 +53,6 @@ class GUIView(parent: RootGUIElement? = RootGUIElementObject,
         DebugOverlay.setInfo(name + " zoom level", zoomLevel.toString())
         DebugOverlay.setInfo(name + " dimensions", "width: $viewWidthPixels, height: $viewHeightPixels")
         // Only one level loaded at a time so no need for parents
-        Game.currentLevel.views.add(this)
         if (camera is MovingObject) {
             camera.moveListeners.add(this)
         }
@@ -71,11 +60,11 @@ class GUIView(parent: RootGUIElement? = RootGUIElementObject,
     }
 
     override fun onClose() {
-        // TODO
+        Game.currentLevel.views.remove(this)
     }
 
     override fun onOpen() {
-        // TODO
+        Game.currentLevel.views.add(this)
     }
 
     /**
@@ -102,6 +91,11 @@ class GUIView(parent: RootGUIElement? = RootGUIElementObject,
 
     private fun onCameraMove(pXPixel: Int, pYPixel: Int) {
         moveListeners.forEach { it.onCameraMove(this, pXPixel, pYPixel) }
+    }
+
+    override fun onDimensionChange(oldWidth: Int, oldHeight: Int) {
+        fillPregenBuffers()
+        updateView()
     }
 
     //Camera moves
@@ -146,6 +140,10 @@ class GUIView(parent: RootGUIElement? = RootGUIElementObject,
                 zoomLevel--
         }
         DebugOverlay.setInfo(name + " zoom level", zoomLevel.toString())
+    }
+
+    override fun onMouseActionOn(type: PressType, xPixel: Int, yPixel: Int) {
+        Game.currentLevel.onMouseAction(type, xPixel, yPixel)
     }
 
     companion object {

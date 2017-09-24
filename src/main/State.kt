@@ -21,7 +21,7 @@ class State(val activate: (State) -> (Unit), val deactivate: (State) -> (Unit)) 
 
         val INGAME = State({
             val seed = Random().nextInt(4096).toLong()
-            Game.currentLevel = SimplexLevel(10240, 10240, seed)
+            Game.currentLevel = SimplexLevel(256, 256, seed)
             Game.player = Player(Game.currentLevel.widthPixels / 2, Game.currentLevel.heightPixels / 2)
             Game.currentLevel.add(Game.player)
             HUD.poke()

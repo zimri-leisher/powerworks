@@ -19,13 +19,7 @@ object ScreenManager : ControlPressHandler, MouseMovementListener {
 
     fun updateMouseOn() {
         openGuiElements.forEach {
-            if (GeometryHelper.contains(it.xPixel, it.yPixel, it.widthPixels, it.heightPixels, InputManager.mouseXPixel, InputManager.mouseYPixel, 0, 0)) {
-                if (!it.mouseOn) {
-                    it.mouseOn = true
-                }
-            } else if (it.mouseOn) {
-                it.mouseOn = false
-            }
+            updateMouseOn(it)
         }
     }
 
@@ -40,7 +34,7 @@ object ScreenManager : ControlPressHandler, MouseMovementListener {
     }
 
     fun render() {
-        openGuiElements.stream().sorted { o2, o1 -> o2.layer.compareTo(o1.layer) }.forEach { it.render() }
+        openGuiElements.stream().filter { it.autoRender }.sorted { o2, o1 -> o2.layer.compareTo(o1.layer) }.forEach { it.render() }
     }
 
     override fun onMouseMove(pXPixel: Int, pYPixel: Int) {
@@ -54,8 +48,9 @@ object ScreenManager : ControlPressHandler, MouseMovementListener {
             val y = InputManager.mouseYPixel
             updateMouseOn()
             if (openGuiElements.size > 0) {
-                openGuiElements.stream().filter { it.mouseOn }.sorted { o2, o1 -> o1.layer.compareTo(o2.layer) }.findFirst().orElseGet { null }?.onMouseActionOn(t, x, y)
-                openGuiElements.stream().filter { !it.mouseOn }.forEach { it.onMouseActionOff(t, x, y) }
+                val o = openGuiElements.stream().filter { it.mouseOn }.sorted { o2, o1 -> o1.layer.compareTo(o2.layer) }.findFirst().orElseGet { null }
+                o?.onMouseActionOn(t, x, y)
+                openGuiElements.stream().filter { it != o }.forEach { it.onMouseActionOff(t, x, y) }
             }
         } else if (p.control == Control.SCROLL_DOWN) {
             updateMouseOn()

@@ -11,6 +11,7 @@ object BlockTypes {
     val ALL = mutableListOf<BlockType>()
 
     val ERROR = BlockType("ERROR", arrayOf(Images.ERROR))
+    val TEST = BlockType("Test", arrayOf(Images.ERROR))
 
     fun getByID(id: Int): BlockType? {
         return ALL.firstOrNull { it.id == id }
@@ -28,6 +29,8 @@ open class BlockType(val name: String, private val textures: Array<Texture>, val
     init {
         BlockTypes.ALL.add(this)
     }
+
+    override fun toString() = name
 
     fun getTexture(dir: Int) = textures[Math.min(dir, textures.size)]
 }

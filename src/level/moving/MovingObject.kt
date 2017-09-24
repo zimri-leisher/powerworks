@@ -1,14 +1,14 @@
 package level.moving
 
-import level.Collidable
 import level.Hitbox
+import level.LevelObject
 import level.MovementListener
 import main.Game
 
 const val DEFAULT_MAX_SPEED = 20
 const val DEFAULT_DRAG = 4
 
-abstract class MovingObject(xPixel: Int, yPixel: Int, hitbox: Hitbox) : Collidable(xPixel, yPixel, true, hitbox) {
+abstract class MovingObject(xPixel: Int, yPixel: Int, hitbox: Hitbox) : LevelObject(xPixel, yPixel, hitbox, true) {
 
     /* Only allow setting of pixel values because otherwise it would cause infinite loop (unless I added a lot of boilerplate private values) */
     final override var xPixel = xPixel
@@ -57,7 +57,12 @@ abstract class MovingObject(xPixel: Int, yPixel: Int, hitbox: Hitbox) : Collidab
         }
     var dir = 0
     var currentChunk = Game.currentLevel.getChunk(xChunk, yChunk)
+    var intersectingChunks = if (hitbox == Hitbox.NONE) mutableListOf() else Game.currentLevel.getChunksFromPixelRectangle(hitbox.xStart + xPixel, hitbox.yStart + yPixel, hitbox.width, hitbox.height).toMutableList()
     val moveListeners = mutableListOf<MovementListener>()
+
+    init {
+        intersectingChunks.remove(currentChunk)
+    }
 
     override fun update() {
         move()
@@ -72,6 +77,7 @@ abstract class MovingObject(xPixel: Int, yPixel: Int, hitbox: Hitbox) : Collidab
     }
 
     protected open fun onMove(pXPixel: Int, pYPixel: Int) {
+        Game.currentLevel.updateChunk(this)
         moveListeners.forEach { it.onMove(this, pXPixel, pYPixel) }
     }
 
@@ -86,17 +92,21 @@ abstract class MovingObject(xPixel: Int, yPixel: Int, hitbox: Hitbox) : Collidab
             dir = 0
         val pXPixel = xPixel
         val pYPixel = yPixel
-        if(xVel != 0 || yVel != 0) {
-            if (!getCollision(xVel, yVel)) {
-                xPixel += xVel
-                yPixel += yVel
+        val nXPixel = xPixel + xVel
+        val nYPixel = yPixel + yVel
+        if (xVel != 0 || yVel != 0) {
+            if (!getCollision(nXPixel, nYPixel)) {
+                xPixel = nXPixel
+                yPixel = nYPixel
             } else {
-                if (!getCollision(xVel, 0)) {
-                    xPixel += xVel
-                }
-                if (!getCollision(0, yVel)) {
-                    yPixel += yVel
-                }
+                if (nXPixel != xPixel)
+                    if (!getCollision(nXPixel, yPixel)) {
+                        xPixel = nXPixel
+                    }
+                if (nYPixel != yPixel)
+                    if (!getCollision(xPixel, nYPixel)) {
+                        yPixel = nYPixel
+                    }
             }
             if (pXPixel != xPixel || pYPixel != yPixel) {
                 onMove(pXPixel, pYPixel)

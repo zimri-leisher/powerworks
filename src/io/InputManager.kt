@@ -22,7 +22,7 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
 
     val handlers = mutableMapOf<ControlPressHandler, Map<ControlMap, Array<out Control>?>?>()
 
-    val keysDown = BooleanArray(156)
+    val keysDown = mutableSetOf<Int>()
 
     val mouseButtonsDown = BooleanArray(5)
 
@@ -36,6 +36,7 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
 
     var mousePress = CopyOnWriteArrayList<MouseEvent>()
     var mouseRelease = CopyOnWriteArrayList<MouseEvent>()
+    var mouseMoved: MouseEvent? = null
 
     var mouseWheelEvent: MouseWheelEvent? = null
 
@@ -69,40 +70,47 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
             /*
             Check to see if it is within valid bounds and the key in question is currently held down. Waits to clear so key presses can check if they were also released
              */
-            if (i < keysDown.size && keysDown[i]) {
-                keysDown[i] = false
+            if (keysDown.contains(i)) {
                 currentModifiers = k.modifiers
                 if (print)
                     out.println("${k.extendedKeyCode} : RELEASED")
-                map.translateKey(i, currentModifiers).forEach { queue.add(ControlPress(it, PressType.RELEASED)) }
+                map.translateKey(i, keysDown.filter {it != i}.toMutableSet()).forEach { queue.add(ControlPress(it, PressType.RELEASED)) }
+                keysDown.remove(i)
             }
         }
-
-        for (key in keysDown.indices) {
-            if (keysDown[key]) {
-                if (print)
-                    out.println("$key : REPEAT")
-                map.translateKey(key, currentModifiers).forEach { queue.add(ControlPress(it, PressType.REPEAT)) }
-            }
+        for (key in keysDown) {
+            if (print)
+                out.println("$key : REPEAT")
+            map.translateKey(key, keysDown.filter {it != key}.toMutableSet()).forEach { queue.add(ControlPress(it, PressType.REPEAT)) }
         }
         for (k in keyPress) {
             val i = k.extendedKeyCode
-            if (i < keysDown.size && !keysDown[i]) {
-                keysDown[i] = true
+            if (!keysDown.contains(i)) {
+                keysDown.add(i)
                 currentModifiers = k.modifiers
                 if (print)
                     out.println("${i} : PRESSED")
-                map.translateKey(i, currentModifiers).forEach { queue.add(ControlPress(it, PressType.PRESSED)) }
+                map.translateKey(i, keysDown.filter {it != i}.toMutableSet()).forEach { queue.add(ControlPress(it, PressType.PRESSED)) }
             }
             if (keyRelease.stream().anyMatch { it.extendedKeyCode == i }) {
                 if (print)
                     out.println("$i : RELEASED")
-                keysDown[i] = false
-                map.translateKey(i, currentModifiers).forEach { queue.add(ControlPress(it, PressType.RELEASED)) }
+                keysDown.remove(i)
+                map.translateKey(i, keysDown.filter {it != i}.toMutableSet()).forEach { queue.add(ControlPress(it, PressType.RELEASED)) }
             }
         }
         keyRelease.clear()
         keyPress.clear()
+        if (mouseMoved != null) {
+            val newMouseXPixel = mouseMoved!!.x / Game.SCALE
+            val newMouseYPixel = mouseMoved!!.y / Game.SCALE
+            if (newMouseXPixel != mouseXPixel || newMouseYPixel != mouseYPixel) {
+                mouseMovementListeners.forEach { it.onMouseMove(mouseXPixel, mouseYPixel) }
+                mouseXPixel = mouseMoved!!.x / Game.SCALE
+                mouseYPixel = mouseMoved!!.y / Game.SCALE
+            }
+            mouseMoved = null
+        }
         for (m in mouseRelease) {
             val i = m.button
             if (mouseButtonsDown[i - 1]) {
@@ -110,7 +118,7 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
                 currentModifiers = m.modifiers
                 if (print)
                     out.println("MOUSE $i : RELEASED")
-                map.translateMouse(i, currentModifiers).forEach { queue.add(ControlPress(it, PressType.RELEASED)) }
+                map.translateMouse(i, keysDown).forEach { queue.add(ControlPress(it, PressType.RELEASED)) }
             }
         }
         mouseRelease.clear()
@@ -118,7 +126,7 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
             if (mouseButtonsDown[button]) {
                 if (print)
                     out.println("MOUSE ${button + 1} : REPEAT")
-                map.translateMouse(button + 1, currentModifiers).forEach { queue.add(ControlPress(it, PressType.REPEAT)) }
+                map.translateMouse(button + 1, keysDown).forEach { queue.add(ControlPress(it, PressType.REPEAT)) }
             }
         }
         for (m in mousePress) {
@@ -128,7 +136,7 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
                 currentModifiers = m.modifiers
                 if (print)
                     out.println("MOUSE $i : PRESSED")
-                map.translateMouse(i, currentModifiers).forEach { queue.add(ControlPress(it, PressType.PRESSED)) }
+                map.translateMouse(i, keysDown).forEach { queue.add(ControlPress(it, PressType.PRESSED)) }
             }
         }
         mousePress.clear()
@@ -137,7 +145,7 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
             currentModifiers = mouseWheelEvent!!.modifiers
             if (print)
                 out.println("MOUSE WHEEL " + if (i == -1) "DOWN" else if (i == 1) "UP" else "???")
-            map.translateMouseWheel(i, currentModifiers).forEach { queue.add(ControlPress(it, PressType.PRESSED)) }
+            map.translateMouseWheel(i, keysDown).forEach { queue.add(ControlPress(it, PressType.PRESSED)) }
             mouseWheelEvent = null
         }
         /* Execute */
@@ -200,19 +208,11 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
     }
 
     override fun mouseMoved(e: MouseEvent) {
-        if (e.x / Game.SCALE != mouseXPixel || e.y / Game.SCALE != mouseYPixel) {
-            mouseMovementListeners.forEach { it.onMouseMove(mouseXPixel, mouseYPixel) }
-            mouseXPixel = e.x / Game.SCALE
-            mouseYPixel = e.y / Game.SCALE
-        }
+        mouseMoved = e
     }
 
     override fun mouseDragged(e: MouseEvent) {
-        if (e.x / Game.SCALE != mouseXPixel || e.y / Game.SCALE != mouseYPixel) {
-            mouseMovementListeners.forEach { it.onMouseMove(mouseXPixel, mouseYPixel) }
-            mouseXPixel = e.x / Game.SCALE
-            mouseYPixel = e.y / Game.SCALE
-        }
+        mouseMoved = e
     }
 
 }

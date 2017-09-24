@@ -2,7 +2,9 @@ package screen
 
 import graphics.Images
 import graphics.Renderer
+import inv.Inventory
 import inv.Item
+import inv.ItemTypes
 import io.*
 
 object HUD {
@@ -21,10 +23,10 @@ object HUD {
             HOTBAR_SIZE * HOTBAR_SLOT_HEIGHT_PIXELS), ControlPressHandler {
 
         init {
-            InputManager.registerControlPressHandler(this, Control.SLOT_1, Control.SLOT_2, Control.SLOT_3, Control.SLOT_4, Control.SLOT_5, Control.SLOT_6, Control.SLOT_7, Control.SLOT_8)
+            InputManager.registerControlPressHandler(this, Control.SLOT_1, Control.SLOT_2, Control.SLOT_3, Control.SLOT_4, Control.SLOT_5, Control.SLOT_6, Control.SLOT_7, Control.SLOT_8, Control.GIVE_TEST_ITEM)
         }
 
-        val items = arrayOfNulls<Item>(HOTBAR_SIZE)
+        val items = Inventory(HOTBAR_SIZE, 1)
         var selected = 0
         val currentItem
             get() = items[selected]
@@ -51,7 +53,7 @@ object HUD {
                 Control.SLOT_6 -> selected = 5
                 Control.SLOT_7 -> selected = 6
                 Control.SLOT_8 -> selected = 7
-
+                Control.GIVE_TEST_ITEM -> items.add(Item(ItemTypes.TEST))
             }
         }
 

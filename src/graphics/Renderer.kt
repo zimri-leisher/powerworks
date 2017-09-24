@@ -33,13 +33,24 @@ object Renderer {
         g2d.clip = defaultClip
     }
 
+    fun renderFilledRectangle(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int, color: Int = 0xFFFFFF) {
+        g2d.color = Color(color)
+        g2d.fillRect((xPixel + xPixelOffset) * Game.SCALE, (yPixel + yPixelOffset) * Game.SCALE, widthPixels * Game.SCALE, heightPixels * Game.SCALE)
+    }
+
+    fun renderEmptyRectangle(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int, color: Int = 0xFFFFFF) {
+        g2d.color = Color(color)
+        g2d.stroke = BasicStroke(Game.SCALE.toFloat())
+        g2d.drawRect((xPixel + xPixelOffset) * Game.SCALE, (yPixel + yPixelOffset) * Game.SCALE, widthPixels * Game.SCALE, heightPixels * Game.SCALE)
+    }
+
     fun renderTexture(t: Texture, xPixel: Int, yPixel: Int) {
         g2d.drawImage(t.currentImage, (xPixel + xPixelOffset)* Game.SCALE, (yPixel + yPixelOffset) * Game.SCALE, t.widthPixels * Game.SCALE, t.heightPixels * Game.SCALE, null)
     }
 
     fun renderTexture(t: Texture, xPixel: Int, yPixel: Int, params: RenderParams) {
-        val absoluteXPixel = xPixel * Game.SCALE + params.xPixelOffset + xPixelOffset
-        val absoluteYPixel = yPixel * Game.SCALE + params.yPixelOffset + yPixelOffset
+        val absoluteXPixel = (xPixel + params.xPixelOffset + xPixelOffset) * Game.SCALE
+        val absoluteYPixel = (yPixel + params.yPixelOffset + yPixelOffset) * Game.SCALE
         val scaledScale = Game.SCALE * params.scale
         val absoluteWidthPixels = t.widthPixels * scaledScale * params.scaleWidth
         val absoluteHeightPixels = t.heightPixels * scaledScale * params.scaleHeight
@@ -91,9 +102,9 @@ object Renderer {
         }
     }
 
-    fun renderText(text: String, xPixel: Int, yPixel: Int, size: Int = 28, color: Int = 0xffffff) {
+    fun renderText(text: Any?, xPixel: Int, yPixel: Int, size: Int = 28, color: Int = 0xffffff) {
         g2d.font = Game.getFont(size)
         g2d.color = Color(color)
-        g2d.drawString(text, (xPixel + xPixelOffset) * Game.SCALE, (yPixel + yPixelOffset) * Game.SCALE)
+        g2d.drawString(text.toString(), (xPixel + xPixelOffset) * Game.SCALE, (yPixel + yPixelOffset) * Game.SCALE)
     }
 }

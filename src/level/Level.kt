@@ -1,35 +1,41 @@
 package level
 
-import graphics.Images
-import graphics.RenderParams
 import graphics.Renderer
 import io.InputManager
 import io.MouseMovementListener
+import io.PressType
 import level.block.Block
+import level.block.GhostBlock
 import level.moving.MovingObject
 import level.tile.Tile
+import main.Game
+import misc.GeometryHelper
 import screen.CameraMovementListener
 import screen.DebugOverlay
 import screen.GUIView
 import screen.HUD
 import java.awt.Rectangle
 import java.util.*
+import java.util.concurrent.CopyOnWriteArrayList
 
-const val CHUNK_SIZE = 8
-val CHUNK_EXP = (Math.log(CHUNK_SIZE.toDouble()) / Math.log(2.0)).toInt()
+const val CHUNK_SIZE_TILES = 8
+val CHUNK_TILE_EXP = (Math.log(CHUNK_SIZE_TILES.toDouble()) / Math.log(2.0)).toInt()
+val CHUNK_PIXEL_EXP = CHUNK_TILE_EXP + 4
+val CHUNK_SIZE_PIXELS = CHUNK_SIZE_TILES shl 4
 
 abstract class Level(seed: Long, val widthTiles: Int, val heightTiles: Int) : CameraMovementListener, MouseMovementListener {
 
     val heightPixels = heightTiles shl 4
     val widthPixels = widthTiles shl 4
-    val heightChunks = heightTiles shr CHUNK_EXP
-    val widthChunks = widthTiles shr CHUNK_EXP
+    val heightChunks = heightTiles shr CHUNK_TILE_EXP
+    val widthChunks = widthTiles shr CHUNK_TILE_EXP
 
     val rand: Random = Random(seed)
 
     val chunks: Array<Chunk>
-    val loadedChunks = mutableListOf<Chunk>()
+    val loadedChunks = CopyOnWriteArrayList<Chunk>()
 
+    private var viewBeingInteractedWith: GUIView? = null
     private val _views = mutableListOf<GUIView>()
     val views = object : MutableList<GUIView> by _views {
         override fun add(element: GUIView): Boolean {
@@ -46,9 +52,8 @@ abstract class Level(seed: Long, val widthTiles: Int, val heightTiles: Int) : Ca
             return ret
         }
     }
-    private var viewBeingInteractedWith: GUIView? = null
 
-    var ghostBlock: Block? = null
+    var ghostBlock: GhostBlock? = null
     var blockPlaceable = false
 
     var mouseOnLevel = false
@@ -82,26 +87,49 @@ abstract class Level(seed: Long, val widthTiles: Int, val heightTiles: Int) : Ca
         val maxY = Math.min(yTile1, heightTiles)
         val minX = Math.max(xTile0, 0)
         val minY = Math.max(yTile0, 0)
+        val chunks = getChunksFromTileRectangle(minX, minY, maxX - minX, maxY - minY)
         var count = 0
         for (y in (maxY - 1) downTo minY) {
             for (x in minX until maxX) {
                 val c = getChunkFromTile(x, y)
                 c.getTile(x, y).render()
-                c.getBlock(x, y)?.render()
                 count++
             }
         }
-        if (ghostBlock != null) {
-            Renderer.renderTexture(ghostBlock!!.type.getTexture(ghostBlock!!.rotation), ghostBlock!!.xPixel, ghostBlock!!.yPixel, RenderParams(alpha = 0.4f))
-            Renderer.renderTexture(if (blockPlaceable) Images.BLOCK_PLACEABLE else Images.BLOCK_NOT_PLACEABLE, ghostBlock!!.xPixel, ghostBlock!!.yPixel)
+        for (y in (maxY - 1) downTo minY) {
+            val yChunk = y shr CHUNK_TILE_EXP
+            // Render the line of blocks
+            for (x in minX until maxX) {
+                val c = getChunk(x shr CHUNK_TILE_EXP, yChunk)
+                c.getBlock(x, y)?.render()
+                if (ghostBlock != null) {
+                    val g = ghostBlock!!
+                    if (g.xTile == x && g.yTile == y) {
+                        g.render()
+                    }
+                }
+            }
+            // Render the moving objects in sorted order
+            for (xChunk in (minX shr CHUNK_TILE_EXP)..(maxX shr CHUNK_TILE_EXP)) {
+                val c = getChunk(xChunk, yChunk)
+                if (c.moving!!.size > 0)
+                    c.moving!!.filter { it.yTile >= y && it.yTile < y + 1 }.forEach { it.render() }
+            }
+        }
+        if (Game.CHUNK_BOUNDARIES) {
+            for (c in getChunksFromTileRectangle(minX, minY, maxX - minX, maxY - minY)) {
+                Renderer.renderEmptyRectangle(c.xTile shl 4, c.yTile shl 4, CHUNK_SIZE_PIXELS, CHUNK_SIZE_PIXELS)
+                Renderer.renderText("x: ${c.xChunk}, y: ${c.yChunk}", (c.xTile shl 4) + 1, (c.yTile shl 4) + 5)
+                Renderer.renderText("updates required: ${c.updatesRequired!!.size}", (c.xTile shl 4) + 1, (c.yTile shl 4) + 9)
+                Renderer.renderText("moving objects: ${c.moving!!.size} (${c.movingOnBoundary!!.size} on boundary)", (c.xTile shl 4) + 1, (c.yTile shl 4) + 13)
+            }
         }
         DebugOverlay.setInfo("${view.name} tile render count", count.toString())
     }
 
     fun update() {
         var count = 0
-        val loadedCopy = loadedChunks.toTypedArray()
-        for (c in loadedCopy) {
+        for (c in loadedChunks) {
             /* update() already unloads if necessary */
             c.beingRendered = isBeingRendered(c.xChunk, c.yChunk)
             c.update()
@@ -112,51 +140,62 @@ abstract class Level(seed: Long, val widthTiles: Int, val heightTiles: Int) : Ca
         DebugOverlay.setInfo("Loaded chunks", count.toString())
     }
 
+    private fun updateGhostBlock() {
+        val currentItem = HUD.Hotbar.currentItem
+        if (currentItem == null && ghostBlock != null) {
+            ghostBlock = null
+        } else if (currentItem != null) {
+            val xTile = mouseLevelXPixel shr 4
+            val yTile = mouseLevelYPixel shr 4
+            if (ghostBlock == null) {
+                ghostBlock = GhostBlock(xTile, yTile, currentItem.type.placedBlock)
+            } else if (xTile != ghostBlock!!.xTile || yTile != ghostBlock!!.yTile || ghostBlock!!.type != currentItem.type.placedBlock) {
+                ghostBlock = GhostBlock(xTile, yTile, currentItem.type.placedBlock)
+            }
+        }
+    }
+
+    private fun isBeingRendered(xChunk: Int, yChunk: Int) = views.any { it.getViewRectangle().intersects(Rectangle(xChunk shl (CHUNK_TILE_EXP + 4), yChunk shl (CHUNK_TILE_EXP + 4), 128, 128)) }
+
+    /* Listeners and senders */
+    fun onMouseAction(type: PressType, xPixel: Int, yPixel: Int) {
+        if (ghostBlock != null && ghostBlock!!.placeable) {
+            add(Block(ghostBlock!!.xTile, ghostBlock!!.yTile, ghostBlock!!.type))
+            updateGhostBlock()
+        }
+    }
+
     override fun onCameraMove(view: GUIView, pXPixel: Int, pYPixel: Int) {
-        println("test")
-        if(view == viewBeingInteractedWith) {
+        if (view == viewBeingInteractedWith) {
             mouseMoveRelativeToLevel()
         }
     }
 
     // Will I know what I did at 3:16 AM later? Hopefully. Right now this seems reasonable
-    fun mouseMoveRelativeToLevel() {
-        println("mmoved")
+    private fun mouseMoveRelativeToLevel() {
         val viewRectangle = viewBeingInteractedWith!!.getViewRectangle()
-        mouseLevelXPixel = viewRectangle.x + InputManager.mouseXPixel
-        mouseLevelYPixel = viewRectangle.y + InputManager.mouseYPixel
+        val zoom = viewBeingInteractedWith!!.zoomMultiplier
+        mouseLevelXPixel = (InputManager.mouseXPixel / zoom).toInt() + viewRectangle.x
+        mouseLevelYPixel = (InputManager.mouseYPixel / zoom).toInt() + viewRectangle.y
     }
 
     override fun onMouseMove(pXPixel: Int, pYPixel: Int) {
         updateViewBeingInteractedWith()
-        if(mouseOnLevel) {
+        if (mouseOnLevel) {
             mouseMoveRelativeToLevel()
         }
     }
 
-    fun updateGhostBlock() {
-        val currentItem = HUD.Hotbar.currentItem
-        val mXTile = InputManager.mouseXPixel shr 4
-        val mYTile = InputManager.mouseYPixel shr 4
-        if(ghostBlock == null) {
-            if(currentItem != null && currentItem.isPlaceable) {
-                ghostBlock = Block(mXTile, mYTile, currentItem.type.placedBlock)
-            }
-        } else if(currentItem == null) {
-            ghostBlock = null
-        } else if(currentItem.type.placedBlock != ghostBlock!!.type) {
-            ghostBlock = Block(mXTile, mYTile, currentItem.type.placedBlock)
-        } else if(ghostBlock!!.xTile != mXTile || ghostBlock!!.yTile != mYTile) {
-            ghostBlock = Block(mXTile, mYTile, currentItem.type.placedBlock)
-        }
-    }
-
-    fun updateViewBeingInteractedWith() {
+    private fun updateViewBeingInteractedWith() {
         viewBeingInteractedWith = views.firstOrNull { it.mouseOn }
         mouseOnLevel = viewBeingInteractedWith != null
+        if (viewBeingInteractedWith != null) {
+            val zoom = viewBeingInteractedWith!!.zoomMultiplier
+            val viewRectangle = viewBeingInteractedWith!!.getViewRectangle()
+            mouseLevelXPixel = (InputManager.mouseXPixel / zoom).toInt() + viewRectangle.x
+            mouseLevelYPixel = (InputManager.mouseYPixel / zoom).toInt() + viewRectangle.y
+        }
     }
-
-    private fun isBeingRendered(xChunk: Int, yChunk: Int) = views.any { it.getViewRectangle().intersects(Rectangle(xChunk shl (CHUNK_EXP + 4), yChunk shl (CHUNK_EXP + 4), 128, 128)) }
 
     /* Generation */
     protected abstract fun genTiles(xChunk: Int, yChunk: Int): Array<Tile>
@@ -164,13 +203,71 @@ abstract class Level(seed: Long, val widthTiles: Int, val heightTiles: Int) : Ca
     protected abstract fun genBlocks(xChunk: Int, yChunk: Int): Array<Block?>
 
     /* Util */
+    /** Whether or not this collides with a block */
+    fun getBlockCollision(l: LevelObject, xPixel: Int = l.xPixel, yPixel: Int = l.yPixel): Boolean {
+        // Blocks won't have a hitbox bigger than their width/height tiles
+        val blocks = getIntersectingBlocksFromPixelRectangle(l.hitbox.xStart + xPixel, l.hitbox.yStart + yPixel, l.hitbox.width, l.hitbox.height)
+        for (b in blocks) {
+            if (doesPairCollide(l, xPixel, yPixel, b)) {
+                return true
+            }
+        }
+        return false
+    }
+
+    /** Whether or not this collides with a moving object */
+    fun getMovingObjectCollision(l: LevelObject, xPixel: Int = l.xPixel, yPixel: Int = l.yPixel, predicate: ((MovingObject) -> Boolean)? = null): Boolean {
+        val c = getChunk(l.xChunk, l.yChunk)
+        for (m in c.moving!!) {
+            if (m != l) {
+                if (predicate != null) {
+                    if (predicate(m) && doesPairCollide(l, xPixel, yPixel, m)) {
+                        return true
+                    }
+                } else if (doesPairCollide(l, xPixel, yPixel, m)) {
+                    return true
+                }
+            }
+        }
+        for (m in c.movingOnBoundary!!) {
+            if (m != l) {
+                if (predicate != null) {
+                    if (predicate(m) &&
+                            doesPairCollide(l, xPixel, yPixel, m)) {
+                        return true
+                    }
+                } else if (doesPairCollide(l, xPixel, yPixel, m)) {
+                    return true
+                }
+            }
+        }
+        return false
+    }
+
+    fun getCollision(l: LevelObject, xPixel: Int = l.xPixel, yPixel: Int = l.yPixel): Boolean {
+        val m = getMovingObjectCollision(l, xPixel, yPixel)
+        val b = getBlockCollision(l, xPixel, yPixel)
+        println("moving: $m, block: $b")
+        return m || b
+    }
+
+    fun doesPairCollide(l: LevelObject, xPixel: Int = l.xPixel, yPixel: Int = l.yPixel, l2: LevelObject, xPixel2: Int = l2.xPixel, yPixel2: Int = l2.yPixel): Boolean {
+        return GeometryHelper.intersects(l.hitbox.xStart + xPixel, l.hitbox.yStart + yPixel, l.hitbox.width, l.hitbox.height, xPixel2 + l2.hitbox.xStart, yPixel2 + l2.hitbox.yStart, l2.hitbox.width, l2.hitbox.height)
+    }
+
     fun updateChunk(o: MovingObject) {
-        val c = getChunk(o.xChunk, o.yChunk)
-        val oldC = o.currentChunk
-        if (c != oldC) {
-            oldC.removeMoving(o)
-            c.addMoving(o)
-            o.currentChunk = c
+        val intersectingChunks = getChunksFromPixelRectangle(o.hitbox.xStart + o.xPixel, o.hitbox.yStart + o.yPixel, o.hitbox.width, o.hitbox.height).toMutableList()
+        val currentChunk = getChunk(o.xChunk, o.yChunk)
+        intersectingChunks.remove(currentChunk)
+        if (o.intersectingChunks != intersectingChunks) {
+            o.intersectingChunks.forEach { it.movingOnBoundary!!.remove(o) }
+            intersectingChunks.forEach { it.movingOnBoundary!!.add(o) }
+            o.intersectingChunks = intersectingChunks
+        }
+        if (o.currentChunk != currentChunk) {
+            o.currentChunk.removeMoving(o)
+            o.currentChunk = currentChunk
+            currentChunk.addMoving(o)
         }
     }
 
@@ -180,21 +277,23 @@ abstract class Level(seed: Long, val widthTiles: Int, val heightTiles: Int) : Ca
      */
     fun add(l: LevelObject): Boolean {
         val c = getChunk(l.xChunk, l.yChunk)
-        if (l is Tile) {
-            c.setTile(l)
-            return true
-        } else if (l is Block) {
-            if (l.getCollision(0, 0))
+        if (l is Block) {
+            if (l.getCollision(l.xPixel, l.yPixel)) {
                 return false
-            if (l.hitbox != Hitbox.NONE)
-                c.collidables!!.add(l)
-            c.setBlock(l)
+            }
+            for (x in 0 until l.type.widthTiles) {
+                for (y in 0 until l.type.heightTiles) {
+                    c.setBlock(l, l.xTile + x, l.yTile + y)
+                }
+            }
             return true
         } else if (l is MovingObject) {
-            if (l.getCollision(0, 0))
+            if (l.getCollision(l.xPixel, l.yPixel))
                 return false
-            if (l.hitbox != Hitbox.NONE)
-                c.collidables!!.add(l)
+            if (l.hitbox != Hitbox.NONE) {
+                l.intersectingChunks.forEach { it.movingOnBoundary!!.add(l) }
+                l.currentChunk.addMoving(l)
+            }
             c.addMoving(l)
         }
         return false
@@ -202,18 +301,16 @@ abstract class Level(seed: Long, val widthTiles: Int, val heightTiles: Int) : Ca
 
     fun remove(l: LevelObject) {
         val c = getChunk(l.xChunk, l.yChunk)
-        if (l is Tile) {
-            throw Exception("Tiles cannot be null. Use add to set a new one instead")
-        } else if (l is Block) {
-            if (l.hitbox != Hitbox.NONE) {
-                c.collidables!!.remove(l)
+        if (l is Block) {
+
+            for (x in 0 until l.type.widthTiles) {
+                for (y in 0 until l.type.heightTiles) {
+                    c.removeBlock(l, l.xTile + x, l.yTile + y)
+                }
             }
-            c.removeBlock(l)
         } else if (l is MovingObject) {
-            if (l.hitbox != Hitbox.NONE) {
-                c.collidables!!.remove(l)
-            }
-            c.removeMoving(l)
+            l.intersectingChunks.forEach { it.movingOnBoundary!!.remove(l) }
+            l.currentChunk.removeMoving(l)
         }
     }
 
@@ -245,10 +342,10 @@ abstract class Level(seed: Long, val widthTiles: Int, val heightTiles: Int) : Ca
         return getChunk(xTile shr 3, yTile shr 3, load)
     }
 
-    fun getChunksFromRectangle(xChunk: Int, yChunk: Int, widthChunks: Int, heightChunks: Int): List<Chunk> {
+    fun getChunksFromRectangle(xChunk: Int, yChunk: Int, xChunk2: Int, yChunk2: Int): List<Chunk> {
         val l = mutableListOf<Chunk>()
-        for (x in xChunk until xChunk + widthChunks) {
-            for (y in yChunk until yChunk + heightChunks) {
+        for (x in xChunk..xChunk2) {
+            for (y in yChunk..yChunk2) {
                 l.add(getChunk(x, y))
             }
         }
@@ -256,11 +353,11 @@ abstract class Level(seed: Long, val widthTiles: Int, val heightTiles: Int) : Ca
     }
 
     fun getChunksFromTileRectangle(xTile: Int, yTile: Int, widthTiles: Int, heightTiles: Int): List<Chunk> {
-        return getChunksFromRectangle(xTile shr 3, yTile shr 3, Math.ceil(widthTiles / CHUNK_SIZE.toDouble()).toInt(), Math.ceil(heightTiles / CHUNK_SIZE.toDouble()).toInt())
+        return getChunksFromRectangle(xTile shr CHUNK_TILE_EXP, yTile shr CHUNK_TILE_EXP, (xTile + widthTiles) shr CHUNK_TILE_EXP, (yTile + heightTiles) shr CHUNK_TILE_EXP)
     }
 
     fun getChunksFromPixelRectangle(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int): List<Chunk> {
-        return getChunksFromRectangle(xPixel shr CHUNK_EXP, yPixel shr CHUNK_EXP, Math.ceil(widthPixels / Math.pow(CHUNK_SIZE.toDouble(), 2.0)).toInt(), Math.ceil(heightPixels / Math.pow(CHUNK_SIZE.toDouble(), 2.0)).toInt())
+        return getChunksFromRectangle(xPixel shr CHUNK_PIXEL_EXP, yPixel shr CHUNK_PIXEL_EXP, (xPixel + widthPixels) shr CHUNK_PIXEL_EXP, (yPixel + heightPixels) shr CHUNK_PIXEL_EXP)
     }
 
     /**
@@ -268,6 +365,22 @@ abstract class Level(seed: Long, val widthTiles: Int, val heightTiles: Int) : Ca
      */
     fun getBlock(xTile: Int, yTile: Int): Block? {
         return getChunkFromTile(xTile, yTile).getBlock(xTile, yTile)
+    }
+
+    fun getIntersectingBlocksFromRectangle(xTile: Int, yTile: Int, widthTiles: Int, heightTiles: Int): Set<Block> {
+        val m = mutableSetOf<Block>()
+        for (x in xTile..(xTile + widthTiles)) {
+            for (y in yTile..(yTile + heightTiles)) {
+                val b = getBlock(x, y)
+                if (b != null)
+                    m.add(b)
+            }
+        }
+        return m
+    }
+
+    fun getIntersectingBlocksFromPixelRectangle(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int): Set<Block> {
+        return getIntersectingBlocksFromRectangle(xPixel shr 4, yPixel shr 4, widthPixels shr 4, heightPixels shr 4)
     }
 
     /**

@@ -1,0 +1,19 @@
+23 September 2017
+Added:
+* gui drag grip
+* some debug controls
+* placing blocks
+* ghost blocks
+* functional collision detection
+* empty and filled rectangle rendering
+* work on gui element lists
+Changed:
+* level object hierarchy so tiles are no longer level objects and level objects are all by default collidables
+* screenshots create directory
+* renamed GUIScrollBar to GUIVerticalScrollBar
+Fixed:
+* gui element onChange methods work logically
+* mouse level coordinates
+* gui button text doesn't block clicking
+* getting blocks and chunks in an area
+* gui view reacts properly to screen size change

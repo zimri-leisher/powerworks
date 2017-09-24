@@ -22,22 +22,22 @@ class SimplexLevel(width: Int, height: Int, seed: Long) : Level(seed, width, hei
 
     override fun genTiles(xChunk: Int, yChunk: Int): Array<Tile> {
         val rand = Random(genRandom(xChunk.toLong(), yChunk.toLong()))
-        val tiles = arrayOfNulls<Tile>(CHUNK_SIZE * CHUNK_SIZE)
+        val tiles = arrayOfNulls<Tile>(CHUNK_SIZE_TILES * CHUNK_SIZE_TILES)
         val xTile = xChunk shl 3
         val yTile = yChunk shl 3
-        for (y in 0..CHUNK_SIZE - 1) {
-            for (x in 0..CHUNK_SIZE - 1) {
+        for (y in 0..CHUNK_SIZE_TILES - 1) {
+            for (x in 0..CHUNK_SIZE_TILES - 1) {
                 val singleOreNoise = 1 + singleOre.getNoise(x + xTile, y + yTile)
                 if (singleOreNoise < IRON_ORE_THRESHOLD) {
-                    tiles[x + y * CHUNK_SIZE] = Tile(TileTypes.GRASS, x + xTile, y + yTile)
+                    tiles[x + y * CHUNK_SIZE_TILES] = Tile(TileTypes.GRASS, x + xTile, y + yTile)
                 } else if (singleOreNoise < IRON_ORE_MAX_THRESHOLD) {
                     if (rand.nextInt(IRON_ORE_SCATTER) == 0) {
-                        tiles[x + y * CHUNK_SIZE] = OreTile(OreTileTypes.GRASS_IRON_ORE, x + xTile, y + yTile)
+                        tiles[x + y * CHUNK_SIZE_TILES] = OreTile(OreTileTypes.GRASS_IRON_ORE, x + xTile, y + yTile)
                     } else {
-                        tiles[x + y * CHUNK_SIZE] = Tile(TileTypes.GRASS, x + xTile, y + yTile)
+                        tiles[x + y * CHUNK_SIZE_TILES] = Tile(TileTypes.GRASS, x + xTile, y + yTile)
                     }
                 } else {
-                    tiles[x + y * CHUNK_SIZE] = Tile(TileTypes.GRASS, x + xTile, y + yTile)
+                    tiles[x + y * CHUNK_SIZE_TILES] = Tile(TileTypes.GRASS, x + xTile, y + yTile)
                 }
             }
         }
@@ -45,7 +45,7 @@ class SimplexLevel(width: Int, height: Int, seed: Long) : Level(seed, width, hei
     }
 
     override fun genBlocks(xChunk: Int, yChunk: Int): Array<Block?> {
-        return arrayOfNulls(CHUNK_SIZE * CHUNK_SIZE)
+        return arrayOfNulls(CHUNK_SIZE_TILES * CHUNK_SIZE_TILES)
     }
 
     companion object {

@@ -1,15 +1,19 @@
 package main
 
 import graphics.Renderer
-import io.InputManager
+import io.*
 import level.Level
 import player.Player
 import screen.DebugOverlay
 import screen.MainMenuGUI
 import screen.ScreenManager
 import java.awt.*
+import java.awt.event.ComponentAdapter
+import java.awt.event.ComponentEvent
 import java.io.File
 import java.io.IOException
+import java.nio.file.Files
+import java.nio.file.Paths
 import java.util.*
 import javax.imageio.ImageIO
 import javax.swing.JFrame
@@ -30,9 +34,9 @@ fun initializeProperties() {
     System.setProperty("sun.java2d.ddforcevram", "true")
 }
 
-object Game : Canvas(), Runnable {
+object Game : Canvas(), Runnable, ControlPressHandler {
 
-    val JAR_PATH = Game::class.java.protectionDomain.codeSource.location.toURI().path.substring(1)
+    val JAR_PATH = Game::class.java.protectionDomain.codeSource.location.toURI().path.substring(1).substring(0 until Game::class.java.protectionDomain.codeSource.location.toURI().path.lastIndexOf("/"))
 
     /* Dimensions */
     const val WIDTH = 300
@@ -44,7 +48,7 @@ object Game : Canvas(), Runnable {
     const val UPDATES_PER_SECOND = 60f
     const val NS_PER_UPDATE: Float = 1000000000 / UPDATES_PER_SECOND
     const val MAX_UPDATES_BEFORE_RENDER = 5
-    var FRAMES_PER_SECOND = 60f
+    var FRAMES_PER_SECOND = 60000000f
     var NS_PER_FRAME: Float = 1000000000 / FRAMES_PER_SECOND
     /* Base statistics */
     var framesCount = 0
@@ -52,13 +56,15 @@ object Game : Canvas(), Runnable {
     var secondsCount = 0
     private var running = false
     private var defaultCursor = Cursor.getDefaultCursor()
-    private var clearCursor = Toolkit.getDefaultToolkit().createCustomCursor(ImageIO.read(Game::class.java.getResource("/textures/cursor/cursor_default.png")), Point(0, 0), "Powerworks Default Cursor")
+    private var clearCursor = Toolkit.getDefaultToolkit().createCustomCursor(ImageIO.read(Game::class.java.getResource("/textures/cursor/cursor_default.png")), Point(0, 0), "Blank cursor")
 
     private val fonts = mutableMapOf<Int, Font>()
     private lateinit var defaultFont: Font
 
     /* Settings */
-    var THREAD_WAITING = true
+    var THREAD_WAITING = false
+    var RENDER_HITBOXES = false
+    var CHUNK_BOUNDARIES = false
 
     /* Level */
     lateinit var currentLevel: Level
@@ -74,7 +80,13 @@ object Game : Canvas(), Runnable {
         frame.defaultCloseOperation = JFrame.EXIT_ON_CLOSE
         frame.setLocationRelativeTo(null)
         requestFocusInWindow()
+        frame.iconImage = ImageIO.read(Game::class.java.getResource("/textures/misc/logo.png"))
         frame.isVisible = true
+        frame.addComponentListener(object : ComponentAdapter() {
+            override fun componentResized(e: ComponentEvent?) {
+                println("resized")
+            }
+        })
         addKeyListener(InputManager)
         addMouseWheelListener(InputManager)
         addMouseMotionListener(InputManager)
@@ -91,6 +103,7 @@ object Game : Canvas(), Runnable {
         } catch (ex: IOException) {
             ex.printStackTrace()
         }
+        InputManager.registerControlPressHandler(this, Control.TAKE_SCREENSHOT, Control.TOGGLE_RENDER_HITBOXES, Control.TOGGLE_CHUNK_INFO)
         /* For initializations */
         MainMenuGUI.poke()
         DebugOverlay.poke()
@@ -140,7 +153,6 @@ object Game : Canvas(), Runnable {
                         Thread.sleep(1)
                     } catch (e: Exception) {
                     }
-
                     now = System.nanoTime().toDouble()
                 }
         }
@@ -166,7 +178,6 @@ object Game : Canvas(), Runnable {
                 val g2d = bufferStrat.drawGraphics as Graphics2D
                 Renderer.g2d = g2d
                 ScreenManager.render()
-
                 g2d.dispose()
                 bufferStrat.show()
             } while (bufferStrat.contentsRestored())
@@ -205,14 +216,16 @@ object Game : Canvas(), Runnable {
     }
 
     fun takeScreenshot() {
+        val directory = Paths.get(JAR_PATH, "screenshots")
+        if (Files.notExists(directory))
+            Files.createDirectory(directory)
         val ss = graphicsConfiguration.createCompatibleImage(Game.WIDTH * Game.SCALE, Game.HEIGHT * Game.SCALE)
         Renderer.g2d = ss.createGraphics()
         ScreenManager.render()
         Renderer.g2d.dispose()
         val calInstance = Calendar.getInstance()
-        val fileName = "${JAR_PATH.substring(0..JAR_PATH.lastIndexOf("/"))}screenshots/${calInstance.get(Calendar.MONTH)}-${calInstance.get(Calendar.DATE)}-${calInstance.get(Calendar.YEAR)}"
+        val fileName = "${JAR_PATH}screenshots/${calInstance.get(Calendar.MONTH)}-${calInstance.get(Calendar.DATE)}-${calInstance.get(Calendar.YEAR)}"
         var i = 0
-        println(fileName)
         var file = File(fileName + " #$i.png")
         while (file.exists()) {
             i++
@@ -220,6 +233,15 @@ object Game : Canvas(), Runnable {
         }
         ImageIO.write(ss, "png", file)
         println("Taken screenshot")
+    }
+
+    override fun handleControlPress(p: ControlPress) {
+        if (p.pressType == PressType.PRESSED)
+            when (p.control) {
+                Control.TAKE_SCREENSHOT -> takeScreenshot()
+                Control.TOGGLE_RENDER_HITBOXES -> RENDER_HITBOXES = !RENDER_HITBOXES
+                Control.TOGGLE_CHUNK_INFO -> CHUNK_BOUNDARIES = !CHUNK_BOUNDARIES
+            }
     }
 
     private fun getDeviceConfigurationString(gc: GraphicsConfiguration): String {

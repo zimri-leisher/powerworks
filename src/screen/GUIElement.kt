@@ -3,22 +3,19 @@ package screen
 import graphics.RenderParams
 import io.PressType
 import main.Game
-import kotlin.properties.Delegates
 
 object RootGUIElementObject : RootGUIElement()
 
 private var nextID = 0
 
-abstract class RootGUIElement(val name: String = "Root GUI element object", xPixel: Int = 0, yPixel: Int = 0, open var widthPixels: Int = Game.WIDTH, open var heightPixels: Int = Game.HEIGHT, var layer: Int = 0, var adjustPosition: Boolean = true, var adjustDimensions: Boolean = false) {
+abstract class RootGUIElement(val name: String = "Root GUI element object", open val xPixel: Int = 0, open val yPixel: Int = 0, open val widthPixels: Int = Game.WIDTH, open val heightPixels: Int = Game.HEIGHT, var layer: Int = 0,
+                              /** Whether or not to modify dimensions based on the ratio of the parent's previous dimension versus the new one */
+                              var adjustDimensions: Boolean = false) {
 
-    var xPixel: Int by Delegates.observable(xPixel) { _, o, _ -> children.forEach { it.updatePosition(o, yPixel) } }
-    var yPixel: Int by Delegates.observable(yPixel) { _, o, _ -> children.forEach { it.updatePosition(xPixel, o) } }
-    private var xRatio: Double = xPixel.toDouble() / Game.WIDTH
-    private var yRatio: Double = yPixel.toDouble() / Game.HEIGHT
-    private var widthRatio: Double = widthPixels.toDouble() / Game.WIDTH
-    private var heightRatio: Double = heightPixels.toDouble() / Game.HEIGHT
     val params = RenderParams()
     var id = nextID++
+    /** Whether or not the ScreenManager should render this */
+    var autoRender = true
     var open: Boolean = false
         set(value) {
             if (!value && field) {
@@ -101,9 +98,18 @@ abstract class RootGUIElement(val name: String = "Root GUI element object", xPix
     }
 
     open fun onParentDimensionChange(oldWidth: Int, oldHeight: Int) {
-        if (adjustPosition) {
+    }
 
-        }
+    open fun onParentPositionChange(pXPixel: Int, pYPixel: Int) {
+    }
+
+    open fun onDimensionChange(oldWidth: Int, oldHeight: Int) {
+    }
+
+    open fun onPositionChange(pXPixel: Int, pYPixel: Int) {
+    }
+
+    open fun onParentChange(oldParent: RootGUIElement) {
     }
 
     /* Take into account params! */
@@ -111,12 +117,12 @@ abstract class RootGUIElement(val name: String = "Root GUI element object", xPix
     }
 
     open fun update() {
-
     }
 
     override fun toString(): String {
         return "Root GUI element object"
     }
+
 }
 
 abstract class GUIElement(parent: RootGUIElement? = RootGUIElementObject,
@@ -124,10 +130,10 @@ abstract class GUIElement(parent: RootGUIElement? = RootGUIElementObject,
                           relXPixel: Int = 0, relYPixel: Int = 0,
                           widthPixels: Int, heightPixels: Int,
                           layer: Int = if (parent == null) 1 else parent.layer + 1,
-                          adjustPosition: Boolean = true, adjustDimensions: Boolean = false) :
-        RootGUIElement(name, (parent?.xPixel ?: 0) + relXPixel, (parent?.yPixel ?: 0) + relYPixel, widthPixels, heightPixels, layer, adjustPosition, adjustDimensions) {
+                          adjustDimensions: Boolean = false) :
+        RootGUIElement(name, (parent?.xPixel ?: 0) + relXPixel, (parent?.yPixel ?: 0) + relYPixel, widthPixels, heightPixels, layer, adjustDimensions) {
 
-    var parent: RootGUIElement = parent ?: RootGUIElementObject
+    open var parent: RootGUIElement = parent ?: RootGUIElementObject
         set(value) {
             if (field != value) {
                 field.children.remove(this)
@@ -138,25 +144,65 @@ abstract class GUIElement(parent: RootGUIElement? = RootGUIElementObject,
             }
         }
 
-    var relXPixel: Int by Delegates.observable(relXPixel) { _, o, n -> xPixel = n + this.parent.xPixel; this.children.forEach { it.updatePosition(o, yPixel) } }
-    var relYPixel: Int by Delegates.observable(relYPixel) { _, o, n -> yPixel = n + this.parent.yPixel; this.children.forEach { it.updatePosition(xPixel, o) } }
+    final override var widthPixels = widthPixels
+        set(value) {
+            val old = field
+            field = value
+            onDimensionChange(old, heightPixels)
+            children.forEach {
+                if (it.adjustDimensions) {
+                    val xRatio = widthPixels / old
+                    it.widthPixels *= xRatio
+                }
+                it.onParentDimensionChange(old, heightPixels)
+            }
+        }
+    final override var heightPixels = heightPixels
+        set(value) {
+            val old = field
+            field = value
+            onDimensionChange(widthPixels, old)
+            children.forEach {
+                if (it.adjustDimensions) {
+                    val yRatio = heightPixels / old
+                    it.heightPixels *= yRatio
+                }
+                it.onParentDimensionChange(widthPixels, old)
+            }
+        }
+
+    final override var xPixel = relXPixel + this.parent.xPixel
+        private set
+    final override var yPixel = relYPixel + this.parent.yPixel
+        private set
+
+    var relXPixel = relXPixel
+        set(value) {
+            field = value
+            updatePosition()
+        }
+    var relYPixel = relYPixel
+        set(value) {
+            field = value
+            updatePosition()
+        }
+
+    private fun updatePosition() {
+        val oldX = xPixel
+        val oldY = yPixel
+        xPixel = parent.xPixel + relXPixel
+        yPixel = parent.yPixel + relYPixel
+        onPositionChange(oldX, oldY)
+        children.forEach {
+            it.updatePosition()
+            it.onParentPositionChange(oldX, oldY)
+        }
+    }
 
     init {
         this.parent.children.add(this)
         open = this.parent.open
         ScreenManager.guiElements.add(this)
-    }
-
-    open fun onParentChange(oldParent: RootGUIElement) {
-        updatePosition(oldParent.xPixel, oldParent.yPixel)
-    }
-
-    open fun updatePosition(oldX: Int, oldY: Int) {
-        val thisOldX = xPixel
-        val thisOldY = yPixel
-        xPixel = parent.xPixel + relXPixel
-        yPixel = parent.yPixel + relYPixel
-        children.forEach { it.updatePosition(thisOldX, thisOldY) }
     }
 
     override fun toString(): String {
