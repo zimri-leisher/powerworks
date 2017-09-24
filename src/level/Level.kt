@@ -116,6 +116,16 @@ abstract class Level(seed: Long, val widthTiles: Int, val heightTiles: Int) : Ca
                     c.moving!!.filter { it.yTile >= y && it.yTile < y + 1 }.forEach { it.render() }
             }
         }
+        /*
+        for (y in (maxY - 1) downTo minY) {
+            for (x in minX until maxX) {
+                val c = getChunkFromTile(x, y)
+                c.getTile(x, y).render()
+                c.getBlock(x, y)?.render()
+                count++
+            }
+        }
+         */
         if (Game.CHUNK_BOUNDARIES) {
             for (c in getChunksFromTileRectangle(minX, minY, maxX - minX, maxY - minY)) {
                 Renderer.renderEmptyRectangle(c.xTile shl 4, c.yTile shl 4, CHUNK_SIZE_PIXELS, CHUNK_SIZE_PIXELS)
@@ -245,10 +255,7 @@ abstract class Level(seed: Long, val widthTiles: Int, val heightTiles: Int) : Ca
     }
 
     fun getCollision(l: LevelObject, xPixel: Int = l.xPixel, yPixel: Int = l.yPixel): Boolean {
-        val m = getMovingObjectCollision(l, xPixel, yPixel)
-        val b = getBlockCollision(l, xPixel, yPixel)
-        println("moving: $m, block: $b")
-        return m || b
+        return getMovingObjectCollision(l, xPixel, yPixel) || getBlockCollision(l, xPixel, yPixel)
     }
 
     fun doesPairCollide(l: LevelObject, xPixel: Int = l.xPixel, yPixel: Int = l.yPixel, l2: LevelObject, xPixel2: Int = l2.xPixel, yPixel2: Int = l2.yPixel): Boolean {

@@ -1,6 +1,9 @@
 package main
 
+import graphics.LocalAnimation
 import graphics.Renderer
+import graphics.SyncAnimation
+import inv.Inventory
 import io.*
 import level.Level
 import player.Player
@@ -69,6 +72,7 @@ object Game : Canvas(), Runnable, ControlPressHandler {
     /* Level */
     lateinit var currentLevel: Level
     lateinit var player: Player
+    lateinit var mainInv: Inventory
 
     val frame: JFrame = JFrame()
 
@@ -161,6 +165,8 @@ object Game : Canvas(), Runnable, ControlPressHandler {
 
     fun update() {
         InputManager.update()
+        SyncAnimation.update()
+        LocalAnimation.update()
         ScreenManager.update()
         if (State.CURRENT_STATE == State.INGAME)
             currentLevel.update()

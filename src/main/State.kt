@@ -1,5 +1,6 @@
 package main
 
+import inv.Inventory
 import level.SimplexLevel
 import player.Player
 import screen.HUD
@@ -23,6 +24,7 @@ class State(val activate: (State) -> (Unit), val deactivate: (State) -> (Unit)) 
             val seed = Random().nextInt(4096).toLong()
             Game.currentLevel = SimplexLevel(256, 256, seed)
             Game.player = Player(Game.currentLevel.widthPixels / 2, Game.currentLevel.heightPixels / 2)
+            Game.mainInv = Inventory(8, 6)
             Game.currentLevel.add(Game.player)
             HUD.poke()
             IngameDefaultGUI.open = true

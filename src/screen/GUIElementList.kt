@@ -15,11 +15,13 @@ class GUIElementList(parent: RootGUIElement? = RootGUIElementObject, name: Strin
 
     init {
         elements.autoRender = false
-
     }
 
     override fun onAddChild(child: GUIElement) {
-
+        if(child.name != this.name + " auto format group") {
+            children.remove(child)
+            elements.children.add(child)
+        }
     }
 
     override fun render() {

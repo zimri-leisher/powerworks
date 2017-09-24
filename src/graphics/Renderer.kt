@@ -56,16 +56,16 @@ object Renderer {
         val absoluteHeightPixels = t.heightPixels * scaledScale * params.scaleHeight
         var oldTransform: AffineTransform? = null
         var oldComposite: Composite? = null
-        if (params.rotation != 0) {
+        if (params.rotation != 0f) {
             oldTransform = g2d.transform
-            g2d.rotate(Math.toRadians(params.rotation * 90.0), (absoluteXPixel + absoluteWidthPixels / 2).toDouble(), (absoluteYPixel + absoluteHeightPixels / 2).toDouble())
+            g2d.rotate(Math.toRadians(params.rotation.toDouble()), (absoluteXPixel + absoluteWidthPixels / 2).toDouble(), (absoluteYPixel + absoluteHeightPixels / 2).toDouble())
         }
         if (params.alpha != 1.0f) {
             oldComposite = g2d.composite
             g2d.composite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, params.alpha)
         }
         g2d.drawImage(t.currentImage, absoluteXPixel, absoluteYPixel, absoluteWidthPixels.toInt(), absoluteHeightPixels.toInt(), null)
-        if (params.rotation != 0) {
+        if (params.rotation != 0f) {
             g2d.transform = oldTransform
         }
         if (params.alpha != 1.0f) {
@@ -85,16 +85,16 @@ object Renderer {
         val absoluteHeightPixels = heightPixels * scaledScale * params.scaleHeight
         var oldTransform: AffineTransform? = null
         var oldComposite: Composite? = null
-        if (params.rotation != 0) {
+        if (params.rotation != 0f) {
             oldTransform = g2d.transform
-            g2d.rotate(Math.toRadians(params.rotation * 90.0), (absoluteXPixel + absoluteWidthPixels / 2).toDouble(), (absoluteYPixel + absoluteHeightPixels / 2).toDouble())
+            g2d.rotate(Math.toRadians(params.rotation.toDouble()), (absoluteXPixel + absoluteWidthPixels / 2).toDouble(), (absoluteYPixel + absoluteHeightPixels / 2).toDouble())
         }
         if (params.alpha != 1.0f) {
             oldComposite = g2d.composite
             g2d.composite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, params.alpha)
         }
         g2d.drawImage(t.currentImage, absoluteXPixel, absoluteYPixel, absoluteWidthPixels.toInt(), absoluteHeightPixels.toInt(), null)
-        if (params.rotation != 0) {
+        if (params.rotation != 0f) {
             g2d.transform = oldTransform
         }
         if (params.alpha != 1.0f) {
