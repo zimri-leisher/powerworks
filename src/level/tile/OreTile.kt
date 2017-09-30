@@ -8,7 +8,7 @@ class OreTile(type: OreTileType, xTile: Int, yTile: Int) : Tile(type, xTile, yTi
 
     var amount = (type.maxAmount - type.minAmount) * Math.random() + 1 + type.minAmount
         set(value) {
-            if(value < 1) {
+            if (value < 1) {
                 currentLevel.getChunk(xChunk, yChunk)
             }
         }

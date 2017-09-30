@@ -11,6 +11,7 @@ class AutoFormatGUIGroup(parent: RootGUIElement? = RootGUIElementObject,
     override fun onAddChild(child: GUIElement) {
         child.relYPixel = nextYPixel
         child.relXPixel = 0
+        child.layer = layer + 1
         nextYPixel += child.heightPixels + yPixelSeparation
         super.onAddChild(child)
     }

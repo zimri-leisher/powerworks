@@ -161,6 +161,8 @@ abstract class Level(seed: Long, val widthTiles: Int, val heightTiles: Int) : Ca
                 ghostBlock = GhostBlock(xTile, yTile, currentItem.type.placedBlock)
             } else if (xTile != ghostBlock!!.xTile || yTile != ghostBlock!!.yTile || ghostBlock!!.type != currentItem.type.placedBlock) {
                 ghostBlock = GhostBlock(xTile, yTile, currentItem.type.placedBlock)
+            } else {
+                ghostBlock!!.placeable = ghostBlock!!.getCollision(xTile shl 4, yTile shl 4) == null
             }
         }
     }
@@ -214,28 +216,28 @@ abstract class Level(seed: Long, val widthTiles: Int, val heightTiles: Int) : Ca
 
     /* Util */
     /** Whether or not this collides with a block */
-    fun getBlockCollision(l: LevelObject, xPixel: Int = l.xPixel, yPixel: Int = l.yPixel): Boolean {
+    fun getBlockCollision(l: LevelObject, xPixel: Int = l.xPixel, yPixel: Int = l.yPixel): LevelObject? {
         // Blocks won't have a hitbox bigger than their width/height tiles
         val blocks = getIntersectingBlocksFromPixelRectangle(l.hitbox.xStart + xPixel, l.hitbox.yStart + yPixel, l.hitbox.width, l.hitbox.height)
         for (b in blocks) {
             if (doesPairCollide(l, xPixel, yPixel, b)) {
-                return true
+                return b
             }
         }
-        return false
+        return null
     }
 
     /** Whether or not this collides with a moving object */
-    fun getMovingObjectCollision(l: LevelObject, xPixel: Int = l.xPixel, yPixel: Int = l.yPixel, predicate: ((MovingObject) -> Boolean)? = null): Boolean {
+    fun getMovingObjectCollision(l: LevelObject, xPixel: Int = l.xPixel, yPixel: Int = l.yPixel, predicate: ((MovingObject) -> Boolean)? = null): LevelObject? {
         val c = getChunk(l.xChunk, l.yChunk)
         for (m in c.moving!!) {
             if (m != l) {
                 if (predicate != null) {
                     if (predicate(m) && doesPairCollide(l, xPixel, yPixel, m)) {
-                        return true
+                        return m
                     }
                 } else if (doesPairCollide(l, xPixel, yPixel, m)) {
-                    return true
+                    return m
                 }
             }
         }
@@ -244,22 +246,28 @@ abstract class Level(seed: Long, val widthTiles: Int, val heightTiles: Int) : Ca
                 if (predicate != null) {
                     if (predicate(m) &&
                             doesPairCollide(l, xPixel, yPixel, m)) {
-                        return true
+                        return m
                     }
                 } else if (doesPairCollide(l, xPixel, yPixel, m)) {
-                    return true
+                    return m
                 }
             }
         }
-        return false
+        return null
     }
 
-    fun getCollision(l: LevelObject, xPixel: Int = l.xPixel, yPixel: Int = l.yPixel): Boolean {
-        return getMovingObjectCollision(l, xPixel, yPixel) || getBlockCollision(l, xPixel, yPixel)
+    fun getCollision(l: LevelObject, xPixel: Int = l.xPixel, yPixel: Int = l.yPixel): LevelObject? {
+        val m = getMovingObjectCollision(l, xPixel, yPixel)
+        if (m != null)
+            return m
+        val b = getBlockCollision(l, xPixel, yPixel)
+        if (b != null)
+            return b
+        return null
     }
 
     fun doesPairCollide(l: LevelObject, xPixel: Int = l.xPixel, yPixel: Int = l.yPixel, l2: LevelObject, xPixel2: Int = l2.xPixel, yPixel2: Int = l2.yPixel): Boolean {
-        return GeometryHelper.intersects(l.hitbox.xStart + xPixel, l.hitbox.yStart + yPixel, l.hitbox.width, l.hitbox.height, xPixel2 + l2.hitbox.xStart, yPixel2 + l2.hitbox.yStart, l2.hitbox.width, l2.hitbox.height)
+        return GeometryHelper.intersects(xPixel + l.hitbox.xStart, yPixel + l.hitbox.yStart, l.hitbox.width, l.hitbox.height, xPixel2 + l2.hitbox.xStart, yPixel2 + l2.hitbox.yStart, l2.hitbox.width, l2.hitbox.height)
     }
 
     fun updateChunk(o: MovingObject) {
@@ -283,25 +291,23 @@ abstract class Level(seed: Long, val widthTiles: Int, val heightTiles: Int) : Ca
      * @return if the object was added
      */
     fun add(l: LevelObject): Boolean {
-        val c = getChunk(l.xChunk, l.yChunk)
         if (l is Block) {
-            if (l.getCollision(l.xPixel, l.yPixel)) {
+            if (l.getCollision(l.xPixel, l.yPixel) != null) {
                 return false
             }
             for (x in 0 until l.type.widthTiles) {
                 for (y in 0 until l.type.heightTiles) {
-                    c.setBlock(l, l.xTile + x, l.yTile + y)
+                    getChunkFromTile(l.xTile + x, l.yTile + y).setBlock(l, l.xTile + x, l.yTile + y)
                 }
             }
             return true
         } else if (l is MovingObject) {
-            if (l.getCollision(l.xPixel, l.yPixel))
+            if (l.getCollision(l.xPixel, l.yPixel) != null)
                 return false
             if (l.hitbox != Hitbox.NONE) {
                 l.intersectingChunks.forEach { it.movingOnBoundary!!.add(l) }
                 l.currentChunk.addMoving(l)
             }
-            c.addMoving(l)
         }
         return false
     }

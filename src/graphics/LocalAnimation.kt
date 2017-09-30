@@ -2,10 +2,6 @@ package graphics
 
 import java.awt.image.BufferedImage
 
-object LocalAnimations {
-
-}
-
 class LocalAnimation(val animation: SyncAnimation, var playing: Boolean = false, var speed: Float = 1f): Texture {
     override var currentImage: BufferedImage = animation.images[0].currentImage
     override val widthPixels: Int
@@ -22,7 +18,7 @@ class LocalAnimation(val animation: SyncAnimation, var playing: Boolean = false,
     }
 
     init {
-        anims.add(this)
+        ALL.add(this)
     }
 
     fun update() {
@@ -40,10 +36,10 @@ class LocalAnimation(val animation: SyncAnimation, var playing: Boolean = false,
 
     companion object {
 
-        val anims = mutableListOf<LocalAnimation>()
+        val ALL = mutableListOf<LocalAnimation>()
 
         fun update() {
-            anims.forEach { it.update() }
+            ALL.forEach { it.update() }
         }
     }
 }

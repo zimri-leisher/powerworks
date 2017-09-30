@@ -28,6 +28,7 @@ class State(val activate: (State) -> (Unit), val deactivate: (State) -> (Unit)) 
             Game.currentLevel.add(Game.player)
             HUD.poke()
             IngameDefaultGUI.open = true
+            println("test")
         }, {
 
         })

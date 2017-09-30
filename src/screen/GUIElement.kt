@@ -23,13 +23,13 @@ abstract class RootGUIElement(val name: String = "Root GUI element object", open
                 ScreenManager.openGuiElements.remove(this)
                 mouseOn = false
                 onClose()
-                children.forEach { it.open = false }
+                children.forEach { if(it.matchParentClosing) it.open = false }
             } else if (value && !field) {
                 field = true
                 ScreenManager.openGuiElements.add(this)
                 ScreenManager.updateMouseOn(this)
                 onOpen()
-                children.forEach { it.open = true }
+                children.forEach { if(it.matchParentOpening) it.open = true }
             }
         }
     var mouseOn: Boolean = false
@@ -52,6 +52,10 @@ abstract class RootGUIElement(val name: String = "Root GUI element object", open
                     element.layer = element.parent.layer + 1
                     element.parent = this@RootGUIElement
                 }
+                if(element.matchParentClosing && !open)
+                    element.open = false
+                else if(element.matchParentOpening && open)
+                    element.open = true
                 this@RootGUIElement.onAddChild(element)
             }
             return result
@@ -143,6 +147,11 @@ abstract class GUIElement(parent: RootGUIElement? = RootGUIElementObject,
                 onParentChange(v)
             }
         }
+
+    /** Whether or not to open when a parent opens*/
+    var matchParentOpening = true
+    /** Whether or not to close when a parent closes*/
+    var matchParentClosing = true
 
     final override var widthPixels = widthPixels
         set(value) {

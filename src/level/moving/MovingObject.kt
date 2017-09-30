@@ -1,5 +1,6 @@
 package level.moving
 
+import level.CHUNK_TILE_EXP
 import level.Hitbox
 import level.LevelObject
 import level.MovementListener
@@ -16,7 +17,7 @@ abstract class MovingObject(xPixel: Int, yPixel: Int, hitbox: Hitbox) : LevelObj
             val old = field
             field = value
             xTile = value shr 4
-            xChunk = xTile shr 3
+            xChunk = xTile shr CHUNK_TILE_EXP
             onMove(old, yPixel)
         }
 
@@ -25,7 +26,7 @@ abstract class MovingObject(xPixel: Int, yPixel: Int, hitbox: Hitbox) : LevelObj
             val old = field
             field = value
             yTile = value shr 4
-            yChunk = yTile shr 3
+            yChunk = yTile shr CHUNK_TILE_EXP
             onMove(xPixel, old)
         }
 
@@ -35,10 +36,10 @@ abstract class MovingObject(xPixel: Int, yPixel: Int, hitbox: Hitbox) : LevelObj
     final override var yTile = yPixel shr 4
         private set
 
-    final override var xChunk = xTile shr 3
+    final override var xChunk = xTile shr CHUNK_TILE_EXP
         private set
 
-    final override var yChunk = yTile shr 3
+    final override var yChunk = yTile shr CHUNK_TILE_EXP
         private set
 
     var xVel = 0
@@ -94,19 +95,33 @@ abstract class MovingObject(xPixel: Int, yPixel: Int, hitbox: Hitbox) : LevelObj
         val pYPixel = yPixel
         val nXPixel = xPixel + xVel
         val nYPixel = yPixel + yVel
+        var collisions: MutableSet<LevelObject>? = null
         if (xVel != 0 || yVel != 0) {
-            if (!getCollision(nXPixel, nYPixel)) {
+            val g = getCollision(nXPixel, nYPixel)
+            if (g == null) {
                 xPixel = nXPixel
                 yPixel = nYPixel
             } else {
-                if (nXPixel != xPixel)
-                    if (!getCollision(nXPixel, yPixel)) {
+                collisions = mutableSetOf(g)
+                if (nXPixel != xPixel) {
+                    val o = getCollision(nXPixel, yPixel)
+                    if (o == null) {
                         xPixel = nXPixel
+                    } else {
+                        collisions.add(o)
                     }
-                if (nYPixel != yPixel)
-                    if (!getCollision(xPixel, nYPixel)) {
+                }
+                if (nYPixel != yPixel) {
+                    val o = getCollision(xPixel, nYPixel)
+                    if (o == null) {
                         yPixel = nYPixel
+                    } else {
+                        collisions.add(o)
                     }
+                }
+            }
+            if(collisions != null) {
+                collisions.forEach { it.onCollide(this); this.onCollide(it) }
             }
             if (pXPixel != xPixel || pYPixel != yPixel) {
                 onMove(pXPixel, pYPixel)

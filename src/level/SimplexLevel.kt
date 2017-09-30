@@ -2,9 +2,9 @@ package level
 
 import level.block.Block
 import level.tile.OreTile
-import level.tile.OreTileTypes
+import level.tile.OreTileType
 import level.tile.Tile
-import level.tile.TileTypes
+import level.tile.TileType
 import java.util.*
 
 
@@ -29,15 +29,15 @@ class SimplexLevel(width: Int, height: Int, seed: Long) : Level(seed, width, hei
             for (x in 0..CHUNK_SIZE_TILES - 1) {
                 val singleOreNoise = 1 + singleOre.getNoise(x + xTile, y + yTile)
                 if (singleOreNoise < IRON_ORE_THRESHOLD) {
-                    tiles[x + y * CHUNK_SIZE_TILES] = Tile(TileTypes.GRASS, x + xTile, y + yTile)
+                    tiles[x + y * CHUNK_SIZE_TILES] = Tile(TileType.GRASS, x + xTile, y + yTile)
                 } else if (singleOreNoise < IRON_ORE_MAX_THRESHOLD) {
                     if (rand.nextInt(IRON_ORE_SCATTER) == 0) {
-                        tiles[x + y * CHUNK_SIZE_TILES] = OreTile(OreTileTypes.GRASS_IRON_ORE, x + xTile, y + yTile)
+                        tiles[x + y * CHUNK_SIZE_TILES] = OreTile(OreTileType.GRASS_IRON_ORE, x + xTile, y + yTile)
                     } else {
-                        tiles[x + y * CHUNK_SIZE_TILES] = Tile(TileTypes.GRASS, x + xTile, y + yTile)
+                        tiles[x + y * CHUNK_SIZE_TILES] = Tile(TileType.GRASS, x + xTile, y + yTile)
                     }
                 } else {
-                    tiles[x + y * CHUNK_SIZE_TILES] = Tile(TileTypes.GRASS, x + xTile, y + yTile)
+                    tiles[x + y * CHUNK_SIZE_TILES] = Tile(TileType.GRASS, x + xTile, y + yTile)
                 }
             }
         }

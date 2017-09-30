@@ -1,6 +1,6 @@
 package screen
 
-import graphics.Images
+import graphics.Image
 import graphics.Renderer
 import graphics.Texture
 import io.PressType
@@ -16,7 +16,7 @@ class GUIButton(parent: RootGUIElement? = RootGUIElementObject,
         GUIElement(parent, name, relXPixel, relYPixel, DEFAULT_WIDTH, DEFAULT_HEIGHT, layer) {
 
     var down = false
-    var currentTexture: Texture = Images.GUI_BUTTON
+    var currentTexture: Texture = Image.GUI.BUTTON
     var text = text
         set(value) {
             field = value
@@ -36,7 +36,7 @@ class GUIButton(parent: RootGUIElement? = RootGUIElementObject,
     }
 
     override fun onMouseEnter() {
-        currentTexture = Images.GUI_BUTTON_HIGHLIGHT
+        currentTexture = Image.GUI.BUTTON_HIGHLIGHT
     }
 
     override fun onMouseLeave() {
@@ -44,17 +44,17 @@ class GUIButton(parent: RootGUIElement? = RootGUIElementObject,
             down = false
             onRelease.invoke()
         }
-        currentTexture = Images.GUI_BUTTON
+        currentTexture = Image.GUI.BUTTON
     }
 
     override fun onMouseActionOn(type: PressType, xPixel: Int, yPixel: Int) {
         if (type == PressType.PRESSED) {
-            currentTexture = Images.GUI_BUTTON_CLICK
+            currentTexture = Image.GUI.BUTTON_CLICK
             onPress.invoke()
             down = true
         } else if (type == PressType.RELEASED) {
             if (down) {
-                currentTexture = Images.GUI_BUTTON_HIGHLIGHT
+                currentTexture = Image.GUI.BUTTON_HIGHLIGHT
                 onRelease.invoke()
                 down = false
             }
@@ -62,7 +62,7 @@ class GUIButton(parent: RootGUIElement? = RootGUIElementObject,
     }
 
     override fun onClose() {
-        currentTexture = Images.GUI_BUTTON
+        currentTexture = Image.GUI.BUTTON
     }
 
     override fun render() {
@@ -71,7 +71,7 @@ class GUIButton(parent: RootGUIElement? = RootGUIElementObject,
     }
 
     companion object {
-        val DEFAULT_WIDTH = Images.GUI_BUTTON.widthPixels
-        val DEFAULT_HEIGHT = Images.GUI_BUTTON.heightPixels
+        val DEFAULT_WIDTH = Image.GUI.BUTTON.widthPixels
+        val DEFAULT_HEIGHT = Image.GUI.BUTTON.heightPixels
     }
 }

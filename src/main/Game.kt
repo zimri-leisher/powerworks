@@ -51,7 +51,7 @@ object Game : Canvas(), Runnable, ControlPressHandler {
     const val UPDATES_PER_SECOND = 60f
     const val NS_PER_UPDATE: Float = 1000000000 / UPDATES_PER_SECOND
     const val MAX_UPDATES_BEFORE_RENDER = 5
-    var FRAMES_PER_SECOND = 60000000f
+    var FRAMES_PER_SECOND = 60f
     var NS_PER_FRAME: Float = 1000000000 / FRAMES_PER_SECOND
     /* Base statistics */
     var framesCount = 0
@@ -65,7 +65,7 @@ object Game : Canvas(), Runnable, ControlPressHandler {
     private lateinit var defaultFont: Font
 
     /* Settings */
-    var THREAD_WAITING = false
+    var THREAD_WAITING = true
     var RENDER_HITBOXES = false
     var CHUNK_BOUNDARIES = false
 
@@ -88,9 +88,9 @@ object Game : Canvas(), Runnable, ControlPressHandler {
         frame.isVisible = true
         frame.addComponentListener(object : ComponentAdapter() {
             override fun componentResized(e: ComponentEvent?) {
-                println("resized")
             }
         })
+        createData()
         addKeyListener(InputManager)
         addMouseWheelListener(InputManager)
         addMouseMotionListener(InputManager)
@@ -219,6 +219,23 @@ object Game : Canvas(), Runnable, ControlPressHandler {
 
     fun clearMouseIcon() {
         cursor = clearCursor
+    }
+
+    fun createData() {
+        val data = Paths.get(JAR_PATH, "data")
+        if (Files.notExists(data))
+            Files.createDirectory(data)
+        val settings = Paths.get(JAR_PATH, "data/settings")
+        if (Files.notExists(settings))
+            Files.createDirectory(settings)
+        val controls = Paths.get(JAR_PATH, "data/settings/controls")
+        if (Files.notExists(controls))
+            Files.createDirectory(controls)
+        val defaultMap = Paths.get(JAR_PATH, "data/settings/controls/default.txt")
+        if (Files.notExists(controls))
+            Files.createFile(defaultMap)
+        val f = defaultMap.toFile()
+        f.writeText(Game::class.java.getResource("/settings/controls/default.txt").readText())
     }
 
     fun takeScreenshot() {

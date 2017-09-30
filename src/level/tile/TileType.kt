@@ -1,26 +1,23 @@
 package level.tile
 
 import graphics.ImageCollection
-import graphics.ImageCollections
 import graphics.Texture
-import java.util.*
 
 private var nextID = 0
 
-object OreTileTypes {
-    val GRASS_IRON_ORE = OreTileType(ImageCollections.GRASS_IRON_ORE_TILE, 10)
+sealed class OreTileType(val parentType: TileType, val maxAmount: Int, val minAmount: Int) : TileType(parentType.textures) {
+    object GRASS_IRON_ORE : OreTileType(TileType.GRASS_IRON_ORE, 10, 1)
 }
 
-object TileTypes {
-    val GRASS = TileType(ImageCollections.GRASS_TILE)
-}
+sealed class TileType(val textures: Array<Texture>) {
 
-open class TileType constructor(val textures: Array<Texture>) {
-
-    val id = nextID++
+    object GRASS : TileType(ImageCollection.GRASS_TILE)
+    object GRASS_IRON_ORE : TileType(ImageCollection.GRASS_IRON_ORE_TILE)
 
     constructor(textures: ImageCollection): this(textures.textures)
     constructor(texture: Texture): this(arrayOf(texture))
+
+    val id = nextID++
 
     override fun equals(other: Any?): Boolean {
         if(other is TileType) {

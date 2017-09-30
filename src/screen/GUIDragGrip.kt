@@ -1,6 +1,6 @@
 package screen
 
-import graphics.Images
+import graphics.Image
 import graphics.Renderer
 import io.InputManager
 import io.PressType
@@ -29,7 +29,7 @@ class GUIDragGrip(parent: GUIElement, name: String, xPixel: Int, yPixel: Int) : 
     }
 
     override fun render() {
-        Renderer.renderTexture(Images.GUI_DRAG_GRIP, xPixel, yPixel)
+        Renderer.renderTexture(Image.GUI.DRAG_GRIP, xPixel, yPixel)
     }
 
     override fun update() {

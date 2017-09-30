@@ -36,10 +36,16 @@ abstract class LevelObject protected constructor(xPixel: Int, yPixel: Int, val h
 
     }
 
+    open fun onCollide(o: LevelObject) {
+        println("------")
+        println(Game.updatesCount)
+        println("$this collides with $o")
+    }
+
     /** X and Y pixel are where to check if this would collide with */
-    open fun getCollision(xPixel: Int, yPixel: Int): Boolean {
+    open fun getCollision(xPixel: Int, yPixel: Int): LevelObject? {
         if (hitbox == Hitbox.NONE)
-            return false
+            return null
         return Game.currentLevel.getCollision(this, xPixel, yPixel)
     }
 

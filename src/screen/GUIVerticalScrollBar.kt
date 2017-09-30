@@ -1,14 +1,11 @@
 package screen
 
-import graphics.Images
+import graphics.Image
 import graphics.Renderer
 import graphics.Texture
 import io.InputManager
 import io.PressType
 import misc.GeometryHelper
-
-
-
 
 interface VerticalScrollable {
     var viewHeightPixels: Int
@@ -19,13 +16,17 @@ interface VerticalScrollable {
 class GUIVerticalScrollBar(parent: RootGUIElement? = RootGUIElementObject, name: String, xPixel: Int, yPixel: Int, heightPixels: Int, layer: Int = (parent?.layer ?: 0) + 1) : GUIElement(parent, name, xPixel, yPixel, WIDTH, heightPixels, layer) {
 
     val s = parent as VerticalScrollable
-    val currentTextures = arrayOf<Texture>(Images.GUI_SCROLL_BAR_UNHIGHLIGHT_TOP, Images.GUI_SCROLL_BAR_UNHIGHLIGHT_MIDDLE, Images.GUI_SCROLL_BAR_UNHIGHLIGHT_BOTTOM)
-    val otherTextures = arrayOf<Texture>(Images.GUI_SCROLL_BAR_UNHIGHLIGHT_TOP, Images.GUI_SCROLL_BAR_UNHIGHLIGHT_MIDDLE, Images.GUI_SCROLL_BAR_UNHIGHLIGHT_BOTTOM,
-            Images.GUI_SCROLL_BAR_HIGHLIGHT_TOP, Images.GUI_SCROLL_BAR_HIGHLIGHT_MIDDLE, Images.GUI_SCROLL_BAR_HIGHLIGHT_BOTTOM,
-            Images.GUI_SCROLL_BAR_CLICK_TOP, Images.GUI_SCROLL_BAR_CLICK_MIDDLE, Images.GUI_SCROLL_BAR_CLICK_BOTTOM)
+    val currentTextures = arrayOf<Texture>(Image.GUI.SCROLL_BAR_UNHIGHLIGHT_TOP, Image.GUI.SCROLL_BAR_UNHIGHLIGHT_MIDDLE, Image.GUI.SCROLL_BAR_UNHIGHLIGHT_BOTTOM)
+    val otherTextures = arrayOf<Texture>(Image.GUI.SCROLL_BAR_UNHIGHLIGHT_TOP, Image.GUI.SCROLL_BAR_UNHIGHLIGHT_MIDDLE, Image.GUI.SCROLL_BAR_UNHIGHLIGHT_BOTTOM,
+            Image.GUI.SCROLL_BAR_HIGHLIGHT_TOP, Image.GUI.SCROLL_BAR_HIGHLIGHT_MIDDLE, Image.GUI.SCROLL_BAR_HIGHLIGHT_BOTTOM,
+            Image.GUI.SCROLL_BAR_CLICK_TOP, Image.GUI.SCROLL_BAR_CLICK_MIDDLE, Image.GUI.SCROLL_BAR_CLICK_BOTTOM)
 
     var currentScrollBarHeight = 0
     var currentPos = 0
+        set(value) {
+            if(value <= maxPos && value > 0)
+                field = value
+        }
     var dragging = false
     var mYPixelPrev = 0
     var maxPos = heightPixels - 2 - currentScrollBarHeight
@@ -36,6 +37,7 @@ class GUIVerticalScrollBar(parent: RootGUIElement? = RootGUIElementObject, name:
     }
 
     fun updateScrollBarHeight() {
+        val s = parent as VerticalScrollable
         currentScrollBarHeight = Math.min((s.viewHeightPixels.toDouble() / (if (s.maxHeightPixels == 0) 1 else s.maxHeightPixels).toDouble() * heightPixels.toDouble()).toInt(), heightPixels - 2)
     }
 
@@ -97,9 +99,9 @@ class GUIVerticalScrollBar(parent: RootGUIElement? = RootGUIElementObject, name:
     }
 
     override fun render() {
-        Renderer.renderTexture(Images.GUI_SCROLL_BAR_TOP, xPixel, yPixel)
-        Renderer.renderTexture(Images.GUI_SCROLL_BAR_MIDDLE, xPixel, yPixel + 2, 6, heightPixels - 4)
-        Renderer.renderTexture(Images.GUI_SCROLL_BAR_BOTTOM, xPixel, yPixel + heightPixels - 2)
+        Renderer.renderTexture(Image.GUI.SCROLL_BAR_TOP, xPixel, yPixel)
+        Renderer.renderTexture(Image.GUI.SCROLL_BAR_MIDDLE, xPixel, yPixel + 2, 6, heightPixels - 4)
+        Renderer.renderTexture(Image.GUI.SCROLL_BAR_BOTTOM, xPixel, yPixel + heightPixels - 2)
         Renderer.renderTexture(currentTextures[0], xPixel + 1, currentPos + 1 + yPixel)
         for (i in currentTextures[0].heightPixels..currentScrollBarHeight - currentTextures[2].heightPixels - 1)
             Renderer.renderTexture(currentTextures[1], xPixel + 1, i + currentPos + 1 + yPixel)

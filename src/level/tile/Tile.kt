@@ -5,7 +5,7 @@ import graphics.Renderer
 import level.CHUNK_TILE_EXP
 
 // Default argument for type is present here
-open class Tile(type: TileType = TileTypes.GRASS, val xTile: Int, val yTile: Int) {
+open class Tile(type: TileType = TileType.GRASS, val xTile: Int, val yTile: Int) {
 
     val xPixel = xTile shl 4
     val yPixel = yTile shl 4

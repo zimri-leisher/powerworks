@@ -5,65 +5,14 @@ import java.awt.AlphaComposite
 import java.awt.Color
 import java.awt.Transparency
 import java.awt.image.BufferedImage
+import java.nio.file.Paths
 import javax.imageio.ImageIO
-
-object Images {
-
-    val ERROR = Image("/textures/misc/error.png")
-    val BLOCK_PLACEABLE = Image("/textures/block/placeable.png")
-    val BLOCK_NOT_PLACEABLE = Image("/textures/block/not_placeable.png")
-    val HOTBAR_SLOT = Image("/textures/gui/hotbar_slot.png")
-    val HOTBAR_SLOT_SELECTED = Image("/textures/gui/hotbar_slot_selected.png")
-    val CURSOR_DEFAULT = Image("/textures/cursor/cursor_default.png")
-    val CURSOR_LEFT_CLICK = Image("/textures/cursor/cursor_left_click.png")
-    val IRON_ORE_ITEM = Image("/textures/item/iron_ore_raw.png")
-    val CONVEYOR_BELT_ITEM = Image("/textures/item/conveyor_belt.png")
-    val IRON_INGOT = Image("/textures/item/iron_ingot.png")
-    val MAIN_MENU_LOGO = Image("/textures/gui/main_menu_logo.png")
-    val GUI_DEFAULT_CORNER_TOP_RIGHT = Image("/textures/gui/default/top_right_corner.png")
-    val GUI_DEFAULT_CORNER_TOP_LEFT = Image("/textures/gui/default/top_left_corner.png")
-    val GUI_DEFAULT_CORNER_BOTTOM_RIGHT = Image("/textures/gui/default/bottom_right_corner.png")
-    val GUI_DEFAULT_CORNER_BOTTOM_LEFT = Image("/textures/gui/default/bottom_left_corner.png")
-    val GUI_DEFAULT_EDGE_TOP = Image("/textures/gui/default/top_edge.png")
-    val GUI_DEFAULT_EDGE_BOTTOM = Image("/textures/gui/default/bottom_edge.png")
-    val GUI_DEFAULT_EDGE_RIGHT = Image("/textures/gui/default/right_edge.png")
-    val GUI_DEFAULT_EDGE_LEFT = Image("/textures/gui/default/left_edge.png")
-    val GUI_DEFAULT_BACKGROUND = Image("/textures/gui/default/background.png")
-    val ITEM_SLOT = Image("/textures/gui/item_slot.png")
-    val ITEM_SLOT_HIGHLIGHT = Image("/textures/gui/item_slot_highlight.png")
-    val ITEM_SLOT_DISPLAY = Image("/textures/gui/item_slot_display.png")
-    val ITEM_SLOT_CLICK = Image("/textures/gui/item_slot_click.png")
-    val CHAT_BAR = Image(Utils.modify("/textures/gui/chat_bar.png", ImageParams(scaleWidth = 180.0, scaleHeight = 10.0)))
-    val ARROW = Image(Utils.modify("/textures/misc/arrow.png", ImageParams(alphaMultiplier = 50)))
-    val VOID = Image(Color(0))
-    val ORE_MINER = Image("/textures/block/ore_miner.png")
-    val GUI_BUTTON = Image(Utils.genRectangle(64, 16))
-    val GUI_BUTTON_HIGHLIGHT = Image(Utils.modify(GUI_BUTTON, ImageParams(brightnessMultiplier = 1.2)))
-    val GUI_BUTTON_CLICK = Image(Utils.modify(GUI_BUTTON, ImageParams(rotation = 2)))
-    val GUI_DRAG_GRIP = Image("/textures/gui/drag_grip.png")
-    val GUI_SCROLL_BAR_TOP = Image("/textures/gui/scroll_bar_top.png")
-    val GUI_SCROLL_BAR_MIDDLE = Image("/textures/gui/scroll_bar_middle.png")
-    val GUI_SCROLL_BAR_BOTTOM = Image("/textures/gui/scroll_bar_bottom.png")
-    val GUI_SCROLL_BAR_UNHIGHLIGHT_TOP = Image("/textures/gui/scroll_bar_unhighlight_top.png")
-    val GUI_SCROLL_BAR_UNHIGHLIGHT_MIDDLE = Image("/textures/gui/scroll_bar_unhighlight_mid.png")
-    val GUI_SCROLL_BAR_UNHIGHLIGHT_BOTTOM = Image("/textures/gui/scroll_bar_unhighlight_bottom.png")
-    val GUI_SCROLL_BAR_HIGHLIGHT_TOP = Image("/textures/gui/scroll_bar_highlight_top.png")
-    val GUI_SCROLL_BAR_HIGHLIGHT_MIDDLE = Image("/textures/gui/scroll_bar_highlight_mid.png")
-    val GUI_SCROLL_BAR_HIGHLIGHT_BOTTOM = Image("/textures/gui/scroll_bar_highlight_bottom.png")
-    val GUI_SCROLL_BAR_CLICK_TOP = Image("/textures/gui/scroll_bar_click_top.png")
-    val GUI_SCROLL_BAR_CLICK_MIDDLE = Image("/textures/gui/scroll_bar_click_mid.png")
-    val GUI_SCROLL_BAR_CLICK_BOTTOM = Image("/textures/gui/scroll_bar_click_bottom.png")
-    val MAIN_MENU_BACKGROUND = Image(Color(0x5B5B5B))
-    val MAIN_MENU_BUTTON_BOX = Image("/textures/gui/main_menu.png")
-    val OPTIONS_MENU_BACKGROUND = Image(Color(0x999999))
-    val ESCAPE_MENU_BACKGROUND = Image("/textures/gui/escape_menu_background.png")
-}
 
 object Utils {
 
     fun genRectangle(widthPixels: Int, heightPixels: Int): BufferedImage {
-        return genRectangle(Images.GUI_DEFAULT_EDGE_TOP, Images.GUI_DEFAULT_EDGE_BOTTOM, Images.GUI_DEFAULT_EDGE_LEFT, Images.GUI_DEFAULT_EDGE_RIGHT, Images.GUI_DEFAULT_CORNER_TOP_RIGHT,
-                Images.GUI_DEFAULT_CORNER_TOP_LEFT, Images.GUI_DEFAULT_CORNER_BOTTOM_RIGHT, Images.GUI_DEFAULT_CORNER_BOTTOM_LEFT, Images.GUI_DEFAULT_BACKGROUND, widthPixels, heightPixels)
+        return genRectangle(Image.GUI.DEFAULT_EDGE_TOP, Image.GUI.DEFAULT_EDGE_BOTTOM, Image.GUI.DEFAULT_EDGE_LEFT, Image.GUI.DEFAULT_EDGE_RIGHT, Image.GUI.DEFAULT_CORNER_TOP_RIGHT,
+                Image.GUI.DEFAULT_CORNER_TOP_LEFT, Image.GUI.DEFAULT_CORNER_BOTTOM_RIGHT, Image.GUI.DEFAULT_CORNER_BOTTOM_LEFT, Image.GUI.DEFAULT_BACKGROUND, widthPixels, heightPixels)
     }
 
     fun genRectangle(topEdge: Texture, bottomEdge: Texture, leftEdge: Texture, rightEdge: Texture, topRightCorner: Texture, topLeftCorner: Texture, bottomRightCorner: Texture,
@@ -262,6 +211,32 @@ data class ImageParams(
         /** 1.0 is default, 2.0 is double brightness and 0.5 is half brightness*/
         val brightnessMultiplier: Double = 1.0)
 
+class WeaponImages internal constructor(id: Int) {
+    val mods: Array<Image>
+    val textures: Array<ImageCollection>
+    val proj: Image = Image(WEAPON_DIR + "weapon$id/proj.png")
+
+    init {
+        textures = arrayOf(
+                ImageCollection(WEAPON_DIR + "weapon$id/dir_0.png", 3),
+                ImageCollection(WEAPON_DIR + "weapon$id/dir_1.png", 3),
+                ImageCollection(WEAPON_DIR + "weapon$id/dir_2.png", 3),
+                ImageCollection(WEAPON_DIR + "weapon$id/dir_3.png", 3)
+        )
+        val modImages = mutableListOf<Image>()
+        var i = 0
+        while (Paths.get(WEAPON_DIR, "weapon$id/mod_$i.png").toFile().exists()) {
+            modImages.add(Image(WEAPON_DIR + "weapons$id/mod_$i.png"))
+            i++
+        }
+        mods = modImages.toTypedArray()
+    }
+
+    companion object {
+        private const val WEAPON_DIR = "/textures/weapon/"
+    }
+}
+
 class Image private constructor() : Texture {
 
     override val widthPixels: Int
@@ -287,6 +262,69 @@ class Image private constructor() : Texture {
             fillRect(0, 0, 1, 1)
             dispose()
         }
+    }
+
+    companion object {
+
+        val ERROR = Image("/textures/misc/error.png")
+        val BLOCK_PLACEABLE = Image("/textures/block/placeable.png")
+        val BLOCK_NOT_PLACEABLE = Image("/textures/block/not_placeable.png")
+        val IRON_ORE_ITEM = Image("/textures/item/iron_ore_raw.png")
+        val CONVEYOR_BELT_ITEM = Image("/textures/item/conveyor_belt.png")
+        val IRON_INGOT = Image("/textures/item/iron_ingot.png")
+        val ARROW = Image(Utils.modify("/textures/misc/arrow.png", ImageParams(alphaMultiplier = 50)))
+        val VOID = Image(Color(0))
+        val ORE_MINER = Image("/textures/block/ore_miner.png")
+    }
+
+    object Weapon {
+        // Could easily change to something that removes boilerplate, but it's nice and consistent this way
+        val ONE = WeaponImages(1)
+        val TWO = WeaponImages(2)
+        //val THREE = WeaponImages(3)
+    }
+
+    object GUI {
+
+        val DRAG_GRIP = Image("/textures/gui/drag_grip.png")
+        val SCROLL_BAR_TOP = Image("/textures/gui/scroll_bar_top.png")
+        val SCROLL_BAR_MIDDLE = Image("/textures/gui/scroll_bar_middle.png")
+        val SCROLL_BAR_BOTTOM = Image("/textures/gui/scroll_bar_bottom.png")
+        val SCROLL_BAR_UNHIGHLIGHT_TOP = Image("/textures/gui/scroll_bar_unhighlight_top.png")
+        val SCROLL_BAR_UNHIGHLIGHT_MIDDLE = Image("/textures/gui/scroll_bar_unhighlight_mid.png")
+        val SCROLL_BAR_UNHIGHLIGHT_BOTTOM = Image("/textures/gui/scroll_bar_unhighlight_bottom.png")
+        val SCROLL_BAR_HIGHLIGHT_TOP = Image("/textures/gui/scroll_bar_highlight_top.png")
+        val SCROLL_BAR_HIGHLIGHT_MIDDLE = Image("/textures/gui/scroll_bar_highlight_mid.png")
+        val SCROLL_BAR_HIGHLIGHT_BOTTOM = Image("/textures/gui/scroll_bar_highlight_bottom.png")
+        val SCROLL_BAR_CLICK_TOP = Image("/textures/gui/scroll_bar_click_top.png")
+        val SCROLL_BAR_CLICK_MIDDLE = Image("/textures/gui/scroll_bar_click_mid.png")
+        val SCROLL_BAR_CLICK_BOTTOM = Image("/textures/gui/scroll_bar_click_bottom.png")
+        val MAIN_MENU_LOGO = Image("/textures/gui/main_menu_logo.png")
+        val DEFAULT_CORNER_TOP_RIGHT = Image("/textures/gui/default/top_right_corner.png")
+        val DEFAULT_CORNER_TOP_LEFT = Image("/textures/gui/default/top_left_corner.png")
+        val DEFAULT_CORNER_BOTTOM_RIGHT = Image("/textures/gui/default/bottom_right_corner.png")
+        val DEFAULT_CORNER_BOTTOM_LEFT = Image("/textures/gui/default/bottom_left_corner.png")
+        val DEFAULT_EDGE_TOP = Image("/textures/gui/default/top_edge.png")
+        val DEFAULT_EDGE_BOTTOM = Image("/textures/gui/default/bottom_edge.png")
+        val DEFAULT_EDGE_RIGHT = Image("/textures/gui/default/right_edge.png")
+        val DEFAULT_EDGE_LEFT = Image("/textures/gui/default/left_edge.png")
+        val DEFAULT_BACKGROUND = Image("/textures/gui/default/background.png")
+        val ITEM_SLOT = Image("/textures/gui/item_slot.png")
+        val ITEM_SLOT_HIGHLIGHT = Image("/textures/gui/item_slot_highlight.png")
+        val ITEM_SLOT_DISPLAY = Image("/textures/gui/item_slot_display.png")
+        val ITEM_SLOT_CLICK = Image("/textures/gui/item_slot_click.png")
+        val CHAT_BAR = Image(Utils.modify("/textures/gui/chat_bar.png", ImageParams(scaleWidth = 180.0, scaleHeight = 10.0)))
+        val MAIN_MENU_BACKGROUND = Image(Color(0x5B5B5B))
+        val MAIN_MENU_BUTTON_BOX = Image("/textures/gui/main_menu.png")
+        val OPTIONS_MENU_BACKGROUND = Image(Color(0x999999))
+        val ESCAPE_MENU_BACKGROUND = Image("/textures/gui/escape_menu_background.png")
+        val HOTBAR_SLOT = Image("/textures/gui/hotbar_slot.png")
+        val HOTBAR_SLOT_SELECTED = Image("/textures/gui/hotbar_slot_selected.png")
+        val CURSOR_DEFAULT = Image("/textures/cursor/cursor_default.png")
+        val CURSOR_LEFT_CLICK = Image("/textures/cursor/cursor_left_click.png")
+        val BUTTON = Image(Utils.genRectangle(64, 16))
+        val BUTTON_HIGHLIGHT = Image(Utils.modify(BUTTON, ImageParams(brightnessMultiplier = 1.2)))
+        val BUTTON_CLICK = Image(Utils.modify(BUTTON, ImageParams(rotation = 2)))
     }
 
 }

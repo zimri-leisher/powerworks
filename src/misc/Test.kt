@@ -1,7 +1,7 @@
 package misc
 
 import inv.Inventory
-import inv.ItemTypes
+import inv.ItemType
 
 fun testInventory() {
     try {
@@ -26,20 +26,20 @@ fun testInventory() {
         /* Check creation */
         val i = Inventory(10, 10)
         /* Check single item addition */
-        assert(i.add(ItemTypes.ERROR))
-        assert(i[0]!!.type == ItemTypes.ERROR)
+        assert(i.add(ItemType.ERROR))
+        assert(i[0]!!.type == ItemType.ERROR)
         /* Check single item removal */
-        i.remove(ItemTypes.ERROR)
+        i.remove(ItemType.ERROR)
         assert(i[0] == null)
         /* Check multiple item addition */
         println("Addition")
         for (x in 0..30)
-            i.add(ItemTypes.ALL.get((Math.random() * ItemTypes.ALL.size).toInt()))
+            i.add(ItemType.ALL.get((Math.random() * ItemType.ALL.size).toInt()))
         assert(checkOrder(i))
         /* Check multiple item removal */
         println("Removal")
         for(x in 0..30)
-            i.remove(ItemTypes.ALL.get((Math.random() * ItemTypes.ALL.size).toInt()))
+            i.remove(ItemType.ALL.get((Math.random() * ItemType.ALL.size).toInt()))
         assert(checkOrder(i))
     } catch (e: Exception) {
         println("Test failed:")

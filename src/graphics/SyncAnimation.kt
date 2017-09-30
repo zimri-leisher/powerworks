@@ -2,11 +2,8 @@ package graphics
 
 import java.awt.image.BufferedImage
 
-object SyncAnimations {
-    val WEAPON_1 = SyncAnimation(ImageCollections.WEAPON_1, arrayOf(10, 30, 30))
-}
-
 class SyncAnimation(val images: ImageCollection, val frameTimes: Array<Int>, var playing: Boolean = false) : Texture {
+
     override var currentImage: BufferedImage = images[0].currentImage
     override val widthPixels: Int
         get() = currentImage.width
@@ -14,44 +11,56 @@ class SyncAnimation(val images: ImageCollection, val frameTimes: Array<Int>, var
         get() = currentImage.height
 
     private var tick = 0
-
-    fun pause() {
-        playing = false
-    }
+    private var frame = 0
 
     fun stop() {
         playing = false
+        reset()
+    }
+
+    fun toggle() {
+        playing = !playing
+    }
+
+    fun toggleAndReset() {
+        toggle()
+        reset()
+    }
+
+    fun reset() {
         tick = 0
+        frame = 0
         currentImage = images[0].currentImage
     }
 
-    fun play() {
-        playing = true
-    }
-
     init {
-        anims.add(this)
+        ALL.add(this)
     }
 
     private fun update() {
         if(!playing)
             return
         tick++
-        var tot = 0
-        var ind = -1
-        while(tot + frameTimes[ind + 1] < tick) {
-            ind++
-            tot += frameTimes[ind]
+        if(frameTimes[frame] <= tick) {
+            tick = 0
+            frame++
+            if(frame > frameTimes.lastIndex) {
+                frame = 0
+            }
         }
-        currentImage = images[ind].currentImage
+        currentImage = images[frame].currentImage
     }
 
     companion object {
 
-        val anims = mutableListOf<SyncAnimation>()
+        val ALL = mutableListOf<SyncAnimation>()
+
+        val WEAPON_1 = SyncAnimation(Image.Weapon.ONE.textures[0], arrayOf(2, 2, 6))
+        val WEAPON_2 = SyncAnimation(Image.Weapon.TWO.textures[0], arrayOf(8, 8, 8))
+        //val WEAPON_3 = SyncAnimation(Image.Weapon.THREE.textures[0], arrayOf(2, 10, 30))
 
         fun update() {
-            anims.forEach { it.update() }
+            ALL.forEach { it.update() }
         }
     }
 }

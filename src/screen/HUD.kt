@@ -1,16 +1,16 @@
 package screen
 
-import graphics.Images
+import graphics.Image
 import graphics.Renderer
 import inv.Inventory
 import inv.Item
-import inv.ItemTypes
+import inv.ItemType
 import io.*
 
 object HUD {
     const val HOTBAR_SIZE = 8
-    val HOTBAR_SLOT_WIDTH_PIXELS = Images.HOTBAR_SLOT.widthPixels
-    val HOTBAR_SLOT_HEIGHT_PIXELS = Images.HOTBAR_SLOT.heightPixels
+    val HOTBAR_SLOT_WIDTH_PIXELS = Image.GUI.HOTBAR_SLOT.widthPixels
+    val HOTBAR_SLOT_HEIGHT_PIXELS = Image.GUI.HOTBAR_SLOT.heightPixels
 
     fun poke() {
         Hotbar.poke()
@@ -33,7 +33,7 @@ object HUD {
 
         override fun render() {
             for (i in 0 until HOTBAR_SIZE) {
-                Renderer.renderTexture(if (i == selected) Images.HOTBAR_SLOT_SELECTED else Images.HOTBAR_SLOT, xPixel + i * HOTBAR_SLOT_WIDTH_PIXELS, yPixel)
+                Renderer.renderTexture(if (i == selected) Image.GUI.HOTBAR_SLOT_SELECTED else Image.GUI.HOTBAR_SLOT, xPixel + i * HOTBAR_SLOT_WIDTH_PIXELS, yPixel)
                 val item = items[i]
                 if (item != null) {
                     Renderer.renderTexture(item.type.texture, xPixel + i * HOTBAR_SLOT_WIDTH_PIXELS, yPixel)
@@ -53,7 +53,7 @@ object HUD {
                 Control.SLOT_6 -> selected = 5
                 Control.SLOT_7 -> selected = 6
                 Control.SLOT_8 -> selected = 7
-                Control.GIVE_TEST_ITEM -> items.add(Item(ItemTypes.TEST))
+                Control.GIVE_TEST_ITEM -> items.add(Item(ItemType.TEST))
             }
         }
 

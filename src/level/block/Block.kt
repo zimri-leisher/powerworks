@@ -16,7 +16,7 @@ open class Block(xTile: Int, yTile: Int, open val type: BlockType, hitbox: Hitbo
         super.render()
     }
 
-    override fun getCollision(xPixel: Int, yPixel: Int): Boolean {
+    override fun getCollision(xPixel: Int, yPixel: Int): LevelObject? {
         // Check if a block is already present
         val nXTile = xPixel shr 4
         val nYTile = yPixel shr 4
@@ -25,7 +25,7 @@ open class Block(xTile: Int, yTile: Int, open val type: BlockType, hitbox: Hitbo
                 val c = Game.currentLevel.getChunk(x shr CHUNK_TILE_EXP, y shr CHUNK_TILE_EXP)
                 val b = c.getBlock(x, y)
                 if (b != null && b != this) {
-                    return true
+                    return b
                 }
             }
         }
@@ -36,6 +36,10 @@ open class Block(xTile: Int, yTile: Int, open val type: BlockType, hitbox: Hitbo
     override fun save(out: DataOutputStream) {
         super.save(out)
         out.writeInt(type.id)
+    }
+
+    override fun toString(): String {
+        return "Block at $xTile, $yTile, type: $type"
     }
 
 }

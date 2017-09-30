@@ -1,5 +1,7 @@
 package io
 
+import main.Game
+import java.nio.file.Paths
 import io.OutputManager as out
 
 private interface ControlBind
@@ -15,12 +17,12 @@ Syntax:
 <code>[:<more key codes separated by :>, end with -1 if this you don't want it to activate when any keys other than those specified are down]:<control>
  */
 enum class ControlMap(path: String) {
-    DEFAULT("/settings/controls/default.txt");
+    DEFAULT("default");
 
     private val binds = mutableListOf<ControlBind>()
 
     init {
-        val text = ControlMap::class.java.getResource(path).readText()
+        val text = Paths.get(Game.JAR_PATH, "data/settings/controls/$path.txt").toFile().readText()
         val lines = text.split(delimiters = "\n")
         var mode = 0
         for (a in lines) {
@@ -40,7 +42,7 @@ enum class ControlMap(path: String) {
                 if (mode == 1)
                     binds.add(MouseBind(first, end, Control.valueOf(control), only))
                 if (mode == 2)
-                    // the if statement necessary so that -1 doesn't interfere. Messy but not really needing a fix
+                // the if statement necessary so that -1 doesn't interfere. Messy but not really needing a fix
                     binds.add(MouseWheelBind(if (first == 2) -1 else first, end, Control.valueOf(control), only))
             } else {
                 when (s) {
