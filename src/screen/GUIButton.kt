@@ -47,7 +47,7 @@ class GUIButton(parent: RootGUIElement? = RootGUIElementObject,
         currentTexture = Image.GUI.BUTTON
     }
 
-    override fun onMouseActionOn(type: PressType, xPixel: Int, yPixel: Int) {
+    override fun onMouseActionOn(type: PressType, xPixel: Int, yPixel: Int, button: Int) {
         if (type == PressType.PRESSED) {
             currentTexture = Image.GUI.BUTTON_CLICK
             onPress.invoke()

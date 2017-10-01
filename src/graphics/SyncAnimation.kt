@@ -54,9 +54,9 @@ class SyncAnimation(val images: ImageCollection, val frameTimes: Array<Int>, var
     companion object {
 
         val ALL = mutableListOf<SyncAnimation>()
-
-        val WEAPON_1 = SyncAnimation(Image.Weapon.ONE.textures[0], arrayOf(2, 2, 6))
-        val WEAPON_2 = SyncAnimation(Image.Weapon.TWO.textures[0], arrayOf(8, 8, 8))
+        // TODO
+        //val WEAPON_1 = SyncAnimation(Image.Weapon.ONE.textures[0], arrayOf(2, 2, 6))
+        //val WEAPON_2 = SyncAnimation(Image.Weapon.TWO.textures[0], arrayOf(8, 8, 8))
         //val WEAPON_3 = SyncAnimation(Image.Weapon.THREE.textures[0], arrayOf(2, 10, 30))
 
         fun update() {

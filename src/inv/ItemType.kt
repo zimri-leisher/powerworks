@@ -35,3 +35,7 @@ sealed class ItemType(val name: String, val texture: Texture, private val placed
         val ALL = mutableListOf<ItemType>()
     }
 }
+
+sealed class WeaponItemType(name: String, texture: Texture, placedBlockID: Int, maxStack: Int) : ItemType(name, texture, placedBlockID, maxStack) {
+
+}

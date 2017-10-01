@@ -142,7 +142,7 @@ class GUIView(parent: RootGUIElement? = RootGUIElementObject,
         DebugOverlay.setInfo(name + " zoom level", zoomLevel.toString())
     }
 
-    override fun onMouseActionOn(type: PressType, xPixel: Int, yPixel: Int) {
+    override fun onMouseActionOn(type: PressType, xPixel: Int, yPixel: Int, button: Int) {
         Game.currentLevel.onMouseAction(type, xPixel, yPixel)
     }
 

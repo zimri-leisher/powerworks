@@ -42,9 +42,6 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
 
     val mouseMovementListeners = mutableListOf<MouseMovementListener>()
 
-    var mouseXPixel = 0
-    var mouseYPixel = 0
-
     var mouseOutside = false
 
     fun registerControlPressHandler(h: ControlPressHandler, controls: Map<ControlMap, Array<out Control>>? = null) {
@@ -104,10 +101,10 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
         if (mouseMoved != null) {
             val newMouseXPixel = mouseMoved!!.x / Game.SCALE
             val newMouseYPixel = mouseMoved!!.y / Game.SCALE
-            if (newMouseXPixel != mouseXPixel || newMouseYPixel != mouseYPixel) {
-                mouseMovementListeners.forEach { it.onMouseMove(mouseXPixel, mouseYPixel) }
-                mouseXPixel = mouseMoved!!.x / Game.SCALE
-                mouseYPixel = mouseMoved!!.y / Game.SCALE
+            if (newMouseXPixel != Mouse.xPixel || newMouseYPixel != Mouse.yPixel) {
+                mouseMovementListeners.forEach { it.onMouseMove(Mouse.xPixel, Mouse.yPixel) }
+                Mouse.xPixel = mouseMoved!!.x / Game.SCALE
+                Mouse.yPixel = mouseMoved!!.y / Game.SCALE
             }
             mouseMoved = null
         }

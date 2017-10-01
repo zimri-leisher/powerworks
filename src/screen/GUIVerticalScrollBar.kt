@@ -3,7 +3,7 @@ package screen
 import graphics.Image
 import graphics.Renderer
 import graphics.Texture
-import io.InputManager
+import io.Mouse
 import io.PressType
 import misc.GeometryHelper
 
@@ -13,7 +13,7 @@ interface VerticalScrollable {
     fun onScroll()
 }
 
-class GUIVerticalScrollBar(parent: RootGUIElement? = RootGUIElementObject, name: String, xPixel: Int, yPixel: Int, heightPixels: Int, layer: Int = (parent?.layer ?: 0) + 1) : GUIElement(parent, name, xPixel, yPixel, WIDTH, heightPixels, layer) {
+class GUIVerticalScrollBar(parent: RootGUIElement? = RootGUIElementObject, name: String, xPixel: Int, yPixel: Int, heightPixels: Int, layer: Int = (parent?.layer ?: 0) + 1) : GUIElement(parent, name, xPixel, yPixel, DEFAULT_WIDTH, heightPixels, layer) {
 
     val s = parent as VerticalScrollable
     val currentTextures = arrayOf<Texture>(Image.GUI.SCROLL_BAR_UNHIGHLIGHT_TOP, Image.GUI.SCROLL_BAR_UNHIGHLIGHT_MIDDLE, Image.GUI.SCROLL_BAR_UNHIGHLIGHT_BOTTOM)
@@ -24,8 +24,8 @@ class GUIVerticalScrollBar(parent: RootGUIElement? = RootGUIElementObject, name:
     var currentScrollBarHeight = 0
     var currentPos = 0
         set(value) {
-            if(value <= maxPos && value > 0)
-                field = value
+            field = Math.min(Math.max(value, -1), maxPos)
+            s.onScroll()
         }
     var dragging = false
     var mYPixelPrev = 0
@@ -47,7 +47,7 @@ class GUIVerticalScrollBar(parent: RootGUIElement? = RootGUIElementObject, name:
         currentTextures[2] = otherTextures[i * 3 + 2]
     }
 
-    override fun onMouseActionOn(type: PressType, xPixel: Int, yPixel: Int) {
+    override fun onMouseActionOn(type: PressType, xPixel: Int, yPixel: Int, button: Int) {
         when (type) {
             PressType.PRESSED -> if (GeometryHelper.intersects(xPixel, yPixel, 1, 1, this.xPixel + 1, currentPos + this.yPixel + 1, 4, currentScrollBarHeight)) {
                 dragging = true
@@ -64,7 +64,7 @@ class GUIVerticalScrollBar(parent: RootGUIElement? = RootGUIElementObject, name:
         }
     }
 
-    override fun onMouseActionOff(type: PressType, xPixel: Int, yPixel: Int) {
+    override fun onMouseActionOff(type: PressType, xPixel: Int, yPixel: Int, button: Int) {
         if (type == PressType.RELEASED) {
             setTexture(0)
             dragging = false
@@ -81,8 +81,8 @@ class GUIVerticalScrollBar(parent: RootGUIElement? = RootGUIElementObject, name:
     }
 
     override fun update() {
-        val mYPixel = InputManager.mouseYPixel
-        val mXPixel = InputManager.mouseXPixel
+        val mYPixel = Mouse.yPixel
+        val mXPixel = Mouse.xPixel
         if (mouseOn && !dragging) {
             if (GeometryHelper.intersects(mXPixel, mYPixel, 1, 1, xPixel + 1, currentPos + yPixel + 1, 4, currentScrollBarHeight))
                 setTexture(1)
@@ -90,11 +90,10 @@ class GUIVerticalScrollBar(parent: RootGUIElement? = RootGUIElementObject, name:
                 setTexture(0)
         }
         if (mYPixel != mYPixelPrev && dragging) {
-            if (yPixel + currentPos + (mYPixel - mYPixelPrev) + 1 + currentScrollBarHeight <= yPixel + heightPixels - 1 && yPixel + (currentPos + (mYPixel - mYPixelPrev)) >= yPixel) {
+            //if (yPixel + currentPos + (mYPixel - mYPixelPrev) + 1 + currentScrollBarHeight <= yPixel + heightPixels - 1 && yPixel + (currentPos + (mYPixel - mYPixelPrev)) >= yPixel) {
                 currentPos += mYPixel - mYPixelPrev
                 mYPixelPrev = mYPixel
-                s.onScroll()
-            }
+            //}
         }
     }
 
@@ -109,6 +108,6 @@ class GUIVerticalScrollBar(parent: RootGUIElement? = RootGUIElementObject, name:
     }
 
     companion object {
-        const val WIDTH = 6
+        const val DEFAULT_WIDTH = 6
     }
 }

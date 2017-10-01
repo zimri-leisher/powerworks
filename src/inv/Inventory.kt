@@ -89,4 +89,8 @@ class Inventory(val width: Int, val height: Int) {
     operator fun get(i: Int): Item? {
         return items[i]
     }
+
+    operator fun set(i: Int, v: Item?) {
+        items[i] = v
+    }
 }

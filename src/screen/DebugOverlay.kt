@@ -1,5 +1,7 @@
 package screen
 
+import audio.AudioManager
+import audio.Sound
 import io.*
 import main.Game
 
@@ -27,6 +29,7 @@ object DebugOverlay : GUI("Debug overlay", 0, 0, Game.WIDTH, Game.HEIGHT), Contr
     override fun handleControlPress(p: ControlPress) {
         if (p.control == Control.DEBUG && p.pressType == PressType.PRESSED) {
             open = !open
+            AudioManager.play(Sound.GRASS_FOOTSTEP, Game.player.xPixel, Game.player.yPixel, true)
         }
     }
 }

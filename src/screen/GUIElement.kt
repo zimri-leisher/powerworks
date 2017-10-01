@@ -23,13 +23,13 @@ abstract class RootGUIElement(val name: String = "Root GUI element object", open
                 ScreenManager.openGuiElements.remove(this)
                 mouseOn = false
                 onClose()
-                children.forEach { if(it.matchParentClosing) it.open = false }
+                children.forEach { if (it.matchParentClosing) it.open = false }
             } else if (value && !field) {
                 field = true
                 ScreenManager.openGuiElements.add(this)
                 ScreenManager.updateMouseOn(this)
                 onOpen()
-                children.forEach { if(it.matchParentOpening) it.open = true }
+                children.forEach { if (it.matchParentOpening) it.open = true }
             }
         }
     var mouseOn: Boolean = false
@@ -52,9 +52,9 @@ abstract class RootGUIElement(val name: String = "Root GUI element object", open
                     element.layer = element.parent.layer + 1
                     element.parent = this@RootGUIElement
                 }
-                if(element.matchParentClosing && !open)
+                if (element.matchParentClosing && !open)
                     element.open = false
-                else if(element.matchParentOpening && open)
+                else if (element.matchParentOpening && open)
                     element.open = true
                 this@RootGUIElement.onAddChild(element)
             }
@@ -86,10 +86,10 @@ abstract class RootGUIElement(val name: String = "Root GUI element object", open
     open fun onAddChild(child: GUIElement) {
     }
 
-    open fun onMouseActionOn(type: PressType, xPixel: Int, yPixel: Int) {
+    open fun onMouseActionOn(type: PressType, xPixel: Int, yPixel: Int, button: Int) {
     }
 
-    open fun onMouseActionOff(type: PressType, xPixel: Int, yPixel: Int) {
+    open fun onMouseActionOff(type: PressType, xPixel: Int, yPixel: Int, button: Int) {
     }
 
     open fun onMouseEnter() {

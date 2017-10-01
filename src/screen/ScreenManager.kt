@@ -24,7 +24,7 @@ object ScreenManager : ControlPressHandler, MouseMovementListener {
     }
 
     fun updateMouseOn(e: RootGUIElement) {
-        if (GeometryHelper.contains(e.xPixel, e.yPixel, e.widthPixels, e.heightPixels, InputManager.mouseXPixel, InputManager.mouseYPixel, 0, 0)) {
+        if (GeometryHelper.contains(e.xPixel, e.yPixel, e.widthPixels, e.heightPixels, Mouse.xPixel, Mouse.yPixel, 0, 0)) {
             if (!e.mouseOn) {
                 e.mouseOn = true
             }
@@ -44,13 +44,14 @@ object ScreenManager : ControlPressHandler, MouseMovementListener {
     override fun handleControlPress(p: ControlPress) {
         if (p.control == Control.INTERACT) {
             val t = p.pressType
-            val x = InputManager.mouseXPixel
-            val y = InputManager.mouseYPixel
+            val x = Mouse.xPixel
+            val y = Mouse.yPixel
+            val b = Mouse.button
             updateMouseOn()
             if (openGuiElements.size > 0) {
                 val o = openGuiElements.stream().filter { it.mouseOn }.sorted { o2, o1 -> o1.layer.compareTo(o2.layer) }.findFirst().orElseGet { null }
-                o?.onMouseActionOn(t, x, y)
-                openGuiElements.stream().filter { it != o }.forEach { it.onMouseActionOff(t, x, y) }
+                o?.onMouseActionOn(t, x, y, b)
+                openGuiElements.stream().filter { it != o }.forEach { it.onMouseActionOff(t, x, y, b) }
             }
         } else if (p.control == Control.SCROLL_DOWN) {
             updateMouseOn()

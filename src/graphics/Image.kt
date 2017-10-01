@@ -5,7 +5,6 @@ import java.awt.AlphaComposite
 import java.awt.Color
 import java.awt.Transparency
 import java.awt.image.BufferedImage
-import java.nio.file.Paths
 import javax.imageio.ImageIO
 
 object Utils {
@@ -212,29 +211,7 @@ data class ImageParams(
         val brightnessMultiplier: Double = 1.0)
 
 class WeaponImages internal constructor(id: Int) {
-    val mods: Array<Image>
-    val textures: Array<ImageCollection>
-    val proj: Image = Image(WEAPON_DIR + "weapon$id/proj.png")
 
-    init {
-        textures = arrayOf(
-                ImageCollection(WEAPON_DIR + "weapon$id/dir_0.png", 3),
-                ImageCollection(WEAPON_DIR + "weapon$id/dir_1.png", 3),
-                ImageCollection(WEAPON_DIR + "weapon$id/dir_2.png", 3),
-                ImageCollection(WEAPON_DIR + "weapon$id/dir_3.png", 3)
-        )
-        val modImages = mutableListOf<Image>()
-        var i = 0
-        while (Paths.get(WEAPON_DIR, "weapon$id/mod_$i.png").toFile().exists()) {
-            modImages.add(Image(WEAPON_DIR + "weapons$id/mod_$i.png"))
-            i++
-        }
-        mods = modImages.toTypedArray()
-    }
-
-    companion object {
-        private const val WEAPON_DIR = "/textures/weapon/"
-    }
 }
 
 class Image private constructor() : Texture {
@@ -265,7 +242,7 @@ class Image private constructor() : Texture {
     }
 
     companion object {
-
+        // TODO definitely rethink how weapon textures are done, apply this to other things in the future like block textures
         val ERROR = Image("/textures/misc/error.png")
         val BLOCK_PLACEABLE = Image("/textures/block/placeable.png")
         val BLOCK_NOT_PLACEABLE = Image("/textures/block/not_placeable.png")

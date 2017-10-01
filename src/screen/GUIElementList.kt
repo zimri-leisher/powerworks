@@ -10,7 +10,7 @@ class GUIElementList(parent: RootGUIElement? = RootGUIElementObject, name: Strin
     override var maxHeightPixels: Int = elements.heightPixels
         get() = elements.heightPixels
 
-    var scrollBar = GUIVerticalScrollBar(this, name + " scroll bar", widthPixels - GUIVerticalScrollBar.WIDTH, 0, heightPixels, layer + 2)
+    var scrollBar = GUIVerticalScrollBar(this, name + " scroll bar", widthPixels - GUIVerticalScrollBar.DEFAULT_WIDTH, 0, heightPixels, layer + 2)
 
     init {
         elements.autoRender = false

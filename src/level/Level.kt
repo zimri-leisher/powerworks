@@ -2,6 +2,7 @@ package level
 
 import graphics.Renderer
 import io.InputManager
+import io.Mouse
 import io.MouseMovementListener
 import io.PressType
 import level.block.Block
@@ -187,8 +188,8 @@ abstract class Level(seed: Long, val widthTiles: Int, val heightTiles: Int) : Ca
     private fun mouseMoveRelativeToLevel() {
         val viewRectangle = viewBeingInteractedWith!!.getViewRectangle()
         val zoom = viewBeingInteractedWith!!.zoomMultiplier
-        mouseLevelXPixel = (InputManager.mouseXPixel / zoom).toInt() + viewRectangle.x
-        mouseLevelYPixel = (InputManager.mouseYPixel / zoom).toInt() + viewRectangle.y
+        mouseLevelXPixel = (Mouse.xPixel / zoom).toInt() + viewRectangle.x
+        mouseLevelYPixel = (Mouse.yPixel / zoom).toInt() + viewRectangle.y
     }
 
     override fun onMouseMove(pXPixel: Int, pYPixel: Int) {
@@ -204,8 +205,8 @@ abstract class Level(seed: Long, val widthTiles: Int, val heightTiles: Int) : Ca
         if (viewBeingInteractedWith != null) {
             val zoom = viewBeingInteractedWith!!.zoomMultiplier
             val viewRectangle = viewBeingInteractedWith!!.getViewRectangle()
-            mouseLevelXPixel = (InputManager.mouseXPixel / zoom).toInt() + viewRectangle.x
-            mouseLevelYPixel = (InputManager.mouseYPixel / zoom).toInt() + viewRectangle.y
+            mouseLevelXPixel = (Mouse.xPixel / zoom).toInt() + viewRectangle.x
+            mouseLevelYPixel = (Mouse.yPixel / zoom).toInt() + viewRectangle.y
         }
     }
 

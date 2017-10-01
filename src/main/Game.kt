@@ -1,5 +1,6 @@
 package main
 
+import audio.AudioManager
 import graphics.LocalAnimation
 import graphics.Renderer
 import graphics.SyncAnimation
@@ -68,6 +69,8 @@ object Game : Canvas(), Runnable, ControlPressHandler {
     var THREAD_WAITING = true
     var RENDER_HITBOXES = false
     var CHUNK_BOUNDARIES = false
+    var LEVEL_PAUSED = false
+    var PAUSE_LEVEL_IN_ESCAPE_MENU = false
 
     /* Level */
     lateinit var currentLevel: Level
@@ -95,6 +98,7 @@ object Game : Canvas(), Runnable, ControlPressHandler {
         addMouseWheelListener(InputManager)
         addMouseMotionListener(InputManager)
         addMouseListener(InputManager)
+        AudioManager.load()
         cursor = clearCursor
         try {
             val font = Font.createFont(Font.TRUETYPE_FONT, Game::class.java.getResourceAsStream("/font/MunroSmall.ttf")).deriveFont(Font.PLAIN, 28f)
@@ -202,6 +206,7 @@ object Game : Canvas(), Runnable, ControlPressHandler {
         } catch (e: InterruptedException) {
             e.printStackTrace()
         }
+        AudioManager.close()
     }
 
     fun getFont(size: Int): Font {
