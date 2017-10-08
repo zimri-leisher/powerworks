@@ -167,11 +167,12 @@ object Utils {
         }
         if (p.brightnessMultiplier != 1.0) {
             newImg = Game.graphicsConfiguration.createCompatibleImage(image.width, image.height, Transparency.TRANSLUCENT)
-            newImg.createGraphics().drawImage(image, 0, 0, null)
-            val wr = newImg.raster
+            val tempImg = Game.graphicsConfiguration.createCompatibleImage(image.width, image.height, Transparency.TRANSLUCENT)
+            tempImg.createGraphics().drawImage(image, 0, 0, null)
+            val wr = tempImg.raster
             val pixel = IntArray(4)
-            for (i in 0..wr.width - 1) {
-                for (j in 0..wr.height - 1) {
+            for (i in 0 until wr.width) {
+                for (j in 0 until wr.height) {
                     wr.getPixel(i, j, pixel)
                     pixel[0] = (pixel[0] * p.brightnessMultiplier).toInt()
                     pixel[1] = (pixel[1] * p.brightnessMultiplier).toInt()
@@ -179,6 +180,7 @@ object Utils {
                     wr.setPixel(i, j, pixel)
                 }
             }
+            newImg.createGraphics().drawImage(tempImg, 0, 0, null)
         }
         return newImg
     }
@@ -262,7 +264,11 @@ class Image private constructor() : Texture {
     }
 
     object GUI {
-
+        val VIEW_SELECTOR_CLOSE_BUTTON = Image("/textures/gui/view_selector_close.png")
+        val VIEW_SELECTOR_CLOSE_BUTTON_HIGHLIGHT = Image("/textures/gui/view_selector_close_highlight.png") // WTF is going on here, for some reason when I use Utils.modify it comes up as black and not red TODO
+        val VIEW_SELECTOR_OPEN_BUTTON = Image("/textures/gui/view_selector_open.png")
+        val VIEW_SELECTOR_OPEN_BUTTON_HIGHLIGHT = Image(Utils.modify(VIEW_SELECTOR_OPEN_BUTTON, ImageParams(brightnessMultiplier = 1.2)))
+        val CLOSE_BUTTON = Image("/textures/gui/close_button.png")
         val DRAG_GRIP = Image("/textures/gui/drag_grip.png")
         val SCROLL_BAR_TOP = Image("/textures/gui/scroll_bar_top.png")
         val SCROLL_BAR_MIDDLE = Image("/textures/gui/scroll_bar_middle.png")

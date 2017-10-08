@@ -4,19 +4,21 @@ import graphics.RenderParams
 import io.PressType
 import main.Game
 
-object RootGUIElementObject : RootGUIElement()
+object RootGUIElementObject : RootGUIElement() {
+}
 
 private var nextID = 0
 
-abstract class RootGUIElement(val name: String = "Root GUI element object", open val xPixel: Int = 0, open val yPixel: Int = 0, open val widthPixels: Int = Game.WIDTH, open val heightPixels: Int = Game.HEIGHT, var layer: Int = 0,
+abstract class RootGUIElement(val name: String = "Root GUI element object", open val xPixel: Int = 0, open val yPixel: Int = 0, widthPixels: Int = Game.WIDTH, heightPixels: Int = Game.HEIGHT, var layer: Int = 0,
                               /** Whether or not to modify dimensions based on the ratio of the parent's previous dimension versus the new one */
-                              var adjustDimensions: Boolean = false) {
+                              var adjustDimensions: Boolean = false,
+                              open: Boolean = false) {
 
     val params = RenderParams()
     var id = nextID++
     /** Whether or not the ScreenManager should render this */
     var autoRender = true
-    var open: Boolean = false
+    var open: Boolean = open
         set(value) {
             if (!value && field) {
                 field = false
@@ -43,6 +45,34 @@ abstract class RootGUIElement(val name: String = "Root GUI element object", open
             }
         }
 
+    var widthPixels = widthPixels
+        set(value) {
+            val old = field
+            field = value
+            onDimensionChange(old, heightPixels)
+            children.forEach {
+                if (it.adjustDimensions) {
+                    val xRatio = widthPixels.toDouble() / old
+                    it.widthPixels = (it.widthPixels * xRatio).toInt()
+                }
+                it.onParentDimensionChange(old, heightPixels)
+            }
+        }
+
+    var heightPixels = heightPixels
+        set(value) {
+            val old = field
+            field = value
+            onDimensionChange(widthPixels, old)
+            children.forEach {
+                if (it.adjustDimensions) {
+                    val yRatio = heightPixels.toDouble() / old
+                    it.heightPixels = (it.heightPixels * yRatio).toInt()
+                }
+                it.onParentDimensionChange(widthPixels, old)
+            }
+        }
+
     private val _children: MutableSet<GUIElement> = mutableSetOf()
     val children = object : MutableSet<GUIElement> by _children {
         override fun add(element: GUIElement): Boolean {
@@ -52,10 +82,6 @@ abstract class RootGUIElement(val name: String = "Root GUI element object", open
                     element.layer = element.parent.layer + 1
                     element.parent = this@RootGUIElement
                 }
-                if (element.matchParentClosing && !open)
-                    element.open = false
-                else if (element.matchParentOpening && open)
-                    element.open = true
                 this@RootGUIElement.onAddChild(element)
             }
             return result
@@ -134,10 +160,10 @@ abstract class GUIElement(parent: RootGUIElement? = RootGUIElementObject,
                           relXPixel: Int = 0, relYPixel: Int = 0,
                           widthPixels: Int, heightPixels: Int,
                           layer: Int = if (parent == null) 1 else parent.layer + 1,
-                          adjustDimensions: Boolean = false) :
-        RootGUIElement(name, (parent?.xPixel ?: 0) + relXPixel, (parent?.yPixel ?: 0) + relYPixel, widthPixels, heightPixels, layer, adjustDimensions) {
+                          adjustDimensions: Boolean = false, open: Boolean = false) :
+        RootGUIElement(name, (parent?.xPixel ?: 0) + relXPixel, (parent?.yPixel ?: 0) + relYPixel, widthPixels, heightPixels, layer, adjustDimensions, open) {
 
-    open var parent: RootGUIElement = parent ?: RootGUIElementObject
+    var parent: RootGUIElement = parent ?: RootGUIElementObject
         set(value) {
             if (field != value) {
                 field.children.remove(this)
@@ -148,37 +174,12 @@ abstract class GUIElement(parent: RootGUIElement? = RootGUIElementObject,
             }
         }
 
+    /** Whether or not to send clicks on this to its parent */
+    var transparentToInteraction = false
     /** Whether or not to open when a parent opens*/
     var matchParentOpening = true
     /** Whether or not to close when a parent closes*/
     var matchParentClosing = true
-
-    final override var widthPixels = widthPixels
-        set(value) {
-            val old = field
-            field = value
-            onDimensionChange(old, heightPixels)
-            children.forEach {
-                if (it.adjustDimensions) {
-                    val xRatio = widthPixels / old
-                    it.widthPixels *= xRatio
-                }
-                it.onParentDimensionChange(old, heightPixels)
-            }
-        }
-    final override var heightPixels = heightPixels
-        set(value) {
-            val old = field
-            field = value
-            onDimensionChange(widthPixels, old)
-            children.forEach {
-                if (it.adjustDimensions) {
-                    val yRatio = heightPixels / old
-                    it.heightPixels *= yRatio
-                }
-                it.onParentDimensionChange(widthPixels, old)
-            }
-        }
 
     final override var xPixel = relXPixel + this.parent.xPixel
         private set
@@ -210,8 +211,9 @@ abstract class GUIElement(parent: RootGUIElement? = RootGUIElementObject,
 
     init {
         this.parent.children.add(this)
-        open = this.parent.open
         ScreenManager.guiElements.add(this)
+        if(open)
+            ScreenManager.openGuiElements.add(this)
     }
 
     override fun toString(): String {

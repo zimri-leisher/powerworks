@@ -20,7 +20,7 @@ object HUD {
             IngameDefaultGUI.widthPixels - (HOTBAR_SIZE * HOTBAR_SLOT_WIDTH_PIXELS)) / 2,
             (IngameDefaultGUI.heightPixels - HOTBAR_SLOT_HEIGHT_PIXELS),
             HOTBAR_SIZE * HOTBAR_SLOT_WIDTH_PIXELS,
-            HOTBAR_SIZE * HOTBAR_SLOT_HEIGHT_PIXELS), ControlPressHandler {
+            HOTBAR_SIZE * HOTBAR_SLOT_HEIGHT_PIXELS, IngameDefaultGUI.layer + 2), ControlPressHandler {
 
         init {
             InputManager.registerControlPressHandler(this, Control.SLOT_1, Control.SLOT_2, Control.SLOT_3, Control.SLOT_4, Control.SLOT_5, Control.SLOT_6, Control.SLOT_7, Control.SLOT_8, Control.GIVE_TEST_ITEM)
@@ -41,10 +41,15 @@ object HUD {
             }
         }
 
+        override fun onParentDimensionChange(oldWidth: Int, oldHeight: Int) {
+            this.relXPixel = (IngameDefaultGUI.widthPixels - (HOTBAR_SIZE * HOTBAR_SLOT_WIDTH_PIXELS)) / 2
+            this.relYPixel = (IngameDefaultGUI.heightPixels - HOTBAR_SLOT_HEIGHT_PIXELS)
+        }
+
         override fun handleControlPress(p: ControlPress) {
-            if(p.pressType != PressType.PRESSED)
+            if (p.pressType != PressType.PRESSED)
                 return
-            when(p.control) {
+            when (p.control) {
                 Control.SLOT_1 -> selected = 0
                 Control.SLOT_2 -> selected = 1
                 Control.SLOT_3 -> selected = 2

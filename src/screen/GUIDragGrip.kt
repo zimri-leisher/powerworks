@@ -6,7 +6,7 @@ import io.Mouse
 import io.PressType
 
 
-class GUIDragGrip(parent: GUIElement, name: String, xPixel: Int, yPixel: Int) : GUIElement(parent, name, xPixel, yPixel, WIDTH, HEIGHT) {
+class GUIDragGrip(parent: GUIElement, name: String, xPixel: Int, yPixel: Int, layer: Int = parent.layer + 1) : GUIElement(parent, name, xPixel, yPixel, WIDTH, HEIGHT, layer) {
 
     var dragging = false
     var mXPixel = 0

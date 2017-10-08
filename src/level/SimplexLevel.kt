@@ -8,7 +8,7 @@ import level.tile.TileType
 import java.util.*
 
 
-class SimplexLevel(width: Int, height: Int, seed: Long) : Level(seed, width, height) {
+class SimplexLevel(name: String, width: Int, height: Int) : Level(name, width, height) {
 
     private var singleOre: SimplexNoise
 

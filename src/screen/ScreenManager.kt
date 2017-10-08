@@ -50,18 +50,32 @@ object ScreenManager : ControlPressHandler, MouseMovementListener {
             updateMouseOn()
             if (openGuiElements.size > 0) {
                 val o = openGuiElements.stream().filter { it.mouseOn }.sorted { o2, o1 -> o1.layer.compareTo(o2.layer) }.findFirst().orElseGet { null }
-                o?.onMouseActionOn(t, x, y, b)
+                if(o != null) {
+                    if(o is GUIElement) {
+                        if(!o.transparentToInteraction)
+                            o.onMouseActionOn(t, x, y, b)
+                        else
+                            o.parent.onMouseActionOn(t, x, y, b)
+                    } else
+                        o.onMouseActionOn(t, x, y, b)
+                }
+
                 openGuiElements.stream().filter { it != o }.forEach { it.onMouseActionOff(t, x, y, b) }
             }
-        } else if (p.control == Control.SCROLL_DOWN) {
+        } else if (p.control == Control.SCROLL_DOWN || p.control == Control.SCROLL_UP) {
+            val dir = if(p.control == Control.SCROLL_DOWN) -1 else 1
             updateMouseOn()
             if (openGuiElements.size > 0) {
-                openGuiElements.stream().filter { it.mouseOn }.sorted { o2, o1 -> o1.layer.compareTo(o2.layer) }.findFirst().orElseGet { null }?.onMouseScroll(-1)
-            }
-        } else if (p.control == Control.SCROLL_UP) {
-            updateMouseOn()
-            if (openGuiElements.size > 0) {
-                openGuiElements.stream().filter { it.mouseOn }.sorted { o2, o1 -> o1.layer.compareTo(o2.layer) }.findFirst().orElseGet { null }?.onMouseScroll(1)
+                val o = openGuiElements.stream().filter { it.mouseOn }.sorted { o2, o1 -> o1.layer.compareTo(o2.layer) }.findFirst().orElseGet { null }
+                if(o != null) {
+                    if(o is GUIElement) {
+                        if(!o.transparentToInteraction)
+                            o.onMouseScroll(dir)
+                        else
+                            o.parent.onMouseScroll(dir)
+                    } else
+                        o.onMouseScroll(dir)
+                }
             }
         } else if (p.control == Control.DEBUG && p.pressType == PressType.PRESSED) {
             /*

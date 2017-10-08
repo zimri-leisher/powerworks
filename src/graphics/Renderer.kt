@@ -38,9 +38,9 @@ object Renderer {
         g2d.fillRect((xPixel + xPixelOffset) * Game.SCALE, (yPixel + yPixelOffset) * Game.SCALE, widthPixels * Game.SCALE, heightPixels * Game.SCALE)
     }
 
-    fun renderEmptyRectangle(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int, color: Int = 0xFFFFFF) {
+    fun renderEmptyRectangle(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int, color: Int = 0xFFFFFF, borderThickness: Int = 1) {
         g2d.color = Color(color)
-        g2d.stroke = BasicStroke(Game.SCALE.toFloat())
+        g2d.stroke = BasicStroke(Game.SCALE.toFloat() * borderThickness)
         g2d.drawRect((xPixel + xPixelOffset) * Game.SCALE, (yPixel + yPixelOffset) * Game.SCALE, widthPixels * Game.SCALE, heightPixels * Game.SCALE)
     }
 

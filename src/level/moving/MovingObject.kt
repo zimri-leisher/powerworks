@@ -5,6 +5,7 @@ import level.Hitbox
 import level.LevelObject
 import level.MovementListener
 import main.Game
+import java.io.DataOutputStream
 
 const val DEFAULT_MAX_SPEED = 20
 const val DEFAULT_DRAG = 4
@@ -129,5 +130,11 @@ abstract class MovingObject(xPixel: Int, yPixel: Int, hitbox: Hitbox) : LevelObj
             xVel /= DEFAULT_DRAG
             yVel /= DEFAULT_DRAG
         }
+    }
+
+    override fun save(out: DataOutputStream) {
+        out.writeInt(xVel)
+        out.writeInt(yVel)
+        out.writeInt(dir)
     }
 }

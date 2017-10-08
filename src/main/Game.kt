@@ -10,6 +10,7 @@ import level.Level
 import player.Player
 import screen.DebugOverlay
 import screen.MainMenuGUI
+import screen.RootGUIElementObject
 import screen.ScreenManager
 import java.awt.*
 import java.awt.event.ComponentAdapter
@@ -43,8 +44,8 @@ object Game : Canvas(), Runnable, ControlPressHandler {
     val JAR_PATH = Game::class.java.protectionDomain.codeSource.location.toURI().path.substring(1).substring(0 until Game::class.java.protectionDomain.codeSource.location.toURI().path.lastIndexOf("/"))
 
     /* Dimensions */
-    const val WIDTH = 300
-    const val HEIGHT = (WIDTH.toFloat() / 16 * 9).toInt()
+    var WIDTH = 300
+    var HEIGHT = (WIDTH.toDouble() / 16 * 9).toInt()
     const val SCALE = 4
 
     val THREAD = Thread(this, "Powerworks Main Thread")
@@ -88,9 +89,15 @@ object Game : Canvas(), Runnable, ControlPressHandler {
         frame.setLocationRelativeTo(null)
         requestFocusInWindow()
         frame.iconImage = ImageIO.read(Game::class.java.getResource("/textures/misc/logo.png"))
-        frame.isVisible = true
         frame.addComponentListener(object : ComponentAdapter() {
             override fun componentResized(e: ComponentEvent?) {
+                val oldW = Game.WIDTH
+                val oldH = Game.HEIGHT
+                Game.WIDTH = Game.width / SCALE
+                Game.HEIGHT = Game.height / SCALE
+                RootGUIElementObject.widthPixels = Game.WIDTH
+                RootGUIElementObject.heightPixels = Game.HEIGHT
+                RootGUIElementObject.onParentDimensionChange(oldW, oldH)
             }
         })
         createData()
@@ -116,6 +123,7 @@ object Game : Canvas(), Runnable, ControlPressHandler {
         MainMenuGUI.poke()
         DebugOverlay.poke()
         State.setState(State.MAIN_MENU)
+        frame.isVisible = true
         start()
     }
 
@@ -237,8 +245,11 @@ object Game : Canvas(), Runnable, ControlPressHandler {
         if (Files.notExists(controls))
             Files.createDirectory(controls)
         val defaultMap = Paths.get(JAR_PATH, "data/settings/controls/default.txt")
-        if (Files.notExists(controls))
+        if (Files.notExists(defaultMap))
             Files.createFile(defaultMap)
+        val save = Paths.get(JAR_PATH, "data/save")
+        if (Files.notExists(save))
+            Files.createDirectory(save)
         val f = defaultMap.toFile()
         f.writeText(Game::class.java.getResource("/settings/controls/default.txt").readText())
     }
@@ -252,7 +263,7 @@ object Game : Canvas(), Runnable, ControlPressHandler {
         ScreenManager.render()
         Renderer.g2d.dispose()
         val calInstance = Calendar.getInstance()
-        val fileName = "${JAR_PATH}screenshots/${calInstance.get(Calendar.MONTH)}-${calInstance.get(Calendar.DATE)}-${calInstance.get(Calendar.YEAR)}"
+        val fileName = "${JAR_PATH}screenshots/${calInstance.get(Calendar.MONTH) + 1}-${calInstance.get(Calendar.DATE)}-${calInstance.get(Calendar.YEAR)}"
         var i = 0
         var file = File(fileName + " #$i.png")
         while (file.exists()) {

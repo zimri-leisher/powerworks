@@ -16,6 +16,9 @@ import screen.DebugOverlay
 import screen.GUIView
 import screen.HUD
 import java.awt.Rectangle
+import java.io.*
+import java.nio.file.Files
+import java.nio.file.Paths
 import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -24,14 +27,17 @@ val CHUNK_TILE_EXP = (Math.log(CHUNK_SIZE_TILES.toDouble()) / Math.log(2.0)).toI
 val CHUNK_PIXEL_EXP = CHUNK_TILE_EXP + 4
 val CHUNK_SIZE_PIXELS = CHUNK_SIZE_TILES shl 4
 
-abstract class Level(seed: Long, val widthTiles: Int, val heightTiles: Int) : CameraMovementListener, MouseMovementListener {
+abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles: Int) : CameraMovementListener, MouseMovementListener {
+
+    val levelFile: File
 
     val heightPixels = heightTiles shl 4
     val widthPixels = widthTiles shl 4
     val heightChunks = heightTiles shr CHUNK_TILE_EXP
     val widthChunks = widthTiles shr CHUNK_TILE_EXP
 
-    val rand: Random = Random(seed)
+    val seed: Long
+    val rand: Random
 
     val chunks: Array<Chunk>
     val loadedChunks = CopyOnWriteArrayList<Chunk>()
@@ -55,15 +61,32 @@ abstract class Level(seed: Long, val widthTiles: Int, val heightTiles: Int) : Ca
     }
 
     var ghostBlock: GhostBlock? = null
-    var blockPlaceable = false
 
     var mouseOnLevel = false
     var mouseLevelXPixel = 0
     var mouseLevelYPixel = 0
 
     init {
-        InputManager.mouseMovementListeners.add(this)
-        System.out.println("Creating level, seed: " + seed)
+        val p = Paths.get(Game.JAR_PATH, "data/save/$levelName/")
+        if (Files.notExists(p)) {
+            Files.createDirectory(p)
+            seed = (Math.random() * 4096).toLong()
+            rand = Random(seed)
+            InputManager.mouseMovementListeners.add(this)
+            println("Creating level")
+            levelFile = Files.createFile(Paths.get(p.toAbsolutePath().toString(), "$levelName.level")).toFile()
+            val out = DataOutputStream(BufferedOutputStream(FileOutputStream(levelFile, true)))
+            out.writeLong(seed)
+            out.close()
+        } else {
+            InputManager.mouseMovementListeners.add(this)
+            println("Loading level")
+            levelFile = Paths.get(p.toAbsolutePath().toString(), "$levelName.level").toFile()
+            val g = DataInputStream(BufferedInputStream(FileInputStream(levelFile)))
+            seed = g.readLong()
+            rand = Random(seed)
+            g.close()
+        }
         val gen = arrayOfNulls<Chunk>(widthChunks * heightChunks)
         for (y in 0 until heightChunks) {
             for (x in 0 until widthChunks) {
@@ -71,11 +94,12 @@ abstract class Level(seed: Long, val widthTiles: Int, val heightTiles: Int) : Ca
             }
         }
         chunks = gen.requireNoNulls()
+
     }
 
     fun render(view: GUIView) {
         // Assume it is already added to views list
-        val r = view.getViewRectangle()
+        val r = view.viewRectangle
         val xPixel0 = r.minX.toInt()
         val yPixel0 = r.minY.toInt()
         val xPixel1 = r.maxX.toInt()
@@ -168,7 +192,7 @@ abstract class Level(seed: Long, val widthTiles: Int, val heightTiles: Int) : Ca
         }
     }
 
-    private fun isBeingRendered(xChunk: Int, yChunk: Int) = views.any { it.getViewRectangle().intersects(Rectangle(xChunk shl (CHUNK_TILE_EXP + 4), yChunk shl (CHUNK_TILE_EXP + 4), 128, 128)) }
+    private fun isBeingRendered(xChunk: Int, yChunk: Int) = views.any { it.viewRectangle.intersects(Rectangle(xChunk shl (CHUNK_TILE_EXP + 4), yChunk shl (CHUNK_TILE_EXP + 4), 128, 128)) }
 
     /* Listeners and senders */
     fun onMouseAction(type: PressType, xPixel: Int, yPixel: Int) {
@@ -186,10 +210,7 @@ abstract class Level(seed: Long, val widthTiles: Int, val heightTiles: Int) : Ca
 
     // Will I know what I did at 3:16 AM later? Hopefully. Right now this seems reasonable
     private fun mouseMoveRelativeToLevel() {
-        val viewRectangle = viewBeingInteractedWith!!.getViewRectangle()
-        val zoom = viewBeingInteractedWith!!.zoomMultiplier
-        mouseLevelXPixel = (Mouse.xPixel / zoom).toInt() + viewRectangle.x
-        mouseLevelYPixel = (Mouse.yPixel / zoom).toInt() + viewRectangle.y
+        updateMouseLevelLocation()
     }
 
     override fun onMouseMove(pXPixel: Int, pYPixel: Int) {
@@ -200,14 +221,16 @@ abstract class Level(seed: Long, val widthTiles: Int, val heightTiles: Int) : Ca
     }
 
     private fun updateViewBeingInteractedWith() {
+        views.sortByDescending {it.layer}
         viewBeingInteractedWith = views.firstOrNull { it.mouseOn }
         mouseOnLevel = viewBeingInteractedWith != null
-        if (viewBeingInteractedWith != null) {
-            val zoom = viewBeingInteractedWith!!.zoomMultiplier
-            val viewRectangle = viewBeingInteractedWith!!.getViewRectangle()
-            mouseLevelXPixel = (Mouse.xPixel / zoom).toInt() + viewRectangle.x
-            mouseLevelYPixel = (Mouse.yPixel / zoom).toInt() + viewRectangle.y
-        }
+    }
+
+    private fun updateMouseLevelLocation() {
+        val zoom = viewBeingInteractedWith!!.zoomMultiplier
+        val viewRectangle = viewBeingInteractedWith!!.viewRectangle
+        mouseLevelXPixel = ((Mouse.xPixel - viewBeingInteractedWith!!.xPixel) / zoom).toInt() + viewRectangle.x
+        mouseLevelYPixel = ((Mouse.yPixel - viewBeingInteractedWith!!.yPixel) / zoom).toInt() + viewRectangle.y
     }
 
     /* Generation */
@@ -242,6 +265,7 @@ abstract class Level(seed: Long, val widthTiles: Int, val heightTiles: Int) : Ca
                 }
             }
         }
+        // In the future, use async?
         for (m in c.movingOnBoundary!!) {
             if (m != l) {
                 if (predicate != null) {
@@ -268,6 +292,10 @@ abstract class Level(seed: Long, val widthTiles: Int, val heightTiles: Int) : Ca
     }
 
     fun doesPairCollide(l: LevelObject, xPixel: Int = l.xPixel, yPixel: Int = l.yPixel, l2: LevelObject, xPixel2: Int = l2.xPixel, yPixel2: Int = l2.yPixel): Boolean {
+        return GeometryHelper.intersects(xPixel + l.hitbox.xStart, yPixel + l.hitbox.yStart, l.hitbox.width, l.hitbox.height, xPixel2 + l2.hitbox.xStart, yPixel2 + l2.hitbox.yStart, l2.hitbox.width, l2.hitbox.height)
+    }
+
+    suspend fun doesPairCollideAsync(l: LevelObject, xPixel: Int = l.xPixel, yPixel: Int = l.yPixel, l2: LevelObject, xPixel2: Int = l2.xPixel, yPixel2: Int = l2.yPixel): Boolean {
         return GeometryHelper.intersects(xPixel + l.hitbox.xStart, yPixel + l.hitbox.yStart, l.hitbox.width, l.hitbox.height, xPixel2 + l2.hitbox.xStart, yPixel2 + l2.hitbox.yStart, l2.hitbox.width, l2.hitbox.height)
     }
 
@@ -402,5 +430,9 @@ abstract class Level(seed: Long, val widthTiles: Int, val heightTiles: Int) : Ca
      */
     fun getTile(xTile: Int, yTile: Int): Tile {
         return getChunkFromTile(xTile, yTile).getTile(xTile, yTile)
+    }
+
+    fun save() {
+
     }
 }

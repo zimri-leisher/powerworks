@@ -23,7 +23,7 @@ object AudioManager : MovementListener{
         }
     }
 
-    val VOLUME_MULTIPLIER = 1.0
+    var VOLUME_MULTIPLIER = 1.0
     val MAX_HEARING_DISTANCE_PIXELS = 100
     var SOUND_ENABLED = true
     var LEVEL_SOUNDS_PAUSED = false

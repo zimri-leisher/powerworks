@@ -14,7 +14,10 @@ class GUIView(parent: RootGUIElement? = RootGUIElementObject,
               name: String,
               relXPixel: Int, relYPixel: Int,
               widthPixels: Int, heightPixels: Int,
-              camera: LevelObject, zoomLevel: Int = 10) : GUIElement(parent, name, relXPixel, relYPixel, widthPixels, heightPixels), MovementListener {
+              camera: LevelObject, zoomLevel: Int = 10,
+              layer: Int = (parent?.layer ?: 0) + 1) : GUIElement(parent, name, relXPixel, relYPixel, widthPixels, heightPixels, layer), MovementListener {
+
+    val moveListeners = mutableListOf<CameraMovementListener>()
 
     var camera = camera
         set(value) {
@@ -43,11 +46,11 @@ class GUIView(parent: RootGUIElement? = RootGUIElementObject,
             onCameraMove(camera.xPixel, camera.yPixel)
         }
 
-    val moveListeners = mutableListOf<CameraMovementListener>()
-
     var currentBuffer = Game.graphicsConfiguration.createCompatibleVolatileImage(viewWidthPixels * Game.SCALE, viewHeightPixels * Game.SCALE, Transparency.TRANSLUCENT)
 
     lateinit var pregeneratedBuffers: Array<VolatileImage>
+
+    var viewRectangle: Rectangle
 
     init {
         DebugOverlay.setInfo(name + " zoom level", zoomLevel.toString())
@@ -56,6 +59,9 @@ class GUIView(parent: RootGUIElement? = RootGUIElementObject,
         if (camera is MovingObject) {
             camera.moveListeners.add(this)
         }
+        if(open)
+            Game.currentLevel.views.add(this)
+        viewRectangle = Rectangle(camera.xPixel - viewWidthPixels / 2, camera.yPixel - viewHeightPixels / 2, viewWidthPixels, viewHeightPixels)
         fillPregenBuffers()
     }
 
@@ -81,15 +87,16 @@ class GUIView(parent: RootGUIElement? = RootGUIElementObject,
     private fun updateView() {
         viewWidthPixels = (widthPixels / zoomMultiplier).toInt()
         viewHeightPixels = (heightPixels / zoomMultiplier).toInt()
-        DebugOverlay.setInfo(name + " dimensions", "width: $viewWidthPixels, height: $viewHeightPixels")
         pregeneratedBuffers[zoomLevel - MAX_ZOOM].validate(Game.graphicsConfiguration)
         currentBuffer = pregeneratedBuffers[zoomLevel - MAX_ZOOM]
+        viewRectangle = Rectangle(camera.xPixel - viewWidthPixels / 2, camera.yPixel - viewHeightPixels / 2, viewWidthPixels, viewHeightPixels)
     }
 
     override fun update() {
     }
 
     private fun onCameraMove(pXPixel: Int, pYPixel: Int) {
+        viewRectangle = Rectangle(camera.xPixel - viewWidthPixels / 2, camera.yPixel - viewHeightPixels / 2, viewWidthPixels, viewHeightPixels)
         moveListeners.forEach { it.onCameraMove(this, pXPixel, pYPixel) }
     }
 
@@ -102,10 +109,6 @@ class GUIView(parent: RootGUIElement? = RootGUIElementObject,
     override fun onMove(m: MovingObject, pXPixel: Int, pYPixel: Int) {
         if (open)
             onCameraMove(pXPixel, pYPixel)
-    }
-
-    fun getViewRectangle(): Rectangle {
-        return Rectangle(camera.xPixel - viewWidthPixels / 2, camera.yPixel - viewHeightPixels / 2, viewWidthPixels, viewHeightPixels)
     }
 
     override fun render() {

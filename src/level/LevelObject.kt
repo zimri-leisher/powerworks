@@ -4,10 +4,8 @@ import graphics.Renderer
 import main.Game
 import java.io.DataOutputStream
 
-abstract class LevelObject protected constructor(xPixel: Int, yPixel: Int, val hitbox: Hitbox, requiresUpdate: Boolean = true) {
+abstract class LevelObject protected constructor(open val xPixel: Int, open val yPixel: Int, val hitbox: Hitbox, requiresUpdate: Boolean = true) {
 
-    open val xPixel: Int = xPixel
-    open val yPixel: Int = yPixel
     open val xTile = xPixel shr 4
     open val yTile = yPixel shr 4
     open val xChunk = xTile shr 3
@@ -37,9 +35,6 @@ abstract class LevelObject protected constructor(xPixel: Int, yPixel: Int, val h
     }
 
     open fun onCollide(o: LevelObject) {
-        println("------")
-        println(Game.updatesCount)
-        println("$this collides with $o")
     }
 
     /** X and Y pixel are where to check if this would collide with */

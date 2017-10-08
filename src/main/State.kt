@@ -7,7 +7,6 @@ import player.Player
 import screen.HUD
 import screen.IngameDefaultGUI
 import screen.MainMenuGUI
-import java.util.*
 
 
 class State(val activate: (State) -> (Unit), val deactivate: (State) -> (Unit)) {
@@ -22,8 +21,7 @@ class State(val activate: (State) -> (Unit), val deactivate: (State) -> (Unit)) 
         })
 
         val INGAME = State({
-            val seed = Random().nextInt(4096).toLong()
-            Game.currentLevel = SimplexLevel(256, 256, seed)
+            Game.currentLevel = SimplexLevel("level1", 256, 256)
             Game.player = Player(Game.currentLevel.widthPixels / 2, Game.currentLevel.heightPixels / 2)
             AudioManager.ears = Game.player
             Game.mainInv = Inventory(8, 6)
