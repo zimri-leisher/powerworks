@@ -3,9 +3,9 @@ package main
 import audio.AudioManager
 import inv.Inventory
 import level.SimplexLevel
-import player.Player
+import player.Camera
 import screen.HUD
-import screen.IngameDefaultGUI
+import screen.IngameGUI
 import screen.MainMenuGUI
 
 
@@ -22,12 +22,12 @@ class State(val activate: (State) -> (Unit), val deactivate: (State) -> (Unit)) 
 
         val INGAME = State({
             Game.currentLevel = SimplexLevel("level1", 256, 256)
-            Game.player = Player(Game.currentLevel.widthPixels / 2, Game.currentLevel.heightPixels / 2)
-            AudioManager.ears = Game.player
+            Game.camera = Camera(Game.currentLevel.widthPixels / 2, Game.currentLevel.heightPixels / 2)
+            AudioManager.ears = Game.camera
             Game.mainInv = Inventory(8, 6)
-            Game.currentLevel.add(Game.player)
+            Game.currentLevel.add(Game.camera)
+            IngameGUI.open = true
             HUD.poke()
-            IngameDefaultGUI.open = true
         }, {
 
         })

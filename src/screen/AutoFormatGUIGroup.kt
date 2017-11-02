@@ -1,10 +1,11 @@
 package screen
 
-class AutoFormatGUIGroup(parent: RootGUIElement? = RootGUIElementObject,
+class AutoFormatGUIGroup(parent: RootGUIElement,
                          name: String,
                          relXPixel: Int, relYPixel: Int,
-                         layer: Int = (parent?.layer ?: 0) + 1, val yPixelSeparation: Int = 0) :
-        GUIGroup(parent, name, relXPixel, relYPixel, layer) {
+                         open: Boolean = false,
+                         layer: Int = parent.layer + 1, val yPixelSeparation: Int = 0) :
+        GUIGroup(parent, name, relXPixel, relYPixel, open, layer) {
 
     var nextYPixel = 0
 

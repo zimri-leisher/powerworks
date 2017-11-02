@@ -8,6 +8,7 @@ import io.PressType
 import level.block.Block
 import level.block.GhostBlock
 import level.moving.MovingObject
+import level.resource.ResourceType
 import level.tile.Tile
 import main.Game
 import misc.GeometryHelper
@@ -221,7 +222,7 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
     }
 
     private fun updateViewBeingInteractedWith() {
-        views.sortByDescending {it.layer}
+        views.sortByDescending { it.parentWindow.layer }
         viewBeingInteractedWith = views.firstOrNull { it.mouseOn }
         mouseOnLevel = viewBeingInteractedWith != null
     }
@@ -300,13 +301,15 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
     }
 
     fun updateChunk(o: MovingObject) {
-        val intersectingChunks = getChunksFromPixelRectangle(o.hitbox.xStart + o.xPixel, o.hitbox.yStart + o.yPixel, o.hitbox.width, o.hitbox.height).toMutableList()
         val currentChunk = getChunk(o.xChunk, o.yChunk)
-        intersectingChunks.remove(currentChunk)
-        if (o.intersectingChunks != intersectingChunks) {
-            o.intersectingChunks.forEach { it.movingOnBoundary!!.remove(o) }
-            intersectingChunks.forEach { it.movingOnBoundary!!.add(o) }
-            o.intersectingChunks = intersectingChunks
+        if (o.hitbox != Hitbox.NONE) {
+            val intersectingChunks = getChunksFromPixelRectangle(o.hitbox.xStart + o.xPixel, o.hitbox.yStart + o.yPixel, o.hitbox.width, o.hitbox.height).toMutableList()
+            intersectingChunks.remove(currentChunk)
+            if (o.intersectingChunks != intersectingChunks) {
+                o.intersectingChunks.forEach { it.movingOnBoundary!!.remove(o) }
+                intersectingChunks.forEach { it.movingOnBoundary!!.add(o) }
+                o.intersectingChunks = intersectingChunks
+            }
         }
         if (o.currentChunk != currentChunk) {
             o.currentChunk.removeMoving(o)
@@ -335,8 +338,8 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
                 return false
             if (l.hitbox != Hitbox.NONE) {
                 l.intersectingChunks.forEach { it.movingOnBoundary!!.add(l) }
-                l.currentChunk.addMoving(l)
             }
+            l.currentChunk.addMoving(l)
         }
         return false
     }
@@ -354,6 +357,15 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
             l.intersectingChunks.forEach { it.movingOnBoundary!!.remove(l) }
             l.currentChunk.removeMoving(l)
         }
+    }
+
+    /**
+     * Tries to 'materialize' this resource where specified. Note: most resources have no physical representation
+     * other than some purely decoratee particles
+     * @return true if the resource was turned into a form that is retrievable and not lost
+     */
+    fun add(xPixel: Int, yPixel: Int, r: ResourceType, quantity: Int): Boolean {
+        return false
     }
 
     /* Getting and setting */

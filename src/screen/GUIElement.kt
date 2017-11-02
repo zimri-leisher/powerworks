@@ -1,37 +1,44 @@
 package screen
 
-import graphics.RenderParams
 import io.PressType
-import main.Game
-
-object RootGUIElementObject : RootGUIElement() {
-}
 
 private var nextID = 0
 
-abstract class RootGUIElement(val name: String = "Root GUI element object", open val xPixel: Int = 0, open val yPixel: Int = 0, widthPixels: Int = Game.WIDTH, heightPixels: Int = Game.HEIGHT, var layer: Int = 0,
-                              /** Whether or not to modify dimensions based on the ratio of the parent's previous dimension versus the new one */
-                              var adjustDimensions: Boolean = false,
-                              open: Boolean = false) {
-
-    val params = RenderParams()
-    var id = nextID++
-    /** Whether or not the ScreenManager should render this */
-    var autoRender = true
+open class RootGUIElement(val parentWindow: GUIWindow,
+                          widthPixels: Int = parentWindow.widthPixels, heightPixels: Int = parentWindow.heightPixels,
+                          open: Boolean = parentWindow.open, var layer: Int = 0) {
+    val id = nextID++
+    private val _children: MutableSet<GUIElement> = mutableSetOf()
+    val children = object : MutableSet<GUIElement> by _children {
+        override fun add(element: GUIElement): Boolean {
+            val result = _children.add(element)
+            if (result) {
+                if (element.parent != this@RootGUIElement) {
+                    if (element.matchParentLayer)
+                        element.layer = element.parent.layer + 1
+                    element.parent = this@RootGUIElement
+                }
+                this@RootGUIElement.onAddChild(element)
+            }
+            return result
+        }
+    }
     var open: Boolean = open
         set(value) {
             if (!value && field) {
                 field = false
-                ScreenManager.openGuiElements.remove(this)
                 mouseOn = false
                 onClose()
                 children.forEach { if (it.matchParentClosing) it.open = false }
             } else if (value && !field) {
                 field = true
-                ScreenManager.openGuiElements.add(this)
-                ScreenManager.updateMouseOn(this)
+                mouseOn = ScreenManager.isMouseOn(this)
                 onOpen()
-                children.forEach { if (it.matchParentOpening) it.open = true }
+                children.forEach {
+                    if (it.matchParentOpening) {
+                        it.open = true
+                    }
+                }
             }
         }
     var mouseOn: Boolean = false
@@ -44,126 +51,149 @@ abstract class RootGUIElement(val name: String = "Root GUI element object", open
                 field = value
             }
         }
-
+    open val xPixel
+        get() = parentWindow.xPixel
+    open val yPixel
+        get() = parentWindow.yPixel
     var widthPixels = widthPixels
         set(value) {
-            val old = field
-            field = value
-            onDimensionChange(old, heightPixels)
-            children.forEach {
-                if (it.adjustDimensions) {
-                    val xRatio = widthPixels.toDouble() / old
-                    it.widthPixels = (it.widthPixels * xRatio).toInt()
+            if (field != value) {
+                val old = field
+                field = value
+                onDimensionChange(old, heightPixels)
+                children.forEach {
+                    if (it.adjustDimensions) {
+                        val xRatio = widthPixels.toDouble() / old
+                        it.widthPixels = (it.widthPixels * xRatio).toInt()
+                    }
+                    it.onParentDimensionChange(old, heightPixels)
                 }
-                it.onParentDimensionChange(old, heightPixels)
             }
         }
 
     var heightPixels = heightPixels
         set(value) {
-            val old = field
-            field = value
-            onDimensionChange(widthPixels, old)
-            children.forEach {
-                if (it.adjustDimensions) {
-                    val yRatio = heightPixels.toDouble() / old
-                    it.heightPixels = (it.heightPixels * yRatio).toInt()
+            if (field != value) {
+                val old = field
+                field = value
+                onDimensionChange(widthPixels, old)
+                children.forEach {
+                    if (it.adjustDimensions) {
+                        val yRatio = heightPixels.toDouble() / old
+                        it.heightPixels = (it.heightPixels * yRatio).toInt()
+                    }
+                    it.onParentDimensionChange(widthPixels, old)
                 }
-                it.onParentDimensionChange(widthPixels, old)
             }
         }
+    open val name
+        get() = parentWindow.name
 
-    private val _children: MutableSet<GUIElement> = mutableSetOf()
-    val children = object : MutableSet<GUIElement> by _children {
-        override fun add(element: GUIElement): Boolean {
-            val result = _children.add(element)
-            if (result) {
-                if (element.parent != this@RootGUIElement) {
-                    element.layer = element.parent.layer + 1
-                    element.parent = this@RootGUIElement
-                }
-                this@RootGUIElement.onAddChild(element)
-            }
-            return result
-        }
-    }
-
-    fun get(name: String, checkChildren: Boolean = true): GUIElement? {
+    /* Util */
+    /* Gets the specified element by name. If checkChildren is true (default), it checks recursively */
+    fun getChild(name: String, checkChildren: Boolean = true): GUIElement? {
         var r = children.firstOrNull { it.name == name }
         if (checkChildren) {
             val i = children.iterator()
             while (r == null && i.hasNext()) {
-                r = i.next().get(name)
+                r = i.next().getChild(name)
             }
         }
         return r
     }
 
+    /* Gets the specified element by id (unique for each element). If checkChildren is true (default), it checks recursively */
+    fun getChild(id: Int, checkChildren: Boolean = true): GUIElement? {
+        var r = children.firstOrNull { it.id == id }
+        if (checkChildren) {
+            val i = children.iterator()
+            while (r == null && i.hasNext()) {
+                r = i.next().getChild(id)
+            }
+        }
+        return r
+    }
+
+    /* Settings */
+    /** Open when the parent opens */
+    var matchParentOpening = true
+    /** Close when the parent closes */
+    var matchParentClosing = true
+    /** Send interactions to the parent */
+    var transparentToInteraction = false
+    /** Modify dimensions automatically when the parent's dimensions change */
+    var adjustDimensions = false
+    /** Follow parent's movement (if false, relative X and Y pixels will be adjusted to match */
+    var adjustPosition = true
+    /** Change the layer to be 1 above the parent's layer automatically */
+    var matchParentLayer = true
+    /** Have the ScreenManager's render() method call this classes render method. Only useful as false if this is is
+     * being rendered by some other container, for instance, GUIGroup
+     */
+    var autoRender = true
+
+    open fun render() {}
+
+    open fun update() {}
+
+    /* Events */
+    /** When this is opened after being closed */
     open fun onOpen() {
     }
 
+    /** When this is closed after being open */
     open fun onClose() {
     }
 
-    fun toggle() {
-        open = !open
-    }
-
+    /** When this gains a child */
     open fun onAddChild(child: GUIElement) {
     }
 
+    /** When the mouse is clicked on this and it is on the highest layer, unless transparentToInteraction is true */
     open fun onMouseActionOn(type: PressType, xPixel: Int, yPixel: Int, button: Int) {
     }
 
+    /** When the mouse clicks off this */
     open fun onMouseActionOff(type: PressType, xPixel: Int, yPixel: Int, button: Int) {
     }
 
+    /** When the mouse enters the rectangle defined by xPixel, yPixel, widthPixels, heightPixels. Called even if it's on the bottom */
     open fun onMouseEnter() {
     }
 
+    /** When the mouse leaves the rectangle defined by xPixel, yPixel, widthPixels, heightPixels. Called even if it's on the bottom layer */
     open fun onMouseLeave() {
     }
 
+    /** When the mouse is scrolled and the mouse is on this element */
     open fun onMouseScroll(dir: Int) {
     }
 
-    open fun onParentDimensionChange(oldWidth: Int, oldHeight: Int) {
-    }
-
-    open fun onParentPositionChange(pXPixel: Int, pYPixel: Int) {
-    }
-
+    /** When either the width or height of this changes */
     open fun onDimensionChange(oldWidth: Int, oldHeight: Int) {
     }
 
+    /** When either the x or y pixel of this changes */
     open fun onPositionChange(pXPixel: Int, pYPixel: Int) {
     }
 
-    open fun onParentChange(oldParent: RootGUIElement) {
+    override fun toString(): String = "Root child of $parentWindow"
+
+    override fun equals(other: Any?): Boolean {
+        return other is RootGUIElement && other.id == id
     }
 
-    /* Take into account params! */
-    open fun render() {
-    }
-
-    open fun update() {
-    }
-
-    override fun toString(): String {
-        return "Root GUI element object"
-    }
-
+    override fun hashCode() = id
 }
 
-abstract class GUIElement(parent: RootGUIElement? = RootGUIElementObject,
-                          name: String,
-                          relXPixel: Int = 0, relYPixel: Int = 0,
+abstract class GUIElement(parent: RootGUIElement,
+                          override val name: String, relXPixel: Int, relYPixel: Int,
                           widthPixels: Int, heightPixels: Int,
-                          layer: Int = if (parent == null) 1 else parent.layer + 1,
-                          adjustDimensions: Boolean = false, open: Boolean = false) :
-        RootGUIElement(name, (parent?.xPixel ?: 0) + relXPixel, (parent?.yPixel ?: 0) + relYPixel, widthPixels, heightPixels, layer, adjustDimensions, open) {
+                          open: Boolean = false,
+                          layer: Int = parent.layer + 1) :
+        RootGUIElement(parent.parentWindow, widthPixels, heightPixels, open, layer) {
 
-    var parent: RootGUIElement = parent ?: RootGUIElementObject
+    var parent: RootGUIElement = parent
         set(value) {
             if (field != value) {
                 field.children.remove(this)
@@ -174,16 +204,9 @@ abstract class GUIElement(parent: RootGUIElement? = RootGUIElementObject,
             }
         }
 
-    /** Whether or not to send clicks on this to its parent */
-    var transparentToInteraction = false
-    /** Whether or not to open when a parent opens*/
-    var matchParentOpening = true
-    /** Whether or not to close when a parent closes*/
-    var matchParentClosing = true
-
-    final override var xPixel = relXPixel + this.parent.xPixel
+    final override var xPixel = parent.xPixel + relXPixel
         private set
-    final override var yPixel = relYPixel + this.parent.yPixel
+    final override var yPixel = parent.yPixel + relYPixel
         private set
 
     var relXPixel = relXPixel
@@ -197,27 +220,60 @@ abstract class GUIElement(parent: RootGUIElement? = RootGUIElementObject,
             updatePosition()
         }
 
-    private fun updatePosition() {
+    init {
+        parent.children.add(this)
+    }
+
+    constructor(parent: GUIWindow,
+                name: String, xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int,
+                open: Boolean = false,
+                layer: Int = parent.rootChild.layer + 1) :
+            this(parent.rootChild, name, xPixel, yPixel, widthPixels, heightPixels, open, layer)
+
+    /* Util */
+    /** Opens if closed, closes if opened */
+    fun toggle() {
+        open = !open
+    }
+
+    /** Updates this elements position based on relative x and y pixel and recurses to children too */
+    fun updatePosition() {
         val oldX = xPixel
         val oldY = yPixel
         xPixel = parent.xPixel + relXPixel
         yPixel = parent.yPixel + relYPixel
         onPositionChange(oldX, oldY)
         children.forEach {
-            it.updatePosition()
+            if (it.adjustPosition)
+                it.updatePosition()
             it.onParentPositionChange(oldX, oldY)
         }
     }
 
+    /** Makes this and all it's children's layers their respective parent's layer + 1 */
+    fun compressLayer() {
+        layer = parent.layer + 1
+        children.forEach { it.compressLayer() }
+    }
+
+    /* Events */
+    /** When the parent is changed */
+    open fun onParentChange(oldParent: RootGUIElement) {
+    }
+
+    /** When a parent's dimension changes (note, no need to call super here, all adjusting stuff is done in separate functions) */
+    open fun onParentDimensionChange(oldWidth: Int, oldHeight: Int) {
+    }
+
+    /** When a parent's dimension changes (note, no need to call super here, all adjusting stuff is done in separate functions) */
+    open fun onParentPositionChange(pXPixel: Int, pYPixel: Int) {
+    }
+
     init {
-        this.parent.children.add(this)
-        ScreenManager.guiElements.add(this)
-        if(open)
-            ScreenManager.openGuiElements.add(this)
+        this.parent.children.add(this).run { }
     }
 
     override fun toString(): String {
         return javaClass.simpleName + ": $name at $xPixel, $yPixel absolute, $relXPixel, $relYPixel relative, width: $widthPixels, height: $heightPixels, layer: $layer, parent: ${parent.name}"
     }
-
 }

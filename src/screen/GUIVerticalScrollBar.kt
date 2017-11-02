@@ -13,7 +13,13 @@ interface VerticalScrollable {
     fun onScroll()
 }
 
-class GUIVerticalScrollBar(parent: RootGUIElement? = RootGUIElementObject, name: String, xPixel: Int, yPixel: Int, heightPixels: Int, layer: Int = (parent?.layer ?: 0) + 1) : GUIElement(parent, name, xPixel, yPixel, DEFAULT_WIDTH, heightPixels, layer) {
+class GUIVerticalScrollBar(parent: RootGUIElement,
+                           name: String,
+                           xPixel: Int, yPixel: Int,
+                           heightPixels: Int,
+                           open: Boolean = false,
+                           layer: Int = parent.layer + 1) :
+        GUIElement(parent, name, xPixel, yPixel, DEFAULT_WIDTH, heightPixels, open, layer) {
 
     val s = parent as VerticalScrollable
     val currentTextures = arrayOf<Texture>(Image.GUI.SCROLL_BAR_UNHIGHLIGHT_TOP, Image.GUI.SCROLL_BAR_UNHIGHLIGHT_MIDDLE, Image.GUI.SCROLL_BAR_UNHIGHLIGHT_BOTTOM)
@@ -76,7 +82,7 @@ class GUIVerticalScrollBar(parent: RootGUIElement? = RootGUIElementObject, name:
     }
 
     override fun onMouseLeave() {
-        if(!dragging)
+        if (!dragging)
             setTexture(0)
     }
 
@@ -91,8 +97,8 @@ class GUIVerticalScrollBar(parent: RootGUIElement? = RootGUIElementObject, name:
         }
         if (mYPixel != mYPixelPrev && dragging) {
             //if (yPixel + currentPos + (mYPixel - mYPixelPrev) + 1 + currentScrollBarHeight <= yPixel + heightPixels - 1 && yPixel + (currentPos + (mYPixel - mYPixelPrev)) >= yPixel) {
-                currentPos += mYPixel - mYPixelPrev
-                mYPixelPrev = mYPixel
+            currentPos += mYPixel - mYPixelPrev
+            mYPixelPrev = mYPixel
             //}
         }
     }

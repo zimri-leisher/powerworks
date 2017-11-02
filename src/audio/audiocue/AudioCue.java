@@ -34,7 +34,10 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, 
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.adonax.audiocue;
+
+// Thanks Phil!
+
+package audio.audiocue;
 
 import java.io.IOException;
 import java.net.URL;
@@ -53,7 +56,7 @@ import javax.sound.sampled.Mixer;
 import javax.sound.sampled.SourceDataLine;
 import javax.sound.sampled.UnsupportedAudioFileException;
 
-import com.adonax.audiocue.AudioCueInstanceEvent.Type;
+import audio.audiocue.AudioCueInstanceEvent.Type;
 
 /**
  * The {@code AudioCue} represents a segment of audio media 

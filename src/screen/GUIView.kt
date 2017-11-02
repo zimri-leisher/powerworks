@@ -10,12 +10,14 @@ import java.awt.Rectangle
 import java.awt.Transparency
 import java.awt.image.VolatileImage
 
-class GUIView(parent: RootGUIElement? = RootGUIElementObject,
+class GUIView(parent: RootGUIElement,
               name: String,
               relXPixel: Int, relYPixel: Int,
               widthPixels: Int, heightPixels: Int,
               camera: LevelObject, zoomLevel: Int = 10,
-              layer: Int = (parent?.layer ?: 0) + 1) : GUIElement(parent, name, relXPixel, relYPixel, widthPixels, heightPixels, layer), MovementListener {
+              open: Boolean = false,
+              layer: Int = parent.layer + 1) :
+        GUIElement(parent, name, relXPixel, relYPixel, widthPixels, heightPixels, open, layer), MovementListener {
 
     val moveListeners = mutableListOf<CameraMovementListener>()
 

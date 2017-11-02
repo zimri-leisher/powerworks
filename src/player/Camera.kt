@@ -4,14 +4,10 @@ import io.*
 import level.Hitbox
 import level.moving.MovingObject
 
-class Player(xPixel: Int, yPixel: Int) : MovingObject(xPixel, yPixel, Hitbox.TILE), ControlPressHandler {
+class Camera(xPixel: Int, yPixel: Int) : MovingObject(xPixel, yPixel, Hitbox.NONE), ControlPressHandler {
 
     init {
         InputManager.registerControlPressHandler(this, Control.UP, Control.DOWN, Control.RIGHT, Control.LEFT)
-    }
-
-    override fun render() {
-        super.render()
     }
 
     override fun handleControlPress(p: ControlPress) {
@@ -30,7 +26,7 @@ class Player(xPixel: Int, yPixel: Int) : MovingObject(xPixel, yPixel, Hitbox.TIL
     }
 
     override fun toString(): String {
-        return "Player camera at $xPixel, $yPixel"
+        return "Camera at $xPixel, $yPixel"
     }
 
 }

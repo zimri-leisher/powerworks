@@ -184,6 +184,7 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
     }
 
     override fun mouseReleased(e: MouseEvent) {
+        Mouse.button = e.button
         mouseRelease.add(e)
     }
 
@@ -201,6 +202,7 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
     }
 
     override fun mousePressed(e: MouseEvent) {
+        Mouse.button = e.button
         mousePress.add(e)
     }
 

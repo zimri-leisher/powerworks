@@ -7,10 +7,11 @@ import io.Mouse
 import io.PressType
 
 
+class GUIItemSlot(parent: RootGUIElement, name: String, xPixel: Int, yPixel: Int, var index: Int, var inv: Inventory,
+                  var isDisplay: Boolean = false, open: Boolean = false, layer: Int = parent.layer + 1) :
+        GUIElement(parent, name, xPixel, yPixel, WIDTH, HEIGHT, open, layer) {
 
-class GUIItemSlot(parent: RootGUIElement? = RootGUIElementObject, name: String, xPixel: Int, yPixel: Int, var index: Int, var inv: Inventory, var isDisplay: Boolean, layer: Int = (parent?.layer ?: 0) + 1) : GUIElement(parent, name, xPixel, yPixel, DEFAULT_WIDTH, DEFAULT_HEIGHT, layer) {
-
-    private var currentTexture = if(isDisplay) Image.GUI.ITEM_SLOT_DISPLAY else Image.GUI.ITEM_SLOT
+    private var currentTexture = if (isDisplay) Image.GUI.ITEM_SLOT_DISPLAY else Image.GUI.ITEM_SLOT
 
     override fun render() {
         Renderer.renderTexture(currentTexture, xPixel, yPixel)
@@ -22,12 +23,12 @@ class GUIItemSlot(parent: RootGUIElement? = RootGUIElementObject, name: String, 
     }
 
     override fun onMouseEnter() {
-        if(!isDisplay)
+        if (!isDisplay)
             currentTexture = Image.GUI.ITEM_SLOT_HIGHLIGHT
     }
 
     override fun onMouseLeave() {
-        if(!isDisplay)
+        if (!isDisplay)
             currentTexture = Image.GUI.ITEM_SLOT
     }
 
@@ -74,7 +75,7 @@ class GUIItemSlot(parent: RootGUIElement? = RootGUIElementObject, name: String, 
     }
 
     companion object {
-        const val DEFAULT_WIDTH = 16
-        const val DEFAULT_HEIGHT = 16
+        const val WIDTH = 16
+        const val HEIGHT = 16
     }
 }

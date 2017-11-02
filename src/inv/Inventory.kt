@@ -79,7 +79,7 @@ class Inventory(val width: Int, val height: Int) {
     }
 
     private fun sort() {
-        Arrays.sort(items, { o1, o2 -> if (o1 == null) 1 else if (o2 == null) -1 else o1.type.id.compareTo(o2.type.id) })
+        Arrays.sort(items, { o1, o2 -> if (o1 == null) 1 else if (o2 == null) -1 else if(o1.type.id == o2.type.id) o2.quantity.compareTo(o1.quantity) else o1.type.id.compareTo(o2.type.id)})
     }
 
     operator fun iterator(): Iterator<Item?> {

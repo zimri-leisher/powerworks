@@ -9,7 +9,6 @@ private var nextID = 0
 sealed class BlockType(val name: String, private val textures: Array<Texture>, val widthTiles: Int = 1, val heightTiles: Int = 1, val hitbox: Hitbox = Hitbox.TILE, val textureXPixelOffset: Int = 0, val textureYPixelOffset: Int = 0, val requiresUpdate: Boolean = false) {
 
     object ERROR : BlockType("Error", arrayOf<Texture>(Image.ERROR))
-    object TEST : BlockType("Test", arrayOf<Texture>(Image.ERROR))
 
     val id = nextID++
 

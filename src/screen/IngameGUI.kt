@@ -6,50 +6,60 @@ import io.*
 import main.Game
 import misc.GeometryHelper
 
-object IngameDefaultGUI : GUI("In game default gui", 0, 0, Game.WIDTH, Game.HEIGHT), ControlPressHandler {
+object IngameGUI : GUIWindow("In game gui",
+        0, 0,
+        Game.WIDTH, Game.HEIGHT,
+        windowGroup = ScreenManager.Groups.BACKGROUND
+        ), ControlPressHandler {
 
-    var viewCount = 1
-    val viewControls = mutableListOf<GUIElement>()
     const val MAX_VIEWS = 4
-    val DEFAULT_VIEW_WIDTH = 300
+    const val DEFAULT_VIEW_WIDTH = 300
     val DEFAULT_VIEW_HEIGHT = (DEFAULT_VIEW_WIDTH.toDouble() / 16 * 9).toInt()
-    val VIEW_SELECTOR_BUTTON_WIDTH = 5
-    val VIEW_SELECTOR_BUTTON_HEIGHT = 5
-    var viewControlsOpen = false
+    const val VIEW_SELECTOR_BUTTON_WIDTH = 5
+    const val VIEW_SELECTOR_BUTTON_HEIGHT = 5
+
+    private var viewCount = 0
+    private val viewControls = mutableListOf<GUIElement>()
+    private var viewControlsOpen = false
+
+    val mainInvGUI = InventoryGUI("In game main inventory gui", "Inventory", Game.mainInv, 20, 20, layer = MAX_VIEWS * 3 + 2)
 
     init {
         InputManager.registerControlPressHandler(this, Control.TOGGLE_VIEW_CONTROLS)
         adjustDimensions = true
-        GUITexturePane(this, "In game default gui background", 0, 0, Image.GUI.MAIN_MENU_BACKGROUND, Game.WIDTH, Game.HEIGHT).run {
+        GUITexturePane(this.rootChild, "In game gui background", 0, 0, Image.GUI.MAIN_MENU_BACKGROUND, Game.WIDTH, Game.HEIGHT).run {
             adjustDimensions = true
-            object : GUIElement(this, "In game default view selector", Game.WIDTH - 30, Game.HEIGHT - 7, 28, 5) {
+            object : GUIElement(this@run, "In game view selector", Game.WIDTH - 30, Game.HEIGHT - 7, 28, 5) {
 
-                val views = arrayOf<GUIView>(newView(), newView(), newView(), newView())
+                val views = arrayOf<GUIWindow>(newView(), newView(), newView(), newView())
 
                 var viewHighlighted = -1
 
                 init {
                     matchParentOpening = false
-                    views[0].open = true
                     viewControls.add(this)
                 }
 
-                private fun newView(): GUIView {
-                    val parent = this@IngameDefaultGUI.get("In game default gui background")
-                    GUIView(parent, "In game default view ${viewCount++}", 0, 0, DEFAULT_VIEW_WIDTH, DEFAULT_VIEW_HEIGHT, Game.player,
-                            layer = parent!!.layer + viewCount * 3 + 1).run {
-                        GUIDragGrip(this, "In game default view $viewCount drag grip", DEFAULT_VIEW_WIDTH - 5, DEFAULT_VIEW_HEIGHT - 5, this.layer + 2).run {
+                private fun newView(): GUIWindow {
+                    if(viewCount < MAX_VIEWS) {
+                        val newView = ViewWindow("In game view ${viewCount++}",
+                                0, 0,
+                                DEFAULT_VIEW_WIDTH, DEFAULT_VIEW_HEIGHT,
+                                Game.camera,
+                                open = viewCount == 1, windowGroup = ScreenManager.Groups.VIEW)
+                        newView.run {
+                            closeButton.matchParentOpening = false
+                            dragGrip.matchParentOpening = false
+                            dragGrip.open = viewControlsOpen
+                            closeButton.open = viewControlsOpen
+                            viewControls.add(dragGrip)
+                            viewControls.add(closeButton)
+                            viewControls.add(nameText)
                             matchParentOpening = false
-                            viewControls.add(this)
                         }
-                        GUIOutline(this, "In game default view $viewCount outline")
-                        GUICloseButton(this, "In game default view $viewCount close button", DEFAULT_VIEW_WIDTH - 11, DEFAULT_VIEW_HEIGHT - 5, this.layer + 2).run {
-                            matchParentOpening = false
-                            viewControls.add(this)
-                        }
-                        matchParentOpening = false
-                        return this
+                        return newView
                     }
+                    throw Exception("GUI views exceeds limit")
                 }
 
                 override fun onMouseActionOn(type: PressType, xPixel: Int, yPixel: Int, button: Int) {
@@ -98,7 +108,7 @@ object IngameDefaultGUI : GUI("In game default gui", 0, 0, Game.WIDTH, Game.HEIG
 
     override fun handleControlPress(p: ControlPress) {
         if (p.control == Control.TOGGLE_VIEW_CONTROLS && open && p.pressType == PressType.PRESSED) {
-            viewControlsOpen = true
+            viewControlsOpen = !viewControlsOpen
             viewControls.filter { it.parent.open }.forEach { it.toggle() }
         }
     }

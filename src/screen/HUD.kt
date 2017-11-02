@@ -2,10 +2,10 @@ package screen
 
 import graphics.Image
 import graphics.Renderer
-import inv.Inventory
 import inv.Item
 import inv.ItemType
 import io.*
+import main.Game
 
 object HUD {
     const val HOTBAR_SIZE = 8
@@ -16,34 +16,41 @@ object HUD {
         Hotbar.poke()
     }
 
-    object Hotbar : GUIElement(IngameDefaultGUI, "In game default hotbar", (
-            IngameDefaultGUI.widthPixels - (HOTBAR_SIZE * HOTBAR_SLOT_WIDTH_PIXELS)) / 2,
-            (IngameDefaultGUI.heightPixels - HOTBAR_SLOT_HEIGHT_PIXELS),
+    object Hotbar : GUIWindow("In game default hotbar", (
+            IngameGUI.widthPixels - (HOTBAR_SIZE * HOTBAR_SLOT_WIDTH_PIXELS)) / 2,
+            (IngameGUI.heightPixels - HOTBAR_SLOT_HEIGHT_PIXELS),
             HOTBAR_SIZE * HOTBAR_SLOT_WIDTH_PIXELS,
-            HOTBAR_SIZE * HOTBAR_SLOT_HEIGHT_PIXELS, IngameDefaultGUI.layer + 2), ControlPressHandler {
+            HOTBAR_SLOT_HEIGHT_PIXELS,
+            true,
+            IngameGUI.layer + 2,
+            // Above the background, view group and inventory group
+            ScreenManager.Groups.HOTBAR),
+            ControlPressHandler {
 
         init {
             InputManager.registerControlPressHandler(this, Control.SLOT_1, Control.SLOT_2, Control.SLOT_3, Control.SLOT_4, Control.SLOT_5, Control.SLOT_6, Control.SLOT_7, Control.SLOT_8, Control.GIVE_TEST_ITEM)
-        }
-
-        val items = Inventory(HOTBAR_SIZE, 1)
-        var selected = 0
-        val currentItem
-            get() = items[selected]
-
-        override fun render() {
-            for (i in 0 until HOTBAR_SIZE) {
-                Renderer.renderTexture(if (i == selected) Image.GUI.HOTBAR_SLOT_SELECTED else Image.GUI.HOTBAR_SLOT, xPixel + i * HOTBAR_SLOT_WIDTH_PIXELS, yPixel)
-                val item = items[i]
-                if (item != null) {
-                    Renderer.renderTexture(item.type.texture, xPixel + i * HOTBAR_SLOT_WIDTH_PIXELS, yPixel)
+            rootChild = object : GUIElement(this, name, xPixel, yPixel, widthPixels, heightPixels, open, layer) {
+                override fun render() {
+                    for (i in 0 until HOTBAR_SIZE) {
+                        Renderer.renderTexture(if (i == selected) Image.GUI.HOTBAR_SLOT_SELECTED else Image.GUI.HOTBAR_SLOT, Hotbar.xPixel + i * HOTBAR_SLOT_WIDTH_PIXELS, Hotbar.yPixel)
+                        val item = items[i]
+                        if (item != null) {
+                            Renderer.renderTexture(item.type.texture, Hotbar.xPixel + i * HOTBAR_SLOT_WIDTH_PIXELS, Hotbar.yPixel)
+                        }
+                    }
                 }
             }
         }
 
-        override fun onParentDimensionChange(oldWidth: Int, oldHeight: Int) {
-            this.relXPixel = (IngameDefaultGUI.widthPixels - (HOTBAR_SIZE * HOTBAR_SLOT_WIDTH_PIXELS)) / 2
-            this.relYPixel = (IngameDefaultGUI.heightPixels - HOTBAR_SLOT_HEIGHT_PIXELS)
+        val items = Game.mainInv
+        var selected = 0
+        val currentItem
+            get() = items[selected]
+
+
+        override fun onScreenSizeChange(oldWidth: Int, oldHeight: Int) {
+            this.xPixel = (IngameGUI.widthPixels - (HOTBAR_SIZE * HOTBAR_SLOT_WIDTH_PIXELS)) / 2
+            this.yPixel = (IngameGUI.heightPixels - HOTBAR_SLOT_HEIGHT_PIXELS)
         }
 
         override fun handleControlPress(p: ControlPress) {

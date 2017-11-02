@@ -2,18 +2,19 @@ package screen
 
 import graphics.Image
 import graphics.Renderer
+import graphics.Renderer.params
 import graphics.Texture
 import io.PressType
 import main.Game
 import java.awt.font.FontRenderContext
 
-class GUIButton(parent: RootGUIElement? = RootGUIElementObject,
+class GUIButton(parent: RootGUIElement,
                 name: String,
                 relXPixel: Int, relYPixel: Int,
                 text: String,
-                var onPress: () -> (Unit), var onRelease: () -> (Unit),
-                layer: Int = (parent?.layer ?: 0) + 1) :
-        GUIElement(parent, name, relXPixel, relYPixel, DEFAULT_WIDTH, DEFAULT_HEIGHT, layer) {
+                var onPress: () -> (Unit), var onRelease: () -> (Unit), open: Boolean = false,
+                layer: Int = parent.layer + 1) :
+        GUIElement(parent, name, relXPixel, relYPixel, DEFAULT_WIDTH, DEFAULT_HEIGHT, open, layer) {
 
     var down = false
     var currentTexture: Texture = Image.GUI.BUTTON

@@ -7,10 +7,10 @@ import graphics.SyncAnimation
 import inv.Inventory
 import io.*
 import level.Level
-import player.Player
+import player.Camera
 import screen.DebugOverlay
+import screen.IngameGUI
 import screen.MainMenuGUI
-import screen.RootGUIElementObject
 import screen.ScreenManager
 import java.awt.*
 import java.awt.event.ComponentAdapter
@@ -75,7 +75,7 @@ object Game : Canvas(), Runnable, ControlPressHandler {
 
     /* Level */
     lateinit var currentLevel: Level
-    lateinit var player: Player
+    lateinit var camera: Camera
     lateinit var mainInv: Inventory
 
     val frame: JFrame = JFrame()
@@ -95,9 +95,7 @@ object Game : Canvas(), Runnable, ControlPressHandler {
                 val oldH = Game.HEIGHT
                 Game.WIDTH = Game.width / SCALE
                 Game.HEIGHT = Game.height / SCALE
-                RootGUIElementObject.widthPixels = Game.WIDTH
-                RootGUIElementObject.heightPixels = Game.HEIGHT
-                RootGUIElementObject.onParentDimensionChange(oldW, oldH)
+                ScreenManager.screenSizeChange(oldW, oldH)
             }
         })
         createData()
@@ -118,10 +116,10 @@ object Game : Canvas(), Runnable, ControlPressHandler {
         } catch (ex: IOException) {
             ex.printStackTrace()
         }
-        InputManager.registerControlPressHandler(this, Control.TAKE_SCREENSHOT, Control.TOGGLE_RENDER_HITBOXES, Control.TOGGLE_CHUNK_INFO)
-        /* For initializations */
-        MainMenuGUI.poke()
-        DebugOverlay.poke()
+        InputManager.registerControlPressHandler(this, Control.TAKE_SCREENSHOT, Control.TOGGLE_RENDER_HITBOXES, Control.TOGGLE_CHUNK_INFO, Control.TOGGLE_INVENTORY)
+        /* For initializations (objects in Kotlin are loaded the first time they are called */
+        MainMenuGUI.open = true
+        DebugOverlay.open = false
         State.setState(State.MAIN_MENU)
         frame.isVisible = true
         start()
@@ -196,6 +194,7 @@ object Game : Canvas(), Runnable, ControlPressHandler {
                 val g2d = bufferStrat.drawGraphics as Graphics2D
                 Renderer.g2d = g2d
                 ScreenManager.render()
+                Mouse.render()
                 g2d.dispose()
                 bufferStrat.show()
             } while (bufferStrat.contentsRestored())
@@ -235,19 +234,13 @@ object Game : Canvas(), Runnable, ControlPressHandler {
     }
 
     fun createData() {
-        val data = Paths.get(JAR_PATH, "data")
-        if (Files.notExists(data))
-            Files.createDirectory(data)
-        val settings = Paths.get(JAR_PATH, "data/settings")
-        if (Files.notExists(settings))
-            Files.createDirectory(settings)
-        val controls = Paths.get(JAR_PATH, "data/settings/controls")
+        val controls = Paths.get(JAR_PATH, "data/settings/controls/")
         if (Files.notExists(controls))
-            Files.createDirectory(controls)
+            Files.createDirectories(controls)
         val defaultMap = Paths.get(JAR_PATH, "data/settings/controls/default.txt")
         if (Files.notExists(defaultMap))
             Files.createFile(defaultMap)
-        val save = Paths.get(JAR_PATH, "data/save")
+        val save = Paths.get(JAR_PATH, "data/save/")
         if (Files.notExists(save))
             Files.createDirectory(save)
         val f = defaultMap.toFile()
@@ -255,7 +248,7 @@ object Game : Canvas(), Runnable, ControlPressHandler {
     }
 
     fun takeScreenshot() {
-        val directory = Paths.get(JAR_PATH, "screenshots")
+        val directory = Paths.get(JAR_PATH, "screenshots/")
         if (Files.notExists(directory))
             Files.createDirectory(directory)
         val ss = graphicsConfiguration.createCompatibleImage(Game.WIDTH * Game.SCALE, Game.HEIGHT * Game.SCALE)
@@ -280,6 +273,7 @@ object Game : Canvas(), Runnable, ControlPressHandler {
                 Control.TAKE_SCREENSHOT -> takeScreenshot()
                 Control.TOGGLE_RENDER_HITBOXES -> RENDER_HITBOXES = !RENDER_HITBOXES
                 Control.TOGGLE_CHUNK_INFO -> CHUNK_BOUNDARIES = !CHUNK_BOUNDARIES
+                Control.TOGGLE_INVENTORY -> IngameGUI.mainInvGUI.toggle()
             }
     }
 

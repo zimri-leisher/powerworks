@@ -6,7 +6,7 @@ import io.Mouse
 import io.PressType
 
 
-class GUIDragGrip(parent: GUIElement, name: String, xPixel: Int, yPixel: Int, layer: Int = parent.layer + 1) : GUIElement(parent, name, xPixel, yPixel, WIDTH, HEIGHT, layer) {
+class GUIDragGrip(parent: RootGUIElement, name: String, xPixel: Int, yPixel: Int, open: Boolean = false, layer: Int = parent.layer + 1) : GUIElement(parent, name, xPixel, yPixel, WIDTH, HEIGHT, open, layer) {
 
     var dragging = false
     var mXPixel = 0
@@ -34,22 +34,35 @@ class GUIDragGrip(parent: GUIElement, name: String, xPixel: Int, yPixel: Int, la
 
     override fun update() {
         if (dragging) {
-            val p = parent as GUIElement
-            val mXPixel1 = Mouse.xPixel
-            val mYPixel1 = Mouse.yPixel
-            if (mXPixel1 != mXPixel) {
-                p.relXPixel = p.relXPixel + (mXPixel1 - mXPixel)
-                mXPixel = mXPixel1
-            }
-            if (mYPixel1 != mYPixel) {
-                p.relYPixel = p.relYPixel + (mYPixel1 - mYPixel)
-                mYPixel = mYPixel1
+            if(parent is GUIElement) {
+                val p = parent as GUIElement
+                val mXPixel1 = Mouse.xPixel
+                val mYPixel1 = Mouse.yPixel
+                if (mXPixel1 != mXPixel) {
+                    p.relXPixel = p.relXPixel + (mXPixel1 - mXPixel)
+                    mXPixel = mXPixel1
+                }
+                if (mYPixel1 != mYPixel) {
+                    p.relYPixel = p.relYPixel + (mYPixel1 - mYPixel)
+                    mYPixel = mYPixel1
+                }
+            } else {
+                val mXPixel1 = Mouse.xPixel
+                val mYPixel1 = Mouse.yPixel
+                if (mXPixel1 != mXPixel) {
+                    parent.parentWindow.xPixel = parent.xPixel + (mXPixel1 - mXPixel)
+                    mXPixel = mXPixel1
+                }
+                if (mYPixel1 != mYPixel) {
+                    parent.parentWindow.yPixel = parent.yPixel + (mYPixel1 - mYPixel)
+                    mYPixel = mYPixel1
+                }
             }
         }
     }
 
     companion object {
-        const val WIDTH = 8
-        const val HEIGHT = 8
+        const val WIDTH = 4
+        const val HEIGHT = 4
     }
 }
