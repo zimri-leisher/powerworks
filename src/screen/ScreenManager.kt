@@ -27,6 +27,11 @@ object ScreenManager : ControlPressHandler {
     val openWindows = mutableListOf<GUIWindow>()
     var elementBeingInteractedWith: RootGUIElement? = null
 
+    var selectedElement: RootGUIElement? = null
+    var selectedWindow: GUIWindow? = null
+
+    private val controlPressHandlers = mutableMapOf<ControlPressHandler, List<Control>>()
+
     object Groups {
         val BACKGROUND = WindowGroup(0, "Background")
         val VIEW = WindowGroup(1, "GUIViews")
@@ -36,19 +41,13 @@ object ScreenManager : ControlPressHandler {
     }
 
     init {
-        InputManager.registerControlPressHandler(this, Control.DEBUG, Control.INTERACT, Control.SCROLL_UP, Control.SCROLL_DOWN)
+        InputManager.registerControlPressHandler(this)
     }
 
     fun render() {
-        fun recursivelyRender(e: RootGUIElement) {
-            if (e.open) {
-                e.render()
-                e.children.forEach { recursivelyRender(it) }
-            }
-        }
-        _backwardsWindowGroups.stream().forEachOrdered {
-            it.windows.stream().forEachOrdered {
-                recursivelyRender(it.rootChild)
+        _backwardsWindowGroups.forEach {
+            it.windows.forEach {
+                it.openChildren.forEach { it.render() }
             }
         }
     }
@@ -87,7 +86,7 @@ object ScreenManager : ControlPressHandler {
     /** @return the highest window, layer-wise, that intersects the given x and y coordinates and matches the predicate */
     fun getHighestWindow(xPixel: Int, yPixel: Int, predicate: (GUIWindow) -> Boolean = { true }): GUIWindow? {
         var g: GUIWindow? = null
-        windowGroups.stream().forEachOrdered {
+        windowGroups.forEach {
             if (g == null) {
                 g = it.windows.lastOrNull { it.open && intersectsElement(xPixel, yPixel, it) && predicate(it) }
             }
@@ -97,17 +96,10 @@ object ScreenManager : ControlPressHandler {
 
     /** @return the highest element, layer-wise, that intersects the given x and y coordinates and matches the predicate. */
     fun getHighestElement(window: GUIWindow, xPixel: Int, yPixel: Int, predicate: (RootGUIElement) -> Boolean): RootGUIElement? {
-        var highest: RootGUIElement? = null
-        fun recurse(e: RootGUIElement) {
-            if (e.open) {
-                if (intersectsElement(xPixel, yPixel, e) && predicate(e) && (highest == null || highest!!.layer < e.layer)) {
-                    highest = e
-                }
-                e.children.forEach { recurse(it) }
-            }
-        }
-        recurse(window.rootChild)
-        return highest
+        return window.openChildren.stream().filter {
+            println("checking ${it.name}: intersects element: ${intersectsElement(xPixel, yPixel, it)}, predicate matched: ${predicate(it)}")
+            intersectsElement(xPixel, yPixel, it) && predicate(it)
+        }.max { o1, o2 -> println("comparing $o1 with $o2"); o1.layer.compareTo(o2.layer) }.orElseGet { null }
     }
 
     fun screenSizeChange(oldWidth: Int, oldHeight: Int) {
@@ -120,28 +112,40 @@ object ScreenManager : ControlPressHandler {
         }
     }
 
+    fun registerControlPressHandler(el: ControlPressHandler, vararg controls: Control) {
+        controlPressHandlers.put(el, controls.toList())
+    }
+
     override fun handleControlPress(p: ControlPress) {
         val x = Mouse.xPixel
         val y = Mouse.yPixel
         val t = p.pressType
         val b = Mouse.button
+
+        /* INTERACT */
+
         if (p.control == Control.INTERACT) {
-            if(t == PressType.REPEAT) {
-                elementBeingInteractedWith!!.onMouseActionOn(t, x, y, b)
+            if (t == PressType.REPEAT) {
+                elementBeingInteractedWith?.onMouseActionOn(t, x, y, b)
                 return
             }
             val highestW = getHighestWindow(x, y, { !it.transparentToInteraction })
+            selectedWindow = highestW
             if (highestW != null) {
                 val highestE = getHighestElement(highestW, x, y, { !it.transparentToInteraction })
                 highestW.windowGroup.bringToTop(highestW)
+                // These are separated because we want to do different things regarding which elements are selected
                 if (t == PressType.PRESSED) {
                     if (highestE != null) {
                         highestE.onMouseActionOn(t, x, y, b)
                         elementBeingInteractedWith = highestE
+                        selectedElement = highestE
                     }
+                    // This purposely doesn't update elementBeingInteractedWith when the control press repeats,
+                    // so that we are able to move the mouse quickly and not have it switch elements
                 } else if (t == PressType.RELEASED) {
-                    if (highestE != null) {
-                        highestE.onMouseActionOn(t, x, y, b)
+                    if (elementBeingInteractedWith != null) {
+                        elementBeingInteractedWith!!.onMouseActionOn(t, x, y, b)
                         elementBeingInteractedWith = null
                     }
                 }
@@ -153,15 +157,20 @@ object ScreenManager : ControlPressHandler {
                 }
                 openWindows.stream().forEachOrdered { recursivelyCallMouseOff(it.rootChild) }
             }
+
+            /* SCROLL */
+
         } else if (p.control == Control.SCROLL_DOWN || p.control == Control.SCROLL_UP) {
             val dir = if (p.control == Control.SCROLL_DOWN) -1 else 1
             val highestW = getHighestWindow(x, y, { !it.transparentToInteraction })
             if (highestW != null) {
                 highestW.windowGroup.bringToTop(highestW)
                 val highestE = getHighestElement(highestW, x, y, { !it.transparentToInteraction })
-                highestE!!
-                highestE.onMouseScroll(dir)
+                highestE!!.onMouseScroll(dir)
             }
+
+            /* DEBUG */
+
         } else if (p.control == Control.DEBUG && p.pressType == PressType.PRESSED) {
             fun RootGUIElement.print(spaces: String = ""): String {
                 var v = spaces + toString()
@@ -176,6 +185,24 @@ object ScreenManager : ControlPressHandler {
                         println("   $window:")
                         println(window.rootChild.print("      "))
                     }
+                }
+            }
+
+            /* SEND CONTROLS TO ELEMENTS */
+
+        } else {
+            if (selectedWindow is ControlPressHandler) {
+                val w = selectedWindow as ControlPressHandler
+                val highestWControls = controlPressHandlers.get(w)
+                if (highestWControls != null && highestWControls.contains(p.control)) {
+                    w.handleControlPress(p)
+                }
+            }
+            if (selectedElement is ControlPressHandler) {
+                val e = selectedElement as ControlPressHandler
+                val highestEControls = controlPressHandlers.get(e)
+                if (highestEControls != null && highestEControls.contains(p.control)) {
+                    e.handleControlPress(p)
                 }
             }
         }

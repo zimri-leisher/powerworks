@@ -27,7 +27,7 @@ object AudioManager : MovementListener{
     val MAX_HEARING_DISTANCE_PIXELS = 100
     var SOUND_ENABLED = true
     var LEVEL_SOUNDS_PAUSED = false
-    internal var ears: LevelObject? = null
+    var ears: LevelObject? = null
         set(value) {
             if(value is MovingObject) {
                 value.moveListeners.add(this)
@@ -38,9 +38,9 @@ object AudioManager : MovementListener{
             }
             field = value
         }
-    internal var levelSounds = CopyOnWriteArrayList<SoundSource>()
-    internal var forceUpdate = CopyOnWriteArrayList<SoundSource>()
-    internal var otherSounds: MutableMap<Sound, Int> = HashMap()
+    var levelSounds = CopyOnWriteArrayList<SoundSource>()
+    var forceUpdate = CopyOnWriteArrayList<SoundSource>()
+    var otherSounds: MutableMap<Sound, Int> = HashMap()
 
     fun load() {
         Sound.load()

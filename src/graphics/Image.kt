@@ -253,7 +253,8 @@ class Image private constructor() : Texture {
         val IRON_INGOT = Image("/textures/item/iron_ingot.png")
         val ARROW = Image(Utils.modify("/textures/misc/arrow.png", ImageParams(alphaMultiplier = 50)))
         val VOID = Image(Color(0))
-        val ORE_MINER = Image("/textures/block/ore_miner.png")
+        val MINER = Image("/textures/block/miner.png")
+        val MINER_ITEM_TEMP = Image("/textures/item/miner_temp.png") //TODO
     }
 
     object Weapon {
@@ -270,6 +271,7 @@ class Image private constructor() : Texture {
         val VIEW_SELECTOR_OPEN_BUTTON_HIGHLIGHT = Image(Utils.modify(VIEW_SELECTOR_OPEN_BUTTON, ImageParams(brightnessMultiplier = 1.2)))
         val CLOSE_BUTTON = Image("/textures/gui/close_button.png")
         val DRAG_GRIP = Image("/textures/gui/drag_grip.png")
+        val DIMENSION_DRAG_GRIP = Image("/textures/gui/dimension_drag_grip.png")
         val SCROLL_BAR_TOP = Image("/textures/gui/scroll_bar_top.png")
         val SCROLL_BAR_MIDDLE = Image("/textures/gui/scroll_bar_middle.png")
         val SCROLL_BAR_BOTTOM = Image("/textures/gui/scroll_bar_bottom.png")

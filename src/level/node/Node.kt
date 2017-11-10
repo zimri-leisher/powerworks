@@ -2,14 +2,9 @@ package level.node
 
 import level.resource.ResourceType
 
-abstract class Node<R : ResourceType>(var xTile: Int, var yTile: Int)
+abstract class TransferNode<R : ResourceType>(var xTile: Int, var yTile: Int, var dir: Int, var storageNode: StorageNode<R>?)
 
-abstract class TransferNode<R : ResourceType>(xTile: Int, yTile: Int, var dir: Int, val storageNode: StorageNode<R>?) :
-        Node<R>(xTile, yTile) {
-}
-
-abstract class StorageNode<R : ResourceType>(xTile: Int, yTile: Int) :
-        Node<R>(xTile, yTile) {
+abstract class StorageNode<R : ResourceType> {
     /**
      * @return true on successful addition
      */

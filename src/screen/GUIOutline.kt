@@ -12,6 +12,7 @@ class GUIOutline(parent: RootGUIElement,
 
     init {
         transparentToInteraction = true
+        adjustDimensions = true
     }
 
     override fun render() {

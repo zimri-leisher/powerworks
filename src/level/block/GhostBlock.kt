@@ -10,7 +10,7 @@ class GhostBlock(xTile: Int, yTile: Int, type: BlockType) : Block(xTile, yTile, 
     var placeable = getCollision(xPixel, yPixel) == null
 
     override fun render() {
-        Renderer.renderTexture(type.getTexture(rotation), xPixel, yPixel, RenderParams(alpha = 0.4f))
+        Renderer.renderTexture(type.getTexture(rotation), xPixel - type.textureXPixelOffset, yPixel - type.textureYPixelOffset, RenderParams(alpha = 0.4f))
         Renderer.renderTexture(if (placeable) Image.BLOCK_PLACEABLE else Image.BLOCK_NOT_PLACEABLE, xPixel, yPixel, type.widthTiles shl 4, type.heightTiles shl 4)
         if(Game.RENDER_HITBOXES)
             renderHitbox()

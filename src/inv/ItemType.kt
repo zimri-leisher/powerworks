@@ -3,6 +3,7 @@ package inv
 import graphics.Image
 import graphics.Texture
 import level.block.BlockType
+import level.block.MachineBlockType
 
 private var nextID = 0
 
@@ -11,6 +12,8 @@ sealed class ItemType(val name: String, val texture: Texture, private val placed
     object ERROR : ItemType("Error", Image.ERROR, maxStack = 5)
 
     object TEST : ItemType("Test", Image.ERROR, BlockType.ERROR.id, 5)
+
+    object MINER : ItemType("Miner", Image.MINER_ITEM_TEMP, MachineBlockType.MINER.id, 10)
 
     val placedBlock: BlockType
         get() = BlockType.getByID(placedBlockID)!!

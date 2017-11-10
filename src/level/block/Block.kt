@@ -12,7 +12,7 @@ open class Block(xTile: Int, yTile: Int, open val type: BlockType, hitbox: Hitbo
     val rotation = 0
 
     override fun render() {
-        Renderer.renderTexture(type.getTexture(rotation), xPixel + type.textureXPixelOffset, yPixel + type.textureYPixelOffset)
+        Renderer.renderTexture(type.getTexture(rotation), xPixel - type.textureXPixelOffset, yPixel - type.textureYPixelOffset)
         super.render()
     }
 

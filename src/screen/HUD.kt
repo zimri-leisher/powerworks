@@ -65,7 +65,7 @@ object HUD {
                 Control.SLOT_6 -> selected = 5
                 Control.SLOT_7 -> selected = 6
                 Control.SLOT_8 -> selected = 7
-                Control.GIVE_TEST_ITEM -> items.add(Item(ItemType.TEST))
+                Control.GIVE_TEST_ITEM -> items.add(Item(ItemType.MINER))
             }
         }
 

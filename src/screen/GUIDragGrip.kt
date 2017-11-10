@@ -4,9 +4,16 @@ import graphics.Image
 import graphics.Renderer
 import io.Mouse
 import io.PressType
+import main.Game
+import misc.GeometryHelper
 
 
-class GUIDragGrip(parent: RootGUIElement, name: String, xPixel: Int, yPixel: Int, open: Boolean = false, layer: Int = parent.layer + 1) : GUIElement(parent, name, xPixel, yPixel, WIDTH, HEIGHT, open, layer) {
+class GUIDragGrip(parent: RootGUIElement,
+                  name: String,
+                  xPixel: Int, yPixel: Int,
+                  open: Boolean = false,
+                  layer: Int = parent.layer + 1,
+                  var keepInsideWindowBounds: Boolean = true) : GUIElement(parent, name, xPixel, yPixel, WIDTH, HEIGHT, open, layer) {
 
     var dragging = false
     var mXPixel = 0
@@ -23,9 +30,8 @@ class GUIDragGrip(parent: RootGUIElement, name: String, xPixel: Int, yPixel: Int
         }
     }
 
-    override fun onMouseActionOff(type: PressType, xPixel: Int, yPixel: Int, button: Int) {
-        if (type == PressType.RELEASED)
-            dragging = false
+    override fun onClose() {
+        dragging = false
     }
 
     override fun render() {
@@ -34,30 +40,33 @@ class GUIDragGrip(parent: RootGUIElement, name: String, xPixel: Int, yPixel: Int
 
     override fun update() {
         if (dragging) {
-            if(parent is GUIElement) {
+            var nX = 0
+            var nY = 0
+            var dX = Mouse.xPixel - mXPixel
+            var dY = Mouse.yPixel - mYPixel
+            if (parent is GUIElement) {
                 val p = parent as GUIElement
-                val mXPixel1 = Mouse.xPixel
-                val mYPixel1 = Mouse.yPixel
-                if (mXPixel1 != mXPixel) {
-                    p.relXPixel = p.relXPixel + (mXPixel1 - mXPixel)
-                    mXPixel = mXPixel1
-                }
-                if (mYPixel1 != mYPixel) {
-                    p.relYPixel = p.relYPixel + (mYPixel1 - mYPixel)
-                    mYPixel = mYPixel1
+                nX = p.relXPixel + dX
+                nY = p.relYPixel + dY
+            } else {
+                nX = parentWindow.xPixel + dX
+                nY = parentWindow.yPixel + dY
+            }
+            if (parent is GUIElement) {
+                if (!keepInsideWindowBounds || GeometryHelper.contains(parentWindow.xPixel, parentWindow.yPixel, parentWindow.widthPixels, parentWindow.heightPixels,
+                        nX, nY, parent.widthPixels, parent.heightPixels)) {
+                    parent.xPixel = nX
+                    parent.yPixel = nY
                 }
             } else {
-                val mXPixel1 = Mouse.xPixel
-                val mYPixel1 = Mouse.yPixel
-                if (mXPixel1 != mXPixel) {
-                    parent.parentWindow.xPixel = parent.xPixel + (mXPixel1 - mXPixel)
-                    mXPixel = mXPixel1
-                }
-                if (mYPixel1 != mYPixel) {
-                    parent.parentWindow.yPixel = parent.yPixel + (mYPixel1 - mYPixel)
-                    mYPixel = mYPixel1
+                if (!keepInsideWindowBounds || GeometryHelper.contains(0, 0, Game.WIDTH, Game.HEIGHT,
+                        nX, nY, parentWindow.widthPixels, parentWindow.heightPixels)) {
+                    parentWindow.xPixel = nX
+                    parentWindow.yPixel = nY
                 }
             }
+            mXPixel = Mouse.xPixel
+            mYPixel = Mouse.yPixel
         }
     }
 

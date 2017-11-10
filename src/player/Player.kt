@@ -1,0 +1,4 @@
+package player
+
+object Player {
+}

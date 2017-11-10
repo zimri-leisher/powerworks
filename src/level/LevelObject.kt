@@ -31,7 +31,6 @@ abstract class LevelObject protected constructor(open val xPixel: Int, open val 
     }
 
     open fun update() {
-
     }
 
     open fun onCollide(o: LevelObject) {

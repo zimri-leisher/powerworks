@@ -9,6 +9,7 @@ open class GUIWindow(val name: String, xPixel: Int, yPixel: Int, widthPixels: In
         set(value) {
             field.windows.remove(this)
             value.windows.add(this)
+            field = value
         }
 
     var open = open
@@ -25,13 +26,27 @@ open class GUIWindow(val name: String, xPixel: Int, yPixel: Int, widthPixels: In
                 onClose()
             }
         }
+
+    private val _openChildren = mutableListOf<RootGUIElement>()
+
+    /**
+     * <i>IS</i> ordered constantly based on layer
+     */
+    val openChildren = object : MutableList<RootGUIElement> by _openChildren{
+        override fun add(el: RootGUIElement): Boolean {
+            val b = _openChildren.add(el)
+            _openChildren.sortBy { it.layer }
+            return b
+        }
+    }
+
     /** The child for which all children get added to */
-    var rootChild = RootGUIElement(this)
+    var rootChild = RootGUIElement(this, widthPixels, heightPixels)
     val children
         get() = rootChild.children
     var xPixel = xPixel
         set(value) {
-            if(field != value) {
+            if (field != value) {
                 val old = field
                 field = value
                 rootChild.children.forEach {
@@ -42,7 +57,7 @@ open class GUIWindow(val name: String, xPixel: Int, yPixel: Int, widthPixels: In
         }
     var yPixel = yPixel
         set(value) {
-            if(field != value) {
+            if (field != value) {
                 val old = field
                 field = value
                 rootChild.children.forEach {
@@ -88,11 +103,15 @@ open class GUIWindow(val name: String, xPixel: Int, yPixel: Int, widthPixels: In
 
     /* Util */
     fun generateCloseButton(parent: RootGUIElement, layer: Int = this.layer + 1): GUICloseButton {
-        return GUICloseButton(parent, name + " close button", widthPixels - GUIDragGrip.WIDTH - GUICloseButton.WIDTH - 2, 1, open, layer)
+        return GUICloseButton(parent, name + " close button", widthPixels - GUICloseButton.WIDTH - 1, 1, open, layer)
     }
 
     fun generateDragGrip(parent: RootGUIElement, layer: Int = this.layer + 1): GUIDragGrip {
-        return GUIDragGrip(parent, name + " drag grip", widthPixels - GUIDragGrip.WIDTH - 1, 1, open, layer)
+        return GUIDragGrip(parent, name + " drag grip", widthPixels - GUIDragGrip.WIDTH - GUICloseButton.WIDTH - 2, 1, open, layer)
+    }
+
+    fun generateDimensionDragGrip(parent: RootGUIElement, layer: Int = this.layer + 1): GUIDimensionDragGrip {
+        return GUIDimensionDragGrip(parent, name + " dimension drag grip", widthPixels - GUIDragGrip.WIDTH - GUICloseButton.WIDTH - GUIDimensionDragGrip.WIDTH - 3, 1, open, layer)
     }
 
     /* Gets the specified element by name. If checkChildren is true (default), it checks recursively */

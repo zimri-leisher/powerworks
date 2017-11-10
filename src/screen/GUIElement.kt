@@ -5,7 +5,7 @@ import io.PressType
 private var nextID = 0
 
 open class RootGUIElement(val parentWindow: GUIWindow,
-                          widthPixels: Int = parentWindow.widthPixels, heightPixels: Int = parentWindow.heightPixels,
+                          widthPixels: Int, heightPixels: Int,
                           open: Boolean = parentWindow.open, var layer: Int = 0) {
     val id = nextID++
     private val _children: MutableSet<GUIElement> = mutableSetOf()
@@ -18,6 +18,8 @@ open class RootGUIElement(val parentWindow: GUIWindow,
                         element.layer = element.parent.layer + 1
                     element.parent = this@RootGUIElement
                 }
+                if (element.open)
+                    parentWindow.openChildren.add(element)
                 this@RootGUIElement.onAddChild(element)
             }
             return result
@@ -28,11 +30,13 @@ open class RootGUIElement(val parentWindow: GUIWindow,
             if (!value && field) {
                 field = false
                 mouseOn = false
+                parentWindow.openChildren.remove(this)
                 onClose()
                 children.forEach { if (it.matchParentClosing) it.open = false }
             } else if (value && !field) {
                 field = true
                 mouseOn = ScreenManager.isMouseOn(this)
+                parentWindow.openChildren.add(this)
                 onOpen()
                 children.forEach {
                     if (it.matchParentOpening) {
@@ -51,10 +55,16 @@ open class RootGUIElement(val parentWindow: GUIWindow,
                 field = value
             }
         }
-    open val xPixel
+    open var xPixel
         get() = parentWindow.xPixel
-    open val yPixel
+        set(value) {
+            parentWindow.xPixel = value
+        }
+    open var yPixel
         get() = parentWindow.yPixel
+        set(value) {
+            parentWindow.yPixel = value
+        }
     var widthPixels = widthPixels
         set(value) {
             if (field != value) {
@@ -197,6 +207,8 @@ abstract class GUIElement(parent: RootGUIElement,
         set(value) {
             if (field != value) {
                 field.children.remove(this)
+                if (open)
+                    field.parentWindow.openChildren.remove(this)
                 value.children.add(this)
                 val v = field
                 field = value
@@ -205,19 +217,37 @@ abstract class GUIElement(parent: RootGUIElement,
         }
 
     final override var xPixel = parent.xPixel + relXPixel
-        private set
+        set(value) {
+            val old = field
+            field = value
+            onPositionChange(old, yPixel)
+            children.forEach {
+                if (it.adjustPosition)
+                    it.xPixel = it.relXPixel + xPixel
+                it.onParentPositionChange(old, yPixel)
+            }
+        }
     final override var yPixel = parent.yPixel + relYPixel
-        private set
+        set(value) {
+            val old = field
+            field = value
+            onPositionChange(xPixel, old)
+            children.forEach {
+                if (it.adjustPosition)
+                    it.yPixel = it.relYPixel + yPixel
+                it.onParentPositionChange(xPixel, old)
+            }
+        }
 
     var relXPixel = relXPixel
         set(value) {
             field = value
-            updatePosition()
+            xPixel = parent.xPixel + value
         }
     var relYPixel = relYPixel
         set(value) {
             field = value
-            updatePosition()
+            yPixel = parent.yPixel + value
         }
 
     init {
@@ -242,12 +272,7 @@ abstract class GUIElement(parent: RootGUIElement,
         val oldY = yPixel
         xPixel = parent.xPixel + relXPixel
         yPixel = parent.yPixel + relYPixel
-        onPositionChange(oldX, oldY)
-        children.forEach {
-            if (it.adjustPosition)
-                it.updatePosition()
-            it.onParentPositionChange(oldX, oldY)
-        }
+
     }
 
     /** Makes this and all it's children's layers their respective parent's layer + 1 */
@@ -271,6 +296,10 @@ abstract class GUIElement(parent: RootGUIElement,
 
     init {
         this.parent.children.add(this).run { }
+    }
+
+    override fun equals(other: Any?): Boolean {
+        return other is GUIElement && other.id == id
     }
 
     override fun toString(): String {

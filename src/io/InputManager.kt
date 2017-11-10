@@ -44,10 +44,18 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
 
     var mouseOutside = false
 
+    /**
+     * Note: if this is a GUI element and you want it to only receive control presses if it's active,
+     * use ScreenManager.registerControlPressHandler
+     */
     fun registerControlPressHandler(h: ControlPressHandler, controls: Map<ControlMap, Array<out Control>>? = null) {
         handlers.put(h, controls)
     }
 
+    /**
+     * Note: if this is a GUI element and you want it to only receive control presses if it's active,
+     * use ScreenManager.registerControlPressHandler
+     */
     fun registerControlPressHandler(h: ControlPressHandler, vararg controls: Control) {
         val m = mutableMapOf<ControlMap, Array<out Control>>()
         for (map in ControlMap.values()) {
@@ -56,6 +64,10 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
         handlers.put(h, m)
     }
 
+    /**
+     * Note: if this is a GUI element and you want it to only receive control presses if it's active,
+     * use ScreenManager.registerControlPressHandler
+     */
     fun registerControlPressHandler(h: ControlPressHandler, map: ControlMap) {
         handlers.put(h, mapOf<ControlMap, Array<Control>?>(Pair(map, null)))
     }
@@ -71,14 +83,14 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
                 currentModifiers = k.modifiers
                 if (print)
                     out.println("${k.extendedKeyCode} : RELEASED")
-                map.translateKey(i, keysDown.filter {it != i}.toMutableSet()).forEach { queue.add(ControlPress(it, PressType.RELEASED)) }
+                map.translateKey(i, keysDown.filter { it != i }.toMutableSet()).forEach { queue.add(ControlPress(it, PressType.RELEASED)) }
                 keysDown.remove(i)
             }
         }
         for (key in keysDown) {
             if (print)
                 out.println("$key : REPEAT")
-            map.translateKey(key, keysDown.filter {it != key}.toMutableSet()).forEach { queue.add(ControlPress(it, PressType.REPEAT)) }
+            map.translateKey(key, keysDown.filter { it != key }.toMutableSet()).forEach { queue.add(ControlPress(it, PressType.REPEAT)) }
         }
         for (k in keyPress) {
             val i = k.extendedKeyCode
@@ -87,13 +99,13 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
                 currentModifiers = k.modifiers
                 if (print)
                     out.println("${i} : PRESSED")
-                map.translateKey(i, keysDown.filter {it != i}.toMutableSet()).forEach { queue.add(ControlPress(it, PressType.PRESSED)) }
+                map.translateKey(i, keysDown.filter { it != i }.toMutableSet()).forEach { queue.add(ControlPress(it, PressType.PRESSED)) }
             }
             if (keyRelease.stream().anyMatch { it.extendedKeyCode == i }) {
                 if (print)
                     out.println("$i : RELEASED")
                 keysDown.remove(i)
-                map.translateKey(i, keysDown.filter {it != i}.toMutableSet()).forEach { queue.add(ControlPress(it, PressType.RELEASED)) }
+                map.translateKey(i, keysDown.filter { it != i }.toMutableSet()).forEach { queue.add(ControlPress(it, PressType.RELEASED)) }
             }
         }
         keyRelease.clear()

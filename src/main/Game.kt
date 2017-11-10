@@ -7,7 +7,6 @@ import graphics.SyncAnimation
 import inv.Inventory
 import io.*
 import level.Level
-import player.Camera
 import screen.DebugOverlay
 import screen.IngameGUI
 import screen.MainMenuGUI
@@ -72,10 +71,11 @@ object Game : Canvas(), Runnable, ControlPressHandler {
     var CHUNK_BOUNDARIES = false
     var LEVEL_PAUSED = false
     var PAUSE_LEVEL_IN_ESCAPE_MENU = false
+    val INVENTORY_WIDTH = 8
+    val INVENTOR_HEIGHT = 6
 
     /* Level */
     lateinit var currentLevel: Level
-    lateinit var camera: Camera
     lateinit var mainInv: Inventory
 
     val frame: JFrame = JFrame()

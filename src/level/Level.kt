@@ -181,14 +181,18 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
         if (currentItem == null && ghostBlock != null) {
             ghostBlock = null
         } else if (currentItem != null) {
-            val xTile = mouseLevelXPixel shr 4
-            val yTile = mouseLevelYPixel shr 4
+            val placedType = currentItem.type.placedBlock
+            var xTile = ((mouseLevelXPixel + placedType.textureXPixelOffset) shr 4) - placedType.widthTiles / 2
+            var yTile = ((mouseLevelYPixel + placedType.textureYPixelOffset) shr 4) - placedType.heightTiles / 2
             if (ghostBlock == null) {
-                ghostBlock = GhostBlock(xTile, yTile, currentItem.type.placedBlock)
-            } else if (xTile != ghostBlock!!.xTile || yTile != ghostBlock!!.yTile || ghostBlock!!.type != currentItem.type.placedBlock) {
-                ghostBlock = GhostBlock(xTile, yTile, currentItem.type.placedBlock)
+                ghostBlock = GhostBlock(xTile, yTile, placedType)
             } else {
-                ghostBlock!!.placeable = ghostBlock!!.getCollision(xTile shl 4, yTile shl 4) == null
+                val g = ghostBlock!!
+                if (xTile != g.xTile || yTile != g.yTile || g.type != placedType) {
+                    ghostBlock = GhostBlock(xTile, yTile, placedType)
+                } else {
+                    g.placeable = ghostBlock!!.getCollision(xTile shl 4, yTile shl 4) == null
+                }
             }
         }
     }
@@ -198,7 +202,7 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
     /* Listeners and senders */
     fun onMouseAction(type: PressType, xPixel: Int, yPixel: Int) {
         if (ghostBlock != null && ghostBlock!!.placeable) {
-            add(Block(ghostBlock!!.xTile, ghostBlock!!.yTile, ghostBlock!!.type))
+            add(ghostBlock!!.type(ghostBlock!!.xTile, ghostBlock!!.yTile))
             updateGhostBlock()
         }
     }

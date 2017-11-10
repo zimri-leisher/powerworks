@@ -3,14 +3,16 @@ package screen
 import graphics.Image
 import graphics.Renderer
 import io.*
+import level.LevelObject
 import main.Game
 import misc.GeometryHelper
+import player.Camera
 
 object IngameGUI : GUIWindow("In game gui",
         0, 0,
         Game.WIDTH, Game.HEIGHT,
         windowGroup = ScreenManager.Groups.BACKGROUND
-        ), ControlPressHandler {
+), ControlPressHandler {
 
     const val MAX_VIEWS = 4
     const val DEFAULT_VIEW_WIDTH = 300
@@ -24,6 +26,9 @@ object IngameGUI : GUIWindow("In game gui",
 
     val mainInvGUI = InventoryGUI("In game main inventory gui", "Inventory", Game.mainInv, 20, 20, layer = MAX_VIEWS * 3 + 2)
 
+    val cameras = arrayOf<LevelObject>(newCamera(), newCamera(), newCamera(), newCamera())
+    val views = arrayOf<GUIWindow>(newView(), newView(), newView(), newView())
+
     init {
         InputManager.registerControlPressHandler(this, Control.TOGGLE_VIEW_CONTROLS)
         adjustDimensions = true
@@ -31,35 +36,11 @@ object IngameGUI : GUIWindow("In game gui",
             adjustDimensions = true
             object : GUIElement(this@run, "In game view selector", Game.WIDTH - 30, Game.HEIGHT - 7, 28, 5) {
 
-                val views = arrayOf<GUIWindow>(newView(), newView(), newView(), newView())
-
                 var viewHighlighted = -1
 
                 init {
                     matchParentOpening = false
                     viewControls.add(this)
-                }
-
-                private fun newView(): GUIWindow {
-                    if(viewCount < MAX_VIEWS) {
-                        val newView = ViewWindow("In game view ${viewCount++}",
-                                0, 0,
-                                DEFAULT_VIEW_WIDTH, DEFAULT_VIEW_HEIGHT,
-                                Game.camera,
-                                open = viewCount == 1, windowGroup = ScreenManager.Groups.VIEW)
-                        newView.run {
-                            closeButton.matchParentOpening = false
-                            dragGrip.matchParentOpening = false
-                            dragGrip.open = viewControlsOpen
-                            closeButton.open = viewControlsOpen
-                            viewControls.add(dragGrip)
-                            viewControls.add(closeButton)
-                            viewControls.add(nameText)
-                            matchParentOpening = false
-                        }
-                        return newView
-                    }
-                    throw Exception("GUI views exceeds limit")
                 }
 
                 override fun onMouseActionOn(type: PressType, xPixel: Int, yPixel: Int, button: Int) {
@@ -104,6 +85,40 @@ object IngameGUI : GUIWindow("In game gui",
                 }
             }
         }
+    }
+
+    private fun newCamera(): Camera {
+        val c = Camera(Game.currentLevel.widthPixels / 2, Game.currentLevel.heightPixels / 2)
+        Game.currentLevel.add(c)
+        return c
+    }
+
+    private fun newView(): GUIWindow {
+        if (viewCount < MAX_VIEWS) {
+            return ViewWindow("In game view ${++viewCount} window",
+                    0, 0,
+                    DEFAULT_VIEW_WIDTH, DEFAULT_VIEW_HEIGHT,
+                    cameras[viewCount - 1],
+                    open = viewCount == 1,
+                    windowGroup = ScreenManager.Groups.VIEW).run {
+                closeButton.matchParentOpening = false
+                dragGrip.matchParentOpening = false
+                dimensionDragGrip.matchParentOpening = false
+                dragGrip.open = viewControlsOpen
+                closeButton.open = viewControlsOpen
+                dimensionDragGrip.open = viewControlsOpen
+                viewControls.add(dragGrip)
+                viewControls.add(closeButton)
+                viewControls.add(nameText)
+                viewControls.add(dimensionDragGrip)
+                return@run this
+            }
+        }
+        throw Exception("GUI views exceeds limit")
+    }
+
+    override fun onClose() {
+        views.forEach { it.open = false }
     }
 
     override fun handleControlPress(p: ControlPress) {

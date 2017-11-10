@@ -9,7 +9,7 @@ class OutputNode<R : ResourceType>(xTile: Int, yTile: Int, dir: Int, storageNode
     var attachedInput: InputNode<R>? = null
 
     fun canOutput(resource: R, quantity: Int): Boolean {
-        return storageNode != null && storageNode.contains(resource, quantity)
+        return storageNode != null && storageNode!!.contains(resource, quantity)
     }
 
     fun output(resource: R, quantity: Int): Boolean {
