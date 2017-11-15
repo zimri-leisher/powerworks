@@ -5,8 +5,31 @@ import io.PressType
 private var nextID = 0
 
 open class RootGUIElement(val parentWindow: GUIWindow,
-                          widthPixels: Int, heightPixels: Int,
+                          /**
+                           * Should return the requested dimension whenever necessary
+                           * Will be used to update said dimension if it changes
+                           * (think of it like: alignment is the calculator,
+                           * the actual pixel value is where it gets stored for performance reasons)
+                           */
+                          widthAlignment: () -> Int, heightAlignment: () -> Int,
                           open: Boolean = parentWindow.open, var layer: Int = 0) {
+
+    constructor(parentWindow: GUIWindow,
+                widthPixels: Int, heightPixels: Int,
+                open: Boolean = parentWindow.open,
+                layer: Int = 0) :
+            this(parentWindow, { widthPixels }, { heightPixels }, open, layer)
+
+    var widthAlignment = widthAlignment
+        set(value) {
+            field = value
+            widthPixels = value()
+        }
+    var heightAlignment = heightAlignment
+        set(value) {
+            field = value
+            heightPixels = value()
+        }
     val id = nextID++
     private val _children: MutableSet<GUIElement> = mutableSetOf()
     val children = object : MutableSet<GUIElement> by _children {
@@ -65,37 +88,38 @@ open class RootGUIElement(val parentWindow: GUIWindow,
         set(value) {
             parentWindow.yPixel = value
         }
-    var widthPixels = widthPixels
+    var widthPixels = widthAlignment()
         set(value) {
             if (field != value) {
                 val old = field
                 field = value
                 onDimensionChange(old, heightPixels)
                 children.forEach {
-                    if (it.adjustDimensions) {
-                        val xRatio = widthPixels.toDouble() / old
-                        it.widthPixels = (it.widthPixels * xRatio).toInt()
-                    }
+                    if (updateDimension)
+                        it.widthPixels = it.widthAlignment()
+                    if (updatePosition)
+                        it.xPixel = xPixel + it.xAlignment()
                     it.onParentDimensionChange(old, heightPixels)
                 }
             }
         }
 
-    var heightPixels = heightPixels
+    var heightPixels = heightAlignment()
         set(value) {
             if (field != value) {
                 val old = field
                 field = value
                 onDimensionChange(widthPixels, old)
                 children.forEach {
-                    if (it.adjustDimensions) {
-                        val yRatio = heightPixels.toDouble() / old
-                        it.heightPixels = (it.heightPixels * yRatio).toInt()
-                    }
+                    if (updateDimension)
+                        it.heightPixels = it.heightAlignment()
+                    if (updatePosition)
+                        it.yPixel = yPixel + it.yAlignment()
                     it.onParentDimensionChange(widthPixels, old)
                 }
             }
         }
+
     open val name
         get() = parentWindow.name
 
@@ -125,6 +149,8 @@ open class RootGUIElement(val parentWindow: GUIWindow,
     }
 
     /* Settings */
+    var updatePosition = true
+    var updateDimension = true
     /** Open when the parent opens */
     var matchParentOpening = true
     /** Close when the parent closes */
@@ -132,10 +158,6 @@ open class RootGUIElement(val parentWindow: GUIWindow,
     /** Send interactions to the parent */
     var transparentToInteraction = false
     /** Modify dimensions automatically when the parent's dimensions change */
-    var adjustDimensions = false
-    /** Follow parent's movement (if false, relative X and Y pixels will be adjusted to match */
-    var adjustPosition = true
-    /** Change the layer to be 1 above the parent's layer automatically */
     var matchParentLayer = true
     /** Have the ScreenManager's render() method call this classes render method. Only useful as false if this is is
      * being rendered by some other container, for instance, GUIGroup
@@ -197,12 +219,39 @@ open class RootGUIElement(val parentWindow: GUIWindow,
 }
 
 abstract class GUIElement(parent: RootGUIElement,
-                          override val name: String, relXPixel: Int, relYPixel: Int,
-                          widthPixels: Int, heightPixels: Int,
+                          override val name: String,
+                          xAlignment: () -> Int, yAlignment: () -> Int,
+                          widthAlignment: () -> Int, heightAlignment: () -> Int,
                           open: Boolean = false,
                           layer: Int = parent.layer + 1) :
-        RootGUIElement(parent.parentWindow, widthPixels, heightPixels, open, layer) {
+        RootGUIElement(parent.parentWindow, widthAlignment, heightAlignment, open, layer) {
 
+    constructor(parent: RootGUIElement,
+                name: String,
+                relXPixel: Int, relYPixel: Int,
+                widthPixels: Int, heightPixels: Int,
+                open: Boolean = false,
+                layer: Int = parent.layer + 1) :
+            this(parent, name, { relXPixel }, { relYPixel }, { widthPixels }, { heightPixels }, open, layer)
+
+    constructor(parentWindow: GUIWindow,
+                name: String,
+                xAlignment: () -> Int, yAlignment: () -> Int,
+                widthAlignment: () -> Int, heightAlignment: () -> Int,
+                open: Boolean = false,
+                layer: Int = parentWindow.rootChild.layer + 1) :
+            this(parentWindow.rootChild, name, xAlignment, yAlignment, widthAlignment, heightAlignment, open, layer)
+
+    var xAlignment = xAlignment
+        set(value) {
+            field = value
+            xPixel = parent.xPixel + value()
+        }
+    var yAlignment = yAlignment
+        set(value) {
+            field = value
+            yPixel = parent.yPixel + value()
+        }
     var parent: RootGUIElement = parent
         set(value) {
             if (field != value) {
@@ -216,38 +265,42 @@ abstract class GUIElement(parent: RootGUIElement,
             }
         }
 
-    final override var xPixel = parent.xPixel + relXPixel
+    /**
+     * THIS SETTER IS MEANT FOR PRIVATE USE ONLY PLS NO USE
+     */
+    final override var xPixel = parent.xPixel + xAlignment()
         set(value) {
-            val old = field
-            field = value
-            onPositionChange(old, yPixel)
-            children.forEach {
-                if (it.adjustPosition)
-                    it.xPixel = it.relXPixel + xPixel
-                it.onParentPositionChange(old, yPixel)
-            }
-        }
-    final override var yPixel = parent.yPixel + relYPixel
-        set(value) {
-            val old = field
-            field = value
-            onPositionChange(xPixel, old)
-            children.forEach {
-                if (it.adjustPosition)
-                    it.yPixel = it.relYPixel + yPixel
-                it.onParentPositionChange(xPixel, old)
+            if (field != value) {
+                val old = field
+                field = value
+                onPositionChange(old, yPixel)
+                children.forEach {
+                    if (updateDimension)
+                        it.widthPixels = it.widthAlignment()
+                    if (updatePosition)
+                        it.xPixel = it.xAlignment() + xPixel
+                    it.onParentPositionChange(old, yPixel)
+                }
             }
         }
 
-    var relXPixel = relXPixel
+    /**
+     * THIS SETTER IS MEANT FOR PRIVATE USE ONLY PLS NO USE
+     */
+    final override var yPixel = parent.yPixel + yAlignment()
         set(value) {
-            field = value
-            xPixel = parent.xPixel + value
-        }
-    var relYPixel = relYPixel
-        set(value) {
-            field = value
-            yPixel = parent.yPixel + value
+            if (field != value) {
+                val old = field
+                field = value
+                onPositionChange(xPixel, old)
+                children.forEach {
+                    if (updateDimension)
+                        it.heightPixels = it.heightAlignment()
+                    if (updatePosition)
+                        it.yPixel = it.yAlignment() + yPixel
+                    it.onParentPositionChange(xPixel, old)
+                }
+            }
         }
 
     init {
@@ -264,15 +317,6 @@ abstract class GUIElement(parent: RootGUIElement,
     /** Opens if closed, closes if opened */
     fun toggle() {
         open = !open
-    }
-
-    /** Updates this elements position based on relative x and y pixel and recurses to children too */
-    fun updatePosition() {
-        val oldX = xPixel
-        val oldY = yPixel
-        xPixel = parent.xPixel + relXPixel
-        yPixel = parent.yPixel + relYPixel
-
     }
 
     /** Makes this and all it's children's layers their respective parent's layer + 1 */
@@ -303,6 +347,6 @@ abstract class GUIElement(parent: RootGUIElement,
     }
 
     override fun toString(): String {
-        return javaClass.simpleName + ": $name at $xPixel, $yPixel absolute, $relXPixel, $relYPixel relative, width: $widthPixels, height: $heightPixels, layer: $layer, parent: ${parent.name}"
+        return javaClass.simpleName + ": $name at $xPixel, $yPixel absolute, ${xAlignment()}, ${yAlignment()} relative, width: $widthPixels, height: $heightPixels, layer: $layer, parent: ${parent.name}"
     }
 }

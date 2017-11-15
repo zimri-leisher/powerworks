@@ -116,7 +116,7 @@ object Game : Canvas(), Runnable, ControlPressHandler {
         } catch (ex: IOException) {
             ex.printStackTrace()
         }
-        InputManager.registerControlPressHandler(this, Control.TAKE_SCREENSHOT, Control.TOGGLE_RENDER_HITBOXES, Control.TOGGLE_CHUNK_INFO, Control.TOGGLE_INVENTORY)
+        InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.TAKE_SCREENSHOT, Control.TOGGLE_RENDER_HITBOXES, Control.TOGGLE_CHUNK_INFO, Control.TOGGLE_INVENTORY)
         /* For initializations (objects in Kotlin are loaded the first time they are called */
         MainMenuGUI.open = true
         DebugOverlay.open = false

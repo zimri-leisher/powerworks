@@ -12,12 +12,21 @@ import java.awt.image.VolatileImage
 
 class GUIView(parent: RootGUIElement,
               name: String,
-              relXPixel: Int, relYPixel: Int,
-              widthPixels: Int, heightPixels: Int,
+              xAlignment: () -> Int, yAlignment: () -> Int,
+              widthAlignment: () -> Int, heightAlignment: () -> Int,
               camera: LevelObject, zoomLevel: Int = 10,
               open: Boolean = false,
               layer: Int = parent.layer + 1) :
-        GUIElement(parent, name, relXPixel, relYPixel, widthPixels, heightPixels, open, layer), MovementListener {
+        GUIElement(parent, name, xAlignment, yAlignment, widthAlignment, heightAlignment, open, layer), MovementListener {
+
+    constructor(parent: RootGUIElement,
+                name: String,
+                relXPixel: Int, relYPixel: Int,
+                widthPixels: Int, heightPixels: Int,
+                camera: LevelObject, zoomLevel: Int = 10,
+                open: Boolean = false,
+                layer: Int = parent.layer + 1) :
+            this(parent, name, { relXPixel }, { relYPixel }, { widthPixels }, { heightPixels }, camera, zoomLevel, open, layer)
 
     val moveListeners = mutableListOf<CameraMovementListener>()
 
@@ -61,7 +70,7 @@ class GUIView(parent: RootGUIElement,
         if (camera is MovingObject) {
             camera.moveListeners.add(this)
         }
-        if(open)
+        if (open)
             Game.currentLevel.views.add(this)
         viewRectangle = Rectangle(camera.xPixel - viewWidthPixels / 2, camera.yPixel - viewHeightPixels / 2, viewWidthPixels, viewHeightPixels)
         fillPregenBuffers()

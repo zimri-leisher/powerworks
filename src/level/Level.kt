@@ -1,6 +1,8 @@
 package level
 
+import audio.AudioManager
 import graphics.Renderer
+import inv.ItemType
 import io.InputManager
 import io.Mouse
 import io.MouseMovementListener
@@ -8,6 +10,9 @@ import io.PressType
 import level.block.Block
 import level.block.GhostBlock
 import level.moving.MovingObject
+import level.node.InputNode
+import level.node.OutputNode
+import level.node.TransferNode
 import level.resource.ResourceType
 import level.tile.Tile
 import main.Game
@@ -44,6 +49,7 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
     val loadedChunks = CopyOnWriteArrayList<Chunk>()
 
     private var viewBeingInteractedWith: GUIView? = null
+    private var lastViewInteractedWith: GUIView? = null
     private val _views = mutableListOf<GUIView>()
     val views = object : MutableList<GUIView> by _views {
         override fun add(element: GUIView): Boolean {
@@ -113,7 +119,6 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
         val maxY = Math.min(yTile1, heightTiles)
         val minX = Math.max(xTile0, 0)
         val minY = Math.max(yTile0, 0)
-        val chunks = getChunksFromTileRectangle(minX, minY, maxX - minX, maxY - minY)
         var count = 0
         for (y in (maxY - 1) downTo minY) {
             for (x in minX until maxX) {
@@ -182,8 +187,8 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
             ghostBlock = null
         } else if (currentItem != null) {
             val placedType = currentItem.type.placedBlock
-            var xTile = ((mouseLevelXPixel + placedType.textureXPixelOffset) shr 4) - placedType.widthTiles / 2
-            var yTile = ((mouseLevelYPixel + placedType.textureYPixelOffset) shr 4) - placedType.heightTiles / 2
+            val xTile = ((mouseLevelXPixel + placedType.textureXPixelOffset) shr 4) - placedType.widthTiles / 2
+            val yTile = ((mouseLevelYPixel + placedType.textureYPixelOffset) shr 4) - placedType.heightTiles / 2
             if (ghostBlock == null) {
                 ghostBlock = GhostBlock(xTile, yTile, placedType)
             } else {
@@ -228,14 +233,26 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
     private fun updateViewBeingInteractedWith() {
         views.sortByDescending { it.parentWindow.layer }
         viewBeingInteractedWith = views.firstOrNull { it.mouseOn }
+        if(viewBeingInteractedWith != null)
+            lastViewInteractedWith = viewBeingInteractedWith
         mouseOnLevel = viewBeingInteractedWith != null
+        updateMouseLevelLocation()
+        updateAudioEars()
+    }
+
+    private fun updateAudioEars() {
+        if(lastViewInteractedWith != null) {
+            AudioManager.ears = lastViewInteractedWith!!.camera
+        }
     }
 
     private fun updateMouseLevelLocation() {
-        val zoom = viewBeingInteractedWith!!.zoomMultiplier
-        val viewRectangle = viewBeingInteractedWith!!.viewRectangle
-        mouseLevelXPixel = ((Mouse.xPixel - viewBeingInteractedWith!!.xPixel) / zoom).toInt() + viewRectangle.x
-        mouseLevelYPixel = ((Mouse.yPixel - viewBeingInteractedWith!!.yPixel) / zoom).toInt() + viewRectangle.y
+        if (viewBeingInteractedWith != null) {
+            val zoom = viewBeingInteractedWith!!.zoomMultiplier
+            val viewRectangle = viewBeingInteractedWith!!.viewRectangle
+            mouseLevelXPixel = ((Mouse.xPixel - viewBeingInteractedWith!!.xPixel) / zoom).toInt() + viewRectangle.x
+            mouseLevelYPixel = ((Mouse.yPixel - viewBeingInteractedWith!!.yPixel) / zoom).toInt() + viewRectangle.y
+        }
     }
 
     /* Generation */
@@ -245,13 +262,12 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
 
     /* Util */
     /** Whether or not this collides with a block */
-    fun getBlockCollision(l: LevelObject, xPixel: Int = l.xPixel, yPixel: Int = l.yPixel): LevelObject? {
+    fun getBlockCollision(l: LevelObject, xPixel: Int = l.xPixel, yPixel: Int = l.yPixel, predicate: ((LevelObject) -> Boolean)? = null): LevelObject? {
         // Blocks won't have a hitbox bigger than their width/height tiles
         val blocks = getIntersectingBlocksFromPixelRectangle(l.hitbox.xStart + xPixel, l.hitbox.yStart + yPixel, l.hitbox.width, l.hitbox.height)
         for (b in blocks) {
-            if (doesPairCollide(l, xPixel, yPixel, b)) {
+            if ((predicate != null && predicate(b) && doesPairCollide(l, xPixel, yPixel, b)) || doesPairCollide(l, xPixel, yPixel, b))
                 return b
-            }
         }
         return null
     }
@@ -261,11 +277,7 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
         val c = getChunk(l.xChunk, l.yChunk)
         for (m in c.moving!!) {
             if (m != l) {
-                if (predicate != null) {
-                    if (predicate(m) && doesPairCollide(l, xPixel, yPixel, m)) {
-                        return m
-                    }
-                } else if (doesPairCollide(l, xPixel, yPixel, m)) {
+                if ((predicate != null && predicate(m) && doesPairCollide(l, xPixel, yPixel, m)) || doesPairCollide(l, xPixel, yPixel, m)) {
                     return m
                 }
             }
@@ -273,12 +285,7 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
         // In the future, use async?
         for (m in c.movingOnBoundary!!) {
             if (m != l) {
-                if (predicate != null) {
-                    if (predicate(m) &&
-                            doesPairCollide(l, xPixel, yPixel, m)) {
-                        return m
-                    }
-                } else if (doesPairCollide(l, xPixel, yPixel, m)) {
+                if ((predicate != null && predicate(m) && doesPairCollide(l, xPixel, yPixel, m)) || doesPairCollide(l, xPixel, yPixel, m)) {
                     return m
                 }
             }
@@ -286,11 +293,11 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
         return null
     }
 
-    fun getCollision(l: LevelObject, xPixel: Int = l.xPixel, yPixel: Int = l.yPixel): LevelObject? {
-        val m = getMovingObjectCollision(l, xPixel, yPixel)
+    fun getCollision(l: LevelObject, xPixel: Int = l.xPixel, yPixel: Int = l.yPixel, predicate: ((LevelObject) -> Boolean)? = null): LevelObject? {
+        val m = getMovingObjectCollision(l, xPixel, yPixel, predicate)
         if (m != null)
             return m
-        val b = getBlockCollision(l, xPixel, yPixel)
+        val b = getBlockCollision(l, xPixel, yPixel, predicate)
         if (b != null)
             return b
         return null
@@ -322,6 +329,29 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
         }
     }
 
+    fun updateNode(o: TransferNode<*>) {
+        if (o is OutputNode) {
+            attachInputToOutput(o)
+        }
+    }
+
+    private fun <R : ResourceType> attachInputToOutput(o: OutputNode<R>) {
+        val i = getInputNode<R>(o.xTile, o.yTile, o.dir, o.resourceTypeID)
+        o.attachedInput = i
+    }
+
+    fun <R : ResourceType> getInputNode(xTile: Int, yTile: Int, dir: Int, resourceTypeID: Int): InputNode<R>? {
+        // THIS IS OK - we know they are of the same type because we can assume that when you
+        // initialize it, you use the corresponding ResourceType ID
+        return getChunkFromTile(xTile, yTile).inputNodes!![resourceTypeID].firstOrNull { it.xTile == xTile && it.yTile == yTile && GeometryHelper.isOppositeAngle(it.dir, dir) } as InputNode<R>?
+    }
+
+    fun <R : ResourceType> getOutputNode(xTile: Int, yTile: Int, dir: Int, resourceTypeID: Int): OutputNode<R>? {
+        // THIS IS OK - we know they are of the same type because we can assume that when you
+        // initialize it, you use the corresponding ResourceType ID
+        return getChunkFromTile(xTile, yTile).outputNodes!![resourceTypeID].firstOrNull { it.xTile == xTile && it.yTile == yTile && GeometryHelper.isOppositeAngle(it.dir, dir) } as OutputNode<R>?
+    }
+
     /**
      * Does everything necessary to add the object to the level
      * @return if the object was added
@@ -338,14 +368,48 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
             }
             return true
         } else if (l is MovingObject) {
-            if (l.getCollision(l.xPixel, l.yPixel) != null)
+            if (l is DroppedItem) {
+                // Dropped items will automatically try and fit themselves nearest to where they are trying to be placed
+                val positions = mutableListOf<Pair<Int, Int>>()
+                // Find the four positions around the position it is currently in
+                positions.add(Pair(l.xPixel, l.yPixel))
+                positions.add(Pair(l.xPixel - 1 * Hitbox.DROPPED_ITEM.width, l.yPixel))
+                positions.add(Pair(l.xPixel, l.yPixel - 1 * Hitbox.DROPPED_ITEM.height))
+                positions.add(Pair(l.xPixel + 1 * Hitbox.DROPPED_ITEM.width, l.yPixel))
+                positions.add(Pair(l.xPixel, l.yPixel + 1 * Hitbox.DROPPED_ITEM.height))
+                for ((x, y) in positions) {
+                    l.xPixel = x
+                    l.yPixel = y
+                    if (l.getCollision(l.xPixel, l.yPixel) == null) {
+                        if (l.hitbox != Hitbox.NONE) {
+                            l.intersectingChunks.forEach { it.movingOnBoundary!!.add(l) }
+                        }
+                        l.currentChunk.addMoving(l)
+                        l.currentChunk.addDroppedItem(l)
+                        return true
+                    }
+                }
                 return false
-            if (l.hitbox != Hitbox.NONE) {
-                l.intersectingChunks.forEach { it.movingOnBoundary!!.add(l) }
+            } else {
+                if (l.getCollision(l.xPixel, l.yPixel) != null)
+                    return false
+                if (l.hitbox != Hitbox.NONE) {
+                    l.intersectingChunks.forEach { it.movingOnBoundary!!.add(l) }
+                }
+                l.currentChunk.addMoving(l)
             }
-            l.currentChunk.addMoving(l)
         }
         return false
+    }
+
+    fun addTransferNode(o: TransferNode<*>) {
+        val c = getChunkFromTile(o.xTile, o.yTile)
+        if (o is InputNode) {
+            c.addInputNode(o)
+        } else if (o is OutputNode) {
+            c.addOutputNode(o)
+        }
+        updateNode(o)
     }
 
     fun remove(l: LevelObject) {
@@ -366,10 +430,14 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
     /**
      * Tries to 'materialize' this resource where specified. Note: most resources have no physical representation
      * other than some purely decoratee particles
-     * @return true if the resource was turned into a form that is retrievable and not lost
+     * @return the quantity of the resource that was able to be materialized
      */
-    fun add(xPixel: Int, yPixel: Int, r: ResourceType, quantity: Int): Boolean {
-        return false
+    fun add(xPixel: Int, yPixel: Int, r: ResourceType, quantity: Int): Int {
+        if (r is ItemType) {
+            add(DroppedItem(xPixel, yPixel, r))
+            return 1
+        }
+        return 0
     }
 
     /* Getting and setting */

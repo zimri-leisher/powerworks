@@ -2,6 +2,8 @@ package level
 
 import level.block.Block
 import level.moving.MovingObject
+import level.node.InputNode
+import level.node.OutputNode
 import level.tile.Tile
 
 class UpdateableOrganizer {
@@ -52,6 +54,10 @@ class Chunk(val parent: Level, val xChunk: Int, val yChunk: Int) {
     var moving: MutableList<MovingObject>? = null
     var movingOnBoundary: MutableList<MovingObject>? = null
     var updatesRequired: UpdateableOrganizer? = null
+    var droppedItem: MutableList<DroppedItem>? = null
+    // One list for each resource type
+    var outputNodes: Array<MutableList<OutputNode<*>>>? = null
+    var inputNodes: Array<MutableList<InputNode<*>>>? = null
     var beingRendered = false
 
     /* Convenience methods. Assume it is loaded */
@@ -75,6 +81,16 @@ class Chunk(val parent: Level, val xChunk: Int, val yChunk: Int) {
             updatesRequired!!.remove(block)
     }
 
+    fun addDroppedItem(d: DroppedItem) {
+        droppedItem!!.add(d)
+        addMoving(d)
+    }
+
+    fun removeDroppedItem(d: DroppedItem) {
+        droppedItem!!.remove(d)
+        removeMoving(d)
+    }
+
     fun addMoving(m: MovingObject) {
         moving!!.add(m)
         moving!!.sortedBy { it.yPixel }
@@ -88,12 +104,28 @@ class Chunk(val parent: Level, val xChunk: Int, val yChunk: Int) {
             updatesRequired!!.remove(m)
     }
 
+    fun addInputNode(i: InputNode<*>) {
+        inputNodes!![i.resourceTypeID].add(i)
+    }
+
+    fun removeInputNode(i: InputNode<*>) {
+        inputNodes!![i.resourceTypeID].remove(i)
+    }
+
+    fun addOutputNode(o: OutputNode<*>) {
+        outputNodes!![o.resourceTypeID].add(o)
+    }
+
+    fun removeOutputNode(o: OutputNode<*>) {
+        outputNodes!![o.resourceTypeID].remove(o)
+    }
+
     fun update() {
         /* Assume is already loaded */
         val o = updatesRequired!!
         if (o.size > 0) {
             o.forEach { it.update() }
-        } else if (!beingRendered) {
+        } else if (!beingRendered && inputNodes!!.all { it.isEmpty() } && outputNodes!!.all { it.isEmpty() }) {
             unload()
         }
     }
@@ -104,6 +136,13 @@ class Chunk(val parent: Level, val xChunk: Int, val yChunk: Int) {
         this.moving = mutableListOf()
         this.updatesRequired = UpdateableOrganizer()
         this.movingOnBoundary = mutableListOf()
+        this.droppedItem = mutableListOf()
+        this.outputNodes = arrayOf(
+                mutableListOf()
+        )
+        this.inputNodes = arrayOf(
+                mutableListOf()
+        )
         loaded = true
         parent.loadedChunks.add(this)
     }
@@ -115,6 +154,9 @@ class Chunk(val parent: Level, val xChunk: Int, val yChunk: Int) {
         updatesRequired = null
         loaded = false
         movingOnBoundary = null
+        droppedItem = null
+        outputNodes = null
+        inputNodes = null
         parent.loadedChunks.remove(this)
     }
 

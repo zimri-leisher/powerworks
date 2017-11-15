@@ -3,9 +3,8 @@ package main
 import audio.AudioManager
 import inv.Inventory
 import level.SimplexLevel
-import screen.HUD
-import screen.IngameGUI
-import screen.MainMenuGUI
+import player.Camera
+import screen.*
 
 
 class State(val activate: (State) -> (Unit), val deactivate: (State) -> (Unit)) {

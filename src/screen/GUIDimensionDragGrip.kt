@@ -5,59 +5,40 @@ import graphics.Renderer
 import io.Mouse
 import io.PressType
 import main.Game
-import misc.GeometryHelper
 
 class GUIDimensionDragGrip(parent: RootGUIElement,
                            name: String,
-                           xPixel: Int, yPixel: Int,
+                           xAlignment: () -> Int, yAlignment: () -> Int,
                            open: Boolean = false,
                            layer: Int = parent.layer + 1,
+                           val actOn: GUIWindow,
                            /** Whether or not the dimensions should be able to go into the negatives
                             * Note: also disallows 0 */
                            var keepInsideWindowBounds: Boolean = true,
                            var maintainDimensionRatio: Boolean = true) :
-        GUIElement(parent, name, xPixel, yPixel, WIDTH, HEIGHT, open, layer) {
+        GUIElement(parent, name, xAlignment, yAlignment, { WIDTH }, { HEIGHT }, open, layer) {
 
     var dragging = false
-    var mXPixel = 0
-    var mYPixel = 0
+    var startXPixel = 0
+    var startYPixel = 0
     var nWidthPixels = 0
     var nHeightPixels = 0
-    var oWidthPixels = 0
-    var oHeightPixels = 0
 
     override fun onMouseActionOn(type: PressType, xPixel: Int, yPixel: Int, button: Int) {
         if (type == PressType.PRESSED) {
             dragging = true
-            mXPixel = Mouse.xPixel
-            mYPixel = Mouse.yPixel
-            nWidthPixels = parent.widthPixels
-            nHeightPixels = parent.heightPixels
-            oWidthPixels = parent.widthPixels
-            oHeightPixels = parent.heightPixels
+            startXPixel = Mouse.xPixel
+            startYPixel = Mouse.yPixel
+            nWidthPixels = actOn.widthPixels
+            nHeightPixels = actOn.heightPixels
         } else if (type == PressType.RELEASED) {
             dragging = false
-            if (parent is GUIElement) {
-                if (keepInsideWindowBounds &&
-                        !GeometryHelper.contains(parentWindow.xPixel, parentWindow.yPixel, parentWindow.widthPixels, parentWindow.heightPixels,
-                                parent.xPixel, parent.yPixel, nWidthPixels, nHeightPixels)) {
-                    nWidthPixels = parentWindow.widthPixels - parent.xPixel
-                    nHeightPixels = parentWindow.heightPixels - parent.yPixel
-                }
-                parent.widthPixels = nWidthPixels
-                parent.heightPixels = nHeightPixels
-            } else {
-                if (keepInsideWindowBounds &&
-                        !GeometryHelper.contains(0, 0, Game.WIDTH, Game.HEIGHT,
-                                parent.xPixel, parent.yPixel, nWidthPixels, nHeightPixels)) {
-                    nWidthPixels = Game.WIDTH - parentWindow.xPixel
-                    nHeightPixels = Game.HEIGHT - parentWindow.yPixel
-                }
-                parentWindow.widthPixels = nWidthPixels
-                parentWindow.heightPixels = nHeightPixels
+            if(keepInsideWindowBounds) {
+                nWidthPixels = Math.min(Game.WIDTH, nWidthPixels)
+                nHeightPixels = Math.min(Game.HEIGHT, nHeightPixels)
             }
-            relXPixel += (nWidthPixels - oWidthPixels)
-            relYPixel += (nHeightPixels - oHeightPixels)
+            actOn.widthPixels = nWidthPixels
+            actOn.heightPixels = nHeightPixels
         }
     }
 
@@ -70,28 +51,16 @@ class GUIDimensionDragGrip(parent: RootGUIElement,
         if (!dragging)
             Renderer.renderTexture(Image.GUI.DIMENSION_DRAG_GRIP, xPixel, yPixel)
         else {
-            Renderer.renderEmptyRectangle(parent.xPixel, parent.yPixel, nWidthPixels, nHeightPixels)
+            Renderer.renderEmptyRectangle(actOn.xPixel, actOn.yPixel, nWidthPixels, nHeightPixels)
         }
     }
 
     override fun update() {
         if (dragging) {
-            val dX = Mouse.xPixel - mXPixel
-            val dY = Mouse.yPixel - mYPixel
-            /*
-            if(maintainDimensionRatio) {
-                if(Math.abs(dX) > Math.abs(dY))
-                    dY = dX
-                else
-                    dY = dX
-            }
-            */
-            nWidthPixels += dX
-            nHeightPixels += dY
+            nWidthPixels = Mouse.xPixel - startXPixel + actOn.widthPixels
+            nHeightPixels = Mouse.yPixel - startYPixel + actOn.heightPixels
             nWidthPixels = Math.max(0, nWidthPixels)
             nHeightPixels = Math.max(0, nHeightPixels)
-            mXPixel = Mouse.xPixel
-            mYPixel = Mouse.yPixel
         }
     }
 

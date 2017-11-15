@@ -2,11 +2,12 @@ package level.tile
 
 import graphics.ImageCollection
 import graphics.Texture
+import inv.ItemType
 
 private var nextID = 0
 
-sealed class OreTileType(val parentType: TileType, val maxAmount: Int, val minAmount: Int) : TileType(parentType.textures) {
-    object GRASS_IRON_ORE : OreTileType(TileType.GRASS_IRON_ORE, 10, 1)
+sealed class OreTileType(parentType: TileType, val maxAmount: Int, val minAmount: Int, val minedItem: ItemType, val backgroundType: TileType) : TileType(parentType.textures) {
+    object GRASS_IRON_ORE : OreTileType(TileType.GRASS_IRON_ORE, 10, 1, ItemType.IRON_ORE, TileType.GRASS)
 }
 
 sealed class TileType(val textures: Array<Texture>) {

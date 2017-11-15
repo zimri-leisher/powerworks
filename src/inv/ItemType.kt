@@ -4,16 +4,19 @@ import graphics.Image
 import graphics.Texture
 import level.block.BlockType
 import level.block.MachineBlockType
+import level.resource.ResourceType
 
 private var nextID = 0
 
-sealed class ItemType(val name: String, val texture: Texture, private val placedBlockID: Int = 1, val maxStack: Int) {
+sealed class ItemType(val name: String, val texture: Texture, private val placedBlockID: Int = BlockType.ERROR.id, val maxStack: Int) : ResourceType {
 
     object ERROR : ItemType("Error", Image.ERROR, maxStack = 5)
 
     object TEST : ItemType("Test", Image.ERROR, BlockType.ERROR.id, 5)
 
     object MINER : ItemType("Miner", Image.MINER_ITEM_TEMP, MachineBlockType.MINER.id, 10)
+
+    object IRON_ORE : ItemType("Iron Ore", Image.IRON_ORE_ITEM, maxStack = 100)
 
     val placedBlock: BlockType
         get() = BlockType.getByID(placedBlockID)!!

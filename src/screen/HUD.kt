@@ -5,6 +5,7 @@ import graphics.Renderer
 import inv.Item
 import inv.ItemType
 import io.*
+import level.DroppedItem
 import main.Game
 
 object HUD {
@@ -28,7 +29,7 @@ object HUD {
             ControlPressHandler {
 
         init {
-            InputManager.registerControlPressHandler(this, Control.SLOT_1, Control.SLOT_2, Control.SLOT_3, Control.SLOT_4, Control.SLOT_5, Control.SLOT_6, Control.SLOT_7, Control.SLOT_8, Control.GIVE_TEST_ITEM)
+            InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.SLOT_1, Control.SLOT_2, Control.SLOT_3, Control.SLOT_4, Control.SLOT_5, Control.SLOT_6, Control.SLOT_7, Control.SLOT_8, Control.GIVE_TEST_ITEM, Control.DROP_HELD_ITEM)
             rootChild = object : GUIElement(this, name, xPixel, yPixel, widthPixels, heightPixels, open, layer) {
                 override fun render() {
                     for (i in 0 until HOTBAR_SIZE) {
@@ -66,6 +67,13 @@ object HUD {
                 Control.SLOT_7 -> selected = 6
                 Control.SLOT_8 -> selected = 7
                 Control.GIVE_TEST_ITEM -> items.add(Item(ItemType.MINER))
+                Control.DROP_HELD_ITEM -> {
+                    if (currentItem != null) {
+                        val type = currentItem!!.type
+                        items.remove(type, 1)
+                        Game.currentLevel.add(DroppedItem(Game.currentLevel.mouseLevelXPixel, Game.currentLevel.mouseLevelYPixel, type))
+                    }
+                }
             }
         }
 

@@ -40,9 +40,20 @@ sealed class BlockType(val name: String,
         fun getByName(name: String): BlockType? {
             return ALL.firstOrNull { it.name == name }
         }
-
     }
+}
 
+sealed class ChestBlockType(name: String,
+                            textures: Array<Texture>,
+                            widthTiles: Int = 1, heightTiles: Int = 1,
+                            hitbox: Hitbox = Hitbox.TILE,
+                            textureXPixelOffset: Int = 0, textureYPixelOffset: Int = 0,
+                            requiresUpdate: Boolean = false,
+                            val invWidth: Int,
+                            val invHeight: Int) : BlockType(name, textures, widthTiles, heightTiles, hitbox, textureXPixelOffset, textureYPixelOffset, requiresUpdate) {
+    object CHEST_SMALL : ChestBlockType("Small Chest", arrayOf<Texture>(Image.ERROR), invWidth = 8, invHeight = 3)
+
+    override fun invoke(xTile: Int, yTile: Int) = ChestBlock(xTile, yTile, this)
 }
 
 sealed class MachineBlockType(name: String,

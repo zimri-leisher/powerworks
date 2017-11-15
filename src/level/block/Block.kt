@@ -16,7 +16,7 @@ open class Block(xTile: Int, yTile: Int, open val type: BlockType, hitbox: Hitbo
         super.render()
     }
 
-    override fun getCollision(xPixel: Int, yPixel: Int): LevelObject? {
+    override fun getCollision(xPixel: Int, yPixel: Int, predicate: ((LevelObject) -> Boolean)?): LevelObject? {
         // Check if a block is already present
         val nXTile = xPixel shr 4
         val nYTile = yPixel shr 4
@@ -24,17 +24,22 @@ open class Block(xTile: Int, yTile: Int, open val type: BlockType, hitbox: Hitbo
             for (y in nYTile until (nYTile + type.heightTiles)) {
                 val c = Game.currentLevel.getChunk(x shr CHUNK_TILE_EXP, y shr CHUNK_TILE_EXP)
                 val b = c.getBlock(x, y)
-                if (b != null && b != this) {
-                    return b
+
+                if (b != null) {
+                    if (predicate != null && !predicate(b))
+                        continue
+                    if (b != this)
+                        return b
                 }
             }
         }
         // Checks for moving objects. Don't worry about blocks, because no block has a hitbox of over a tile
-        return Game.currentLevel.getMovingObjectCollision(this, xPixel, yPixel)
+        return Game.currentLevel.getMovingObjectCollision(this, xPixel, yPixel, predicate)
     }
 
     override fun save(out: DataOutputStream) {
         super.save(out)
+        out.writeInt(rotation)
         out.writeInt(type.id)
     }
 

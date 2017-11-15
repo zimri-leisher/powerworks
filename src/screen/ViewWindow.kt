@@ -1,9 +1,6 @@
 package screen
 
-import io.Control
-import io.ControlPress
-import io.ControlPressHandler
-import io.PressType
+import io.*
 import level.LevelObject
 import level.moving.MovingObject
 
@@ -18,26 +15,19 @@ class ViewWindow(name: String,
         GUIWindow(name, xPixel, yPixel, widthPixels, heightPixels, open, layer, windowGroup),
         ControlPressHandler {
 
-    val view = GUIView(this.rootChild, name,
-            0, 0,
-            widthPixels, heightPixels,
+    val view = GUIView(rootChild, name,
+            { 0 }, { 0 },
+            { this.widthPixels }, { this.heightPixels },
             camera, zoomLevel, open)
     val outline = GUIOutline(view, name + " outline", open = open)
-    val dragGrip = generateDragGrip(rootChild, 2)
-    val closeButton = generateCloseButton(rootChild, 2)
-    val dimensionDragGrip = generateDimensionDragGrip(rootChild, 2)
     val nameText = GUIText(view, name, 1, 4, name, layer = 1)
 
     init {
-        ScreenManager.registerControlPressHandler(this, Control.UP, Control.DOWN, Control.LEFT, Control.RIGHT)
+        InputManager.registerControlPressHandler(this, ControlPressHandlerType.SCREEN, Control.UP, Control.DOWN, Control.LEFT, Control.RIGHT)
         nameText.transparentToInteraction = true
-        view.adjustDimensions = true
-    }
-
-    override fun onDimensionChange(oldWidth: Int, oldHeight: Int) {
-        dragGrip.relXPixel = widthPixels - GUIDragGrip.WIDTH - 1
-        closeButton.relXPixel = widthPixels - GUIDragGrip.WIDTH - GUICloseButton.WIDTH - 2
-        dimensionDragGrip.relXPixel = widthPixels - GUIDragGrip.WIDTH - GUICloseButton.WIDTH - GUIDimensionDragGrip.WIDTH - 3
+        generateDimensionDragGrip(2)
+        generateDragGrip(2)
+        generateCloseButton(2)
     }
 
     override fun handleControlPress(p: ControlPress) {

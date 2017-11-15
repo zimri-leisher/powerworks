@@ -6,9 +6,10 @@ import io.PressType
 
 class GUICloseButton(parent: RootGUIElement,
                      name: String,
-                     xPixel: Int, yPixel: Int,
+                     xAlignment: () -> Int, yAlignment: () -> Int,
                      open: Boolean = false,
-                     layer: Int = parent.layer + 1) : GUIElement(parent, name, xPixel, yPixel, WIDTH, HEIGHT, open, layer) {
+                     layer: Int = parent.layer + 1,
+                     val actOn: GUIWindow) : GUIElement(parent, name, xAlignment, yAlignment, { WIDTH }, { HEIGHT }, open, layer) {
 
     override fun render() {
         Renderer.renderTexture(Image.GUI.CLOSE_BUTTON, xPixel, yPixel)
@@ -16,7 +17,7 @@ class GUICloseButton(parent: RootGUIElement,
 
     override fun onMouseActionOn(type: PressType, xPixel: Int, yPixel: Int, button: Int) {
         if (type == PressType.PRESSED)
-            parentWindow.open = false
+            actOn.open = false
     }
 
     companion object {

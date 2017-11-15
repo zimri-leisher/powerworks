@@ -14,7 +14,7 @@ abstract class MovingObject(xPixel: Int, yPixel: Int, hitbox: Hitbox) : LevelObj
 
     /* Only allow setting of pixel values because otherwise it would cause infinite loop (unless I added a lot of boilerplate private values) */
     final override var xPixel = xPixel
-        protected set(value) {
+        set(value) {
             val old = field
             field = value
             xTile = value shr 4
@@ -23,7 +23,7 @@ abstract class MovingObject(xPixel: Int, yPixel: Int, hitbox: Hitbox) : LevelObj
         }
 
     final override var yPixel = yPixel
-        protected set(value) {
+        set(value) {
             val old = field
             field = value
             yTile = value shr 4

@@ -30,9 +30,9 @@ open class GUIWindow(val name: String, xPixel: Int, yPixel: Int, widthPixels: In
     private val _openChildren = mutableListOf<RootGUIElement>()
 
     /**
-     * <i>IS</i> ordered constantly based on layer
+     * Ordered constantly based on layer
      */
-    val openChildren = object : MutableList<RootGUIElement> by _openChildren{
+    val openChildren = object : MutableList<RootGUIElement> by _openChildren {
         override fun add(el: RootGUIElement): Boolean {
             val b = _openChildren.add(el)
             _openChildren.sortBy { it.layer }
@@ -41,7 +41,7 @@ open class GUIWindow(val name: String, xPixel: Int, yPixel: Int, widthPixels: In
     }
 
     /** The child for which all children get added to */
-    var rootChild = RootGUIElement(this, widthPixels, heightPixels)
+    var rootChild = RootGUIElement(this, { this.widthPixels }, { this.heightPixels })
     val children
         get() = rootChild.children
     var xPixel = xPixel
@@ -50,7 +50,7 @@ open class GUIWindow(val name: String, xPixel: Int, yPixel: Int, widthPixels: In
                 val old = field
                 field = value
                 rootChild.children.forEach {
-                    it.updatePosition()
+                    it.xPixel = value + it.xAlignment()
                     it.onParentPositionChange(old, xPixel)
                 }
             }
@@ -61,7 +61,7 @@ open class GUIWindow(val name: String, xPixel: Int, yPixel: Int, widthPixels: In
                 val old = field
                 field = value
                 rootChild.children.forEach {
-                    it.updatePosition()
+                    it.yPixel = value + it.yAlignment()
                     it.onParentPositionChange(xPixel, old)
                 }
             }
@@ -86,13 +86,14 @@ open class GUIWindow(val name: String, xPixel: Int, yPixel: Int, widthPixels: In
             }
         }
 
+    var topRightControlsGroup = AutoFormatGUIGroup(rootChild, name + " top right controls group", { this.widthPixels - 5 }, { 1 }, open, xPixelSeparation = -5)
+
     init {
         windowGroup.windows.add(this)
         ScreenManager.windows.add(this)
         if (open) {
             ScreenManager.openWindows.add(this)
         }
-        rootChild.adjustDimensions = true
     }
 
     /* Settings */
@@ -102,16 +103,25 @@ open class GUIWindow(val name: String, xPixel: Int, yPixel: Int, widthPixels: In
     var transparentToInteraction = false
 
     /* Util */
-    fun generateCloseButton(parent: RootGUIElement, layer: Int = this.layer + 1): GUICloseButton {
-        return GUICloseButton(parent, name + " close button", widthPixels - GUICloseButton.WIDTH - 1, 1, open, layer)
+    fun generateCloseButton(layer: Int = this.layer + 1): GUICloseButton {
+        return GUICloseButton(topRightControlsGroup, name + " close button", { 0 }, { 0 }, open, layer, this).run {
+            topRightControlsGroup.children.add(this)
+            this
+        }
     }
 
-    fun generateDragGrip(parent: RootGUIElement, layer: Int = this.layer + 1): GUIDragGrip {
-        return GUIDragGrip(parent, name + " drag grip", widthPixels - GUIDragGrip.WIDTH - GUICloseButton.WIDTH - 2, 1, open, layer)
+    fun generateDragGrip(layer: Int = this.layer + 1): GUIDragGrip {
+        return GUIDragGrip(topRightControlsGroup, name + " drag grip", { 0 }, { 0 }, open, layer, this).run {
+            topRightControlsGroup.children.add(this)
+            this
+        }
     }
 
-    fun generateDimensionDragGrip(parent: RootGUIElement, layer: Int = this.layer + 1): GUIDimensionDragGrip {
-        return GUIDimensionDragGrip(parent, name + " dimension drag grip", widthPixels - GUIDragGrip.WIDTH - GUICloseButton.WIDTH - GUIDimensionDragGrip.WIDTH - 3, 1, open, layer)
+    fun generateDimensionDragGrip(layer: Int = this.layer + 1): GUIDimensionDragGrip {
+        return GUIDimensionDragGrip(topRightControlsGroup, name + " dimension drag grip", { 0 }, { 0 }, open, layer, this).run {
+            topRightControlsGroup.children.add(this)
+            this
+        }
     }
 
     /* Gets the specified element by name. If checkChildren is true (default), it checks recursively */

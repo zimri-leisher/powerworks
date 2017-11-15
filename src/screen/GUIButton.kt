@@ -62,6 +62,12 @@ class GUIButton(parent: RootGUIElement,
         }
     }
 
+    override fun onOpen() {
+        if(mouseOn)
+            currentTexture = Image.GUI.BUTTON_HIGHLIGHT
+        else currentTexture = Image.GUI.BUTTON
+    }
+
     override fun onClose() {
         currentTexture = Image.GUI.BUTTON
     }

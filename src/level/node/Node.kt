@@ -1,10 +1,16 @@
 package level.node
 
 import level.resource.ResourceType
+import main.Game
 
-abstract class TransferNode<R : ResourceType>(var xTile: Int, var yTile: Int, var dir: Int, var storageNode: StorageNode<R>?)
+abstract class TransferNode<R : ResourceType>(val xTile: Int, val yTile: Int, dir: Int, var storageNode: StorageNode<R>?, val resourceTypeID: Int) {
+    var dir = dir
+        set(value) {
+            Game.currentLevel
+        }
+}
 
-abstract class StorageNode<R : ResourceType> {
+abstract class StorageNode<R : ResourceType>(val resourceTypeID: Int) {
     /**
      * @return true on successful addition
      */

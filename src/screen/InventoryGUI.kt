@@ -21,8 +21,8 @@ class InventoryGUI(name: String,
     val nameText = GUIText(background, name + " name text", 2, 5, displayName)
 
     init {
-        generateCloseButton(this.rootChild, background.layer + 1)
-        generateDragGrip(this.rootChild, background.layer + 1)
+        generateCloseButton(background.layer + 1)
+        generateDragGrip(background.layer + 1)
         val arr = arrayOfNulls<GUIItemSlot>(inv.width * inv.height)
         for (y in 0 until inv.height) {
             for (x in 0 until inv.width) {

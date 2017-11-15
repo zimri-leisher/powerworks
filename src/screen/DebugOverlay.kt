@@ -2,14 +2,14 @@ package screen
 
 import io.*
 
-object DebugOverlay : GUIWindow("Debug overlay", 0, 0, 0, 0, windowGroup =  ScreenManager.Groups.DEBUG_OVERLAY), ControlPressHandler {
+object DebugOverlay : GUIWindow("Debug overlay", 0, 0, 0, 0, windowGroup = ScreenManager.Groups.DEBUG_OVERLAY), ControlPressHandler {
 
     val group: AutoFormatGUIGroup
 
     init {
         transparentToInteraction = true
-        InputManager.registerControlPressHandler(this, Control.DEBUG)
-        group = AutoFormatGUIGroup(rootChild, "Debug overlay text auto format group", 0, 0, yPixelSeparation = 4)
+        InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.DEBUG)
+        group = AutoFormatGUIGroup(rootChild, "Debug overlay text auto format group", 0, 0, yPixelSeparation = 4, accountForChildHeight = true)
         group.nextYPixel = 4
         GUIText(group, "Debug overlay name text", 0, 0, "Debug information:", color = 0x45f442)
     }

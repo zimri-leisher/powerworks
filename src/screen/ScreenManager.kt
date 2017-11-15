@@ -28,9 +28,25 @@ object ScreenManager : ControlPressHandler {
     var elementBeingInteractedWith: RootGUIElement? = null
 
     var selectedElement: RootGUIElement? = null
+        set(value) {
+            if (field != value) {
+                if (field is ControlPressHandler)
+                    InputManager.currentScreenHandlers.remove(field as ControlPressHandler)
+                if(value is ControlPressHandler)
+                    InputManager.currentScreenHandlers.add(value) // fix the error in console rn (mouse level coorrrds not init)
+                field = value
+            }
+        }
     var selectedWindow: GUIWindow? = null
-
-    private val controlPressHandlers = mutableMapOf<ControlPressHandler, List<Control>>()
+        set(value) {
+            if (field != value) {
+                if (field is ControlPressHandler)
+                    InputManager.currentScreenHandlers.remove(field as ControlPressHandler)
+                if(value is ControlPressHandler)
+                    InputManager.currentScreenHandlers.add(value)
+                field = value
+            }
+        }
 
     object Groups {
         val BACKGROUND = WindowGroup(0, "Background")
@@ -41,7 +57,7 @@ object ScreenManager : ControlPressHandler {
     }
 
     init {
-        InputManager.registerControlPressHandler(this)
+        InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.INTERACT, Control.SCROLL_UP, Control.SCROLL_DOWN, Control.DEBUG)
     }
 
     fun render() {
@@ -97,9 +113,8 @@ object ScreenManager : ControlPressHandler {
     /** @return the highest element, layer-wise, that intersects the given x and y coordinates and matches the predicate. */
     fun getHighestElement(window: GUIWindow, xPixel: Int, yPixel: Int, predicate: (RootGUIElement) -> Boolean): RootGUIElement? {
         return window.openChildren.stream().filter {
-            println("checking ${it.name}: intersects element: ${intersectsElement(xPixel, yPixel, it)}, predicate matched: ${predicate(it)}")
             intersectsElement(xPixel, yPixel, it) && predicate(it)
-        }.max { o1, o2 -> println("comparing $o1 with $o2"); o1.layer.compareTo(o2.layer) }.orElseGet { null }
+        }.max { o1, o2 -> o1.layer.compareTo(o2.layer) }.orElseGet { null }
     }
 
     fun screenSizeChange(oldWidth: Int, oldHeight: Int) {
@@ -110,10 +125,6 @@ object ScreenManager : ControlPressHandler {
             }
             it.onScreenSizeChange(oldWidth, oldHeight)
         }
-    }
-
-    fun registerControlPressHandler(el: ControlPressHandler, vararg controls: Control) {
-        controlPressHandlers.put(el, controls.toList())
     }
 
     override fun handleControlPress(p: ControlPress) {
@@ -163,10 +174,13 @@ object ScreenManager : ControlPressHandler {
         } else if (p.control == Control.SCROLL_DOWN || p.control == Control.SCROLL_UP) {
             val dir = if (p.control == Control.SCROLL_DOWN) -1 else 1
             val highestW = getHighestWindow(x, y, { !it.transparentToInteraction })
+            selectedWindow = highestW
             if (highestW != null) {
                 highestW.windowGroup.bringToTop(highestW)
                 val highestE = getHighestElement(highestW, x, y, { !it.transparentToInteraction })
                 highestE!!.onMouseScroll(dir)
+                elementBeingInteractedWith = highestE
+                selectedElement = highestE
             }
 
             /* DEBUG */
@@ -185,24 +199,6 @@ object ScreenManager : ControlPressHandler {
                         println("   $window:")
                         println(window.rootChild.print("      "))
                     }
-                }
-            }
-
-            /* SEND CONTROLS TO ELEMENTS */
-
-        } else {
-            if (selectedWindow is ControlPressHandler) {
-                val w = selectedWindow as ControlPressHandler
-                val highestWControls = controlPressHandlers.get(w)
-                if (highestWControls != null && highestWControls.contains(p.control)) {
-                    w.handleControlPress(p)
-                }
-            }
-            if (selectedElement is ControlPressHandler) {
-                val e = selectedElement as ControlPressHandler
-                val highestEControls = controlPressHandlers.get(e)
-                if (highestEControls != null && highestEControls.contains(p.control)) {
-                    e.handleControlPress(p)
                 }
             }
         }

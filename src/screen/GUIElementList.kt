@@ -10,14 +10,14 @@ class GUIElementList(parent: RootGUIElement, name: String, xPixel: Int, yPixel: 
     override var maxHeightPixels: Int = elements.heightPixels
         get() = elements.heightPixels
 
-    var scrollBar = GUIVerticalScrollBar(this, name + " scroll bar", widthPixels - GUIVerticalScrollBar.DEFAULT_WIDTH, 0, heightPixels, open,layer + 2)
+    var scrollBar = GUIVerticalScrollBar(this, name + " scroll bar", widthPixels - GUIVerticalScrollBar.DEFAULT_WIDTH, 0, heightPixels, open, layer + 2)
 
     init {
         elements.autoRender = false
     }
 
     override fun onAddChild(child: GUIElement) {
-        if(child.name != name + " auto format group" && child.name != name + " scroll bar") {
+        if (child.name != name + " auto format group" && child.name != name + " scroll bar") {
             children.remove(child)
             elements.children.add(child)
             scrollBar.updateScrollBarHeight()
@@ -35,7 +35,7 @@ class GUIElementList(parent: RootGUIElement, name: String, xPixel: Int, yPixel: 
     }
 
     override fun onScroll() {
-        elements.relYPixel = (Math.min(0, heightPixels - elements.heightPixels) * (scrollBar.currentPos.toDouble() / scrollBar.maxPos)).toInt()
+        elements.yAlignment = { (Math.min(0, heightPixels - elements.heightPixels) * (scrollBar.currentPos.toDouble() / scrollBar.maxPos)).toInt() }
     }
 
     companion object {

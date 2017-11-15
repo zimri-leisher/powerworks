@@ -9,6 +9,10 @@ interface ControlPressHandler {
     fun handleControlPress(p: ControlPress)
 }
 
+enum class ControlPressHandlerType {
+    GLOBAL, LEVEL, SCREEN
+}
+
 data class ControlPress(val control: Control, val pressType: PressType)
 
 enum class PressType { PRESSED, REPEAT, RELEASED }
@@ -17,10 +21,17 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
 
     val map = ControlMap.DEFAULT
 
-    /* Print info to out */
     var print = false
 
-    val handlers = mutableMapOf<ControlPressHandler, Map<ControlMap, Array<out Control>?>?>()
+    val handlers = mutableMapOf<
+            Pair<
+                    ControlPressHandler,
+                    ControlPressHandlerType>,
+            Map<
+                    ControlMap,
+                    Array<out Control>?>?>()
+    var currentScreenHandlers = mutableListOf<ControlPressHandler>()
+    var currentLevelHandlers = mutableListOf<ControlPressHandler>()
 
     val keysDown = mutableSetOf<Int>()
 
@@ -44,32 +55,20 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
 
     var mouseOutside = false
 
-    /**
-     * Note: if this is a GUI element and you want it to only receive control presses if it's active,
-     * use ScreenManager.registerControlPressHandler
-     */
-    fun registerControlPressHandler(h: ControlPressHandler, controls: Map<ControlMap, Array<out Control>>? = null) {
-        handlers.put(h, controls)
+    fun registerControlPressHandler(h: ControlPressHandler, type: ControlPressHandlerType, controls: Map<ControlMap, Array<out Control>>? = null) {
+        handlers.put(Pair(h, type), controls)
     }
 
-    /**
-     * Note: if this is a GUI element and you want it to only receive control presses if it's active,
-     * use ScreenManager.registerControlPressHandler
-     */
-    fun registerControlPressHandler(h: ControlPressHandler, vararg controls: Control) {
+    fun registerControlPressHandler(h: ControlPressHandler, type: ControlPressHandlerType, vararg controls: Control) {
         val m = mutableMapOf<ControlMap, Array<out Control>>()
         for (map in ControlMap.values()) {
             m.put(map, controls)
         }
-        handlers.put(h, m)
+        handlers.put(Pair(h, type), m)
     }
 
-    /**
-     * Note: if this is a GUI element and you want it to only receive control presses if it's active,
-     * use ScreenManager.registerControlPressHandler
-     */
-    fun registerControlPressHandler(h: ControlPressHandler, map: ControlMap) {
-        handlers.put(h, mapOf<ControlMap, Array<Control>?>(Pair(map, null)))
+    fun registerControlPressHandler(h: ControlPressHandler, type: ControlPressHandlerType, map: ControlMap) {
+        handlers.put(Pair(h, type), mapOf<ControlMap, Array<Control>?>(Pair(map, null)))
     }
 
     fun update() {
@@ -160,24 +159,32 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
         /* Execute */
         if (print)
             out.println("QUEUE: [${queue.joinToString()}]")
-        for (p in queue) {
-            for ((k, v) in handlers) {
-                if (v != null) {
-                    if (v.containsKey(map)) {
-                        val controls = v.get(map)
-                        if (controls != null) {
-                            if (controls.contains(p.control))
-                                k.handleControlPress(p)
-                        } else {
-                            k.handleControlPress(p)
-                        }
-                    }
-                } else {
-                    k.handleControlPress(p)
+        for(p in queue) {
+            handlers.forEach { k, v ->
+                if(k.second == ControlPressHandlerType.GLOBAL ||
+                        (k.second == ControlPressHandlerType.SCREEN && currentScreenHandlers.contains(k.first)) ||
+                        (k.second == ControlPressHandlerType.LEVEL && currentLevelHandlers.contains(k.first))) {
+                    sendPress(p, k.first, v)
                 }
             }
         }
         queue.clear()
+    }
+
+    private fun sendPress(p: ControlPress, k: ControlPressHandler, v: Map<ControlMap, Array<out Control>?>?) {
+        if (v != null) {
+            if (v.containsKey(map)) {
+                val controls = v.get(map)
+                if (controls != null) {
+                    if (controls.contains(p.control))
+                        k.handleControlPress(p)
+                } else {
+                    k.handleControlPress(p)
+                }
+            }
+        } else {
+            k.handleControlPress(p)
+        }
     }
 
     override fun keyTyped(e: KeyEvent) {
