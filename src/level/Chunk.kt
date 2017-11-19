@@ -5,44 +5,7 @@ import level.moving.MovingObject
 import level.node.InputNode
 import level.node.OutputNode
 import level.tile.Tile
-
-class UpdateableOrganizer {
-
-    var beingTraversed = false
-
-    val elements = mutableListOf<LevelObject>()
-
-    val toAdd = mutableListOf<LevelObject>()
-
-    val toRemove = mutableListOf<LevelObject>()
-
-    fun add(l: LevelObject) {
-        if (beingTraversed)
-            toAdd.add(l)
-        else
-            elements.add(l)
-    }
-
-    fun remove(l: LevelObject) {
-        if (beingTraversed)
-            toRemove.add(l)
-        else
-            elements.remove(l)
-    }
-
-    val size
-        get() = elements.size + toAdd.size - toRemove.size
-
-    fun forEach(f: (LevelObject) -> Unit) {
-        beingTraversed = true
-        elements.forEach(f)
-        beingTraversed = false
-        elements.addAll(toAdd)
-        toAdd.clear()
-        elements.removeAll(toRemove)
-        toRemove.clear()
-    }
-}
+import misc.ConcurrentlyModifiableMutableList
 
 class Chunk(val parent: Level, val xChunk: Int, val yChunk: Int) {
 
@@ -53,7 +16,7 @@ class Chunk(val parent: Level, val xChunk: Int, val yChunk: Int) {
     var blocks: Array<Block?>? = null
     var moving: MutableList<MovingObject>? = null
     var movingOnBoundary: MutableList<MovingObject>? = null
-    var updatesRequired: UpdateableOrganizer? = null
+    var updatesRequired: ConcurrentlyModifiableMutableList<LevelObject>? = null
     var droppedItem: MutableList<DroppedItem>? = null
     // One list for each resource type
     var outputNodes: Array<MutableList<OutputNode<*>>>? = null
@@ -134,7 +97,7 @@ class Chunk(val parent: Level, val xChunk: Int, val yChunk: Int) {
         this.blocks = blocks
         this.tiles = tiles
         this.moving = mutableListOf()
-        this.updatesRequired = UpdateableOrganizer()
+        this.updatesRequired = ConcurrentlyModifiableMutableList()
         this.movingOnBoundary = mutableListOf()
         this.droppedItem = mutableListOf()
         this.outputNodes = arrayOf(

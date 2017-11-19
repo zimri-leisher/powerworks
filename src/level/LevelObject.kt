@@ -11,6 +11,11 @@ abstract class LevelObject protected constructor(open val xPixel: Int, open val 
     open val xChunk = xTile shr 3
     open val yChunk = yTile shr 3
 
+    /**
+     * If this has been added to the level
+     */
+    var inLevel = false
+
     var requiresUpdate: Boolean = requiresUpdate
         set(value) {
             val c = Game.currentLevel.getChunk(xChunk, yChunk)
@@ -24,6 +29,14 @@ abstract class LevelObject protected constructor(open val xPixel: Int, open val 
     open fun render() {
         if(Game.RENDER_HITBOXES)
             renderHitbox()
+    }
+
+    open fun onAddToLevel() {
+
+    }
+
+    open fun onRemoveFromLevel() {
+
     }
 
     protected fun renderHitbox() {

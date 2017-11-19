@@ -1,5 +1,7 @@
 package level.block
 
+import audio.AudioManager
+import audio.AudioManager.SoundSource
 import graphics.LocalAnimation
 
 abstract class MachineBlock(xTile: Int, yTile: Int, override val type: MachineBlockType, on: Boolean = false) : Block(xTile, yTile, type) {
@@ -8,17 +10,24 @@ abstract class MachineBlock(xTile: Int, yTile: Int, override val type: MachineBl
         set(value) {
             if (!value && field) {
                 onTurnOff()
-                if(type.getTexture(rotation) is LocalAnimation) {
+                if(currentSound != null)
+                    currentSound!!.playing = false
+                if (type.getTexture(rotation) is LocalAnimation) {
                     (type.getTexture(rotation) as LocalAnimation).playing = false
                 }
             } else if (value && !field) {
                 onTurnOn()
-                if(type.getTexture(rotation) is LocalAnimation) {
+                if(currentSound == null && type.onSound != null) {
+                    AudioManager.play(type.onSound!!, xPixel, yPixel, true)
+                }
+                if (type.getTexture(rotation) is LocalAnimation) {
                     (type.getTexture(rotation) as LocalAnimation).playing = true
                 }
             }
             field = value
         }
+
+    var currentSound: SoundSource? = null
     var currentWork = 0
 
     open fun onTurnOn() {
@@ -36,12 +45,17 @@ abstract class MachineBlock(xTile: Int, yTile: Int, override val type: MachineBl
     override fun update() {
         if (on) {
             currentWork++
-            if (currentWork == type.maxWork) {
+            onWork()
+            if (currentWork >= (type.maxWork / type.defaultSpeed).toInt()) {
                 currentWork = 0
                 onFinishWork()
                 if (!type.loop)
                     on = false
             }
         }
+    }
+
+    open fun onWork() {
+        // use power and type.defaultEfficiency
     }
 }

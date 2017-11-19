@@ -3,6 +3,7 @@ package inv
 import graphics.Image
 import graphics.Texture
 import level.block.BlockType
+import level.block.ChestBlockType
 import level.block.MachineBlockType
 import level.resource.ResourceType
 
@@ -17,6 +18,8 @@ sealed class ItemType(val name: String, val texture: Texture, private val placed
     object MINER : ItemType("Miner", Image.MINER_ITEM_TEMP, MachineBlockType.MINER.id, 10)
 
     object IRON_ORE : ItemType("Iron Ore", Image.IRON_ORE_ITEM, maxStack = 100)
+
+    object CHEST_SMALL : ItemType("Small Chest", Image.ERROR, ChestBlockType.CHEST_SMALL.id, 20)
 
     val placedBlock: BlockType
         get() = BlockType.getByID(placedBlockID)!!

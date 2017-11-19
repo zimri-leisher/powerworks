@@ -16,6 +16,8 @@ class InventoryGUI(name: String,
                 open,
                 layer, ScreenManager.Groups.INVENTORY) {
 
+    // TODO make this use init functions for x and y so that u can have it start in the center
+
     val itemSlots: Array<GUIItemSlot>
     val background = GUITexturePane(this.rootChild, name + " background", 0, 0, Image(Utils.genRectangle(widthPixels, heightPixels)))
     val nameText = GUIText(background, name + " name text", 2, 5, displayName)

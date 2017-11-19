@@ -4,7 +4,8 @@ import graphics.RenderParams
 import graphics.Renderer
 import level.CHUNK_TILE_EXP
 
-// Default argument for type is present here
+// This is not a level object for performance reasons, and besides,
+// why would we need it to be? It's not involved in anything except mining (for now)
 open class Tile(type: TileType = TileType.GRASS, val xTile: Int, val yTile: Int) {
 
     val xPixel = xTile shl 4

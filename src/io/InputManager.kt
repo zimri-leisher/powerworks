@@ -1,6 +1,7 @@
 package io
 
 import main.Game
+import misc.ConcurrentlyModifiableMutableMap
 import java.awt.event.*
 import java.util.concurrent.CopyOnWriteArrayList
 import io.OutputManager as out
@@ -23,7 +24,7 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
 
     var print = false
 
-    val handlers = mutableMapOf<
+    val handlers = ConcurrentlyModifiableMutableMap<
             Pair<
                     ControlPressHandler,
                     ControlPressHandlerType>,

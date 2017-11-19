@@ -50,6 +50,9 @@ open class RootGUIElement(val parentWindow: GUIWindow,
     }
     var open: Boolean = open
         set(value) {
+            if (this !is GUIElement && value != parentWindow.open) {
+                parentWindow.open = value
+            }
             if (!value && field) {
                 field = false
                 mouseOn = false
@@ -163,6 +166,11 @@ open class RootGUIElement(val parentWindow: GUIWindow,
      * being rendered by some other container, for instance, GUIGroup
      */
     var autoRender = true
+
+    /** Opens if closed, closes if opened */
+    fun toggle() {
+        open = !open
+    }
 
     open fun render() {}
 
@@ -314,11 +322,6 @@ abstract class GUIElement(parent: RootGUIElement,
             this(parent.rootChild, name, xPixel, yPixel, widthPixels, heightPixels, open, layer)
 
     /* Util */
-    /** Opens if closed, closes if opened */
-    fun toggle() {
-        open = !open
-    }
-
     /** Makes this and all it's children's layers their respective parent's layer + 1 */
     fun compressLayer() {
         layer = parent.layer + 1

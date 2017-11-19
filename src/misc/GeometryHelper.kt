@@ -21,4 +21,16 @@ object GeometryHelper {
     fun isOppositeAngle(a1: Int, a2: Int): Boolean {
         return Math.max(a1, a2) - 2 == Math.min(a1, a2)
     }
+
+    fun getOppositeAngle(a1: Int): Int {
+        return (a1 + 2) % 4
+    }
+
+    fun getXSign(dir: Int): Int {
+        return if (dir == 1) 1 else if (dir == 3) -1 else 0
+    }
+
+    fun getYSign(dir: Int): Int {
+        return if (dir == 0) -1 else if (dir == 2) 1 else 0
+    }
 }

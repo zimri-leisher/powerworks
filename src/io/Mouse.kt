@@ -12,6 +12,7 @@ object Mouse {
     fun render() {
         if(heldItem != null) {
             Renderer.renderTexture(heldItem!!.type.texture, xPixel, yPixel)
+            Renderer.renderText(heldItem!!.quantity.toString(), xPixel, yPixel + 4)
         }
     }
 }

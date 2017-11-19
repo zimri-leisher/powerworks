@@ -21,13 +21,15 @@ class ViewWindow(name: String,
             camera, zoomLevel, open)
     val outline = GUIOutline(view, name + " outline", open = open)
     val nameText = GUIText(view, name, 1, 4, name, layer = 1)
+    val controls = mutableListOf<GUIElement>()
 
     init {
         InputManager.registerControlPressHandler(this, ControlPressHandlerType.SCREEN, Control.UP, Control.DOWN, Control.LEFT, Control.RIGHT)
         nameText.transparentToInteraction = true
-        generateDimensionDragGrip(2)
-        generateDragGrip(2)
-        generateCloseButton(2)
+        controls.add(generateDimensionDragGrip(2, 2))
+        controls.add(generateDragGrip(2))
+        controls.add(generateCloseButton(2))
+        controls.add(nameText)
     }
 
     override fun handleControlPress(p: ControlPress) {

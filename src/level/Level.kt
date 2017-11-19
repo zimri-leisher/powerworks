@@ -3,10 +3,7 @@ package level
 import audio.AudioManager
 import graphics.Renderer
 import inv.ItemType
-import io.InputManager
-import io.Mouse
-import io.MouseMovementListener
-import io.PressType
+import io.*
 import level.block.Block
 import level.block.GhostBlock
 import level.moving.MovingObject
@@ -68,6 +65,8 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
     }
 
     var ghostBlock: GhostBlock? = null
+
+    var selectedLevelObject: LevelObject? = null
 
     var mouseOnLevel = false
     var mouseLevelXPixel = 0
@@ -147,6 +146,15 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
                     c.moving!!.filter { it.yTile >= y && it.yTile < y + 1 }.forEach { it.render() }
             }
         }
+        if (selectedLevelObject != null && ghostBlock == null) {
+            val s = selectedLevelObject!!
+            if (r.contains(s.xPixel, s.yPixel)) {
+                if (s is Block)
+                    Renderer.renderEmptyRectangle(s.xPixel, s.yPixel, s.type.widthTiles shl 4, s.type.heightTiles shl 4, 0x1A6AF4, .45f)
+                else if (s is MovingObject)
+                    Renderer.renderEmptyRectangle(s.xPixel, s.yPixel, s.hitbox.width, s.hitbox.height, 0x1A6AF4, .45f)
+            }
+        }
         /*
         for (y in (maxY - 1) downTo minY) {
             for (x in minX until maxX) {
@@ -178,17 +186,21 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
                 count++
         }
         updateGhostBlock()
+        updateSelectedLevelObject()
         DebugOverlay.setInfo("Loaded chunks", count.toString())
     }
 
+    /**
+     * Makes the ghost block that appears on the mouse when holding a placeable item up-to-date
+     */
     private fun updateGhostBlock() {
         val currentItem = HUD.Hotbar.currentItem
         if (currentItem == null && ghostBlock != null) {
             ghostBlock = null
         } else if (currentItem != null) {
             val placedType = currentItem.type.placedBlock
-            val xTile = ((mouseLevelXPixel + placedType.textureXPixelOffset) shr 4) - placedType.widthTiles / 2
-            val yTile = ((mouseLevelYPixel + placedType.textureYPixelOffset) shr 4) - placedType.heightTiles / 2
+            val xTile = ((mouseLevelXPixel) shr 4) - placedType.widthTiles / 2
+            val yTile = ((mouseLevelYPixel) shr 4) - placedType.heightTiles / 2
             if (ghostBlock == null) {
                 ghostBlock = GhostBlock(xTile, yTile, placedType)
             } else {
@@ -205,6 +217,9 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
     private fun isBeingRendered(xChunk: Int, yChunk: Int) = views.any { it.viewRectangle.intersects(Rectangle(xChunk shl (CHUNK_TILE_EXP + 4), yChunk shl (CHUNK_TILE_EXP + 4), 128, 128)) }
 
     /* Listeners and senders */
+    /**
+     * Called by gui views when they are clicked on, used to place the ghost block
+     */
     fun onMouseAction(type: PressType, xPixel: Int, yPixel: Int) {
         if (ghostBlock != null && ghostBlock!!.placeable) {
             add(ghostBlock!!.type(ghostBlock!!.xTile, ghostBlock!!.yTile))
@@ -212,40 +227,60 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
         }
     }
 
+    /**
+     * Called when any view moves
+     */
     override fun onCameraMove(view: GUIView, pXPixel: Int, pYPixel: Int) {
         if (view == viewBeingInteractedWith) {
-            mouseMoveRelativeToLevel()
+            updateMouseLevelLocation()
         }
     }
 
     // Will I know what I did at 3:16 AM later? Hopefully. Right now this seems reasonable
-    private fun mouseMoveRelativeToLevel() {
-        updateMouseLevelLocation()
-    }
 
     override fun onMouseMove(pXPixel: Int, pYPixel: Int) {
         updateViewBeingInteractedWith()
         if (mouseOnLevel) {
-            mouseMoveRelativeToLevel()
+            updateMouseLevelLocation()
         }
     }
 
     private fun updateViewBeingInteractedWith() {
         views.sortByDescending { it.parentWindow.layer }
         viewBeingInteractedWith = views.firstOrNull { it.mouseOn }
-        if(viewBeingInteractedWith != null)
+        if (viewBeingInteractedWith != null)
             lastViewInteractedWith = viewBeingInteractedWith
         mouseOnLevel = viewBeingInteractedWith != null
         updateMouseLevelLocation()
         updateAudioEars()
     }
 
+    /**
+     * Updates the control press handlers that get controls sent to them, if any exist
+     */
+    private fun updateSelectedLevelObject() {
+        InputManager.currentLevelHandlers.clear()
+        val block = getBlock(mouseLevelXPixel shr 4, mouseLevelYPixel shr 4)
+        val moving = getMoving(mouseLevelXPixel, mouseLevelYPixel)
+        selectedLevelObject = moving ?: block
+        if (block is ControlPressHandler)
+            InputManager.currentLevelHandlers.add(block)
+        if (moving is ControlPressHandler)
+            InputManager.currentLevelHandlers.add(moving)
+    }
+
+    /**
+     * Updates the audio engine so you hear sound from last the selected view
+     */
     private fun updateAudioEars() {
-        if(lastViewInteractedWith != null) {
+        if (lastViewInteractedWith != null) {
             AudioManager.ears = lastViewInteractedWith!!.camera
         }
     }
 
+    /**
+     * Keeps the mouse level x and y pixel up-to-date by comparing with the currently selected view
+     */
     private fun updateMouseLevelLocation() {
         if (viewBeingInteractedWith != null) {
             val zoom = viewBeingInteractedWith!!.zoomMultiplier
@@ -353,7 +388,7 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
     }
 
     /**
-     * Does everything necessary to add the object to the level
+     * Does everything necessary to put the object to the level
      * @return if the object was added
      */
     fun add(l: LevelObject): Boolean {
@@ -366,6 +401,8 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
                     getChunkFromTile(l.xTile + x, l.yTile + y).setBlock(l, l.xTile + x, l.yTile + y)
                 }
             }
+            l.inLevel = true
+            l.onAddToLevel()
             return true
         } else if (l is MovingObject) {
             if (l is DroppedItem) {
@@ -386,6 +423,8 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
                         }
                         l.currentChunk.addMoving(l)
                         l.currentChunk.addDroppedItem(l)
+                        l.inLevel = true
+                        l.onAddToLevel()
                         return true
                     }
                 }
@@ -397,6 +436,9 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
                     l.intersectingChunks.forEach { it.movingOnBoundary!!.add(l) }
                 }
                 l.currentChunk.addMoving(l)
+                l.inLevel = true
+                l.onAddToLevel()
+                return true
             }
         }
         return false
@@ -412,24 +454,36 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
         updateNode(o)
     }
 
-    fun remove(l: LevelObject) {
+    fun remove(l: LevelObject): Boolean {
         val c = getChunk(l.xChunk, l.yChunk)
-        if (l is Block) {
-
-            for (x in 0 until l.type.widthTiles) {
-                for (y in 0 until l.type.heightTiles) {
-                    c.removeBlock(l, l.xTile + x, l.yTile + y)
+        if (l.inLevel) {
+            if (l is Block) {
+                for (x in 0 until l.type.widthTiles) {
+                    for (y in 0 until l.type.heightTiles) {
+                        c.removeBlock(l, l.xTile + x, l.yTile + y)
+                    }
                 }
+                l.inLevel = false
+                l.onRemoveFromLevel()
+                return true
+            } else if (l is MovingObject) {
+                if (l is DroppedItem) {
+                    l.currentChunk.removeDroppedItem(l)
+                }
+                if (l.hitbox != Hitbox.NONE)
+                    l.intersectingChunks.forEach { it.movingOnBoundary!!.remove(l) }
+                l.currentChunk.removeMoving(l)
+                l.inLevel = false
+                l.onRemoveFromLevel()
             }
-        } else if (l is MovingObject) {
-            l.intersectingChunks.forEach { it.movingOnBoundary!!.remove(l) }
-            l.currentChunk.removeMoving(l)
+            return true
         }
+        return false
     }
 
     /**
      * Tries to 'materialize' this resource where specified. Note: most resources have no physical representation
-     * other than some purely decoratee particles
+     * other than some purely decorative particles
      * @return the quantity of the resource that was able to be materialized
      */
     fun add(xPixel: Int, yPixel: Int, r: ResourceType, quantity: Int): Int {
@@ -465,7 +519,11 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
      * If load is true, it will load the chunk if necessary
      */
     fun getChunkFromTile(xTile: Int, yTile: Int, load: Boolean = true): Chunk {
-        return getChunk(xTile shr 3, yTile shr 3, load)
+        return getChunk(xTile shr CHUNK_TILE_EXP, yTile shr CHUNK_TILE_EXP, load)
+    }
+
+    fun getChunkFromPixel(xPixel: Int, yPixel: Int, load: Boolean = true): Chunk {
+        return getChunkFromTile(xPixel shr 4, yPixel shr 4, load)
     }
 
     fun getChunksFromRectangle(xChunk: Int, yChunk: Int, xChunk2: Int, yChunk2: Int): List<Chunk> {
@@ -484,6 +542,15 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
 
     fun getChunksFromPixelRectangle(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int): List<Chunk> {
         return getChunksFromRectangle(xPixel shr CHUNK_PIXEL_EXP, yPixel shr CHUNK_PIXEL_EXP, (xPixel + widthPixels) shr CHUNK_PIXEL_EXP, (yPixel + heightPixels) shr CHUNK_PIXEL_EXP)
+    }
+
+    fun getMoving(xPixel: Int, yPixel: Int): MovingObject? {
+        val chunk = getChunkFromPixel(xPixel, yPixel)
+        var ret: MovingObject? = null
+        ret = chunk.moving!!.firstOrNull { GeometryHelper.contains(it.xPixel + it.hitbox.xStart, it.yPixel + it.hitbox.yStart, it.hitbox.width, it.hitbox.height, xPixel, yPixel, 0, 0) }
+        if (ret == null)
+            ret = chunk.movingOnBoundary!!.firstOrNull { GeometryHelper.contains(it.xPixel + it.hitbox.xStart, it.yPixel + it.hitbox.yStart, it.hitbox.width, it.hitbox.height, xPixel, yPixel, 0, 0) }
+        return ret
     }
 
     /**

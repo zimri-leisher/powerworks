@@ -1,10 +1,38 @@
 package screen
 
-open class GUIWindow(val name: String, xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int,
+open class GUIWindow(val name: String, xAlignment: () -> Int, yAlignment: () -> Int, widthAlignment: () -> Int, heightAlignment: () -> Int,
                      open: Boolean = false,
                      /** Subject to change if this is not a fixed window */
                      var layer: Int = 0,
                      windowGroup: WindowGroup) {
+
+    constructor(name: String, xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int,
+                open: Boolean = false,
+                /** Subject to change if this is not a fixed window */
+                layer: Int = 0,
+                windowGroup: WindowGroup) : this(name, { xPixel }, { yPixel }, { widthPixels }, { heightPixels }, open, layer, windowGroup)
+
+
+    var xAlignment = xAlignment
+        set(value) {
+            field = value
+            xPixel = value()
+        }
+    var yAlignment = yAlignment
+        set(value) {
+            field = value
+            yPixel = value()
+        }
+    var widthAlignment = widthAlignment
+        set(value) {
+            field = value
+            widthPixels = value()
+        }
+    var heightAlignment = heightAlignment
+        set(value) {
+            field = value
+            heightPixels = value()
+        }
     var windowGroup: WindowGroup = windowGroup
         set(value) {
             field.windows.remove(this)
@@ -44,7 +72,26 @@ open class GUIWindow(val name: String, xPixel: Int, yPixel: Int, widthPixels: In
     var rootChild = RootGUIElement(this, { this.widthPixels }, { this.heightPixels })
     val children
         get() = rootChild.children
-    var xPixel = xPixel
+    var widthPixels = widthAlignment()
+        set(value) {
+            if (field != value) {
+                val old = field
+                field = value
+                onDimensionChange(old, heightPixels)
+                rootChild.widthPixels = value
+            }
+        }
+
+    var heightPixels = heightAlignment()
+        set(value) {
+            if (field != value) {
+                val old = field
+                field = value
+                onDimensionChange(widthPixels, old)
+                rootChild.heightPixels = value
+            }
+        }
+    var xPixel = xAlignment()
         set(value) {
             if (field != value) {
                 val old = field
@@ -55,7 +102,7 @@ open class GUIWindow(val name: String, xPixel: Int, yPixel: Int, widthPixels: In
                 }
             }
         }
-    var yPixel = yPixel
+    var yPixel = yAlignment()
         set(value) {
             if (field != value) {
                 val old = field
@@ -66,27 +113,11 @@ open class GUIWindow(val name: String, xPixel: Int, yPixel: Int, widthPixels: In
                 }
             }
         }
-    var widthPixels = widthPixels
-        set(value) {
-            if (field != value) {
-                val old = field
-                field = value
-                onDimensionChange(old, heightPixels)
-                rootChild.widthPixels = value
-            }
-        }
 
-    var heightPixels = heightPixels
-        set(value) {
-            if (field != value) {
-                val old = field
-                field = value
-                onDimensionChange(widthPixels, old)
-                rootChild.heightPixels = value
-            }
-        }
-
-    var topRightControlsGroup = AutoFormatGUIGroup(rootChild, name + " top right controls group", { this.widthPixels - 5 }, { 1 }, open, xPixelSeparation = -5)
+    var topLeftGroup = AutoFormatGUIGroup(rootChild, name + " top left group", { 1 }, { 1 }, open, xPixelSeparation = 5)
+    var topRightGroup = AutoFormatGUIGroup(rootChild, name + " top right group", { this.widthPixels - 5 }, { 1 }, open, xPixelSeparation = -5)
+    var bottomRightGroup = AutoFormatGUIGroup(rootChild, name + " bottom right group", { this.widthPixels - 5 }, { this.heightPixels - 5 }, open, xPixelSeparation = -5)
+    var bottomLeftGroup = AutoFormatGUIGroup(rootChild, name + " bottom left group", { this.widthPixels - 5 }, { 1 }, open, xPixelSeparation = 5)
 
     init {
         windowGroup.windows.add(this)
@@ -103,25 +134,26 @@ open class GUIWindow(val name: String, xPixel: Int, yPixel: Int, widthPixels: In
     var transparentToInteraction = false
 
     /* Util */
-    fun generateCloseButton(layer: Int = this.layer + 1): GUICloseButton {
-        return GUICloseButton(topRightControlsGroup, name + " close button", { 0 }, { 0 }, open, layer, this).run {
-            topRightControlsGroup.children.add(this)
-            this
-        }
+    fun generateCloseButton(layer: Int = this.layer + 1, pos: Int = 1): GUICloseButton {
+        return GUICloseButton(getGroup(pos), name + " close button", { 0 }, { 0 }, open, layer, this)
     }
 
-    fun generateDragGrip(layer: Int = this.layer + 1): GUIDragGrip {
-        return GUIDragGrip(topRightControlsGroup, name + " drag grip", { 0 }, { 0 }, open, layer, this).run {
-            topRightControlsGroup.children.add(this)
-            this
-        }
+    fun generateDragGrip(layer: Int = this.layer + 1, pos: Int = 1): GUIDragGrip {
+        return GUIDragGrip(getGroup(pos), name + " drag grip", { 0 }, { 0 }, open, layer, this)
     }
 
-    fun generateDimensionDragGrip(layer: Int = this.layer + 1): GUIDimensionDragGrip {
-        return GUIDimensionDragGrip(topRightControlsGroup, name + " dimension drag grip", { 0 }, { 0 }, open, layer, this).run {
-            topRightControlsGroup.children.add(this)
-            this
+    fun generateDimensionDragGrip(layer: Int = this.layer + 1, pos: Int = 1): GUIDimensionDragGrip {
+        return GUIDimensionDragGrip(getGroup(pos), name + " dimension drag grip", { 0 }, { 0 }, open, layer, this)
+    }
+
+    private fun getGroup(pos: Int): AutoFormatGUIGroup {
+        when(pos) {
+            0 -> return topLeftGroup
+            1 -> return topRightGroup
+            2 -> return bottomRightGroup
+            3 -> return bottomLeftGroup
         }
+        return topRightGroup
     }
 
     /* Gets the specified element by name. If checkChildren is true (default), it checks recursively */

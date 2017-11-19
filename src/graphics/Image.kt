@@ -246,14 +246,11 @@ class Image private constructor() : Texture {
     companion object {
         // TODO definitely rethink how weapon textures are done, apply this to other things in the future like block textures
         val ERROR = Image("/textures/misc/error.png")
-        val BLOCK_PLACEABLE = Image("/textures/block/placeable.png")
-        val BLOCK_NOT_PLACEABLE = Image("/textures/block/not_placeable.png")
         val IRON_ORE_ITEM = Image("/textures/item/iron_ore_raw.png")
         val CONVEYOR_BELT_ITEM = Image("/textures/item/conveyor_belt.png")
         val IRON_INGOT = Image("/textures/item/iron_ingot.png")
         val ARROW = Image(Utils.modify("/textures/misc/arrow.png", ImageParams(alphaMultiplier = 50)))
         val VOID = Image(Color(0))
-        val MINER = Image("/textures/block/miner.png")
         val MINER_ITEM_TEMP = Image("/textures/item/miner_temp.png") //TODO
     }
 
@@ -262,6 +259,22 @@ class Image private constructor() : Texture {
         val ONE = WeaponImages(1)
         val TWO = WeaponImages(2)
         //val THREE = WeaponImages(3)
+    }
+
+    object Block {
+        val CHEST_SMALL = Image("/textures/block/chest_small.png")
+        val MINER = Image("/textures/block/miner.png")
+        val PIPE_4_WAY = Image("/textures/block/pipe_4_way.png")
+        val PIPE_3_WAY_UP = Image("/textures/block/pipe_3_way_up.png")
+        val PIPE_3_WAY_RIGHT = Image("/textures/block/pipe_3_way_right.png")
+        val PIPE_3_WAY_DOWN = Image("/textures/block/pipe_3_way_down.png")
+        val PIPE_3_WAY_LEFT = Image("/textures/block/pipe_3_way_left.png")
+        val PIPE_2_WAY_VERTICAL = Image("/textures/block/pipe_2_way_vertical.png")
+        val PIPE_2_WAY_HORIZONTAL = Image(Utils.modify(PIPE_2_WAY_VERTICAL, ImageParams(rotation = 1)))
+        val PIPE_CORNER_UP_TO_RIGHT = Image("/textures/block/pipe_corner_up_right.png")
+        val PIPE_CORNER_RIGHT_TO_DOWN = Image("/textures/block/pipe_corner_right_down.png")
+        val PIPE_CORNER_DOWN_TO_LEFT = Image("/textures/block/pipe_corner_down_left.png")
+        val PIPE_CORNER_LEFT_TO_UP = Image("/textures/block/pipe_corner_left_up.png")
     }
 
     object GUI {
@@ -299,17 +312,15 @@ class Image private constructor() : Texture {
         val ITEM_SLOT_DISPLAY = Image("/textures/gui/item_slot_display.png")
         val ITEM_SLOT_CLICK = Image("/textures/gui/item_slot_click.png")
         val CHAT_BAR = Image(Utils.modify("/textures/gui/chat_bar.png", ImageParams(scaleWidth = 180.0, scaleHeight = 10.0)))
-        val MAIN_MENU_BACKGROUND = Image(Color(0x5B5B5B))
-        val MAIN_MENU_BUTTON_BOX = Image("/textures/gui/main_menu.png")
+        val MAIN_MENU_BACKGROUND = Image("/textures/gui/main_menu_bg.png")
+        val MAIN_MENU_BUTTON_BOX = Image("/textures/gui/main_menu_button_box.png")
         val OPTIONS_MENU_BACKGROUND = Image(Color(0x999999))
         val ESCAPE_MENU_BACKGROUND = Image("/textures/gui/escape_menu_background.png")
-        val HOTBAR_SLOT = Image("/textures/gui/hotbar_slot.png")
-        val HOTBAR_SLOT_SELECTED = Image("/textures/gui/hotbar_slot_selected.png")
-        val CURSOR_DEFAULT = Image("/textures/cursor/cursor_default.png")
-        val CURSOR_LEFT_CLICK = Image("/textures/cursor/cursor_left_click.png")
         val BUTTON = Image(Utils.genRectangle(64, 16))
         val BUTTON_HIGHLIGHT = Image(Utils.modify(BUTTON, ImageParams(brightnessMultiplier = 1.2)))
         val BUTTON_CLICK = Image(Utils.modify(BUTTON, ImageParams(rotation = 2)))
+        val MAIN_MENU_BACKGROUND_FILLER = Image(Color(0x515151))
+        val HOTBAR_SELECTED_SLOT = Image("/textures/gui/selected_slot.png")
     }
 
 }

@@ -16,6 +16,10 @@ class WindowGroup(var layer: Int, val name: String) {
         ScreenManager.windowGroups.add(this)
     }
 
+    fun getTop(predicate: (GUIWindow) -> Boolean = { true }): GUIWindow? {
+        return windows.stream().filter(predicate).max { o1, o2 -> o1.layer.compareTo(o2.layer) }.orElseGet { null }
+    }
+
     fun bringToTop(window: GUIWindow) {
         if (windows.contains(window)) {
             window.layer = windows.size + 1

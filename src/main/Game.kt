@@ -273,7 +273,13 @@ object Game : Canvas(), Runnable, ControlPressHandler {
                 Control.TAKE_SCREENSHOT -> takeScreenshot()
                 Control.TOGGLE_RENDER_HITBOXES -> RENDER_HITBOXES = !RENDER_HITBOXES
                 Control.TOGGLE_CHUNK_INFO -> CHUNK_BOUNDARIES = !CHUNK_BOUNDARIES
-                Control.TOGGLE_INVENTORY -> IngameGUI.mainInvGUI.toggle()
+                Control.TOGGLE_INVENTORY -> {
+                    if (!ScreenManager.Groups.INVENTORY.windows.any { it.open }) {
+                        IngameGUI.mainInvGUI.open = true
+                    } else {
+                        ScreenManager.Groups.INVENTORY.getTop { it.open }?.toggle()
+                    }
+                }
             }
     }
 

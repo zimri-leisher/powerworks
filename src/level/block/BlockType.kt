@@ -16,6 +16,8 @@ sealed class BlockType(val name: String,
 
     object ERROR : BlockType("Error", arrayOf<Texture>(Image.ERROR))
 
+    object TUBE : BlockType("Tube", arrayOf<Texture>(Image.ERROR))
+
     val id = nextID++
 
     init {
@@ -51,7 +53,7 @@ sealed class ChestBlockType(name: String,
                             requiresUpdate: Boolean = false,
                             val invWidth: Int,
                             val invHeight: Int) : BlockType(name, textures, widthTiles, heightTiles, hitbox, textureXPixelOffset, textureYPixelOffset, requiresUpdate) {
-    object CHEST_SMALL : ChestBlockType("Small Chest", arrayOf<Texture>(Image.ERROR), invWidth = 8, invHeight = 3)
+    object CHEST_SMALL : ChestBlockType("Small Chest", arrayOf<Texture>(Image.Block.CHEST_SMALL), textureYPixelOffset = 16, invWidth = 8, invHeight = 3)
 
     override fun invoke(xTile: Int, yTile: Int) = ChestBlock(xTile, yTile, this)
 }
@@ -81,7 +83,7 @@ sealed class MachineBlockType(name: String,
             defaultSpeed,
             loop)
 
-    object MINER : MachineBlockType("Miner", arrayOf<Texture>(Image.MINER), 2, 2, Hitbox.TILE2X2, textureYPixelOffset = 32, requiresUpdate = true, maxWork = 500) {
+    object MINER : MachineBlockType("Miner", arrayOf<Texture>(Image.Block.MINER), 2, 2, Hitbox.TILE2X2, textureYPixelOffset = 32, requiresUpdate = true, maxWork = 500) {
         override operator fun invoke(xTile: Int, yTile: Int) = MinerBlock(xTile, yTile)
     }
 

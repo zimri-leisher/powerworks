@@ -38,10 +38,18 @@ object Renderer {
         g2d.fillRect((xPixel + xPixelOffset) * Game.SCALE, (yPixel + yPixelOffset) * Game.SCALE, widthPixels * Game.SCALE, heightPixels * Game.SCALE)
     }
 
-    fun renderEmptyRectangle(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int, color: Int = 0xFFFFFF, borderThickness: Int = 1) {
+    fun renderEmptyRectangle(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int, color: Int = 0xFFFFFF, alpha: Float = 1.0f, borderThickness: Int = 1) {
         g2d.color = Color(color)
+        var oldComposite: Composite? = null
+        if (alpha != 1.0f) {
+            oldComposite = g2d.composite
+            g2d.composite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha)
+        }
         g2d.stroke = BasicStroke(Game.SCALE.toFloat() * borderThickness)
         g2d.drawRect((xPixel + xPixelOffset) * Game.SCALE, (yPixel + yPixelOffset) * Game.SCALE, widthPixels * Game.SCALE, heightPixels * Game.SCALE)
+        if (alpha != 1.0f) {
+            g2d.composite = oldComposite
+        }
     }
 
     fun renderTexture(t: Texture, xPixel: Int, yPixel: Int) {

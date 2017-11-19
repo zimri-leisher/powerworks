@@ -1,7 +1,6 @@
 package screen
 
 import io.*
-import main.Game
 import misc.GeometryHelper
 
 object ScreenManager : ControlPressHandler {
@@ -120,9 +119,11 @@ object ScreenManager : ControlPressHandler {
     fun screenSizeChange(oldWidth: Int, oldHeight: Int) {
         windows.forEach {
             if (it.adjustDimensions) {
-                it.widthPixels = ((Game.WIDTH.toDouble() / oldWidth) * it.widthPixels).toInt()
-                it.heightPixels = ((Game.HEIGHT.toDouble() / oldHeight) * it.heightPixels).toInt()
+                it.widthPixels = it.widthAlignment()
+                it.heightPixels = it.heightAlignment()
             }
+            it.xPixel = it.xAlignment()
+            it.yPixel = it.yAlignment()
             it.onScreenSizeChange(oldWidth, oldHeight)
         }
     }
