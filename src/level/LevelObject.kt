@@ -14,7 +14,16 @@ abstract class LevelObject protected constructor(open val xPixel: Int, open val 
     /**
      * If this has been added to the level
      */
-    var inLevel = false
+    open var inLevel = false
+        set(value) {
+            if (field && !value) {
+                field = value
+                onRemoveFromLevel()
+            } else if (!field && value) {
+                field = value
+                onAddToLevel()
+            }
+        }
 
     var requiresUpdate: Boolean = requiresUpdate
         set(value) {
@@ -27,25 +36,37 @@ abstract class LevelObject protected constructor(open val xPixel: Int, open val 
         }
 
     open fun render() {
-        if(Game.RENDER_HITBOXES)
+        if (Game.RENDER_HITBOXES)
             renderHitbox()
     }
 
+    /**
+     * When this gets put in the level
+     * Called when inLevel is changed to true, should usually be from Level.add
+     */
     open fun onAddToLevel() {
-
     }
 
+    /**
+     * When this gets taken out of the level
+     * Called when inLevel is changed to false, should usually be from Level.remove
+     */
     open fun onRemoveFromLevel() {
-
     }
 
     protected fun renderHitbox() {
         Renderer.renderFilledRectangle(xPixel + hitbox.xStart, yPixel + hitbox.yStart, hitbox.width, hitbox.height, 0xFF0010)
     }
 
+    /**
+     * Only called if type.requiresUpdate is true
+     */
     open fun update() {
     }
 
+    /**
+     * Called if this collides with something or something else collides with it
+     */
     open fun onCollide(o: LevelObject) {
     }
 

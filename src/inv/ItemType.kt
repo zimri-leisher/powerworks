@@ -9,17 +9,9 @@ import level.resource.ResourceType
 
 private var nextID = 0
 
-sealed class ItemType(val name: String, val texture: Texture, private val placedBlockID: Int = BlockType.ERROR.id, val maxStack: Int) : ResourceType {
+open class ItemType(val name: String, val texture: Texture, val stretchTexture: Boolean = true, private val placedBlockID: Int = BlockType.ERROR.id, val maxStack: Int) : ResourceType {
 
-    object ERROR : ItemType("Error", Image.ERROR, maxStack = 5)
-
-    object TEST : ItemType("Test", Image.ERROR, BlockType.ERROR.id, 5)
-
-    object MINER : ItemType("Miner", Image.MINER_ITEM_TEMP, MachineBlockType.MINER.id, 10)
-
-    object IRON_ORE : ItemType("Iron Ore", Image.IRON_ORE_ITEM, maxStack = 100)
-
-    object CHEST_SMALL : ItemType("Small Chest", Image.ERROR, ChestBlockType.CHEST_SMALL.id, 20)
+    constructor(parent: ItemType) : this(parent.name, parent.texture, parent.stretchTexture, parent.placedBlockID, parent.maxStack)
 
     val placedBlock: BlockType
         get() = BlockType.getByID(placedBlockID)!!
@@ -42,9 +34,34 @@ sealed class ItemType(val name: String, val texture: Texture, private val placed
 
     companion object {
         val ALL = mutableListOf<ItemType>()
+
+        val ERROR = ItemType("Error",
+                Image.ERROR,
+                maxStack = 5)
+
+        val TEST = ItemType("Test",
+                Image.ERROR,
+                placedBlockID = BlockType.ERROR.id,
+                maxStack = 5)
+
+        val MINER = ItemType("Miner",
+                Image.MINER_ITEM_TEMP,
+                placedBlockID = MachineBlockType.MINER.id,
+                maxStack = 10)
+
+        val IRON_ORE = ItemType("Iron Ore",
+                Image.IRON_ORE_ITEM,
+                maxStack = 100)
+
+        val TUBE = ItemType("Item Transport Tube",
+                Image.TUBE_ITEM,
+                false,
+                BlockType.TUBE.id,
+                50)
+
+        val CHEST_SMALL = ItemType("Small Chest",
+                Image.ERROR,
+                placedBlockID = ChestBlockType.CHEST_SMALL.id,
+                maxStack = 20)
     }
-}
-
-sealed class WeaponItemType(name: String, texture: Texture, placedBlockID: Int, maxStack: Int) : ItemType(name, texture, placedBlockID, maxStack) {
-
 }

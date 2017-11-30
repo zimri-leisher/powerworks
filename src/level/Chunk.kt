@@ -17,11 +17,17 @@ class Chunk(val parent: Level, val xChunk: Int, val yChunk: Int) {
     var moving: MutableList<MovingObject>? = null
     var movingOnBoundary: MutableList<MovingObject>? = null
     var updatesRequired: ConcurrentlyModifiableMutableList<LevelObject>? = null
-    var droppedItem: MutableList<DroppedItem>? = null
+    var droppedItems: MutableList<DroppedItem>? = null
     // One list for each resource type
     var outputNodes: Array<MutableList<OutputNode<*>>>? = null
     var inputNodes: Array<MutableList<InputNode<*>>>? = null
     var beingRendered = false
+        set(value) {
+            if(value != field) {
+                field = value
+                Exception().printStackTrace()
+            }
+        }
 
     /* Convenience methods. Assume it is loaded */
     fun getBlock(xTile: Int, yTile: Int) = blocks!![(xTile - this.xTile) + (yTile - this.yTile) * CHUNK_SIZE_TILES]
@@ -32,25 +38,25 @@ class Chunk(val parent: Level, val xChunk: Int, val yChunk: Int) {
         /* Don't bother checking if it requires an update */
     }
 
-    fun setBlock(block: Block, xTile: Int = block.xTile, yTile: Int = block.yTile) {
+    fun setBlock(block: Block, xTile: Int = block.xTile, yTile: Int = block.yTile, mainBlock: Boolean) {
         blocks!![(xTile - this.xTile) + (yTile - this.yTile) * CHUNK_SIZE_TILES] = block
-        if (block.requiresUpdate)
+        if (mainBlock && block.requiresUpdate)
             updatesRequired!!.add(block)
     }
 
-    fun removeBlock(block: Block, xTile: Int = block.xTile, yTile: Int = block.yTile) {
+    fun removeBlock(block: Block, xTile: Int = block.xTile, yTile: Int = block.yTile, mainBlock: Boolean) {
         blocks!![(xTile - this.xTile) + (yTile - this.yTile) * CHUNK_SIZE_TILES] = null
-        if (block.requiresUpdate)
+        if (mainBlock && block.requiresUpdate)
             updatesRequired!!.remove(block)
     }
 
     fun addDroppedItem(d: DroppedItem) {
-        droppedItem!!.add(d)
+        droppedItems!!.add(d)
         addMoving(d)
     }
 
     fun removeDroppedItem(d: DroppedItem) {
-        droppedItem!!.remove(d)
+        droppedItems!!.remove(d)
         removeMoving(d)
     }
 
@@ -89,6 +95,7 @@ class Chunk(val parent: Level, val xChunk: Int, val yChunk: Int) {
         if (o.size > 0) {
             o.forEach { it.update() }
         } else if (!beingRendered && inputNodes!!.all { it.isEmpty() } && outputNodes!!.all { it.isEmpty() }) {
+            println("unloading: $beingRendered")
             unload()
         }
     }
@@ -99,7 +106,7 @@ class Chunk(val parent: Level, val xChunk: Int, val yChunk: Int) {
         this.moving = mutableListOf()
         this.updatesRequired = ConcurrentlyModifiableMutableList()
         this.movingOnBoundary = mutableListOf()
-        this.droppedItem = mutableListOf()
+        this.droppedItems = mutableListOf()
         this.outputNodes = arrayOf(
                 mutableListOf()
         )
@@ -117,7 +124,7 @@ class Chunk(val parent: Level, val xChunk: Int, val yChunk: Int) {
         updatesRequired = null
         loaded = false
         movingOnBoundary = null
-        droppedItem = null
+        droppedItems = null
         outputNodes = null
         inputNodes = null
         parent.loadedChunks.remove(this)

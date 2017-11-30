@@ -13,11 +13,6 @@ object GeometryHelper {
         return false
     }
 
-    fun addDegrees(deg1: Int, deg2: Int): Int {
-        return (deg1 + deg2) % 360
-    }
-
-    /** NOT in degrees - 0 = 0 degrees, 1 = 90, etc */
     fun isOppositeAngle(a1: Int, a2: Int): Boolean {
         return Math.max(a1, a2) - 2 == Math.min(a1, a2)
     }
@@ -32,5 +27,15 @@ object GeometryHelper {
 
     fun getYSign(dir: Int): Int {
         return if (dir == 0) -1 else if (dir == 2) 1 else 0
+    }
+
+    fun getDir(x: Int, y: Int): Int {
+        if(x == -1)
+            return 3
+        if(x == 1)
+            return 1
+        if(y == -1)
+            return 0
+        return 2
     }
 }

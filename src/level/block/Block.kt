@@ -7,13 +7,45 @@ import level.LevelObject
 import main.Game
 import java.io.DataOutputStream
 
-open class Block(xTile: Int, yTile: Int, open val type: BlockType, hitbox: Hitbox = type.hitbox, requiresUpdate: Boolean = type.requiresUpdate) : LevelObject(xTile shl 4, yTile shl 4, hitbox, requiresUpdate) {
+abstract class Block(xTile: Int, yTile: Int, open val type: BlockType, hitbox: Hitbox = type.hitbox, requiresUpdate: Boolean = type.requiresUpdate) : LevelObject(xTile shl 4, yTile shl 4, hitbox, requiresUpdate) {
 
     val rotation = 0
+
+    override fun onAddToLevel() {
+        for (y in -1..1) {
+            for (x in -1..1) {
+                if (Math.abs(x) != Math.abs(y))
+                    Game.currentLevel.getBlock(xTile + x, yTile + y)?.onAdjacentBlockAdd(this)
+            }
+        }
+    }
+
+    override fun onRemoveFromLevel() {
+        for (y in -1..1) {
+            for (x in -1..1) {
+                if (Math.abs(x) != Math.abs(y))
+                    Game.currentLevel.getBlock(xTile + x, yTile + y)?.onAdjacentBlockRemove(this)
+            }
+        }
+    }
 
     override fun render() {
         Renderer.renderTexture(type.getTexture(rotation), xPixel - type.textureXPixelOffset, yPixel - type.textureYPixelOffset)
         super.render()
+    }
+
+    /**
+     * When an adjacent block is removed
+     */
+    open fun onAdjacentBlockRemove(b: Block) {
+
+    }
+
+    /**
+     * When an adjacent block is added
+     */
+    open fun onAdjacentBlockAdd(b: Block) {
+
     }
 
     override fun getCollision(xPixel: Int, yPixel: Int, predicate: ((LevelObject) -> Boolean)?): LevelObject? {
@@ -24,12 +56,14 @@ open class Block(xTile: Int, yTile: Int, open val type: BlockType, hitbox: Hitbo
             for (y in nYTile until (nYTile + type.heightTiles)) {
                 val c = Game.currentLevel.getChunk(x shr CHUNK_TILE_EXP, y shr CHUNK_TILE_EXP)
                 val b = c.getBlock(x, y)
-
                 if (b != null) {
-                    if (predicate != null && !predicate(b))
+                    if (predicate != null && !predicate(b)) {
                         continue
-                    if (b != this)
+                    }
+                    // check memory because we could be trying to put the same block down at the same place
+                    if (b !== this) {
                         return b
+                    }
                 }
             }
         }
@@ -45,6 +79,18 @@ open class Block(xTile: Int, yTile: Int, open val type: BlockType, hitbox: Hitbo
 
     override fun toString(): String {
         return "Block at $xTile, $yTile, type: $type"
+    }
+
+    override fun equals(other: Any?): Boolean {
+        return other is Block && other.xTile == xTile && other.yTile == yTile && other.type == type
+    }
+
+    override fun hashCode(): Int {
+        var result = type.hashCode()
+        result = 31 * result + rotation
+        result = 31 * result + xTile
+        result = 31 * result + yTile
+        return result
     }
 
 }

@@ -11,10 +11,16 @@ class MinerBlock(xTile: Int, yTile: Int) : MachineBlock(xTile, yTile, MachineBlo
     val out: OutputNode<ItemType> = OutputNode(xTile, yTile, rotation, null, ResourceType.ITEM)
 
     override fun onFinishWork() {
-        val tile = Game.currentLevel.getTile(xTile, yTile)
-        if(tile is OreTile) {
-            out.output(tile.type.minedItem, 1)
-            tile.amount -= 1
+        for(x in 0 until type.widthTiles) {
+            for(y in 0 until type.heightTiles) {
+                val tile = Game.currentLevel.getTile(xTile + x, yTile + y)
+                if(tile is OreTile) {
+                    out.output(tile.type.minedItem, 1)
+                    tile.amount -= 1
+                    return
+                }
+            }
         }
+
     }
 }

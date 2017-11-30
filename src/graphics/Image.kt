@@ -252,6 +252,7 @@ class Image private constructor() : Texture {
         val ARROW = Image(Utils.modify("/textures/misc/arrow.png", ImageParams(alphaMultiplier = 50)))
         val VOID = Image(Color(0))
         val MINER_ITEM_TEMP = Image("/textures/item/miner_temp.png") //TODO
+        val TUBE_ITEM = Image("/textures/item/tube.png")
     }
 
     object Weapon {
@@ -264,17 +265,13 @@ class Image private constructor() : Texture {
     object Block {
         val CHEST_SMALL = Image("/textures/block/chest_small.png")
         val MINER = Image("/textures/block/miner.png")
-        val PIPE_4_WAY = Image("/textures/block/pipe_4_way.png")
-        val PIPE_3_WAY_UP = Image("/textures/block/pipe_3_way_up.png")
-        val PIPE_3_WAY_RIGHT = Image("/textures/block/pipe_3_way_right.png")
-        val PIPE_3_WAY_DOWN = Image("/textures/block/pipe_3_way_down.png")
-        val PIPE_3_WAY_LEFT = Image("/textures/block/pipe_3_way_left.png")
-        val PIPE_2_WAY_VERTICAL = Image("/textures/block/pipe_2_way_vertical.png")
-        val PIPE_2_WAY_HORIZONTAL = Image(Utils.modify(PIPE_2_WAY_VERTICAL, ImageParams(rotation = 1)))
-        val PIPE_CORNER_UP_TO_RIGHT = Image("/textures/block/pipe_corner_up_right.png")
-        val PIPE_CORNER_RIGHT_TO_DOWN = Image("/textures/block/pipe_corner_right_down.png")
-        val PIPE_CORNER_DOWN_TO_LEFT = Image("/textures/block/pipe_corner_down_left.png")
-        val PIPE_CORNER_LEFT_TO_UP = Image("/textures/block/pipe_corner_left_up.png")
+        val TUBE_4_WAY = Image("/textures/block/tube/4_way.png")
+        val TUBE_2_WAY_VERTICAL = Image("/textures/block/tube/2_way_vertical.png")
+        val TUBE_2_WAY_HORIZONTAL = Image("/textures/block/tube/2_way_horizontal.png")
+        val TUBE_UP_CLOSE = Image("/textures/block/tube/up_close.png")
+        val TUBE_RIGHT_CLOSE = Image("/textures/block/tube/right_close.png")
+        val TUBE_DOWN_CLOSE = Image("/textures/block/tube/down_close.png")
+        val TUBE_LEFT_CLOSE = Image("/textures/block/tube/left_close.png")
     }
 
     object GUI {

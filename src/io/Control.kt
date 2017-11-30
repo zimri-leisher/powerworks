@@ -3,13 +3,14 @@ package io
 enum class Control {
     UP, DOWN, LEFT, RIGHT, TOGGLE_INVENTORY,
     /* GUI clicks/scrolls, level clicks, etc */
-    INTERACT, SCROLL_UP, SCROLL_DOWN,
+    INTERACT, SHIFT_INTERACT, SCROLL_UP, SCROLL_DOWN,
 
     /* For whatever you need whenever you need it */
     DEBUG,
 
     TOGGLE_RENDER_HITBOXES,
     TOGGLE_CHUNK_INFO,
+    TOGGLE_DEBUG_TUBE_GROUP_INFO,
     /* Hotbar slots */
     SLOT_1, SLOT_2, SLOT_3, SLOT_4, SLOT_5, SLOT_6,SLOT_7, SLOT_8,
 
@@ -17,5 +18,6 @@ enum class Control {
     TOGGLE_VIEW_CONTROLS,
     /* Testing controls */
     GIVE_TEST_ITEM,
-    DROP_HELD_ITEM
+    DROP_HELD_ITEM,
+    PICK_UP_DROPPED_ITEMS
 }

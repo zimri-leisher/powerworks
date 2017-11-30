@@ -74,8 +74,6 @@ object IngameGUI : GUIWindow("In game gui",
 ), ControlPressHandler {
 
     const val MAX_VIEWS = 4
-    const val DEFAULT_VIEW_WIDTH = 300
-    val DEFAULT_VIEW_HEIGHT = (DEFAULT_VIEW_WIDTH.toDouble() / 16 * 9).toInt()
 
     val mainInvGUI = InventoryGUI("In game main inventory gui", "Inventory", Game.mainInv, 20, 20, layer = MAX_VIEWS * 3 + 2)
 
@@ -99,7 +97,7 @@ object IngameGUI : GUIWindow("In game gui",
         if (viewCount < MAX_VIEWS) {
             return ViewWindow("In game view ${++viewCount} window",
                     0, 0,
-                    DEFAULT_VIEW_WIDTH, DEFAULT_VIEW_HEIGHT,
+                    Game.WIDTH, Game.HEIGHT,
                     cameras[viewCount - 1],
                     open = viewCount == 1,
                     windowGroup = ScreenManager.Groups.VIEW).run {

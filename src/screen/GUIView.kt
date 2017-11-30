@@ -128,6 +128,7 @@ class GUIView(parent: RootGUIElement,
             if (currentBuffer.validate(Game.graphicsConfiguration) == VolatileImage.IMAGE_INCOMPATIBLE)
                 updateView()
             Renderer.g2d = currentBuffer.createGraphics()
+            Renderer.g2d.clearRect(0, 0, Game.WIDTH * Game.SCALE, Game.HEIGHT * Game.SCALE)
             Renderer.xPixelOffset = -(camera.xPixel - viewWidthPixels / 2)
             Renderer.yPixelOffset = -(camera.yPixel - viewHeightPixels / 2)
             Game.currentLevel.render(this)

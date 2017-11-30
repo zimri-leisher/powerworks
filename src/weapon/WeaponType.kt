@@ -1,7 +1,7 @@
 package weapon
 
 /* TODO
-sealed class WeaponType(val id: Int, val connections: Array<Pair<Int, Int>>) {
+sealed class WeaponType(val id: Int, val tubeConnections: Array<Pair<Int, Int>>) {
 
     val validMods: Array<Modification>
     val textures: Array<ImageCollection>

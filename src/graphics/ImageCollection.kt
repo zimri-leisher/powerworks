@@ -13,6 +13,8 @@ class ImageCollection(path: String, numberOfImages: Int) {
         val CONVEYOR_BELT_CONNECTED_LEFT = ImageCollection("/textures/block/conveyor_belt_connected_left_anim.png", 2)
         val CONVEYOR_BELT_CONNECTED_UP = ImageCollection("/textures/block/conveyor_belt_connected_up_anim.png", 4)
         val PLAYER = ImageCollection("/textures/player/player.png", 4)
+        val TUBE_CORNER = ImageCollection("/textures/block/tube/corner.png", 4)
+        val TUBE_3_WAY = ImageCollection("/textures/block/tube/3_way.png", 4)
     }
 
     val textures: Array<Texture>

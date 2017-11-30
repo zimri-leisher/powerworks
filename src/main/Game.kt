@@ -5,12 +5,11 @@ import graphics.LocalAnimation
 import graphics.Renderer
 import graphics.SyncAnimation
 import inv.Inventory
+import inv.Item
+import inv.ItemType
 import io.*
 import level.Level
-import screen.DebugOverlay
-import screen.IngameGUI
-import screen.MainMenuGUI
-import screen.ScreenManager
+import screen.*
 import java.awt.*
 import java.awt.event.ComponentAdapter
 import java.awt.event.ComponentEvent
@@ -27,7 +26,18 @@ const val TRACE_GRAPHICS = false
 
 fun main(args: Array<String>) {
     initializeProperties()
-    Game.poke()
+    Game
+    val `in` = Scanner(System.`in`)
+    var s: String? = null
+    while (`in`.hasNext()) {
+        s = `in`.nextLine()
+        val split = s!!.split(" ")
+        val first = split[0]
+        var second: String = "1"
+        if (split.size > 1)
+            second = split[1]
+        HUD.Hotbar.items.add(Item(ItemType.ALL.first { it.name.toLowerCase().equals(first.toLowerCase().replace("_", " ").trim()) }, second.toInt()))
+    }
 }
 
 fun initializeProperties() {
@@ -71,6 +81,7 @@ object Game : Canvas(), Runnable, ControlPressHandler {
     var CHUNK_BOUNDARIES = false
     var LEVEL_PAUSED = false
     var PAUSE_LEVEL_IN_ESCAPE_MENU = false
+    var DEBUG_TUBE_GROUP_INFO = false
     val INVENTORY_WIDTH = 8
     val INVENTOR_HEIGHT = 6
 
@@ -116,7 +127,7 @@ object Game : Canvas(), Runnable, ControlPressHandler {
         } catch (ex: IOException) {
             ex.printStackTrace()
         }
-        InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.TAKE_SCREENSHOT, Control.TOGGLE_RENDER_HITBOXES, Control.TOGGLE_CHUNK_INFO, Control.TOGGLE_INVENTORY)
+        InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.TAKE_SCREENSHOT, Control.TOGGLE_RENDER_HITBOXES, Control.TOGGLE_CHUNK_INFO, Control.TOGGLE_INVENTORY, Control.TOGGLE_DEBUG_TUBE_GROUP_INFO)
         /* For initializations (objects in Kotlin are loaded the first time they are called */
         MainMenuGUI.open = true
         DebugOverlay.open = false
@@ -178,8 +189,11 @@ object Game : Canvas(), Runnable, ControlPressHandler {
         SyncAnimation.update()
         LocalAnimation.update()
         ScreenManager.update()
-        if (State.CURRENT_STATE == State.INGAME)
+        if (State.CURRENT_STATE == State.INGAME) {
+            if(updatesCount % 60 == 0)
+                currentLevel.maxRenderSteps++
             currentLevel.update()
+        }
         State.update()
     }
 
@@ -274,12 +288,15 @@ object Game : Canvas(), Runnable, ControlPressHandler {
                 Control.TOGGLE_RENDER_HITBOXES -> RENDER_HITBOXES = !RENDER_HITBOXES
                 Control.TOGGLE_CHUNK_INFO -> CHUNK_BOUNDARIES = !CHUNK_BOUNDARIES
                 Control.TOGGLE_INVENTORY -> {
+                    if(State.CURRENT_STATE != State.INGAME)
+                        return
                     if (!ScreenManager.Groups.INVENTORY.windows.any { it.open }) {
                         IngameGUI.mainInvGUI.open = true
                     } else {
                         ScreenManager.Groups.INVENTORY.getTop { it.open }?.toggle()
                     }
                 }
+                Control.TOGGLE_DEBUG_TUBE_GROUP_INFO -> DEBUG_TUBE_GROUP_INFO = !DEBUG_TUBE_GROUP_INFO
             }
     }
 
