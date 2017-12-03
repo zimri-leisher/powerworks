@@ -77,7 +77,6 @@ class TubeBlock(xTile: Int, yTile: Int) : Block(xTile, yTile, BlockType.TUBE) {
             if (tubeConnections[dir] != new) {
                 tubeConnections[dir] = getTubeAt(dir)
                 if (new != null) {
-                    println("connected with tube")
                     mergeGroups(new)
                     new.tubeConnections[getOppositeAngle(dir)] = this
                     new.updateTexture()
@@ -123,9 +122,8 @@ class TubeBlock(xTile: Int, yTile: Int) : Block(xTile, yTile, BlockType.TUBE) {
             val nodes = Game.currentLevel.getAllTransferNodes(xTile + getXSign(dir), yTile + getYSign(dir), { isOppositeAngle(it.dir, dir) })
             nodeConnections[dir] = nodes
             if (nodes.isNotEmpty()) {
-                println("connected with node")
                 if (group != null)
-                    group!!.connect(nodes)
+                    group!!.createCorrespondingNodes(nodes)
             }
         }
     }

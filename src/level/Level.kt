@@ -12,15 +12,16 @@ import level.node.InputNode
 import level.node.OutputNode
 import level.node.TransferNode
 import level.resource.ResourceType
+import level.tile.OreTileType
 import level.tile.Tile
 import level.tube.TubeBlockGroup
 import main.Game
 import misc.GeometryHelper
+import misc.Numbers
 import screen.CameraMovementListener
 import screen.DebugOverlay
 import screen.GUIView
 import screen.HUD
-import java.awt.Rectangle
 import java.io.*
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -47,10 +48,12 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
     val chunks: Array<Chunk>
     val loadedChunks = CopyOnWriteArrayList<Chunk>()
 
+    val oreNoises = mutableMapOf<OreTileType, Noise>()
+
     private var viewBeingInteractedWith: GUIView? = null
     private var lastViewInteractedWith: GUIView? = null
     private val _views = mutableListOf<GUIView>()
-    val views = object : MutableList<GUIView> by _views {
+    val openViews = object : MutableList<GUIView> by _views {
         override fun add(element: GUIView): Boolean {
             val ret = _views.add(element)
             element.moveListeners.add(this@Level)
@@ -97,6 +100,9 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
             seed = g.readLong()
             rand = Random(seed)
             g.close()
+        }
+        for(t in OreTileType.ALL) {
+            oreNoises.put(t, OpenSimplexNoise(Numbers.genRandom(seed, rand.nextInt(99).toLong())))
         }
         val gen = arrayOfNulls<Chunk>(widthChunks * heightChunks)
         for (y in 0 until heightChunks) {
@@ -156,7 +162,7 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
                 }
             }
             // Render the moving objects in sorted order
-            for (xChunk in (minX shr CHUNK_TILE_EXP)..(maxX shr CHUNK_TILE_EXP)) {
+            for (xChunk in (minX shr CHUNK_TILE_EXP) until (maxX shr CHUNK_TILE_EXP)) {
                 val c = getChunk(xChunk, yChunk)
                 if (c.moving!!.size > 0)
                     c.moving!!.filter { it.yTile >= y && it.yTile < y + 1 }.forEach {
@@ -186,7 +192,7 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
             }
         }
          */
-        val chunksInTileRectangle = getChunksFromTileRectangle(minX, minY, maxX - minX, maxY - minY)
+        val chunksInTileRectangle = getChunksFromTileRectangle(minX, minY, maxX - minX - 1, maxY - minY - 1)
         if (Game.CHUNK_BOUNDARIES) {
             for (c in chunksInTileRectangle) {
                 Renderer.renderEmptyRectangle(c.xTile shl 4, c.yTile shl 4, CHUNK_SIZE_PIXELS, CHUNK_SIZE_PIXELS)
@@ -199,14 +205,14 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
             for (g in TubeBlockGroup.ALL) {
                 g.renderDebug()
             }
-            for(c in chunksInTileRectangle) {
-                for(nList in c.inputNodes!!) {
-                    for(n in nList) {
+            for (c in chunksInTileRectangle) {
+                for (nList in c.inputNodes!!) {
+                    for (n in nList) {
                         renderNodeDebug(n)
                     }
                 }
-                for(nList in c.outputNodes!!) {
-                    for(n in nList) {
+                for (nList in c.outputNodes!!) {
+                    for (n in nList) {
                         renderNodeDebug(n)
                     }
                 }
@@ -216,9 +222,9 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
     }
 
     private fun renderNodeDebug(n: TransferNode<*>) {
-        if(n is OutputNode<*>) {
+        if (n is OutputNode<*>) {
             Renderer.renderText("Out: ${n.dir}", (n.xTile shl 4) + 2, (n.yTile shl 4) + 10)
-        } else if(n is InputNode<*>) {
+        } else if (n is InputNode<*>) {
             Renderer.renderText("In: ${n.dir}", (n.xTile shl 4) + 6, (n.yTile shl 4) + 10)
         }
     }
@@ -226,16 +232,28 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
     fun update() {
         var count = 0
         TubeBlockGroup.update()
+        updateChunksBeingRendered()
         for (c in loadedChunks) {
-            /* update() already unloads if necessary */
-            c.beingRendered = isBeingRendered(c.xChunk, c.yChunk)
-            c.update()
-            if (c.loaded)
-                count++ // TODO isbeingrendered is broken
+            if (c.updatesRequired!!.size == 0 && !c.beingRendered && c.inputNodes!!.all { it.isEmpty() } && c.outputNodes!!.all { it.isEmpty() }) {
+                c.unload()
+            } else {
+                c.update()
+                count++
+            }
         }
         updateGhostBlock()
         updateSelectedLevelObject()
         DebugOverlay.setInfo("Loaded chunks", count.toString())
+    }
+
+    private fun updateChunksBeingRendered() {
+        for(c in chunks) {
+            c.beingRendered = false
+        }
+        for(v in openViews) {
+            for(c in getChunksFromPixelRectangle(v.viewRectangle.x, v.viewRectangle.y, v.viewRectangle.width, v.viewRectangle.height))
+                c.beingRendered = true
+        }
     }
 
     /**
@@ -267,8 +285,6 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
         }
     }
 
-    private fun isBeingRendered(xChunk: Int, yChunk: Int) = views.any { it.viewRectangle.intersects(Rectangle(xChunk shl (CHUNK_TILE_EXP + 4), yChunk shl (CHUNK_TILE_EXP + 4), CHUNK_SIZE_PIXELS, CHUNK_SIZE_PIXELS)) }
-
     /* Listeners and senders */
     /**
      * Called by gui views when they are clicked on, used to place the ghost block
@@ -299,8 +315,8 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
     }
 
     private fun updateViewBeingInteractedWith() {
-        views.sortByDescending { it.parentWindow.layer }
-        viewBeingInteractedWith = views.firstOrNull { it.mouseOn }
+        openViews.sortByDescending { it.parentWindow.layer }
+        viewBeingInteractedWith = openViews.firstOrNull { it.mouseOn }
         if (viewBeingInteractedWith != null)
             lastViewInteractedWith = viewBeingInteractedWith
         mouseOnLevel = viewBeingInteractedWith != null
@@ -603,8 +619,8 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
 
     fun getChunksFromRectangle(xChunk: Int, yChunk: Int, xChunk2: Int, yChunk2: Int): List<Chunk> {
         val l = mutableListOf<Chunk>()
-        for (x in xChunk..xChunk2) {
-            for (y in yChunk..yChunk2) {
+        for (x in xChunk .. xChunk2) {
+            for (y in yChunk .. yChunk2) {
                 l.add(getChunk(x, y))
             }
         }

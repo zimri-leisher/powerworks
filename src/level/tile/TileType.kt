@@ -6,10 +6,36 @@ import inv.ItemType
 
 private var nextID = 0
 
-open class OreTileType(textures: ImageCollection, name: String, val maxAmount: Int, val minAmount: Int, val minedItem: ItemType, val backgroundType: TileType) : TileType(name, textures) {
+open class OreTileType(textures: ImageCollection, name: String,
+                       val maxAmount: Int,
+                       val minAmount: Int,
+                       val minedItem: ItemType,
+                       val backgroundType: TileType,
+                       val scatter: Int,
+                       val generationChance: Double) : TileType(name, textures) {
+
+    init {
+        ALL.add(this)
+    }
 
     companion object {
-        val GRASS_IRON_ORE = OreTileType(ImageCollection.GRASS_IRON_ORE_TILE, "Grass and iron ore", 10, 1, ItemType.IRON_ORE, TileType.GRASS)
+        val ALL = mutableListOf<OreTileType>()
+
+        val GRASS_IRON_ORE = OreTileType(ImageCollection.GRASS_IRON_ORE_TILE, "Grass and iron ore",
+                10,
+                1,
+                ItemType.IRON_ORE,
+                TileType.GRASS,
+                5,
+                .1)
+
+        val GRASS_COPPER_ORE = OreTileType(ImageCollection.GRASS_COPPER_ORE_TILE, "Grass and copper ore",
+                10,
+                1,
+                ItemType.COPPER_ORE,
+                TileType.GRASS,
+                3,
+                .07)
     }
 }
 

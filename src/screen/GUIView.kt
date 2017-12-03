@@ -71,17 +71,17 @@ class GUIView(parent: RootGUIElement,
             camera.moveListeners.add(this)
         }
         if (open)
-            Game.currentLevel.views.add(this)
+            Game.currentLevel.openViews.add(this)
         viewRectangle = Rectangle(camera.xPixel - viewWidthPixels / 2, camera.yPixel - viewHeightPixels / 2, viewWidthPixels, viewHeightPixels)
         fillPregenBuffers()
     }
 
     override fun onClose() {
-        Game.currentLevel.views.remove(this)
+        Game.currentLevel.openViews.remove(this)
     }
 
     override fun onOpen() {
-        Game.currentLevel.views.add(this)
+        Game.currentLevel.openViews.add(this)
     }
 
     /**

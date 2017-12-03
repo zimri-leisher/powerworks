@@ -63,5 +63,6 @@ open class ItemType(val name: String, val texture: Texture, val stretchTexture: 
                 Image.ERROR,
                 placedBlockID = ChestBlockType.CHEST_SMALL.id,
                 maxStack = 20)
+        val COPPER_ORE = ItemType("Copper Ore", Image.COPPER_ORE_ITEM, maxStack = 100)
     }
 }

@@ -112,6 +112,16 @@ object IngameGUI : GUIWindow("In game gui",
         throw Exception("GUI views exceeds limit")
     }
 
+    override fun onDimensionChange(oldWidth: Int, oldHeight: Int) {
+        for (v in views) {
+            // If there are any fullscreen views, keep them fullscreen
+            if (v.widthPixels == oldWidth && v.heightPixels == oldHeight) {
+                v.widthAlignment = { widthPixels }
+                v.heightAlignment = { heightPixels }
+            }
+        }
+    }
+
     override fun onClose() {
         views.forEach { it.open = false }
         viewControlsOpen = false

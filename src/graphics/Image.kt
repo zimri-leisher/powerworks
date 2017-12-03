@@ -253,6 +253,7 @@ class Image private constructor() : Texture {
         val VOID = Image(Color(0))
         val MINER_ITEM_TEMP = Image("/textures/item/miner_temp.png") //TODO
         val TUBE_ITEM = Image("/textures/item/tube.png")
+        val COPPER_ORE_ITEM = Image("/textures/item/copper_ore_raw.png")
     }
 
     object Weapon {

@@ -22,6 +22,8 @@ import javax.imageio.ImageIO
 import javax.swing.JFrame
 import io.OutputManager as out
 
+
+
 const val TRACE_GRAPHICS = false
 
 fun main(args: Array<String>) {

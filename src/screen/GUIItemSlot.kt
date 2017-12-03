@@ -97,8 +97,13 @@ class GUIItemSlot(parent: RootGUIElement, name: String, xPixel: Int, yPixel: Int
                 if (invGUIs.isNotEmpty()) {
                     val highestOtherWindow = invGUIs.filter { it.open && it != parentWindow }.maxBy { it.layer }
                     if (highestOtherWindow != null && highestOtherWindow is InventoryGUI) {
-                        inv.remove(i)
-                        highestOtherWindow.inv.add(i)
+                        if (highestOtherWindow.inv.add(i))
+                            inv.remove(i)
+                    } else {
+                        if (parentWindow != HUD.Hotbar) {
+                            if (HUD.Hotbar.items.add(i))
+                                inv.remove(i)
+                        }
                     }
                 }
             }

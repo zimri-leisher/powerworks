@@ -25,7 +25,7 @@ class Inventory(val width: Int, val height: Int) : StorageNode<ItemType>(Resourc
             if (!spaceFor(resource, quantity))
                 return false
         var amountLeftToAdd = quantity
-        var indexOfLastStackOfType = -1
+
         itemCount += quantity
         // Find if there is a slot that has this type but is not full
         for (i in items.indices) {
@@ -47,13 +47,32 @@ class Inventory(val width: Int, val height: Int) : StorageNode<ItemType>(Resourc
                         } else {
                             amountLeftToAdd -= (resource.maxStack - item.quantity)
                             item.quantity = resource.maxStack
-                            indexOfLastStackOfType = i
+                            // Only 1 possible non full stack
                             break
                         }
                     }
                 }
             }
         }
+        var indexOfLastStackOfType = -1
+        for(i in items.indices) {
+            val item = items[i]
+            if(item != null) {
+                val nextItem = items[i + 1]
+                if(nextItem != null) {
+                    if(item.type.id <= resource.id && nextItem.type.id > resource.id) {
+                        indexOfLastStackOfType = i - 1
+                        break
+                    }
+                } else {
+                    indexOfLastStackOfType = i - 1
+                }
+            } else {
+                indexOfLastStackOfType = -1
+                break
+            }
+        }
+
         val needsShift = items[indexOfLastStackOfType + 1] != null
         val stacksLeft = Math.ceil(amountLeftToAdd.toDouble() / resource.maxStack).toInt()
         if (needsShift) {
@@ -170,12 +189,13 @@ class Inventory(val width: Int, val height: Int) : StorageNode<ItemType>(Resourc
             }
             count++
         }
+        items[items.lastIndex - 1] = null
         return count
     }
 
     fun print() {
-        for(y in 0 until height) {
-            for(x in 0 until width)
+        for (y in 0 until height) {
+            for (x in 0 until width)
                 print("${items[x + y * width]?.type?.name}      ")
             println()
         }

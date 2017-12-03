@@ -22,12 +22,6 @@ class Chunk(val parent: Level, val xChunk: Int, val yChunk: Int) {
     var outputNodes: Array<MutableList<OutputNode<*>>>? = null
     var inputNodes: Array<MutableList<InputNode<*>>>? = null
     var beingRendered = false
-        set(value) {
-            if(value != field) {
-                field = value
-                Exception().printStackTrace()
-            }
-        }
 
     /* Convenience methods. Assume it is loaded */
     fun getBlock(xTile: Int, yTile: Int) = blocks!![(xTile - this.xTile) + (yTile - this.yTile) * CHUNK_SIZE_TILES]
@@ -94,9 +88,6 @@ class Chunk(val parent: Level, val xChunk: Int, val yChunk: Int) {
         val o = updatesRequired!!
         if (o.size > 0) {
             o.forEach { it.update() }
-        } else if (!beingRendered && inputNodes!!.all { it.isEmpty() } && outputNodes!!.all { it.isEmpty() }) {
-            println("unloading: $beingRendered")
-            unload()
         }
     }
 
