@@ -9,9 +9,9 @@ object DebugOverlay : GUIWindow("Debug overlay", 0, 0, 0, 0, windowGroup = Scree
     init {
         transparentToInteraction = true
         InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.DEBUG)
-        group = AutoFormatGUIGroup(rootChild, "Debug overlay text auto format group", 0, 0, yPixelSeparation = 4, accountForChildHeight = true)
-        group.nextYPixel = 4
-        GUIText(group, "Debug overlay name text", 0, 0, "Debug information:", color = 0x45f442)
+        group = AutoFormatGUIGroup(rootChild, "Debug overlay text auto format group", 0, 0, initializerList = {
+            GUIText(this, "Debug overlay name text", 0, 0, "Debug information:", color = 0x45f442)
+        }, yPixelSeparation = 4, accountForChildHeight = true)
     }
 
     fun setInfo(key: String, value: String) {

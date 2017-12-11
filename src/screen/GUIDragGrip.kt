@@ -22,7 +22,7 @@ class GUIDragGrip(parent: RootGUIElement,
     var actOnSXPixel = 0
     var actOnSYPixel = 0
 
-    override fun onMouseActionOn(type: PressType, xPixel: Int, yPixel: Int, button: Int) {
+    override fun onMouseActionOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
         when (type) {
             PressType.PRESSED -> {
                 dragging = true
@@ -47,21 +47,20 @@ class GUIDragGrip(parent: RootGUIElement,
         if (dragging) {
             var nX = Mouse.xPixel - sXPixel + actOnSXPixel
             var nY = Mouse.yPixel - sYPixel + actOnSYPixel
-            if (!keepInsideWindowBounds) {
-                actOn.xPixel = nX
-                actOn.yPixel = nY
-            } else {
-                actOn.xPixel = Math.max(0,
+            if (keepInsideWindowBounds) {
+                nX = Math.max(0,
                         Math.min(
                                 Game.WIDTH - actOn.widthPixels,
                                 nX
                         ))
-                actOn.yPixel = Math.max(0,
+                nY = Math.max(0,
                         Math.min(
                                 Game.HEIGHT - actOn.heightPixels,
                                 nY
                         ))
             }
+            actOn.xAlignment = { nX }
+            actOn.yAlignment = { nY }
         }
     }
 

@@ -1,33 +1,32 @@
-//<initial code>[:<secondary code 1> ... :<secondary code n> [:-1 (if you want this to activate ONLY when these keys are down, no more, no less)]]:<control name>
-87:UP
+//<initial code>[:<secondary code 1> ... :<secondary code n> [:ONLY (if you want this to activate ONLY when these keys are down, no more, no less)]]:<control name>
+W:UP
 // ^ will always activate when 87 is pressed, regardless of any other keys down
-65:LEFT
-83:DOWN
-68:RIGHT
-114:-1:DEBUG
+A:LEFT
+S:DOWN
+D:RIGHT
+F3:ONLY:DEBUG
 // ^ will activate only if 114 is pressed and no others at the time
-66:114:-1:TOGGLE_RENDER_HITBOXES
+F3:B:ONLY:TOGGLE_RENDER_HITBOXES
 // ^ will activate only if 114 is pressed and then 66, no other keys
-67:114:-1:TOGGLE_CHUNK_INFO
-71:114:-1:TOGGLE_DEBUG_TUBE_GROUP_INFO
-49:SLOT_1
-50:SLOT_2
-51:SLOT_3
-52:SLOT_4
-53:SLOT_5
-54:SLOT_6
-55:SLOT_7
-56:SLOT_8
-123:-1:TAKE_SCREENSHOT
-70:GIVE_TEST_ITEM
-80:-1:TOGGLE_VIEW_CONTROLS
-69:-1:TOGGLE_INVENTORY
-71:-1:DROP_HELD_ITEM
-72:-1:PICK_UP_DROPPED_ITEMS
-m
-1:-1:INTERACT
-1:16:-1:SHIFT_INTERACT
-// 1 = lmb, 2 = mmb, 3 = rmb, 4 & 5 are not always present on all mice but can still be used
-mw
-1:SCROLL_UP
-2:SCROLL_DOWN
+F3:C:ONLY:TOGGLE_CHUNK_INFO
+F3:G:ONLY:TOGGLE_DEBUG_TUBE_GROUP_INFO
+1:SLOT_1
+2:SLOT_2
+3:SLOT_3
+4:SLOT_4
+5:SLOT_5
+6:SLOT_6
+7:SLOT_7
+8:SLOT_8
+F12:ONLY:TAKE_SCREENSHOT
+F:GIVE_TEST_ITEM
+P:ONLY:TOGGLE_VIEW_CONTROLS
+E:TOGGLE_INVENTORY
+G:ONLY:DROP_HELD_ITEM
+H:ONLY:PICK_UP_DROPPED_ITEMS
+MOUSE_1:!SHIFT:!CONTROL:!ALT:INTERACT
+MOUSE_1:SHIFT:SHIFT_INTERACT
+MOUSE_1:CTRL:CONTROL_INTERACT
+MOUSE_1:ALT:ALT_INTERACT
+WHEEL_UP:SCROLL_UP
+WHEEL_DOWN:SCROLL_DOWN

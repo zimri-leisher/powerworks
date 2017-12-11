@@ -22,8 +22,6 @@ import javax.imageio.ImageIO
 import javax.swing.JFrame
 import io.OutputManager as out
 
-
-
 const val TRACE_GRAPHICS = false
 
 fun main(args: Array<String>) {
@@ -138,9 +136,6 @@ object Game : Canvas(), Runnable, ControlPressHandler {
         start()
     }
 
-    /* Lazy initialization makes this a requirement */
-    fun poke() {}
-
     override fun run() {
         var lastUpdateTime = System.nanoTime().toDouble()
         var lastRenderTime = System.nanoTime().toDouble()
@@ -254,13 +249,14 @@ object Game : Canvas(), Runnable, ControlPressHandler {
         if (Files.notExists(controls))
             Files.createDirectories(controls)
         val defaultMap = Paths.get(JAR_PATH, "data/settings/controls/default.txt")
-        if (Files.notExists(defaultMap))
+        if (Files.notExists(defaultMap)) {
             Files.createFile(defaultMap)
+        }
+        val f = defaultMap.toFile()
+        f.writeText(Game::class.java.getResource("/settings/controls/default.txt").readText())
         val save = Paths.get(JAR_PATH, "data/save/")
         if (Files.notExists(save))
             Files.createDirectory(save)
-        val f = defaultMap.toFile()
-        f.writeText(Game::class.java.getResource("/settings/controls/default.txt").readText())
     }
 
     fun takeScreenshot() {

@@ -1,6 +1,11 @@
 package level.resource
 
+import graphics.Texture
+
 interface ResourceType {
+
+    val texture: Texture
+
     companion object {
         const val ITEM = 0
         const val ENERGY = 1

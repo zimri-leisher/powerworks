@@ -22,16 +22,16 @@ open class OreTileType(textures: ImageCollection, name: String,
         val ALL = mutableListOf<OreTileType>()
 
         val GRASS_IRON_ORE = OreTileType(ImageCollection.GRASS_IRON_ORE_TILE, "Grass and iron ore",
-                10,
-                1,
+                9000,
+                3000,
                 ItemType.IRON_ORE,
                 TileType.GRASS,
                 5,
                 .1)
 
         val GRASS_COPPER_ORE = OreTileType(ImageCollection.GRASS_COPPER_ORE_TILE, "Grass and copper ore",
-                10,
-                1,
+                5000,
+                3000,
                 ItemType.COPPER_ORE,
                 TileType.GRASS,
                 3,

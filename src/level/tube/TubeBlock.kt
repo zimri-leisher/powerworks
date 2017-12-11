@@ -27,11 +27,11 @@ class TubeBlock(xTile: Int, yTile: Int) : Block(xTile, yTile, BlockType.TUBE) {
         set(value) {
             if (field != value) {
                 if (field != null) {
-                    field!!.removeTube(this)
+                    field!!.tubes.remove(this)
                 }
                 field = value
                 if (value != null) {
-                    value.addTube(this)
+                    value.tubes.add(this)
                 }
             }
         }

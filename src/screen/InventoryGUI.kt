@@ -19,7 +19,7 @@ class InventoryGUI(name: String,
     // TODO make this use init functions for x and y so that u can have it start in the center
 
     val itemSlots: Array<GUIItemSlot>
-    val background = GUITexturePane(this.rootChild, name + " background", 0, 0, Image(Utils.genRectangle(widthPixels, heightPixels)))
+    val background = GUITexturePane(this.rootChild, name + " background", 0, 0, texture = Image(Utils.genRectangle(widthPixels, heightPixels)))
     val nameText = GUIText(background, name + " name text", 2, 5, displayName)
 
     init {
@@ -32,10 +32,12 @@ class InventoryGUI(name: String,
             }
         }
         itemSlots = arr.requireNoNulls()
+        // You want to be able to move and edit inventories at the same time
+        partOfLevel = true
     }
 
     companion object {
-        const val ITEM_SLOT_PADDING = 1
+        const val ITEM_SLOT_PADDING = 0
     }
 
 }

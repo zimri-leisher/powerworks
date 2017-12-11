@@ -1,6 +1,6 @@
 package misc
 
-class ConcurrentlyModifiableMutableList<T> {
+open class ConcurrentlyModifiableMutableList<T> {
 
     var beingTraversed = false
 
@@ -10,14 +10,14 @@ class ConcurrentlyModifiableMutableList<T> {
 
     val toRemove = mutableListOf<T>()
 
-    fun add(l: T) {
+    open fun add(l: T) {
         if (beingTraversed)
             toAdd.add(l)
         else
             elements.add(l)
     }
 
-    fun remove(l: T) {
+    open fun remove(l: T) {
         if (beingTraversed)
             toRemove.add(l)
         else

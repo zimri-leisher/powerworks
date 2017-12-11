@@ -4,6 +4,8 @@ import java.awt.image.BufferedImage
 
 class SyncAnimation(val images: ImageCollection, val frameTimes: Array<Int>, var playing: Boolean = false) : Texture {
 
+    constructor(path: String, numberOfFrames: Int, frameTimes: Array<Int>, playing: Boolean = false) : this(ImageCollection(path, numberOfFrames), frameTimes, playing)
+
     override var currentImage: BufferedImage = images[0].currentImage
     override val widthPixels: Int
         get() = currentImage.width
@@ -54,10 +56,14 @@ class SyncAnimation(val images: ImageCollection, val frameTimes: Array<Int>, var
     companion object {
 
         val ALL = mutableListOf<SyncAnimation>()
-        // TODO
-        //val WEAPON_1 = SyncAnimation(Image.Weapon.ONE.textures[0], arrayOf(2, 2, 6))
-        //val WEAPON_2 = SyncAnimation(Image.Weapon.TWO.textures[0], arrayOf(8, 8, 8))
-        //val WEAPON_3 = SyncAnimation(Image.Weapon.THREE.textures[0], arrayOf(2, 10, 30))
+        val WEAPON_1_0 = SyncAnimation("/textures/weapon/weapon1/dir_0.png", 3, arrayOf(2, 2, 6), true)
+        val WEAPON_1_1 = SyncAnimation("/textures/weapon/weapon1/dir_1.png", 3, arrayOf(2, 2, 6), true)
+        val WEAPON_1_2 = SyncAnimation("/textures/weapon/weapon1/dir_2.png", 3, arrayOf(2, 2, 6), true)
+        val WEAPON_1_3 = SyncAnimation("/textures/weapon/weapon1/dir_3.png", 3, arrayOf(2, 2, 6), true)
+        val WEAPON_2_0 = SyncAnimation("/textures/weapon/weapon1/dir_0.png", 3, arrayOf(8, 8, 8), true)
+        val WEAPON_2_1 = SyncAnimation("/textures/weapon/weapon1/dir_1.png", 3, arrayOf(8, 8, 8), true)
+        val WEAPON_2_2 = SyncAnimation("/textures/weapon/weapon1/dir_2.png", 3, arrayOf(8, 8, 8), true)
+        val WEAPON_2_3 = SyncAnimation("/textures/weapon/weapon1/dir_3.png", 3, arrayOf(8, 8, 8), true)
 
         fun update() {
             ALL.forEach { it.update() }

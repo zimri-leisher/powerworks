@@ -12,9 +12,9 @@ class GUIButton(parent: RootGUIElement,
                 name: String,
                 relXPixel: Int, relYPixel: Int,
                 text: String,
-                var onPress: () -> (Unit), var onRelease: () -> (Unit), open: Boolean = false,
+                private var onPress: () -> (Unit), private var onRelease: () -> (Unit), open: Boolean = false,
                 layer: Int = parent.layer + 1) :
-        GUIElement(parent, name, relXPixel, relYPixel, DEFAULT_WIDTH, DEFAULT_HEIGHT, open, layer) {
+        GUIElement(parent, name, relXPixel, relYPixel, WIDTH, HEIGHT, open, layer) {
 
     var down = false
     var currentTexture: Texture = Image.GUI.BUTTON
@@ -48,7 +48,7 @@ class GUIButton(parent: RootGUIElement,
         currentTexture = Image.GUI.BUTTON
     }
 
-    override fun onMouseActionOn(type: PressType, xPixel: Int, yPixel: Int, button: Int) {
+    override fun onMouseActionOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
         if (type == PressType.PRESSED) {
             currentTexture = Image.GUI.BUTTON_CLICK
             onPress.invoke()
@@ -78,7 +78,7 @@ class GUIButton(parent: RootGUIElement,
     }
 
     companion object {
-        val DEFAULT_WIDTH = Image.GUI.BUTTON.widthPixels
-        val DEFAULT_HEIGHT = Image.GUI.BUTTON.heightPixels
+        val WIDTH = Image.GUI.BUTTON.widthPixels
+        val HEIGHT = Image.GUI.BUTTON.heightPixels
     }
 }

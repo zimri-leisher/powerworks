@@ -15,7 +15,7 @@ class GUICloseButton(parent: RootGUIElement,
         Renderer.renderTexture(Image.GUI.CLOSE_BUTTON, xPixel, yPixel)
     }
 
-    override fun onMouseActionOn(type: PressType, xPixel: Int, yPixel: Int, button: Int) {
+    override fun onMouseActionOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
         if (type == PressType.PRESSED)
             actOn.open = false
     }

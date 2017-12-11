@@ -9,7 +9,7 @@ import level.resource.ResourceType
 
 private var nextID = 0
 
-open class ItemType(val name: String, val texture: Texture, val stretchTexture: Boolean = true, private val placedBlockID: Int = BlockType.ERROR.id, val maxStack: Int) : ResourceType {
+open class ItemType(val name: String, override val texture: Texture, val stretchTexture: Boolean = true, private val placedBlockID: Int = BlockType.ERROR.id, val maxStack: Int) : ResourceType {
 
     constructor(parent: ItemType) : this(parent.name, parent.texture, parent.stretchTexture, parent.placedBlockID, parent.maxStack)
 
@@ -39,13 +39,8 @@ open class ItemType(val name: String, val texture: Texture, val stretchTexture: 
                 Image.ERROR,
                 maxStack = 5)
 
-        val TEST = ItemType("Test",
-                Image.ERROR,
-                placedBlockID = BlockType.ERROR.id,
-                maxStack = 5)
-
         val MINER = ItemType("Miner",
-                Image.MINER_ITEM_TEMP,
+                Image.Block.MINER,
                 placedBlockID = MachineBlockType.MINER.id,
                 maxStack = 10)
 
@@ -60,9 +55,10 @@ open class ItemType(val name: String, val texture: Texture, val stretchTexture: 
                 50)
 
         val CHEST_SMALL = ItemType("Small Chest",
-                Image.ERROR,
+                Image.Block.CHEST_SMALL,
                 placedBlockID = ChestBlockType.CHEST_SMALL.id,
                 maxStack = 20)
+
         val COPPER_ORE = ItemType("Copper Ore", Image.COPPER_ORE_ITEM, maxStack = 100)
     }
 }

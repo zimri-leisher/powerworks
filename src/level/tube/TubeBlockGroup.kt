@@ -17,7 +17,21 @@ data class ItemPackage(val item: Item, val goal: OutputNode<ItemType>, var xPixe
 data class IntersectionTube(val tubeBlock: TubeBlock, val connectedTo: Array<IntersectionTube?>)
 
 class TubeBlockGroup {
-    private val tubes = ConcurrentlyModifiableMutableList<TubeBlock>()
+
+    val tubes = object : ConcurrentlyModifiableMutableList<TubeBlock>() {
+        override fun add(l: TubeBlock) {
+            super.add(l)
+            if (!combining)
+                createCorrespondingNodes(l)
+        }
+
+        override fun remove(l: TubeBlock) {
+            super.remove(l)
+            if (!combining)
+                removeCorrespondingNodes(l)
+        }
+    }
+
     private var inputs = mutableListOf<InputNode<ItemType>>()
     private var outputs = mutableListOf<OutputNode<ItemType>>()
     private val intersections = mutableListOf<IntersectionTube>()
@@ -47,13 +61,6 @@ class TubeBlockGroup {
         outputs.addAll(other.outputs)
     }
 
-    // Called by TubeBlock.setGroup
-    fun addTube(tubeBlock: TubeBlock) {
-        tubes.add(tubeBlock)
-        if (!combining)
-            createCorrespondingNodes(tubeBlock)
-    }
-
     // Creates transfer nodes corresponding the inputted nodes
     fun createCorrespondingNodes(nodes: List<TransferNode<*>>) {
         for (n in nodes) {
@@ -69,13 +76,6 @@ class TubeBlockGroup {
     // Creates transfer nodes corresponding to the tube's nodes
     fun createCorrespondingNodes(tubeBlock: TubeBlock) {
         tubeBlock.nodeConnections.forEach { createCorrespondingNodes(it) }
-    }
-
-    // Called by TubeBlock.setGroup
-    fun removeTube(tubeBlock: TubeBlock) {
-        tubes.remove(tubeBlock)
-        if (!combining)
-            removeCorrespondingNodes(tubeBlock)
     }
 
     // Removes all nodes that were given to the network because of this

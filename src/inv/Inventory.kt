@@ -61,18 +61,17 @@ class Inventory(val width: Int, val height: Int) : StorageNode<ItemType>(Resourc
                 val nextItem = items[i + 1]
                 if(nextItem != null) {
                     if(item.type.id <= resource.id && nextItem.type.id > resource.id) {
-                        indexOfLastStackOfType = i - 1
+                        indexOfLastStackOfType = i
                         break
                     }
                 } else {
-                    indexOfLastStackOfType = i - 1
+                    indexOfLastStackOfType = i
                 }
             } else {
                 indexOfLastStackOfType = -1
                 break
             }
         }
-
         val needsShift = items[indexOfLastStackOfType + 1] != null
         val stacksLeft = Math.ceil(amountLeftToAdd.toDouble() / resource.maxStack).toInt()
         if (needsShift) {
@@ -92,7 +91,7 @@ class Inventory(val width: Int, val height: Int) : StorageNode<ItemType>(Resourc
     }
 
     fun add(i: Item): Boolean {
-        return add(i.type, i.quantity)
+        return add(i.type, i.quantity, true)
     }
 
     override fun spaceFor(resource: ItemType, quantity: Int): Boolean {

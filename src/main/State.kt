@@ -28,7 +28,7 @@ class State(val activate: (State) -> (Unit), val deactivate: (State) -> (Unit)) 
             }
             AudioManager.ears = IngameGUI.cameras[0]
             IngameGUI.open = true
-            HUD.poke()
+            HUD
         }, {
         })
 

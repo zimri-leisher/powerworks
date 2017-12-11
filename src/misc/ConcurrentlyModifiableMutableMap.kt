@@ -36,4 +36,12 @@ class ConcurrentlyModifiableMutableMap<T, K> {
         toRemove.forEach { t, k -> elements.remove(t) }
         toRemove.clear()
     }
+
+    operator fun iterator() = elements.iterator()
+
+    fun clear() {
+        elements.clear()
+        toAdd.clear()
+        toRemove.clear()
+    }
 }

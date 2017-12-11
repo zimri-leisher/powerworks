@@ -30,6 +30,7 @@ class ViewWindow(name: String,
         controls.add(generateDragGrip(2))
         controls.add(generateCloseButton(2))
         controls.add(nameText)
+        partOfLevel = true
     }
 
     override fun handleControlPress(p: ControlPress) {

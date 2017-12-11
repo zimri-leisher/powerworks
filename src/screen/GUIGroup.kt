@@ -9,18 +9,16 @@ open class GUIGroup(parent: RootGUIElement,
                     layer: Int = parent.layer + 1) :
         GUIElement(parent, name, xAlignment, yAlignment, { 0 }, { 0 }, open, layer) {
 
+    var print = false
+
     override fun onAddChild(child: GUIElement) {
         updateDimensions()
     }
 
-    init {
-        updateDimensions()
-    }
-
-    private fun updateDimensions() {
+    fun updateDimensions() {
         val r = Rectangle()
         children.forEach { r.add(Rectangle(it.xAlignment(), it.yAlignment(), it.widthPixels, it.heightPixels)) }
-        widthPixels = r.width
-        heightPixels = r.height
+        widthAlignment = { r.width }
+        heightAlignment = { r.height }
     }
 }

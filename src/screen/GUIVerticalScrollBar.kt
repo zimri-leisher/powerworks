@@ -53,7 +53,7 @@ class GUIVerticalScrollBar(parent: RootGUIElement,
         currentTextures[2] = otherTextures[i * 3 + 2]
     }
 
-    override fun onMouseActionOn(type: PressType, xPixel: Int, yPixel: Int, button: Int) {
+    override fun onMouseActionOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
         when (type) {
             PressType.PRESSED -> if (GeometryHelper.intersects(xPixel, yPixel, 1, 1, this.xPixel + 1, currentPos + this.yPixel + 1, 4, currentScrollBarHeight)) {
                 dragging = true
@@ -67,13 +67,6 @@ class GUIVerticalScrollBar(parent: RootGUIElement,
                     setTexture(0)
                 dragging = false
             }
-        }
-    }
-
-    override fun onMouseActionOff(type: PressType, xPixel: Int, yPixel: Int, button: Int) {
-        if (type == PressType.RELEASED) {
-            setTexture(0)
-            dragging = false
         }
     }
 

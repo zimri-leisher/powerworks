@@ -24,7 +24,7 @@ class GUIDimensionDragGrip(parent: RootGUIElement,
     var nWidthPixels = 0
     var nHeightPixels = 0
 
-    override fun onMouseActionOn(type: PressType, xPixel: Int, yPixel: Int, button: Int) {
+    override fun onMouseActionOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
         if (type == PressType.PRESSED) {
             dragging = true
             startXPixel = Mouse.xPixel
@@ -33,18 +33,25 @@ class GUIDimensionDragGrip(parent: RootGUIElement,
             nHeightPixels = actOn.heightPixels
         } else if (type == PressType.RELEASED) {
             dragging = false
-            if(keepInsideWindowBounds) {
+            if (keepInsideWindowBounds) {
                 nWidthPixels = Math.min(Game.WIDTH, nWidthPixels)
                 nHeightPixels = Math.min(Game.HEIGHT, nHeightPixels)
             }
-            actOn.widthPixels = nWidthPixels
-            actOn.heightPixels = nHeightPixels
+            actOn.widthAlignment = { nWidthPixels }
+            actOn.heightAlignment = { nHeightPixels }
         }
     }
 
-    override fun onMouseActionOff(type: PressType, xPixel: Int, yPixel: Int, button: Int) {
-        if (type == PressType.RELEASED)
+    override fun onMouseActionOff(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+        if (dragging && type == PressType.RELEASED) {
             dragging = false
+            if (keepInsideWindowBounds) {
+                nWidthPixels = Math.min(Game.WIDTH, nWidthPixels)
+                nHeightPixels = Math.min(Game.HEIGHT, nHeightPixels)
+            }
+            actOn.widthAlignment = { nWidthPixels }
+            actOn.heightAlignment = { nHeightPixels }
+        }
     }
 
     override fun render() {

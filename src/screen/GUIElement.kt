@@ -91,6 +91,10 @@ open class RootGUIElement(val parentWindow: GUIWindow,
         set(value) {
             parentWindow.yPixel = value
         }
+    /**
+     * This will be calculated and assigned to the width pixels every time a dimension or position of this or a parent changes,
+     * or the updateAlignment() function is called
+     */
     var widthPixels = widthAlignment()
         set(value) {
             if (field != value) {
@@ -98,15 +102,15 @@ open class RootGUIElement(val parentWindow: GUIWindow,
                 field = value
                 onDimensionChange(old, heightPixels)
                 children.forEach {
-                    if (updateDimension)
-                        it.widthPixels = it.widthAlignment()
-                    if (updatePosition)
-                        it.xPixel = xPixel + it.xAlignment()
+                    it.updateAlignment()
                     it.onParentDimensionChange(old, heightPixels)
                 }
             }
         }
-
+    /**
+     * This will be calculated and assigned to the height pixels every time a dimension or position of this or a parent changes,
+     * or the updateAlignment() function is called
+     */
     var heightPixels = heightAlignment()
         set(value) {
             if (field != value) {
@@ -114,10 +118,7 @@ open class RootGUIElement(val parentWindow: GUIWindow,
                 field = value
                 onDimensionChange(widthPixels, old)
                 children.forEach {
-                    if (updateDimension)
-                        it.heightPixels = it.heightAlignment()
-                    if (updatePosition)
-                        it.yPixel = yPixel + it.yAlignment()
+                    it.updateAlignment()
                     it.onParentDimensionChange(widthPixels, old)
                 }
             }
@@ -152,8 +153,6 @@ open class RootGUIElement(val parentWindow: GUIWindow,
     }
 
     /* Settings */
-    var updatePosition = true
-    var updateDimension = true
     /** Open when the parent opens */
     var matchParentOpening = true
     /** Close when the parent closes */
@@ -190,11 +189,11 @@ open class RootGUIElement(val parentWindow: GUIWindow,
     }
 
     /** When the mouse is clicked on this and it is on the highest layer, unless transparentToInteraction is true */
-    open fun onMouseActionOn(type: PressType, xPixel: Int, yPixel: Int, button: Int) {
+    open fun onMouseActionOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
     }
 
-    /** When the mouse clicks off this */
-    open fun onMouseActionOff(type: PressType, xPixel: Int, yPixel: Int, button: Int) {
+    open fun onMouseActionOff(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+
     }
 
     /** When the mouse enters the rectangle defined by xPixel, yPixel, widthPixels, heightPixels. Called even if it's on the bottom */
@@ -250,11 +249,25 @@ abstract class GUIElement(parent: RootGUIElement,
                 layer: Int = parentWindow.rootChild.layer + 1) :
             this(parentWindow.rootChild, name, xAlignment, yAlignment, widthAlignment, heightAlignment, open, layer)
 
+    constructor(parent: GUIWindow,
+                name: String, xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int,
+                open: Boolean = false,
+                layer: Int = parent.rootChild.layer + 1) :
+            this(parent.rootChild, name, xPixel, yPixel, widthPixels, heightPixels, open, layer)
+
+    /**
+     * This will be calculated and assigned to the x pixel every time a dimension or position of this or a parent changes,
+     * or the updateAlignment() function is called
+     */
     var xAlignment = xAlignment
         set(value) {
             field = value
             xPixel = parent.xPixel + value()
         }
+    /**
+     * This will be calculated and assigned to the y pixel every time a dimension or position of this or a parent changes,
+     * or the updateAlignment() function is called
+     */
     var yAlignment = yAlignment
         set(value) {
             field = value
@@ -283,10 +296,7 @@ abstract class GUIElement(parent: RootGUIElement,
                 field = value
                 onPositionChange(old, yPixel)
                 children.forEach {
-                    if (updateDimension)
-                        it.widthPixels = it.widthAlignment()
-                    if (updatePosition)
-                        it.xPixel = it.xAlignment() + xPixel
+                    it.updateAlignment()
                     it.onParentPositionChange(old, yPixel)
                 }
             }
@@ -302,10 +312,7 @@ abstract class GUIElement(parent: RootGUIElement,
                 field = value
                 onPositionChange(xPixel, old)
                 children.forEach {
-                    if (updateDimension)
-                        it.heightPixels = it.heightAlignment()
-                    if (updatePosition)
-                        it.yPixel = it.yAlignment() + yPixel
+                    it.updateAlignment()
                     it.onParentPositionChange(xPixel, old)
                 }
             }
@@ -315,17 +322,18 @@ abstract class GUIElement(parent: RootGUIElement,
         parent.children.add(this)
     }
 
-    constructor(parent: GUIWindow,
-                name: String, xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int,
-                open: Boolean = false,
-                layer: Int = parent.rootChild.layer + 1) :
-            this(parent.rootChild, name, xPixel, yPixel, widthPixels, heightPixels, open, layer)
-
     /* Util */
     /** Makes this and all it's children's layers their respective parent's layer + 1 */
     fun compressLayer() {
         layer = parent.layer + 1
         children.forEach { it.compressLayer() }
+    }
+
+    fun updateAlignment() {
+        xPixel = xAlignment() + parent.xPixel
+        yPixel = yAlignment() + parent.yPixel
+        widthPixels = widthAlignment()
+        heightPixels = heightAlignment()
     }
 
     /* Events */
@@ -341,15 +349,20 @@ abstract class GUIElement(parent: RootGUIElement,
     open fun onParentPositionChange(pXPixel: Int, pYPixel: Int) {
     }
 
-    init {
-        this.parent.children.add(this).run { }
-    }
-
     override fun equals(other: Any?): Boolean {
         return other is GUIElement && other.id == id
     }
 
     override fun toString(): String {
         return javaClass.simpleName + ": $name at $xPixel, $yPixel absolute, ${xAlignment()}, ${yAlignment()} relative, width: $widthPixels, height: $heightPixels, layer: $layer, parent: ${parent.name}"
+    }
+
+    override fun hashCode(): Int {
+        var result = super.hashCode()
+        result = 31 * result + name.hashCode()
+        result = 31 * result + parent.hashCode()
+        result = 31 * result + xPixel
+        result = 31 * result + yPixel
+        return result
     }
 }

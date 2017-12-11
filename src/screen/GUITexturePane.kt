@@ -10,7 +10,8 @@ class GUITexturePane(parent: RootGUIElement,
                      val texture: Texture,
                      widthAlignment: () -> Int = { texture.widthPixels }, heightAlignment: () -> Int = { texture.heightPixels },
                      open: Boolean = false,
-                     layer: Int = parent.layer + 1) :
+                     layer: Int = parent.layer + 1,
+                     var keepAspect: Boolean = false) :
         GUIElement(parent, name, xAlignment, yAlignment, widthAlignment, heightAlignment, open, layer) {
 
     constructor(parent: RootGUIElement,
@@ -19,10 +20,14 @@ class GUITexturePane(parent: RootGUIElement,
                 texture: Texture,
                 widthPixels: Int = texture.widthPixels, heightPixels: Int = texture.heightPixels,
                 open: Boolean = false,
-                layer: Int = parent.layer + 1) :
-            this(parent, name, { relXPixel }, { relYPixel }, texture, { widthPixels }, { heightPixels }, open, layer)
+                layer: Int = parent.layer + 1,
+                keepAspect: Boolean = false) :
+            this(parent, name, { relXPixel }, { relYPixel }, texture, { widthPixels }, { heightPixels }, open, layer, keepAspect)
 
     override fun render() {
-        Renderer.renderTexture(texture, xPixel, yPixel, widthPixels, heightPixels, params)
+        if (keepAspect)
+            Renderer.renderTextureKeepAspect(texture, xPixel, yPixel, widthPixels, heightPixels)
+        else
+            Renderer.renderTexture(texture, xPixel, yPixel, widthPixels, heightPixels, params)
     }
 }

@@ -24,7 +24,6 @@ object ScreenManager : ControlPressHandler {
     private val _backwardsWindowGroups = mutableListOf<WindowGroup>()
     val windows = mutableListOf<GUIWindow>()
     val openWindows = mutableListOf<GUIWindow>()
-    var elementBeingInteractedWith: RootGUIElement? = null
 
     var selectedElement: RootGUIElement? = null
         set(value) {
@@ -48,16 +47,18 @@ object ScreenManager : ControlPressHandler {
             }
         }
 
+
     object Groups {
         val BACKGROUND = WindowGroup(0, "Background")
         val VIEW = WindowGroup(1, "GUIViews")
         val INVENTORY = WindowGroup(2, "Inventories")
-        val HOTBAR = WindowGroup(3, "Hotbar")
+        val CRAFTING = WindowGroup(3, "Crafting")
+        val HOTBAR = WindowGroup(4, "Hotbar")
         val DEBUG_OVERLAY = WindowGroup(10000, "Debug overlay")
     }
 
     init {
-        InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.INTERACT, Control.SHIFT_INTERACT, Control.SCROLL_UP, Control.SCROLL_DOWN, Control.DEBUG)
+        InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.INTERACT, Control.SHIFT_INTERACT, Control.ALT_INTERACT, Control.CONTROL_INTERACT, Control.SCROLL_UP, Control.SCROLL_DOWN, Control.DEBUG)
     }
 
     fun render() {
@@ -70,21 +71,11 @@ object ScreenManager : ControlPressHandler {
 
     fun update() {
         updateMouseOn()
-        fun recursivelyUpdate(e: RootGUIElement) {
-            e.update()
-            e.children.forEach { it.update() }
-        }
-        windows.forEach { it.update(); recursivelyUpdate(it.rootChild) }
+        forEachElement(func = { it.update() })
     }
 
     fun updateMouseOn() {
-        fun recursivelyUpdateMouseOn(e: RootGUIElement) {
-            if (e.open) {
-                e.mouseOn = isMouseOn(e)
-                e.children.forEach { recursivelyUpdateMouseOn(it) }
-            }
-        }
-        windows.forEach { recursivelyUpdateMouseOn(it.rootChild) }
+        forEachElement({ it.mouseOn = isMouseOn(it) }, { it.open })
     }
 
     fun isMouseOn(e: RootGUIElement): Boolean {
@@ -140,67 +131,37 @@ object ScreenManager : ControlPressHandler {
         }
     }
 
+    private fun forEachElement(func: ((RootGUIElement) -> Unit), pred: ((RootGUIElement) -> Boolean)? = null) {
+        windows.forEach { recursivelyCall(it.rootChild, func, pred) }
+    }
+
+    private fun recursivelyCall(e: RootGUIElement, l: (RootGUIElement) -> Unit, f: ((RootGUIElement) -> Boolean)? = null) {
+        if (f == null || f(e)) {
+            l(e)
+            e.children.forEach { recursivelyCall(it, l, f) }
+        }
+    }
+
     override fun handleControlPress(p: ControlPress) {
         val x = Mouse.xPixel
         val y = Mouse.yPixel
         val t = p.pressType
         val b = Mouse.button
-
-        /* INTERACT */
-
-        if (p.control == Control.INTERACT) {
-            if (t == PressType.REPEAT) {
-                elementBeingInteractedWith?.onMouseActionOn(t, x, y, b)
-                return
-            }
-            updateSelected()
-            val window = selectedWindow
-            if (window != null) {
-                window.windowGroup.bringToTop(window)
-                if (t == PressType.PRESSED) {
-                    if (selectedElement != null) {
-                        selectedElement!!.onMouseActionOn(t, x, y, b)
-                        elementBeingInteractedWith = selectedElement
-                    }
-                    // This purposely doesn't update elementBeingInteractedWith when the control press repeats,
-                    // so that we are able to move the mouse quickly and not have it switch elements
-                } else if (t == PressType.RELEASED) {
-                    if (elementBeingInteractedWith != null) {
-                        elementBeingInteractedWith!!.onMouseActionOn(t, x, y, b)
-                        elementBeingInteractedWith = null
-                    }
-                }
-            } // TODO redo this
-            // These are separated because we want to do different things regarding which elements are selected
-            fun recursivelyCallMouseOff(e: RootGUIElement) {
-                if (e.open && e !== selectedElement) {
-                    e.onMouseActionOff(t, x, y, b)
-                    e.children.forEach { recursivelyCallMouseOff(it) }
+        val c = p.control
+        if (Control.Groups.INTERACTION.contains(c)) {
+            // If it is repeating, we don't want it to change the selected element so we can move the mouse nice and fast
+            // without worrying that it will click on something else
+            if (t != PressType.REPEAT) {
+                updateSelected()
+                if (Control.Groups.SCROLL.contains(c))
+                    selectedElement?.onMouseScroll(if (c == Control.SCROLL_UP) 1 else -1)
+                else {
+                    selectedElement?.onMouseActionOn(t, x, y, b, (c == Control.SHIFT_INTERACT), (c == Control.CONTROL_INTERACT), (c == Control.ALT_INTERACT))
+                    forEachElement({ it.onMouseActionOff(t, x, y, b, (c == Control.SHIFT_INTERACT), (c == Control.CONTROL_INTERACT), (c == Control.ALT_INTERACT)) }, { it != selectedElement && it.open })
                 }
             }
-            openWindows.stream().forEachOrdered { recursivelyCallMouseOff(it.rootChild) }
-
-        } else if(p.control == Control.SHIFT_INTERACT) {
-            updateSelected()
-
-            /* SCROLL */
-
-        } else if (p.control == Control.SCROLL_DOWN || p.control == Control.SCROLL_UP) {
-            val dir = if (p.control == Control.SCROLL_DOWN) -1 else 1
-            val highestW = getHighestWindow(x, y, { !it.transparentToInteraction })
-            selectedWindow = highestW
-            if (highestW != null) {
-                highestW.windowGroup.bringToTop(highestW)
-                val highestE = getHighestElement(highestW, x, y, { !it.transparentToInteraction })
-                highestE!!.onMouseScroll(dir)
-                elementBeingInteractedWith = highestE
-                selectedElement = highestE
-            }
-
-            /* DEBUG */
-
-        } else if (p.control == Control.DEBUG && p.pressType == PressType.PRESSED) {
-            /*
+        }
+        if(c == Control.DEBUG && t == PressType.PRESSED) {
             fun RootGUIElement.print(spaces: String = ""): String {
                 var v = spaces + toString()
                 for (g in children)
@@ -216,7 +177,6 @@ object ScreenManager : ControlPressHandler {
                     }
                 }
             }
-            */
         }
     }
 }

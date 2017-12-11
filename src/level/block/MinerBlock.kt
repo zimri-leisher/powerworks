@@ -17,6 +17,8 @@ class MinerBlock(xTile: Int, yTile: Int) : MachineBlock(xTile, yTile, MachineBlo
                 if(tile is OreTile) {
                     out.output(tile.type.minedItem, 1)
                     tile.amount -= 1
+                    if(tile.amount == 0)
+                        requiresUpdate = false
                     return
                 }
             }

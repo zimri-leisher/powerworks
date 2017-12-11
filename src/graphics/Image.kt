@@ -1,6 +1,7 @@
 package graphics
 
 import main.Game
+import screen.GUIRecipeButton
 import java.awt.AlphaComposite
 import java.awt.Color
 import java.awt.Transparency
@@ -319,6 +320,8 @@ class Image private constructor() : Texture {
         val BUTTON_CLICK = Image(Utils.modify(BUTTON, ImageParams(rotation = 2)))
         val MAIN_MENU_BACKGROUND_FILLER = Image(Color(0x515151))
         val HOTBAR_SELECTED_SLOT = Image("/textures/gui/selected_slot.png")
+        val CRAFTING_ARROW = Image("/textures/gui/crafting_arrow.png")
+        val RECIPE_BUTTON_BACKGROUND = Image(Utils.genRectangle(GUIRecipeButton.WIDTH, GUIRecipeButton.HEIGHT))
     }
 
 }

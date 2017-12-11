@@ -8,6 +8,7 @@ class OreTile(override val type: OreTileType, xTile: Int, yTile: Int) : Tile(typ
         set(value) {
             if (value < 1) {
                 currentLevel.getChunk(xChunk, yChunk).setTile(Tile(type.backgroundType, xTile, yTile))
+                field = value
             }
         }
 }

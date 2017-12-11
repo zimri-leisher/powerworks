@@ -2,10 +2,8 @@ package io
 
 import main.Game
 import misc.ConcurrentlyModifiableMutableMap
-import screen.GUIView
 import screen.ScreenManager
 import java.awt.event.*
-import java.util.concurrent.CopyOnWriteArrayList
 import io.OutputManager as out
 
 interface ControlPressHandler {
@@ -22,8 +20,6 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
 
     val map = ControlMap.DEFAULT
 
-    var print = false
-
     val handlers = ConcurrentlyModifiableMutableMap<
             Pair<
                     ControlPressHandler,
@@ -34,23 +30,14 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
     var currentScreenHandlers = mutableListOf<ControlPressHandler>()
     var currentLevelHandlers = mutableListOf<ControlPressHandler>()
 
-    val keysDown = mutableSetOf<Int>()
+    val inputsBeingPressed = mutableSetOf<String>()
 
-    val mouseButtonsDown = BooleanArray(5)
-
-    var currentModifiers = 0
+    var inputEvent = ConcurrentlyModifiableMutableMap<String, PressType>()
 
     /* Each control can only happen once per update */
     val queue = linkedSetOf<ControlPress>()
 
-    var keyPress = CopyOnWriteArrayList<KeyEvent>()
-    var keyRelease = CopyOnWriteArrayList<KeyEvent>()
-
-    var mousePress = CopyOnWriteArrayList<MouseEvent>()
-    var mouseRelease = CopyOnWriteArrayList<MouseEvent>()
     var mouseMoved: MouseEvent? = null
-
-    var mouseWheelEvent: MouseWheelEvent? = null
 
     val mouseMovementListeners = mutableListOf<MouseMovementListener>()
 
@@ -73,43 +60,22 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
     }
 
     fun update() {
-        /* Translate */
-        for (k in keyRelease) {
-            val i = k.extendedKeyCode
-            /*
-            Check to see if it is within valid bounds and the key in question is currently held down. Waits to clear so key presses can check if they were also released
-             */
-            if (keysDown.contains(i)) {
-                currentModifiers = k.modifiers
-                if (print)
-                    out.println("${k.extendedKeyCode} : RELEASED")
-                map.translateKey(i, keysDown.filter { it != i }.toMutableSet()).forEach { queue.add(ControlPress(it, PressType.RELEASED)) }
-                keysDown.remove(i)
+        for (i in inputsBeingPressed) {
+            map.translate(i, inputsBeingPressed.filter { it != i }.toMutableSet()).forEach { queue.add(ControlPress(it, PressType.REPEAT)) }
+        }
+        for ((k, v) in inputEvent) {
+            if((v == PressType.PRESSED && !inputsBeingPressed.contains(k)) || (v == PressType.RELEASED && inputsBeingPressed.contains(k))) {
+                map.translate(k, inputsBeingPressed.filter { it != k }.toMutableSet()).forEach { queue.add(ControlPress(it, v)) }
+                if(v == PressType.PRESSED &&
+                        /* Wheels are not able to be held down, so you shouldn't add them to the repeat */
+                        !k.contains("WHEEL")) {
+                    inputsBeingPressed.add(k)
+                } else if(v == PressType.RELEASED) {
+                    inputsBeingPressed.remove(k)
+                }
             }
         }
-        for (key in keysDown) {
-            if (print)
-                out.println("$key : REPEAT")
-            map.translateKey(key, keysDown.filter { it != key }.toMutableSet()).forEach { queue.add(ControlPress(it, PressType.REPEAT)) }
-        }
-        for (k in keyPress) {
-            val i = k.extendedKeyCode
-            if (!keysDown.contains(i)) {
-                keysDown.add(i)
-                currentModifiers = k.modifiers
-                if (print)
-                    out.println("${i} : PRESSED")
-                map.translateKey(i, keysDown.filter { it != i }.toMutableSet()).forEach { queue.add(ControlPress(it, PressType.PRESSED)) }
-            }
-            if (keyRelease.stream().anyMatch { it.extendedKeyCode == i }) {
-                if (print)
-                    out.println("$i : RELEASED")
-                keysDown.remove(i)
-                map.translateKey(i, keysDown.filter { it != i }.toMutableSet()).forEach { queue.add(ControlPress(it, PressType.RELEASED)) }
-            }
-        }
-        keyRelease.clear()
-        keyPress.clear()
+        inputEvent.clear()
         if (mouseMoved != null) {
             val newMouseXPixel = mouseMoved!!.x / Game.SCALE
             val newMouseYPixel = mouseMoved!!.y / Game.SCALE
@@ -120,55 +86,17 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
             }
             mouseMoved = null
         }
-        for (m in mouseRelease) {
-            val i = m.button
-            if (mouseButtonsDown[i - 1]) {
-                mouseButtonsDown[i - 1] = false
-                currentModifiers = m.modifiers
-                if (print)
-                    out.println("MOUSE $i : RELEASED")
-                map.translateMouse(i, keysDown).forEach { queue.add(ControlPress(it, PressType.RELEASED)) }
-            }
-        }
-        mouseRelease.clear()
-        for (button in mouseButtonsDown.indices) {
-            if (mouseButtonsDown[button]) {
-                if (print)
-                    out.println("MOUSE ${button + 1} : REPEAT")
-                map.translateMouse(button + 1, keysDown).forEach { queue.add(ControlPress(it, PressType.REPEAT)) }
-            }
-        }
-        for (m in mousePress) {
-            val i = m.button
-            if (!mouseButtonsDown[i - 1]) {
-                mouseButtonsDown[i - 1] = true
-                currentModifiers = m.modifiers
-                if (print)
-                    out.println("MOUSE $i : PRESSED")
-                map.translateMouse(i, keysDown).forEach { queue.add(ControlPress(it, PressType.PRESSED)) }
-            }
-        }
-        mousePress.clear()
-        if (mouseWheelEvent != null) {
-            val i: Int = mouseWheelEvent!!.wheelRotation
-            currentModifiers = mouseWheelEvent!!.modifiers
-            if (print)
-                out.println("MOUSE WHEEL " + if (i == -1) "DOWN" else if (i == 1) "UP" else "???")
-            map.translateMouseWheel(i, keysDown).forEach { queue.add(ControlPress(it, PressType.PRESSED)) }
-            mouseWheelEvent = null
-        }
+
         /* Execute */
-        if (print)
-            out.println("QUEUE: [${queue.joinToString()}]")
-        for(p in queue) {
+        for (p in queue) {
             handlers.forEach { k, v ->
-                if(k.second == ControlPressHandlerType.GLOBAL ||
+                if (k.second == ControlPressHandlerType.GLOBAL ||
                         (k.second == ControlPressHandlerType.SCREEN && currentScreenHandlers.contains(k.first)) ||
                         (k.second == ControlPressHandlerType.LEVEL &&
                                 // we want the part below because otherwise the level controls will trigger even when we
                                 // press on a gui element that is higher. However, we don't care if it is a gui view because
                                 // that's how we're supposed to interact
-                                (ScreenManager.selectedElement == null || ScreenManager.selectedElement is GUIView)
+                                (ScreenManager.selectedWindow == null || ScreenManager.selectedWindow!!.partOfLevel)
                                 && currentLevelHandlers.contains(k.first))) {
                     sendPress(p, k.first, v)
                 }
@@ -197,20 +125,20 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
     }
 
     override fun keyPressed(e: KeyEvent) {
-        keyPress.add(e)
+        inputEvent.put(KeyEvent.getKeyText(e.extendedKeyCode).toUpperCase(), PressType.PRESSED)
     }
 
     override fun keyReleased(e: KeyEvent) {
-        keyRelease.add(e)
+        inputEvent.put(KeyEvent.getKeyText(e.extendedKeyCode).toUpperCase(), PressType.RELEASED)
     }
 
     override fun mouseWheelMoved(e: MouseWheelEvent) {
-        mouseWheelEvent = e
+        inputEvent.put("WHEEL_${if (e.wheelRotation == -1) "DOWN" else "UP"}", PressType.PRESSED)
     }
 
     override fun mouseReleased(e: MouseEvent) {
         Mouse.button = e.button
-        mouseRelease.add(e)
+        inputEvent.put("MOUSE_${e.button}", PressType.RELEASED)
     }
 
     override fun mouseEntered(e: MouseEvent) {
@@ -224,11 +152,13 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
     override fun mouseExited(e: MouseEvent) {
         mouseOutside = true
         Game.resetMouseIcon()
+        for(i in 1..5)
+            inputEvent.put("MOUSE_$i", PressType.RELEASED)
     }
 
     override fun mousePressed(e: MouseEvent) {
         Mouse.button = e.button
-        mousePress.add(e)
+        inputEvent.put("MOUSE_${e.button}", PressType.PRESSED)
     }
 
     override fun mouseMoved(e: MouseEvent) {

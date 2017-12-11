@@ -114,10 +114,10 @@ open class GUIWindow(val name: String, xAlignment: () -> Int, yAlignment: () -> 
             }
         }
 
-    var topLeftGroup = AutoFormatGUIGroup(rootChild, name + " top left group", { 1 }, { 1 }, open, xPixelSeparation = 5)
-    var topRightGroup = AutoFormatGUIGroup(rootChild, name + " top right group", { this.widthPixels - 5 }, { 1 }, open, xPixelSeparation = -5)
-    var bottomRightGroup = AutoFormatGUIGroup(rootChild, name + " bottom right group", { this.widthPixels - 5 }, { this.heightPixels - 5 }, open, xPixelSeparation = -5)
-    var bottomLeftGroup = AutoFormatGUIGroup(rootChild, name + " bottom left group", { this.widthPixels - 5 }, { 1 }, open, xPixelSeparation = 5)
+    var topLeftGroup = AutoFormatGUIGroup(rootChild, name + " top left group", { 1 }, { 1 }, open = open, xPixelSeparation = 5)
+    var topRightGroup = AutoFormatGUIGroup(rootChild, name + " top right group", { this.widthPixels - 5 }, { 1 }, open = open, xPixelSeparation = -5)
+    var bottomRightGroup = AutoFormatGUIGroup(rootChild, name + " bottom right group", { this.widthPixels - 5 }, { this.heightPixels - 5 }, open = open, xPixelSeparation = -5)
+    var bottomLeftGroup = AutoFormatGUIGroup(rootChild, name + " bottom left group", { this.widthPixels - 5 }, { 1 }, open = open, xPixelSeparation = 5)
 
     init {
         windowGroup.windows.add(this)
@@ -132,6 +132,8 @@ open class GUIWindow(val name: String, xAlignment: () -> Int, yAlignment: () -> 
     var adjustDimensions = false
     /** Send interactions to the window behind it */
     var transparentToInteraction = false
+    /** If this should not interfere with sending controls to the level when selected */
+    var partOfLevel = false
 
     /* Util */
     fun generateCloseButton(layer: Int = this.layer + 1, pos: Int = 1): GUICloseButton {

@@ -25,7 +25,7 @@ object ViewControlGUI : GUIWindow("In game view selector window", { Game.WIDTH -
                         viewControls.add(this)
                     }
 
-                    override fun onMouseActionOn(type: PressType, xPixel: Int, yPixel: Int, button: Int) {
+                    override fun onMouseActionOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
                         if (type == PressType.PRESSED) {
                             // If it is on the space in between one of the four buttons, don't do anything
                             if ((xPixel - this.xPixel) % (VIEW_SELECTOR_BUTTON_WIDTH + 2) > VIEW_SELECTOR_BUTTON_WIDTH) return

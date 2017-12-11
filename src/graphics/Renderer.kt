@@ -81,6 +81,26 @@ object Renderer {
         }
     }
 
+    fun renderTextureKeepAspect(t: Texture, xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int) {
+        var w = widthPixels
+        var h = heightPixels
+        if (t.widthPixels > t.heightPixels) {
+            if (t.widthPixels > widthPixels) {
+                w = widthPixels
+                val ratio = widthPixels.toFloat() / t.widthPixels
+                h = (t.heightPixels * ratio).toInt()
+            }
+        }
+        if (t.heightPixels > t.widthPixels) {
+            if (t.heightPixels > heightPixels) {
+                h = heightPixels
+                val ratio = heightPixels.toFloat() / t.heightPixels
+                w = (t.widthPixels * ratio).toInt()
+            }
+        }
+        Renderer.renderTexture(t, xPixel + (widthPixels - w) / 2, yPixel + (heightPixels - h) / 2, w, h)
+    }
+
     fun renderTexture(t: Texture, xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int) {
         g2d.drawImage(t.currentImage, (xPixel + xPixelOffset) * Game.SCALE, (yPixel + yPixelOffset) * Game.SCALE, widthPixels * Game.SCALE, heightPixels * Game.SCALE, null)
     }
@@ -89,8 +109,31 @@ object Renderer {
         val absoluteXPixel = (xPixel + params.xPixelOffset + xPixelOffset) * Game.SCALE
         val absoluteYPixel = (yPixel + params.yPixelOffset + yPixelOffset) * Game.SCALE
         val scaledScale = Game.SCALE * params.scale
-        val absoluteWidthPixels = widthPixels * scaledScale * params.scaleWidth
-        val absoluteHeightPixels = heightPixels * scaledScale * params.scaleHeight
+        val absoluteWidthPixels: Float
+        val absoluteHeightPixels: Float
+        if(true) {
+            var w = widthPixels
+            var h = heightPixels
+            if (t.widthPixels > t.heightPixels) {
+                if (t.widthPixels > widthPixels) {
+                    w = widthPixels
+                    val ratio = widthPixels.toFloat() / t.widthPixels
+                    h = (t.heightPixels * ratio).toInt()
+                }
+            }
+            if (t.heightPixels > t.widthPixels) {
+                if (t.heightPixels > heightPixels) {
+                    h = heightPixels
+                    val ratio = heightPixels.toFloat() / t.heightPixels
+                    w = (t.widthPixels * ratio).toInt()
+                }
+            }
+            absoluteWidthPixels = w * scaledScale * params.scaleWidth
+            absoluteHeightPixels = h * scaledScale * params.scaleHeight
+        } else {
+            absoluteWidthPixels = widthPixels * scaledScale * params.scaleWidth
+            absoluteHeightPixels = heightPixels * scaledScale * params.scaleHeight
+        }
         var oldTransform: AffineTransform? = null
         var oldComposite: Composite? = null
         if (params.rotation != 0f) {
