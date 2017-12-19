@@ -2,8 +2,8 @@ package io
 
 enum class Control {
     UP, DOWN, LEFT, RIGHT, TOGGLE_INVENTORY,
-    /* GUI clicks/scrolls, level clicks, etc */
-    INTERACT, SHIFT_INTERACT, SCROLL_UP, SCROLL_DOWN,
+
+    INTERACT, SHIFT_INTERACT, CONTROL_INTERACT, ALT_INTERACT, SCROLL_UP, SCROLL_DOWN,
 
     /* For whatever you need whenever you need it */
     DEBUG,
@@ -19,5 +19,16 @@ enum class Control {
     /* Testing controls */
     GIVE_TEST_ITEM,
     DROP_HELD_ITEM,
-    PICK_UP_DROPPED_ITEMS
+    PICK_UP_DROPPED_ITEMS;
+
+    enum class Groups(vararg val controls: Control) {
+        /* GUI clicks/scrolls, level clicks, etc */
+        INTERACTION(INTERACT, SHIFT_INTERACT, CONTROL_INTERACT, ALT_INTERACT, SCROLL_UP, SCROLL_DOWN),
+        DEBUG(Control.DEBUG, TOGGLE_CHUNK_INFO, TOGGLE_DEBUG_TUBE_GROUP_INFO, TOGGLE_RENDER_HITBOXES),
+        HOTBAR_SLOTS(SLOT_1, SLOT_2, SLOT_3, SLOT_4, SLOT_5, SLOT_6,SLOT_7, SLOT_8),
+        SCROLL(SCROLL_DOWN, SCROLL_UP);
+        fun contains(c: Control): Boolean = controls.contains(c)
+    }
+
 }
+

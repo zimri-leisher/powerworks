@@ -31,7 +31,7 @@ object Mouse {
                 }
             }
             Renderer.renderTexture(t, xPixel + (GUIItemSlot.WIDTH - w) / 2, yPixel + (GUIItemSlot.HEIGHT - h) / 2, w, h)
-            Renderer.renderText(i.quantity.toString(), xPixel, yPixel + 4)
+            Renderer.renderText(i.quantity.toString(), xPixel, yPixel)
         }
     }
 }

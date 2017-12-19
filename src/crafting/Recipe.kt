@@ -15,6 +15,7 @@ fun ResourceList.enoughIn(other: ResourceList): Boolean {
 
 class Recipe(val consume: ResourceList,
              val produce: ResourceList,
+             val icon: ResourceType,
         /*
         * Whichever crafter types are able to make this recipe. For example, Crafters#PLAYER
         * Null means any
@@ -28,7 +29,7 @@ class Recipe(val consume: ResourceList,
     companion object {
         val ALL = mutableListOf<Recipe>()
 
-        val TEST = Recipe(mapOf(Pair(ItemType.IRON_ORE, 1)), mapOf(Pair(ItemType.CHEST_SMALL, 1)))
+        val TEST = Recipe(mapOf(Pair(ItemType.IRON_ORE, 1)), mapOf(Pair(ItemType.CHEST_SMALL, 1)), ItemType.CHEST_SMALL)
 
         fun craft(resources: ResourceList): ResourceList? {
             return ALL.firstOrNull { resources.enoughIn(it.consume) }?.produce

@@ -151,17 +151,18 @@ object ScreenManager : ControlPressHandler {
         if (Control.Groups.INTERACTION.contains(c)) {
             // If it is repeating, we don't want it to change the selected element so we can move the mouse nice and fast
             // without worrying that it will click on something else
-            if (t != PressType.REPEAT) {
+            if (t == PressType.PRESSED)
                 updateSelected()
-                if (Control.Groups.SCROLL.contains(c))
-                    selectedElement?.onMouseScroll(if (c == Control.SCROLL_UP) 1 else -1)
-                else {
-                    selectedElement?.onMouseActionOn(t, x, y, b, (c == Control.SHIFT_INTERACT), (c == Control.CONTROL_INTERACT), (c == Control.ALT_INTERACT))
-                    forEachElement({ it.onMouseActionOff(t, x, y, b, (c == Control.SHIFT_INTERACT), (c == Control.CONTROL_INTERACT), (c == Control.ALT_INTERACT)) }, { it != selectedElement && it.open })
-                }
+            if (Control.Groups.SCROLL.contains(c))
+                selectedElement?.onMouseScroll(if (c == Control.SCROLL_UP) 1 else -1)
+            else {
+                selectedElement?.onMouseActionOn(t, x, y, b, (c == Control.SHIFT_INTERACT), (c == Control.CONTROL_INTERACT), (c == Control.ALT_INTERACT))
+                forEachElement({ it.onMouseActionOff(t, x, y, b, (c == Control.SHIFT_INTERACT), (c == Control.CONTROL_INTERACT), (c == Control.ALT_INTERACT)) }, { it != selectedElement && it.open })
             }
+            if(t == PressType.RELEASED)
+                updateSelected()
         }
-        if(c == Control.DEBUG && t == PressType.PRESSED) {
+        if (c == Control.DEBUG && t == PressType.PRESSED) {
             fun RootGUIElement.print(spaces: String = ""): String {
                 var v = spaces + toString()
                 for (g in children)

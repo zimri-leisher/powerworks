@@ -196,9 +196,9 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
         if (Game.CHUNK_BOUNDARIES) {
             for (c in chunksInTileRectangle) {
                 Renderer.renderEmptyRectangle(c.xTile shl 4, c.yTile shl 4, CHUNK_SIZE_PIXELS, CHUNK_SIZE_PIXELS)
-                Renderer.renderText("x: ${c.xChunk}, y: ${c.yChunk}", (c.xTile shl 4) + 1, (c.yTile shl 4) + 5)
-                Renderer.renderText("updates required: ${c.updatesRequired!!.size}", (c.xTile shl 4) + 1, (c.yTile shl 4) + 9)
-                Renderer.renderText("moving objects: ${c.moving!!.size} (${c.movingOnBoundary!!.size} on boundary)", (c.xTile shl 4) + 1, (c.yTile shl 4) + 13)
+                Renderer.renderText("x: ${c.xChunk}, y: ${c.yChunk}", (c.xTile shl 4), (c.yTile shl 4))
+                Renderer.renderText("updates required: ${c.updatesRequired!!.size}", (c.xTile shl 4), (c.yTile shl 4) + 4)
+                Renderer.renderText("moving objects: ${c.moving!!.size} (${c.movingOnBoundary!!.size} on boundary)", (c.xTile shl 4), (c.yTile shl 4) + 8)
             }
         }
         if (Game.DEBUG_TUBE_GROUP_INFO) {

@@ -13,6 +13,7 @@ import screen.*
 import java.awt.*
 import java.awt.event.ComponentAdapter
 import java.awt.event.ComponentEvent
+import java.awt.font.FontRenderContext
 import java.io.File
 import java.io.IOException
 import java.nio.file.Files
@@ -48,6 +49,8 @@ fun initializeProperties() {
     System.setProperty("sun.java2d.ddforcevram", "true")
 }
 
+typealias FontAndOffset = Pair<Font, Int>
+
 object Game : Canvas(), Runnable, ControlPressHandler {
 
     val JAR_PATH = Game::class.java.protectionDomain.codeSource.location.toURI().path.substring(1).substring(0 until Game::class.java.protectionDomain.codeSource.location.toURI().path.lastIndexOf("/"))
@@ -62,7 +65,7 @@ object Game : Canvas(), Runnable, ControlPressHandler {
     const val UPDATES_PER_SECOND = 60f
     const val NS_PER_UPDATE: Float = 1000000000 / UPDATES_PER_SECOND
     const val MAX_UPDATES_BEFORE_RENDER = 5
-    var FRAMES_PER_SECOND = 60f
+    var FRAMES_PER_SECOND = 6000000f
     var NS_PER_FRAME: Float = 1000000000 / FRAMES_PER_SECOND
     /* Base statistics */
     var framesCount = 0
@@ -72,11 +75,12 @@ object Game : Canvas(), Runnable, ControlPressHandler {
     private var defaultCursor = Cursor.getDefaultCursor()
     private var clearCursor = Toolkit.getDefaultToolkit().createCustomCursor(ImageIO.read(Game::class.java.getResource("/textures/cursor/cursor_default.png")), Point(0, 0), "Blank cursor")
 
-    private val fonts = mutableMapOf<Int, Font>()
+    private val defaultFontRenderContext = FontRenderContext(null, false, false)
+    private val fonts = mutableMapOf<Int, FontAndOffset>()
     private lateinit var defaultFont: Font
 
     /* Settings */
-    var THREAD_WAITING = true
+    var THREAD_WAITING = false
     var RENDER_HITBOXES = false
     var CHUNK_BOUNDARIES = false
     var LEVEL_PAUSED = false
@@ -117,11 +121,11 @@ object Game : Canvas(), Runnable, ControlPressHandler {
         AudioManager.load()
         cursor = clearCursor
         try {
-            val font = Font.createFont(Font.TRUETYPE_FONT, Game::class.java.getResourceAsStream("/font/MunroSmall.ttf")).deriveFont(Font.PLAIN, 28f)
+            val font = Font.createFont(Font.TRUETYPE_FONT, Game::class.java.getResourceAsStream("/font/Graph-35-pix.ttf")).deriveFont(Font.PLAIN, 20f)
             val ge = GraphicsEnvironment.getLocalGraphicsEnvironment()
             ge.registerFont(font)
             defaultFont = font
-            fonts.put(28, font)
+            fonts.put(20, Pair(font, getFontYOffset(font)))
         } catch (ex: FontFormatException) {
             ex.printStackTrace()
         } catch (ex: IOException) {
@@ -227,13 +231,35 @@ object Game : Canvas(), Runnable, ControlPressHandler {
         AudioManager.close()
     }
 
-    fun getFont(size: Int): Font {
+    fun getFont(size: Int): FontAndOffset {
         var font = fonts.get(size)
         if (font != null)
             return font
-        font = defaultFont.deriveFont(size.toFloat())
+        val f = defaultFont.deriveFont(size.toFloat())
+        font = Pair(f, getFontYOffset(f))
         fonts.put(size, font)
         return font
+    }
+
+    fun getFontYOffset(f: Font): Int {
+        val r = getMaxFontBounds(f)
+        return r.height
+    }
+
+    fun getMaxFontBounds(f: Font): Rectangle {
+        return f.getMaxCharBounds(defaultFontRenderContext).apply {
+            setRect(x, y, width / Game.SCALE, height / Game.SCALE)
+        }.bounds
+    }
+
+    fun getMaxFontBounds(s: Int): Rectangle {
+        return getMaxFontBounds(getFont(s).first)
+    }
+
+    fun getStringBounds(s: String, size: Int): Rectangle {
+        return getFont(size).first.getStringBounds(s, defaultFontRenderContext).apply {
+            setRect(x, y, width / Game.SCALE, height / Game.SCALE)
+        }.bounds
     }
 
     fun resetMouseIcon() {

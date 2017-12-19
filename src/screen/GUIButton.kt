@@ -6,7 +6,6 @@ import graphics.Renderer.params
 import graphics.Texture
 import io.PressType
 import main.Game
-import java.awt.font.FontRenderContext
 
 class GUIButton(parent: RootGUIElement,
                 name: String,
@@ -25,15 +24,19 @@ class GUIButton(parent: RootGUIElement,
         }
     var textXPixel = 0
     var textYPixel = 0
+    var textWidthPixels = 0
+    var textHeightPixels = 0
 
     init {
         updateTextPos()
     }
 
     private fun updateTextPos() {
-        val r = Game.getFont(28).getStringBounds(text, FontRenderContext(null, false, false))
-        textXPixel = ((widthPixels - (r.width / Game.SCALE).toInt()) / 2)
-        textYPixel = (heightPixels / 2 + 1)
+        val r = Game.getStringBounds(text, 20)
+        textWidthPixels = r.width
+        textHeightPixels = r.height
+        textXPixel = (widthPixels - textWidthPixels) / 2
+        textYPixel = (heightPixels - textHeightPixels) / 2
     }
 
     override fun onMouseEnter() {
@@ -63,7 +66,7 @@ class GUIButton(parent: RootGUIElement,
     }
 
     override fun onOpen() {
-        if(mouseOn)
+        if (mouseOn)
             currentTexture = Image.GUI.BUTTON_HIGHLIGHT
         else currentTexture = Image.GUI.BUTTON
     }
@@ -75,6 +78,7 @@ class GUIButton(parent: RootGUIElement,
     override fun render() {
         Renderer.renderTexture(currentTexture, xPixel, yPixel, params)
         Renderer.renderText(text, textXPixel + xPixel, textYPixel + yPixel)
+        Renderer.renderEmptyRectangle(textXPixel + xPixel, textYPixel + yPixel, textWidthPixels, textHeightPixels)
     }
 
     companion object {

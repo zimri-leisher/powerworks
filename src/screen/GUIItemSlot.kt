@@ -18,7 +18,7 @@ class GUIItemSlot(parent: RootGUIElement, name: String, xPixel: Int, yPixel: Int
         val i = inv[index]
         if (i != null) {
             Renderer.renderTextureKeepAspect(i.type.texture, xPixel, yPixel, WIDTH, HEIGHT)
-            Renderer.renderText(i.quantity, xPixel + 1, yPixel + 5)
+            Renderer.renderText(i.quantity, xPixel, yPixel)
         }
     }
 

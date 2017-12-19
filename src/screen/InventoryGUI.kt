@@ -20,7 +20,7 @@ class InventoryGUI(name: String,
 
     val itemSlots: Array<GUIItemSlot>
     val background = GUITexturePane(this.rootChild, name + " background", 0, 0, texture = Image(Utils.genRectangle(widthPixels, heightPixels)))
-    val nameText = GUIText(background, name + " name text", 2, 5, displayName)
+    val nameText = GUIText(background, name + " name text", 2, -3, displayName)
 
     init {
         generateCloseButton(background.layer + 1)
@@ -31,7 +31,7 @@ class InventoryGUI(name: String,
                 arr[x + y * inv.width] = GUIItemSlot(background, name + " item slot ${x + y * inv.width}", ITEM_SLOT_PADDING + x * (GUIItemSlot.WIDTH + ITEM_SLOT_PADDING), ITEM_SLOT_PADDING + 5 + y * (GUIItemSlot.HEIGHT + ITEM_SLOT_PADDING), x + y * inv.width, inv)
             }
         }
-        itemSlots = arr.requireNoNulls()
+        itemSlots = arr as Array<GUIItemSlot>
         // You want to be able to move and edit inventories at the same time
         partOfLevel = true
     }

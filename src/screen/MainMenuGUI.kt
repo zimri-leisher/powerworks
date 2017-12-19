@@ -1,6 +1,5 @@
 package screen
 
-import crafting.Recipe
 import graphics.Image
 import main.Game
 import main.State
@@ -9,13 +8,10 @@ object MainMenuGUI : GUIWindow("Main menu", { 0 }, { 0 }, { Game.WIDTH }, { Game
 
     init {
         adjustDimensions = true
-        //GUITexturePane(rootChild, "Main menu background filler", { 0 }, { 0 }, Image.GUI.MAIN_MENU_BACKGROUND_FILLER, { Game.WIDTH }, { Game.HEIGHT})
         GUITexturePane(rootChild, "Main menu background",
                 { 0 }, { 0 },
                 Image.GUI.MAIN_MENU_BACKGROUND,
                 { Math.max(Game.WIDTH, Image.GUI.MAIN_MENU_BACKGROUND.widthPixels) }, { Math.max(Game.HEIGHT, Image.GUI.MAIN_MENU_BACKGROUND.heightPixels) }).run {
-
-            GUIRecipeButton(this, "test", { 0 }, { 0 }, Recipe.TEST)
         }
 
         GUITexturePane(this.rootChild, "Main menu logo",

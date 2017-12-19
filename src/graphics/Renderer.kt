@@ -153,9 +153,10 @@ object Renderer {
         }
     }
 
-    fun renderText(text: Any?, xPixel: Int, yPixel: Int, size: Int = 28, color: Int = 0xffffff) {
-        g2d.font = Game.getFont(size)
+    fun renderText(text: Any?, xPixel: Int, yPixel: Int, size: Int = 20, color: Int = 0xffffff) {
+        val f = Game.getFont(size)
+        g2d.font = f.first
         g2d.color = Color(color)
-        g2d.drawString(text.toString(), (xPixel + xPixelOffset) * Game.SCALE, (yPixel + yPixelOffset) * Game.SCALE)
+        g2d.drawString(text.toString(), (xPixel + xPixelOffset) * Game.SCALE, (yPixel + yPixelOffset + f.second) * Game.SCALE)
     }
 }
