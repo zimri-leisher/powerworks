@@ -31,8 +31,8 @@ open class RootGUIElement(val parentWindow: GUIWindow,
             heightPixels = value()
         }
     val id = nextID++
-    private val _children: MutableSet<GUIElement> = mutableSetOf()
-    val children = object : MutableSet<GUIElement> by _children {
+    private val _children = mutableListOf<GUIElement>()
+    val children = object : MutableList<GUIElement> by _children {
         override fun add(element: GUIElement): Boolean {
             val result = _children.add(element)
             if (result) {
@@ -44,6 +44,16 @@ open class RootGUIElement(val parentWindow: GUIWindow,
                 if (element.open)
                     parentWindow.openChildren.add(element)
                 this@RootGUIElement.onAddChild(element)
+            }
+            return result
+        }
+
+        override fun remove(element: GUIElement): Boolean {
+            val result = _children.remove(element)
+            if(result) {
+                if(element.open)
+                    parentWindow.openChildren.remove(element)
+                this@RootGUIElement.onRemoveChild(element)
             }
             return result
         }
@@ -188,6 +198,9 @@ open class RootGUIElement(val parentWindow: GUIWindow,
     open fun onAddChild(child: GUIElement) {
     }
 
+    open fun onRemoveChild(child: GUIElement) {
+    }
+
     /** When the mouse is clicked on this and it is on the highest layer, unless transparentToInteraction is true */
     open fun onMouseActionOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
     }
@@ -218,9 +231,7 @@ open class RootGUIElement(val parentWindow: GUIWindow,
 
     override fun toString(): String = "Root child of $parentWindow"
 
-    override fun equals(other: Any?): Boolean {
-        return other is RootGUIElement && other.id == id
-    }
+    override operator fun equals(other: Any?): Boolean = other is RootGUIElement && other.id == id
 
     override fun hashCode() = id
 }
@@ -347,10 +358,6 @@ abstract class GUIElement(parent: RootGUIElement,
 
     /** When a parent's dimension changes (note, no need to call super here, all adjusting stuff is done in separate functions) */
     open fun onParentPositionChange(pXPixel: Int, pYPixel: Int) {
-    }
-
-    override fun equals(other: Any?): Boolean {
-        return other is GUIElement && other.id == id
     }
 
     override fun toString(): String {

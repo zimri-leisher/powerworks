@@ -7,12 +7,23 @@ import graphics.Texture
 class GUITexturePane(parent: RootGUIElement,
                      name: String,
                      xAlignment: () -> Int, yAlignment: () -> Int,
-                     val texture: Texture,
+                     texture: Texture,
                      widthAlignment: () -> Int = { texture.widthPixels }, heightAlignment: () -> Int = { texture.heightPixels },
                      open: Boolean = false,
                      layer: Int = parent.layer + 1,
                      var keepAspect: Boolean = false) :
         GUIElement(parent, name, xAlignment, yAlignment, widthAlignment, heightAlignment, open, layer) {
+
+    var texture = texture
+        set(value) {
+            if (field != value) {
+                if (widthPixels == field.widthPixels && heightPixels == field.heightPixels) {
+                    widthAlignment = { value.widthPixels }
+                    heightAlignment = { value.heightPixels }
+                }
+                field = value
+            }
+        }
 
     constructor(parent: RootGUIElement,
                 name: String,

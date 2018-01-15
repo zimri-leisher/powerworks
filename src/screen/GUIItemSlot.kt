@@ -3,7 +3,7 @@ package screen
 import graphics.Image
 import graphics.Renderer
 import inv.Inventory
-import io.Mouse
+import inv.Item
 import io.PressType
 
 
@@ -13,10 +13,16 @@ class GUIItemSlot(parent: RootGUIElement, name: String, xPixel: Int, yPixel: Int
 
     private var currentTexture = if (isDisplay) Image.GUI.ITEM_SLOT_DISPLAY else Image.GUI.ITEM_SLOT
 
+    var currentItem: Item? = null
+
+    override fun update() {
+        currentItem = inv[index]
+    }
+
     override fun render() {
         Renderer.renderTexture(currentTexture, xPixel, yPixel)
-        val i = inv[index]
-        if (i != null) {
+        if (currentItem != null) {
+            val i = currentItem!!
             Renderer.renderTextureKeepAspect(i.type.texture, xPixel, yPixel, WIDTH, HEIGHT)
             Renderer.renderText(i.quantity, xPixel, yPixel)
         }
@@ -39,10 +45,10 @@ class GUIItemSlot(parent: RootGUIElement, name: String, xPixel: Int, yPixel: Int
     override fun onMouseActionOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
         if (isDisplay)
             return
-        if(type == PressType.PRESSED) {
+        if (type == PressType.PRESSED) {
             if (shift) {
-                val i = inv[index]
-                if (i != null) {
+                if (currentItem != null) {
+                    val i = currentItem!!
                     val invGUIs = ScreenManager.Groups.INVENTORY.windows
                     if (invGUIs.isNotEmpty()) {
                         val highestOtherWindow = invGUIs.filter { it.open && it != parentWindow }.maxBy { it.layer }
@@ -59,22 +65,17 @@ class GUIItemSlot(parent: RootGUIElement, name: String, xPixel: Int, yPixel: Int
                 }
             } else {
                 currentTexture = Image.GUI.ITEM_SLOT_CLICK
-                val i = inv[index]
                 val mI = Mouse.heldItem
                 if (button == 1) {
                     if (mI != null) {
-                        if (i != null) {
-                            inv.remove(i)
-                            inv.add(mI)
-                            Mouse.heldItem = i
+                        if (currentItem != null) {
+                            Mouse.setHeldItem(inv, index)
                         } else {
-                            inv.add(mI)
-                            Mouse.heldItem = null
+                            Mouse.setHeldItem(null)
                         }
                     } else {
-                        if (i != null) {
-                            inv.remove(i)
-                            Mouse.heldItem = i
+                        if (currentItem != null) {
+                            Mouse.setHeldItem(inv, index)
                         }
                     }
                 }
@@ -87,5 +88,14 @@ class GUIItemSlot(parent: RootGUIElement, name: String, xPixel: Int, yPixel: Int
     companion object {
         const val WIDTH = 16
         const val HEIGHT = 16
+
+        init {
+            Mouse.addScreenTooltipTemplate({
+                if(it is GUIItemSlot && it.currentItem != null) {
+                    return@addScreenTooltipTemplate "${it.currentItem!!.type.name} * ${it.currentItem!!.quantity}"
+                }
+                return@addScreenTooltipTemplate null
+            }, 0)
+        }
     }
 }

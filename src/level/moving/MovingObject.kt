@@ -58,8 +58,19 @@ abstract class MovingObject(xPixel: Int, yPixel: Int, hitbox: Hitbox) : LevelObj
                 field = value
         }
     var dir = 0
+    /**
+     * The chunk that this object's coordinates are in
+     */
     var currentChunk = Game.currentLevel.getChunk(xChunk, yChunk)
-    var intersectingChunks = if (hitbox == Hitbox.NONE) mutableListOf() else Game.currentLevel.getChunksFromPixelRectangle(hitbox.xStart + xPixel, hitbox.yStart + yPixel, hitbox.width, hitbox.height).toMutableList()
+    /**
+     * The chunks that this object's hitbox intersects but not the chunk that its coordinates are in
+     */
+    var intersectingChunks =
+            if (hitbox == Hitbox.NONE)
+                mutableListOf()
+            else
+                Game.currentLevel.getChunksFromPixelRectangle(hitbox.xStart + xPixel, hitbox.yStart + yPixel, hitbox.width, hitbox.height).toMutableList().
+                        apply { remove(currentChunk) }
     val moveListeners = mutableListOf<MovementListener>()
 
     init {
@@ -121,7 +132,7 @@ abstract class MovingObject(xPixel: Int, yPixel: Int, hitbox: Hitbox) : LevelObj
                     }
                 }
             }
-            if(collisions != null) {
+            if (collisions != null) {
                 collisions.forEach { it.onCollide(this); this.onCollide(it) }
             }
             if (pXPixel != xPixel || pYPixel != yPixel) {

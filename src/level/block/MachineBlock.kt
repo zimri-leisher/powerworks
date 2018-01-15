@@ -4,7 +4,7 @@ import audio.AudioManager
 import audio.AudioManager.SoundSource
 import graphics.LocalAnimation
 
-abstract class MachineBlock(xTile: Int, yTile: Int, override val type: MachineBlockType, on: Boolean = false) : Block(xTile, yTile, type) {
+abstract class MachineBlock(xTile: Int, yTile: Int, override val type: MachineBlockType, on: Boolean = false) : Block(type, yTile, xTile) {
 
     var on = on
         set(value) {

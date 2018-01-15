@@ -4,7 +4,7 @@ import graphics.RenderParams
 import graphics.Renderer
 import main.Game
 
-class GhostBlock(xTile: Int, yTile: Int, type: BlockType) : Block(xTile, yTile, type, type.hitbox, false) {
+class GhostBlock(xTile: Int, yTile: Int, type: BlockType) : Block(type, yTile, xTile, type.hitbox, false) {
 
     var placeable = getCollision(xPixel, yPixel) == null
 

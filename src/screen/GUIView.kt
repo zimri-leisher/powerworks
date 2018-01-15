@@ -158,7 +158,7 @@ class GUIView(parent: RootGUIElement,
     }
 
     override fun onMouseActionOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
-        Game.currentLevel.onMouseAction(type, xPixel, yPixel)
+        Game.currentLevel.onMouseAction(type, xPixel, yPixel, button, shift, ctrl, alt)
     }
 
     companion object {

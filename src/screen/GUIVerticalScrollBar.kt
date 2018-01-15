@@ -3,7 +3,6 @@ package screen
 import graphics.Image
 import graphics.Renderer
 import graphics.Texture
-import io.Mouse
 import io.PressType
 import misc.GeometryHelper
 

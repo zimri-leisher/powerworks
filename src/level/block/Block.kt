@@ -7,7 +7,7 @@ import level.LevelObject
 import main.Game
 import java.io.DataOutputStream
 
-abstract class Block(xTile: Int, yTile: Int, open val type: BlockType, hitbox: Hitbox = type.hitbox, requiresUpdate: Boolean = type.requiresUpdate) : LevelObject(xTile shl 4, yTile shl 4, hitbox, requiresUpdate) {
+abstract class Block(open val type: BlockType, yTile: Int, xTile: Int, hitbox: Hitbox = type.hitbox, requiresUpdate: Boolean = type.requiresUpdate) : LevelObject(xTile shl 4, yTile shl 4, hitbox, requiresUpdate) {
 
     val rotation = 0
 

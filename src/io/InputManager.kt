@@ -2,6 +2,8 @@ package io
 
 import main.Game
 import misc.ConcurrentlyModifiableMutableMap
+import screen.GUIView
+import screen.Mouse
 import screen.ScreenManager
 import java.awt.event.*
 import io.OutputManager as out
@@ -27,6 +29,7 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
             Map<
                     ControlMap,
                     Array<out Control>?>?>()
+
     var currentScreenHandlers = mutableListOf<ControlPressHandler>()
     var currentLevelHandlers = mutableListOf<ControlPressHandler>()
 
@@ -57,6 +60,14 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
 
     fun registerControlPressHandler(h: ControlPressHandler, type: ControlPressHandlerType, map: ControlMap) {
         handlers.put(Pair(h, type), mapOf<ControlMap, Array<Control>?>(Pair(map, null)))
+    }
+
+    fun removeControlPressHandler(handler: ControlPressHandler) {
+        for((k, v) in handlers) {
+            if(k.first == handler) {
+                handlers.remove(k)
+            }
+        }
     }
 
     fun update() {
@@ -96,7 +107,7 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
                                 // we want the part below because otherwise the level controls will trigger even when we
                                 // press on a gui element that is higher. However, we don't care if it is a gui view because
                                 // that's how we're supposed to interact
-                                (ScreenManager.selectedWindow == null || ScreenManager.selectedWindow!!.partOfLevel)
+                                (ScreenManager.selectedWindow == null || ScreenManager.selectedElement is GUIView)
                                 && currentLevelHandlers.contains(k.first))) {
                     sendPress(p, k.first, v)
                 }

@@ -39,9 +39,9 @@ open class BlockType(val name: String,
     companion object {
         val ALL = mutableListOf<BlockType>()
 
-        val ERROR = BlockType("Error", arrayOf<Texture>(Image.ERROR))
+        val ERROR = BlockType("Error", arrayOf(Image.ERROR))
 
-        val TUBE = object : BlockType("Tube", arrayOf<Texture>(Image.Block.TUBE_2_WAY_VERTICAL)) {
+        val TUBE = object : BlockType("Tube", arrayOf(Image.Block.TUBE_2_WAY_VERTICAL)) {
             override fun invoke(xTile: Int, yTile: Int): Block {
                 return TubeBlock(xTile, yTile)
             }
@@ -67,7 +67,7 @@ open class ChestBlockType(name: String,
                             val invHeight: Int) : BlockType(name, textures, widthTiles, heightTiles, hitbox, textureXPixelOffset, textureYPixelOffset, requiresUpdate) {
 
     companion object {
-        val CHEST_SMALL = ChestBlockType("Small Chest", arrayOf<Texture>(Image.Block.CHEST_SMALL), textureYPixelOffset = 16, invWidth = 8, invHeight = 3)
+        val CHEST_SMALL = ChestBlockType("Small Chest", arrayOf(Image.Block.CHEST_SMALL), textureYPixelOffset = 16, invWidth = 8, invHeight = 3)
     }
 
     override fun invoke(xTile: Int, yTile: Int) = ChestBlock(xTile, yTile, this)

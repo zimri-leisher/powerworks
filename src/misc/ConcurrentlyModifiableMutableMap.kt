@@ -8,7 +8,7 @@ class ConcurrentlyModifiableMutableMap<T, K> {
 
     val toAdd = mutableMapOf<T, K>()
 
-    val toRemove = mutableMapOf<T, K>()
+    val toRemove = mutableListOf<T>()
 
     fun put(l: T, o: K) {
         if (beingTraversed)
@@ -17,11 +17,11 @@ class ConcurrentlyModifiableMutableMap<T, K> {
             elements.put(l, o)
     }
 
-    fun remove(l: T, o: K) {
+    fun remove(l: T) {
         if (beingTraversed)
-            toRemove.put(l, o)
+            toRemove.add(l)
         else
-            elements.remove(l, o)
+            elements.remove(l)
     }
 
     val size
@@ -33,7 +33,7 @@ class ConcurrentlyModifiableMutableMap<T, K> {
         beingTraversed = false
         elements.putAll(toAdd)
         toAdd.clear()
-        toRemove.forEach { t, k -> elements.remove(t) }
+        toRemove.forEach { t -> elements.remove(t) }
         toRemove.clear()
     }
 

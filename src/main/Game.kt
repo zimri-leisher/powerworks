@@ -1,6 +1,9 @@
 package main
 
 import audio.AudioManager
+import audio.Sound
+import graphics.Font
+import graphics.Image.GUI
 import graphics.LocalAnimation
 import graphics.Renderer
 import graphics.SyncAnimation
@@ -13,9 +16,7 @@ import screen.*
 import java.awt.*
 import java.awt.event.ComponentAdapter
 import java.awt.event.ComponentEvent
-import java.awt.font.FontRenderContext
 import java.io.File
-import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.*
@@ -49,11 +50,9 @@ fun initializeProperties() {
     System.setProperty("sun.java2d.ddforcevram", "true")
 }
 
-typealias FontAndOffset = Pair<Font, Int>
-
 object Game : Canvas(), Runnable, ControlPressHandler {
 
-    val JAR_PATH = Game::class.java.protectionDomain.codeSource.location.toURI().path.substring(1).substring(0 until Game::class.java.protectionDomain.codeSource.location.toURI().path.lastIndexOf("/"))
+    val JAR_PATH = Game::class.java.protectionDomain.codeSource.location.toURI().path.substring(1 until Game::class.java.protectionDomain.codeSource.location.toURI().path.lastIndexOf("/"))
 
     /* Dimensions */
     var WIDTH = 300
@@ -65,7 +64,7 @@ object Game : Canvas(), Runnable, ControlPressHandler {
     const val UPDATES_PER_SECOND = 60f
     const val NS_PER_UPDATE: Float = 1000000000 / UPDATES_PER_SECOND
     const val MAX_UPDATES_BEFORE_RENDER = 5
-    var FRAMES_PER_SECOND = 6000000f
+    var FRAMES_PER_SECOND = 60f
     var NS_PER_FRAME: Float = 1000000000 / FRAMES_PER_SECOND
     /* Base statistics */
     var framesCount = 0
@@ -75,19 +74,18 @@ object Game : Canvas(), Runnable, ControlPressHandler {
     private var defaultCursor = Cursor.getDefaultCursor()
     private var clearCursor = Toolkit.getDefaultToolkit().createCustomCursor(ImageIO.read(Game::class.java.getResource("/textures/cursor/cursor_default.png")), Point(0, 0), "Blank cursor")
 
-    private val defaultFontRenderContext = FontRenderContext(null, false, false)
-    private val fonts = mutableMapOf<Int, FontAndOffset>()
-    private lateinit var defaultFont: Font
-
     /* Settings */
-    var THREAD_WAITING = false
+    var THREAD_WAITING = true
     var RENDER_HITBOXES = false
     var CHUNK_BOUNDARIES = false
     var LEVEL_PAUSED = false
     var PAUSE_LEVEL_IN_ESCAPE_MENU = false
-    var DEBUG_TUBE_GROUP_INFO = false
+    var DEBUG_TUBE_INFO = false
     val INVENTORY_WIDTH = 8
     val INVENTOR_HEIGHT = 6
+    val RANDOM_CHANCE_OF_SPARK = 200
+
+    var SPARK_ANIMATION = -1
 
     /* Level */
     lateinit var currentLevel: Level
@@ -120,17 +118,7 @@ object Game : Canvas(), Runnable, ControlPressHandler {
         addMouseListener(InputManager)
         AudioManager.load()
         cursor = clearCursor
-        try {
-            val font = Font.createFont(Font.TRUETYPE_FONT, Game::class.java.getResourceAsStream("/font/Graph-35-pix.ttf")).deriveFont(Font.PLAIN, 20f)
-            val ge = GraphicsEnvironment.getLocalGraphicsEnvironment()
-            ge.registerFont(font)
-            defaultFont = font
-            fonts.put(20, Pair(font, getFontYOffset(font)))
-        } catch (ex: FontFormatException) {
-            ex.printStackTrace()
-        } catch (ex: IOException) {
-            ex.printStackTrace()
-        }
+        Font
         InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.TAKE_SCREENSHOT, Control.TOGGLE_RENDER_HITBOXES, Control.TOGGLE_CHUNK_INFO, Control.TOGGLE_INVENTORY, Control.TOGGLE_DEBUG_TUBE_GROUP_INFO)
         /* For initializations (objects in Kotlin are loaded the first time they are called */
         MainMenuGUI.open = true
@@ -142,7 +130,7 @@ object Game : Canvas(), Runnable, ControlPressHandler {
 
     override fun run() {
         var lastUpdateTime = System.nanoTime().toDouble()
-        var lastRenderTime = System.nanoTime().toDouble()
+        var lastRenderTime: Double
         var lastSecondTime = (lastUpdateTime / 1000000000).toInt()
         var frameCount = 0
         var updateCount = 0
@@ -186,16 +174,41 @@ object Game : Canvas(), Runnable, ControlPressHandler {
     }
 
     fun update() {
+        //spark()
         InputManager.update()
+        Mouse.update()
         SyncAnimation.update()
         LocalAnimation.update()
         ScreenManager.update()
         if (State.CURRENT_STATE == State.INGAME) {
-            if(updatesCount % 60 == 0)
+            if (updatesCount % 60 == 0)
                 currentLevel.maxRenderSteps++
             currentLevel.update()
         }
         State.update()
+    }
+
+    /**
+     * Fun little spark animation that copies motherlode
+     */
+    fun spark() {
+        if ((Math.random() * RANDOM_CHANCE_OF_SPARK).toInt() == 0) {
+            Sound.MOTHERLODE_SPARK.play()
+            SPARK_ANIMATION = 0
+        }
+        if (SPARK_ANIMATION != -1) {
+            val a = MainMenuGUI.logo
+            SPARK_ANIMATION++
+            println(SPARK_ANIMATION)
+            if (SPARK_ANIMATION == 1) {
+                a.texture == GUI.MAIN_MENU_LOGO_2
+            } else if(SPARK_ANIMATION == 15) {
+                a.texture = GUI.MAIN_MENU_LOGO_3
+            } else if(SPARK_ANIMATION > 30){
+                SPARK_ANIMATION = -1
+                a.texture = GUI.MAIN_MENU_LOGO
+            }
+        }
     }
 
     fun render() {
@@ -231,37 +244,6 @@ object Game : Canvas(), Runnable, ControlPressHandler {
         AudioManager.close()
     }
 
-    fun getFont(size: Int): FontAndOffset {
-        var font = fonts.get(size)
-        if (font != null)
-            return font
-        val f = defaultFont.deriveFont(size.toFloat())
-        font = Pair(f, getFontYOffset(f))
-        fonts.put(size, font)
-        return font
-    }
-
-    fun getFontYOffset(f: Font): Int {
-        val r = getMaxFontBounds(f)
-        return r.height
-    }
-
-    fun getMaxFontBounds(f: Font): Rectangle {
-        return f.getMaxCharBounds(defaultFontRenderContext).apply {
-            setRect(x, y, width / Game.SCALE, height / Game.SCALE)
-        }.bounds
-    }
-
-    fun getMaxFontBounds(s: Int): Rectangle {
-        return getMaxFontBounds(getFont(s).first)
-    }
-
-    fun getStringBounds(s: String, size: Int): Rectangle {
-        return getFont(size).first.getStringBounds(s, defaultFontRenderContext).apply {
-            setRect(x, y, width / Game.SCALE, height / Game.SCALE)
-        }.bounds
-    }
-
     fun resetMouseIcon() {
         cursor = defaultCursor
     }
@@ -284,9 +266,9 @@ object Game : Canvas(), Runnable, ControlPressHandler {
         if (Files.notExists(save))
             Files.createDirectory(save)
     }
-
+ // make it so that you place down blocks based ont he mouse held item, etc
     fun takeScreenshot() {
-        val directory = Paths.get(JAR_PATH, "screenshots/")
+        val directory = Paths.get(JAR_PATH, "/screenshots/")
         if (Files.notExists(directory))
             Files.createDirectory(directory)
         val ss = graphicsConfiguration.createCompatibleImage(Game.WIDTH * Game.SCALE, Game.HEIGHT * Game.SCALE)
@@ -294,7 +276,7 @@ object Game : Canvas(), Runnable, ControlPressHandler {
         ScreenManager.render()
         Renderer.g2d.dispose()
         val calInstance = Calendar.getInstance()
-        val fileName = "${JAR_PATH}screenshots/${calInstance.get(Calendar.MONTH) + 1}-${calInstance.get(Calendar.DATE)}-${calInstance.get(Calendar.YEAR)}"
+        val fileName = "${JAR_PATH}/screenshots/${calInstance.get(Calendar.MONTH) + 1}-${calInstance.get(Calendar.DATE)}-${calInstance.get(Calendar.YEAR)}"
         var i = 0
         var file = File(fileName + " #$i.png")
         while (file.exists()) {
@@ -312,7 +294,7 @@ object Game : Canvas(), Runnable, ControlPressHandler {
                 Control.TOGGLE_RENDER_HITBOXES -> RENDER_HITBOXES = !RENDER_HITBOXES
                 Control.TOGGLE_CHUNK_INFO -> CHUNK_BOUNDARIES = !CHUNK_BOUNDARIES
                 Control.TOGGLE_INVENTORY -> {
-                    if(State.CURRENT_STATE != State.INGAME)
+                    if (State.CURRENT_STATE != State.INGAME)
                         return
                     if (!ScreenManager.Groups.INVENTORY.windows.any { it.open }) {
                         IngameGUI.mainInvGUI.open = true
@@ -320,7 +302,7 @@ object Game : Canvas(), Runnable, ControlPressHandler {
                         ScreenManager.Groups.INVENTORY.getTop { it.open }?.toggle()
                     }
                 }
-                Control.TOGGLE_DEBUG_TUBE_GROUP_INFO -> DEBUG_TUBE_GROUP_INFO = !DEBUG_TUBE_GROUP_INFO
+                Control.TOGGLE_DEBUG_TUBE_GROUP_INFO -> DEBUG_TUBE_INFO = !DEBUG_TUBE_INFO
             }
     }
 

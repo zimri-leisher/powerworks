@@ -15,6 +15,10 @@ open class GUIGroup(parent: RootGUIElement,
         updateDimensions()
     }
 
+    override fun onRemoveChild(child: GUIElement) {
+        updateDimensions()
+    }
+
     fun updateDimensions() {
         val r = Rectangle()
         children.forEach { r.add(Rectangle(it.xAlignment(), it.yAlignment(), it.widthPixels, it.heightPixels)) }

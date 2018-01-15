@@ -186,6 +186,13 @@ open class GUIWindow(val name: String, xAlignment: () -> Int, yAlignment: () -> 
         open = !open
     }
 
+    fun updateAlignment() {
+        xPixel = xAlignment()
+        yPixel = yAlignment()
+        widthPixels = widthAlignment()
+        heightPixels = heightAlignment()
+    }
+
     /* Events */
     /** When this is opened after being closed */
     open fun onOpen() {

@@ -4,11 +4,14 @@ import main.Game
 import screen.GUIRecipeButton
 import java.awt.AlphaComposite
 import java.awt.Color
+import java.awt.Rectangle
 import java.awt.Transparency
 import java.awt.image.BufferedImage
 import javax.imageio.ImageIO
 
 object Utils {
+
+    private val rectTable = mutableMapOf<Rectangle, BufferedImage>()
 
     fun genRectangle(widthPixels: Int, heightPixels: Int): BufferedImage {
         return genRectangle(Image.GUI.DEFAULT_EDGE_TOP, Image.GUI.DEFAULT_EDGE_BOTTOM, Image.GUI.DEFAULT_EDGE_LEFT, Image.GUI.DEFAULT_EDGE_RIGHT, Image.GUI.DEFAULT_CORNER_TOP_RIGHT,
@@ -17,6 +20,10 @@ object Utils {
 
     fun genRectangle(topEdge: Texture, bottomEdge: Texture, leftEdge: Texture, rightEdge: Texture, topRightCorner: Texture, topLeftCorner: Texture, bottomRightCorner: Texture,
                      bottomLeftCorner: Texture, background: Texture, widthPixels: Int, heightPixels: Int): BufferedImage {
+        val rect = Rectangle(widthPixels, heightPixels)
+        val previous = rectTable[rect]
+        if(previous != null)
+            return previous
         val dest = Game.graphicsConfiguration.createCompatibleImage(widthPixels, heightPixels, Transparency.TRANSLUCENT)
         val g = dest.createGraphics()
         with(g) {
@@ -40,6 +47,7 @@ object Utils {
             drawImage(bottomLeftCorner.currentImage, 0, heightPixels - bottomLeftCorner.heightPixels, null)
             dispose()
         }
+        rectTable.put(rect, dest)
         return dest
     }
 
@@ -252,7 +260,6 @@ class Image private constructor() : Texture {
         val IRON_INGOT = Image("/textures/item/iron_ingot.png")
         val ARROW = Image(Utils.modify("/textures/misc/arrow.png", ImageParams(alphaMultiplier = 50)))
         val VOID = Image(Color(0))
-        val MINER_ITEM_TEMP = Image("/textures/item/miner_temp.png") //TODO
         val TUBE_ITEM = Image("/textures/item/tube.png")
         val COPPER_ORE_ITEM = Image("/textures/item/copper_ore_raw.png")
     }
@@ -297,6 +304,8 @@ class Image private constructor() : Texture {
         val SCROLL_BAR_CLICK_MIDDLE = Image("/textures/gui/scroll_bar_click_mid.png")
         val SCROLL_BAR_CLICK_BOTTOM = Image("/textures/gui/scroll_bar_click_bottom.png")
         val MAIN_MENU_LOGO = Image("/textures/gui/main_menu_logo.png")
+        val MAIN_MENU_LOGO_2 = Image("/textures/gui/main_menu_logo_2.png")
+        val MAIN_MENU_LOGO_3 = Image("/textures/gui/main_menu_logo_3.png")
         val DEFAULT_CORNER_TOP_RIGHT = Image("/textures/gui/default/top_right_corner.png")
         val DEFAULT_CORNER_TOP_LEFT = Image("/textures/gui/default/top_left_corner.png")
         val DEFAULT_CORNER_BOTTOM_RIGHT = Image("/textures/gui/default/bottom_right_corner.png")

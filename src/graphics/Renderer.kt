@@ -53,7 +53,7 @@ object Renderer {
     }
 
     fun renderTexture(t: Texture, xPixel: Int, yPixel: Int) {
-        g2d.drawImage(t.currentImage, (xPixel + xPixelOffset)* Game.SCALE, (yPixel + yPixelOffset) * Game.SCALE, t.widthPixels * Game.SCALE, t.heightPixels * Game.SCALE, null)
+        g2d.drawImage(t.currentImage, (xPixel + xPixelOffset) * Game.SCALE, (yPixel + yPixelOffset) * Game.SCALE, t.widthPixels * Game.SCALE, t.heightPixels * Game.SCALE, null)
     }
 
     fun renderTexture(t: Texture, xPixel: Int, yPixel: Int, params: RenderParams) {
@@ -111,7 +111,7 @@ object Renderer {
         val scaledScale = Game.SCALE * params.scale
         val absoluteWidthPixels: Float
         val absoluteHeightPixels: Float
-        if(true) {
+        if (true) {
             var w = widthPixels
             var h = heightPixels
             if (t.widthPixels > t.heightPixels) {
@@ -153,10 +153,16 @@ object Renderer {
         }
     }
 
-    fun renderText(text: Any?, xPixel: Int, yPixel: Int, size: Int = 20, color: Int = 0xffffff) {
-        val f = Game.getFont(size)
-        g2d.font = f.first
+    fun renderText(text: Any?, xPixel: Int, yPixel: Int, size: Int = Font.DEFAULT_SIZE, color: Int = 0xffffff) {
+        val f = Font.getFont(size)
+        g2d.font = f.font
         g2d.color = Color(color)
-        g2d.drawString(text.toString(), (xPixel + xPixelOffset) * Game.SCALE, (yPixel + yPixelOffset + f.second) * Game.SCALE)
+        val s = text.toString()
+        if (s.contains("\n")) {
+            s.split("\n").forEachIndexed { index, string ->
+                g2d.drawString(string, (xPixel + xPixelOffset) * Game.SCALE, (yPixel + yPixelOffset + f.charHeight * index) * Game.SCALE)
+            }
+        } else
+            g2d.drawString(s, (xPixel + xPixelOffset) * Game.SCALE, (yPixel + yPixelOffset + f.charHeight) * Game.SCALE)
     }
 }

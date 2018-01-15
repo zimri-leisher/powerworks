@@ -29,4 +29,6 @@ abstract class StorageNode<R : ResourceType>(val resourceTypeID: Int) {
     abstract fun remove(resource: R, quantity: Int, checkIfContains: Boolean = true): Boolean
 
     abstract fun contains(resource: R, quantity: Int): Boolean
+
+    abstract fun clear()
 }

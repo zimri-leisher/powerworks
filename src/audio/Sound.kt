@@ -3,7 +3,8 @@ package audio
 import audio.audiocue.AudioCue
 
 enum class Sound(path: String, maxConcurrent: Int) {
-    GRASS_FOOTSTEP("/sounds/footstep/grass.wav", 6);//, CONVEYOR_BELT("/sounds/block/machine/conveyor_belt.wav", 4);
+    GRASS_FOOTSTEP("/sounds/footstep/grass.wav", 6),
+    MOTHERLODE_SPARK("/sounds/misc/motherlode_spark.wav", 2);
 
     internal var a: AudioCue = AudioCue.makeStereoCue(Sound::class.java.getResource(path), maxConcurrent)
 

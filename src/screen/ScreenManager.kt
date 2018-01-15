@@ -1,6 +1,7 @@
 package screen
 
 import io.*
+import misc.ConcurrentlyModifiableMutableList
 import misc.GeometryHelper
 
 object ScreenManager : ControlPressHandler {
@@ -22,31 +23,14 @@ object ScreenManager : ControlPressHandler {
         }
     }
     private val _backwardsWindowGroups = mutableListOf<WindowGroup>()
-    val windows = mutableListOf<GUIWindow>()
+    val windows = ConcurrentlyModifiableMutableList<GUIWindow>()
     val openWindows = mutableListOf<GUIWindow>()
 
     var selectedElement: RootGUIElement? = null
-        set(value) {
-            if (field != value) {
-                if (field is ControlPressHandler)
-                    InputManager.currentScreenHandlers.remove(field as ControlPressHandler)
-                if (value is ControlPressHandler)
-                    InputManager.currentScreenHandlers.add(value) // fix the error (mouse level coords not init) TODO
-                field = value
-            }
-        }
+
+    // fix the error (mouse level coords not init) TODO
 
     var selectedWindow: GUIWindow? = null
-        set(value) {
-            if (field != value) {
-                if (field is ControlPressHandler)
-                    InputManager.currentScreenHandlers.remove(field as ControlPressHandler)
-                if (value is ControlPressHandler)
-                    InputManager.currentScreenHandlers.add(value)
-                field = value
-            }
-        }
-
 
     object Groups {
         val BACKGROUND = WindowGroup(0, "Background")
@@ -54,11 +38,12 @@ object ScreenManager : ControlPressHandler {
         val INVENTORY = WindowGroup(2, "Inventories")
         val CRAFTING = WindowGroup(3, "Crafting")
         val HOTBAR = WindowGroup(4, "Hotbar")
+        val MOUSE = WindowGroup(9999, "Mouse")
         val DEBUG_OVERLAY = WindowGroup(10000, "Debug overlay")
     }
 
     init {
-        InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.INTERACT, Control.SHIFT_INTERACT, Control.ALT_INTERACT, Control.CONTROL_INTERACT, Control.SCROLL_UP, Control.SCROLL_DOWN, Control.DEBUG)
+        InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.INTERACT, Control.SHIFT_INTERACT, Control.ALT_INTERACT, Control.CONTROL_INTERACT, Control.SCROLL_UP, Control.SCROLL_DOWN, Control.DEBUG, Control.SECONDARY_INTERACT)
     }
 
     fun render() {
@@ -102,10 +87,10 @@ object ScreenManager : ControlPressHandler {
     }
 
     /** @return the highest element, layer-wise, that intersects the given x and y coordinates and matches the predicate. */
-    fun getHighestElement(window: GUIWindow, xPixel: Int, yPixel: Int, predicate: (RootGUIElement) -> Boolean): RootGUIElement? {
-        return window.openChildren.stream().filter {
+    fun getHighestElement(xPixel: Int, yPixel: Int, window: GUIWindow? = getHighestWindow(xPixel, yPixel), predicate: (RootGUIElement) -> Boolean = { true }): RootGUIElement? {
+        return window?.openChildren?.stream()?.filter {
             intersectsElement(xPixel, yPixel, it) && predicate(it)
-        }.max { o1, o2 -> o1.layer.compareTo(o2.layer) }.orElseGet { null }
+        }?.max { o1, o2 -> o1.layer.compareTo(o2.layer) }?.orElseGet { null }
     }
 
     fun screenSizeChange(oldWidth: Int, oldHeight: Int) {
@@ -127,9 +112,29 @@ object ScreenManager : ControlPressHandler {
         val window = selectedWindow
         if (window != null) {
             window.windowGroup.bringToTop(window)
-            selectedElement = getHighestElement(window, x, y, { !it.transparentToInteraction })
+            selectedElement = getHighestElement(x, y, window, { !it.transparentToInteraction })
+        }
+        updateControlHandlers()
+    }
+
+    fun updateControlHandlers() {
+        InputManager.currentScreenHandlers.clear()
+        val x = Mouse.xPixel
+        val y = Mouse.yPixel
+            if(selectedElement is ControlPressHandler) {
+                InputManager.currentScreenHandlers.add(selectedElement as ControlPressHandler)
+            }
+        if(selectedWindow != null) {
+            if(selectedWindow is ControlPressHandler) {
+                InputManager.currentScreenHandlers.add(selectedWindow as ControlPressHandler)
+            }
+            if(selectedWindow!!.partOfLevel) {
+                InputManager.currentScreenHandlers.add(getHighestWindow(x, y, { it is ViewWindow }) as ControlPressHandler)
+            }
         }
     }
+
+    // TODO update screen control handlers by going through the selected elements. if one is part of the level, add the gui view under it to the screen handler
 
     private fun forEachElement(func: ((RootGUIElement) -> Unit), pred: ((RootGUIElement) -> Boolean)? = null) {
         windows.forEach { recursivelyCall(it.rootChild, func, pred) }
@@ -148,12 +153,12 @@ object ScreenManager : ControlPressHandler {
         val t = p.pressType
         val b = Mouse.button
         val c = p.control
-        if (Control.Groups.INTERACTION.contains(c)) {
+        if (Control.Group.INTERACTION.contains(c)) {
             // If it is repeating, we don't want it to change the selected element so we can move the mouse nice and fast
             // without worrying that it will click on something else
             if (t == PressType.PRESSED)
                 updateSelected()
-            if (Control.Groups.SCROLL.contains(c))
+            if (Control.Group.SCROLL.contains(c))
                 selectedElement?.onMouseScroll(if (c == Control.SCROLL_UP) 1 else -1)
             else {
                 selectedElement?.onMouseActionOn(t, x, y, b, (c == Control.SHIFT_INTERACT), (c == Control.CONTROL_INTERACT), (c == Control.ALT_INTERACT))
@@ -163,19 +168,23 @@ object ScreenManager : ControlPressHandler {
                 updateSelected()
         }
         if (c == Control.DEBUG && t == PressType.PRESSED) {
-            fun RootGUIElement.print(spaces: String = ""): String {
-                var v = spaces + toString()
-                for (g in children)
-                    v += "\n" + g.print(spaces + "   ")
-                return v
-            }
-            for (group in windowGroups) {
-                println(group.name + ":")
-                for (window in group.windows) {
-                    if (window.open) {
-                        println("   $window:")
-                        println(window.rootChild.print("      "))
-                    }
+            printDebug()
+        }
+    }
+
+    private fun printDebug() {
+        fun RootGUIElement.print(spaces: String = ""): String {
+            var v = spaces + toString()
+            for (g in children)
+                v += "\n" + g.print(spaces + "   ")
+            return v
+        }
+        for (group in windowGroups) {
+            println(group.name + ":")
+            for (window in group.windows) {
+                if (window.open) {
+                    println("   $window:")
+                    println(window.rootChild.print("      "))
                 }
             }
         }

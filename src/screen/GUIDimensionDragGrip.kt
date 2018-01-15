@@ -2,7 +2,6 @@ package screen
 
 import graphics.Image
 import graphics.Renderer
-import io.Mouse
 import io.PressType
 import main.Game
 

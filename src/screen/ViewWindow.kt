@@ -20,7 +20,7 @@ class ViewWindow(name: String,
             { this.widthPixels }, { this.heightPixels },
             camera, zoomLevel, open)
     val outline = GUIOutline(view, name + " outline", open = open)
-    val nameText = GUIText(view, name, 1, 4, name, layer = 1)
+    val nameText = GUIText(view, name, 1, 1, name, layer = 1)
     val controls = mutableListOf<GUIElement>()
 
     init {

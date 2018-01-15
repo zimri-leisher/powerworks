@@ -5,7 +5,6 @@ import graphics.Renderer
 import graphics.Renderer.params
 import graphics.Texture
 import io.PressType
-import main.Game
 
 class GUIButton(parent: RootGUIElement,
                 name: String,
@@ -17,26 +16,12 @@ class GUIButton(parent: RootGUIElement,
 
     var down = false
     var currentTexture: Texture = Image.GUI.BUTTON
-    var text = text
-        set(value) {
-            field = value
-            updateTextPos()
-        }
-    var textXPixel = 0
-    var textYPixel = 0
-    var textWidthPixels = 0
-    var textHeightPixels = 0
+    var text = GUIText(parent = this, name = name + " text", relXPixel = 0, relYPixel = 0, text = text)
 
     init {
-        updateTextPos()
-    }
-
-    private fun updateTextPos() {
-        val r = Game.getStringBounds(text, 20)
-        textWidthPixels = r.width
-        textHeightPixels = r.height
-        textXPixel = (widthPixels - textWidthPixels) / 2
-        textYPixel = (heightPixels - textHeightPixels) / 2
+        this.text.transparentToInteraction = true
+        this.text.xAlignment = { (WIDTH - this.text.widthPixels) / 2 }
+        this.text.yAlignment = { (HEIGHT - this.text.heightPixels) / 2 }
     }
 
     override fun onMouseEnter() {
@@ -77,8 +62,6 @@ class GUIButton(parent: RootGUIElement,
 
     override fun render() {
         Renderer.renderTexture(currentTexture, xPixel, yPixel, params)
-        Renderer.renderText(text, textXPixel + xPixel, textYPixel + yPixel)
-        Renderer.renderEmptyRectangle(textXPixel + xPixel, textYPixel + yPixel, textWidthPixels, textHeightPixels)
     }
 
     companion object {

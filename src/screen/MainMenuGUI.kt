@@ -6,6 +6,8 @@ import main.State
 
 object MainMenuGUI : GUIWindow("Main menu", { 0 }, { 0 }, { Game.WIDTH }, { Game.HEIGHT }, true, 0, ScreenManager.Groups.BACKGROUND) {
 
+    var logo: GUITexturePane
+
     init {
         adjustDimensions = true
         GUITexturePane(rootChild, "Main menu background",
@@ -14,10 +16,10 @@ object MainMenuGUI : GUIWindow("Main menu", { 0 }, { 0 }, { Game.WIDTH }, { Game
                 { Math.max(Game.WIDTH, Image.GUI.MAIN_MENU_BACKGROUND.widthPixels) }, { Math.max(Game.HEIGHT, Image.GUI.MAIN_MENU_BACKGROUND.heightPixels) }).run {
         }
 
-        GUITexturePane(this.rootChild, "Main menu logo",
+        logo = GUITexturePane(this.rootChild, "Main menu logo",
                 { (Game.WIDTH - Image.GUI.MAIN_MENU_LOGO.widthPixels) / 2 - 1 }, { (Game.HEIGHT - Image.GUI.MAIN_MENU_LOGO.heightPixels) / 2 - 50 },
                 Image.GUI.MAIN_MENU_LOGO,
-                layer = 7).run {
+                layer = 7).apply {
 
             GUITexturePane(this, "Main menu button box",
                     { (Image.GUI.MAIN_MENU_LOGO.widthPixels - Image.GUI.MAIN_MENU_BUTTON_BOX.widthPixels) / 2 }, { Image.GUI.MAIN_MENU_LOGO.heightPixels },

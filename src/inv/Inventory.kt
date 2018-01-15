@@ -200,6 +200,12 @@ class Inventory(val width: Int, val height: Int) : StorageNode<ItemType>(Resourc
         }
     }
 
+    override fun clear() {
+        for(i in items.indices) {
+            items[i] = null
+        }
+    }
+
     operator fun iterator(): Iterator<Item?> {
         return items.iterator()
     }
