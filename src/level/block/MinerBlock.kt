@@ -15,10 +15,11 @@ class MinerBlock(xTile: Int, yTile: Int) : MachineBlock(xTile, yTile, MachineBlo
             for(y in 0 until type.heightTiles) {
                 val tile = Game.currentLevel.getTile(xTile + x, yTile + y)
                 if(tile is OreTile) {
-                    out.output(tile.type.minedItem, 1)
-                    tile.amount -= 1
-                    if(tile.amount == 0)
-                        requiresUpdate = false
+                    if(out.output(tile.type.minedItem, 1)) {
+                        tile.amount -= 1
+                        if(tile.amount == 0)
+                            requiresUpdate = false
+                    }
                     return
                 }
             }

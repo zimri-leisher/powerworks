@@ -1,5 +1,6 @@
 package level.tube
 
+import graphics.Renderer
 import inv.Item
 import inv.ItemType
 import level.node.InputNode
@@ -8,11 +9,10 @@ import level.node.StorageNode
 import level.node.TransferNode
 import level.resource.ResourceType
 import misc.GeometryHelper
+import misc.PixelCoord
 import misc.WeakMutableList
 import java.io.DataOutputStream
 import java.util.*
-
-data class ItemPackage(val item: Item, val goal: OutputNode<ItemType>, var currentIndex: Int, val path: Map<IntersectionTube, Int>, var xPixel: Int, var yPixel: Int, var dir: Int = 0)
 
 data class IntersectionTube(val tubeBlock: TubeBlock, var connectedTo: Array<TubeAndDist?>) {
     override fun equals(other: Any?): Boolean {
@@ -38,7 +38,6 @@ class TubeBlockGroup {
     private var outputs = mutableListOf<OutputNode<ItemType>>()
     val intersections = mutableListOf<IntersectionTube>()
     private val storage = TubeBlockGroupInternalStorage(this)
-    var ticksSinceLastOutput = 0
     val id = nextId++
 
     init {
@@ -102,11 +101,8 @@ class TubeBlockGroup {
         outputs = outputs.filter { it.xTile != t.xTile && it.yTile != t.yTile }.toMutableList()
     }
 
-    // If this tube is a valid intersection, it will recursively go down, find all other intersections and connect them back to this.
-    // This should only be called on the first intersection of the network
     fun convertToIntersection(tube: TubeBlock): IntersectionTube? {
         if (isIntersection(tube)) {
-            println("tube is an intersection ${tube.xTile}, ${tube.yTile}")
             return getIntersection(tube)
         }
         return null
@@ -114,11 +110,10 @@ class TubeBlockGroup {
 
     private fun getIntersection(tube: TubeBlock): IntersectionTube {
         val i = intersections.firstOrNull { it.tubeBlock == tube }
+
         if (i != null) {
-            println("already found")
             return i
         } else {
-            println("creating")
             val t = IntersectionTube(tube, arrayOfNulls(4))
             intersections.add(t)
             t.connectedTo = findIntersections(t)
@@ -126,7 +121,7 @@ class TubeBlockGroup {
         }
     }
 
-    fun findIntersections(tube: IntersectionTube): Array<TubeAndDist?> {
+    private fun findIntersections(tube: IntersectionTube): Array<TubeAndDist?> {
         val arr = arrayOfNulls<TubeAndDist>(4)
         for (i in 0..3) {
             var currentTube = tube.tubeBlock.tubeConnections[i]
@@ -140,6 +135,7 @@ class TubeBlockGroup {
                 arr[i] = TubeAndDist(convertToIntersection(currentTube)!!.apply {
                     connectedTo[GeometryHelper.getOppositeAngle(i)] = TubeAndDist(tube, dist)
                 }, dist)
+            } else {
             }
         }
         return arr
@@ -160,7 +156,6 @@ class TubeBlockGroup {
         fun getChildren(): List<Node> {
             val l = mutableListOf<Node>()
             for (i in 0 until 4) {
-                // if the intersection at this node has a connection in this dir
                 if (intersection.connectedTo[i] != null) {
                     val newIntersection = intersection.connectedTo[i]!!.intersection
                     val dist = intersection.connectedTo[i]!!.dist
@@ -184,7 +179,7 @@ class TubeBlockGroup {
 
     private data class IntersectionAndDir(val intersection: IntersectionTube, var dir: Int)
 
-    fun route(input: InputNode<*>, output: OutputNode<*>): Map<IntersectionTube, Int>? {
+    private fun route(input: InputNode<*>, output: OutputNode<*>): ItemPath? {
         val inp = findCorrespondingIntersection(input)!!
         val out = findCorrespondingIntersection(output)!!
         val startNode = Node(null, out, inp, -1, 0, 0)
@@ -223,13 +218,12 @@ class TubeBlockGroup {
         if (finalNode != null) {
             val instructions = mutableListOf<IntersectionAndDir>()
             instructions.add(IntersectionAndDir(finalNode.intersection, -1))
-            val endNode = finalNode
-            while(finalNode!!.parent != null) {
+            while (finalNode!!.parent != null) {
                 instructions.add(IntersectionAndDir(finalNode.parent!!.intersection, finalNode.directionFromParent))
                 finalNode = finalNode.parent
             }
             Collections.reverse(instructions)
-            println(instructions.joinToString("\n"))
+            return ItemPath(instructions)
         }
         return null
     }
@@ -242,7 +236,11 @@ class TubeBlockGroup {
         get() = tubes.size
 
     fun update() {
-        ticksSinceLastOutput++
+        storage.update()
+    }
+
+    fun render() {
+        storage.render()
     }
 
     fun save(out: DataOutputStream) {
@@ -261,39 +259,61 @@ class TubeBlockGroup {
         fun update() {
             ALL.forEach { it.update() }
         }
+
+        fun render() {
+            ALL.forEach { it.render() }
+        }
     }
+
+    private data class ItemPackage(val item: Item, val goal: OutputNode<ItemType>, var currentIndex: Int, val path: ItemPath, var xPixel: Int, var yPixel: Int, var dir: Int = 0)
 
     // When an output node tries to input into this, do nothing if there is nowhere to put it
     // Each stack inputted is stored as separate, even if they could be combined. If there is more than 1 stack inputted at a time,
     // split it up and send it with a delay
     class TubeBlockGroupInternalStorage(val parent: TubeBlockGroup) : StorageNode<ItemType>(ResourceType.ITEM) {
 
-        var stackCount = 0
+        private val itemsBeingMoved = mutableListOf<ItemPackage>()
 
-        val maxStacks
-            get() = parent.tubes.size
-
-        var itemCount = 0
-
-        val itemsBeingMoved = mutableListOf<ItemPackage>()
-
-        override fun add(resource: ItemType, quantity: Int, input: InputNode<ItemType>?, checkForSpace: Boolean): Boolean {
-            if (input != null) {
+        override fun add(resource: ItemType, quantity: Int, inputNode: InputNode<ItemType>?, checkForSpace: Boolean): Boolean {
+            if (inputNode != null) {
                 val output = parent.outputs.firstOrNull { it.canOutput(resource, quantity) }
                 if (output != null) {
-                    val t = parent.route(input, output)
+                    val t = parent.route(inputNode, output)
                     if (t != null) {
+                        itemsBeingMoved.add(ItemPackage(Item(resource, quantity), output, 0, t, inputNode.xTile shl 4, inputNode.yTile shl 4, GeometryHelper.getOppositeAngle(inputNode.dir)))
+                        return true
                     }
                 }
             }
             return false
         }
 
+        fun update() {
+            val iterator = itemsBeingMoved.iterator()
+            for (item in iterator) {
+                if (item.xPixel == item.path[item.currentIndex].coord.xPixel && item.yPixel == item.path[item.currentIndex].coord.yPixel) {
+                    item.dir = item.path[item.currentIndex].nextDir
+                    item.currentIndex++
+                    if (item.currentIndex > item.path.lastIndex) {
+                        item.goal.output(item.item.type, item.item.quantity)
+                        iterator.remove()
+                    }
+                } else {
+                    item.xPixel += ITEM_TRANSPORT_SPEED * GeometryHelper.getXSign(item.dir)
+                    item.yPixel += ITEM_TRANSPORT_SPEED * GeometryHelper.getYSign(item.dir)
+                }
+            }
+        }
+
+        fun render() {
+            for(item in itemsBeingMoved) {
+                Renderer.renderTexture(item.item.type.texture, item.xPixel + 4, item.yPixel + 4, 8, 8)
+                Renderer.renderText(item.item.quantity, item.xPixel + 4, item.yPixel + 4)
+            }
+        }
+
         override fun remove(resource: ItemType, quantity: Int, checkIfContains: Boolean): Boolean {
-            if (checkIfContains)
-                if (!contains(resource, quantity))
-                    return false
-            return false
+            return true
         }
 
         override fun spaceFor(resource: ItemType, quantity: Int): Boolean {
@@ -305,11 +325,40 @@ class TubeBlockGroup {
         }
 
         override fun clear() {
-            itemsBeingMoved.clear()
-            itemCount = 0
-            stackCount = 0
         }
 
+        companion object {
+            const val ITEM_TRANSPORT_SPEED = 1
+        }
+    }
+
+    private class ItemPath(p: List<IntersectionAndDir>) {
+
+        data class Step(val coord: PixelCoord, val nextDir: Int)
+
+        private val steps: Array<Step>
+
+        init {
+            val a = arrayOfNulls<Step>(p.size)
+            for (index in p.indices) {
+                a[index] = Step(PixelCoord(p[index].intersection.tubeBlock.xPixel, p[index].intersection.tubeBlock.yPixel), p[index].dir)
+            }
+            steps = a as Array<Step>
+        }
+
+        val size: Int
+            get() = steps.size
+
+        val lastIndex: Int
+            get() = steps.lastIndex
+
+        operator fun get(i: Int): Step {
+            return steps[i]
+        }
+
+        override fun toString(): String {
+            return "\n" + steps.joinToString("\n")
+        }
     }
     // when a tube block gets placed, it checks for nearby networks and merges them as appropriate.
     // if there is a block with no network next to it, they create a new one

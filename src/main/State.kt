@@ -7,6 +7,7 @@ import level.SimplexLevel
 import screen.HUD
 import screen.IngameGUI
 import screen.MainMenuGUI
+import screen.MovementToolsGUI
 
 
 class State(val activate: (State) -> (Unit), val deactivate: (State) -> (Unit)) {
@@ -29,6 +30,7 @@ class State(val activate: (State) -> (Unit), val deactivate: (State) -> (Unit)) 
             AudioManager.ears = IngameGUI.cameras[0]
             IngameGUI.open = true
             HUD
+            MovementToolsGUI
         }, {
         })
 

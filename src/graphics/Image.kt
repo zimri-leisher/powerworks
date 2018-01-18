@@ -1,7 +1,7 @@
 package graphics
 
 import main.Game
-import screen.GUIRecipeButton
+import screen.elements.GUIRecipeButton
 import java.awt.AlphaComposite
 import java.awt.Color
 import java.awt.Rectangle

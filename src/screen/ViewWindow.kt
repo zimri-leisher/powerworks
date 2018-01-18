@@ -3,6 +3,7 @@ package screen
 import io.*
 import level.LevelObject
 import level.moving.MovingObject
+import screen.elements.*
 
 class ViewWindow(name: String,
                  xPixel: Int, yPixel: Int,

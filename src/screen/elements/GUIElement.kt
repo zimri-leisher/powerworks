@@ -1,6 +1,7 @@
-package screen
+package screen.elements
 
 import io.PressType
+import screen.ScreenManager
 
 private var nextID = 0
 

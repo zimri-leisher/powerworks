@@ -23,9 +23,9 @@ import misc.GeometryHelper
 import misc.Numbers
 import screen.CameraMovementListener
 import screen.DebugOverlay
-import screen.GUIView
 import screen.Mouse
 import screen.Mouse.DROPPED_ITEM_PICK_UP_RANGE
+import screen.elements.GUIView
 import java.io.*
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -61,7 +61,6 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
         override fun add(element: GUIView): Boolean {
             val ret = _views.add(element)
             element.moveListeners.add(this@Level)
-            println("adding view")
             updateViewBeingInteractedWith()
             return ret
         }
@@ -187,6 +186,7 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
                     Renderer.renderEmptyRectangle(s.xPixel, s.yPixel, s.hitbox.width, s.hitbox.height, 0x1A6AF4, .45f)
             }
         }
+        TubeBlockGroup.render()
         /*
         for (y in (maxY - 1) downTo minY) {
             for (x in minX until maxX) {
@@ -296,7 +296,6 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
     fun onMouseAction(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, control: Boolean, alt: Boolean) {
         if (button == 1) {
             if (ghostBlock != null && ghostBlock!!.placeable) {
-                println("-----placed-----")
                 if (add(ghostBlock!!.type(ghostBlock!!.xTile, ghostBlock!!.yTile))) {
                     Mouse.removeHeldItem(1)
                 }
@@ -332,7 +331,7 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
         }
     }
 
-    private fun updateViewBeingInteractedWith() {
+    fun updateViewBeingInteractedWith() {
         openViews.sortByDescending { it.parentWindow.layer }
         viewBeingInteractedWith = openViews.firstOrNull { it.mouseOn }
         if (viewBeingInteractedWith != null)
@@ -602,8 +601,9 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
      */
     fun add(xPixel: Int, yPixel: Int, r: ResourceType, quantity: Int): Int {
         if (r is ItemType) {
-            add(DroppedItem(xPixel, yPixel, r))
-            return 1
+            if(!add(DroppedItem(xPixel, yPixel, r, quantity)))
+                return 0
+            return quantity
         }
         return 0
     }

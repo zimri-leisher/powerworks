@@ -1,10 +1,14 @@
-package screen
+package screen.elements
 
 import graphics.Image
 import graphics.Renderer
 import inv.Inventory
 import inv.Item
 import io.PressType
+import screen.HUD
+import screen.InventoryGUI
+import screen.Mouse
+import screen.ScreenManager
 
 
 class GUIItemSlot(parent: RootGUIElement, name: String, xPixel: Int, yPixel: Int, var index: Int, var inv: Inventory,
@@ -71,7 +75,6 @@ class GUIItemSlot(parent: RootGUIElement, name: String, xPixel: Int, yPixel: Int
                         if (currentItem != null) {
                             Mouse.removeHeldItem(mI.quantity)
                             Mouse.setHeldItem(inv, index)
-                            println("adding $mI")
                             inv.add(mI)
                         } else {
                             inv.add(mI)

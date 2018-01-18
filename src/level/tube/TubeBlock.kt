@@ -42,9 +42,10 @@ class TubeBlock(xTile: Int, yTile: Int) : Block(BlockType.TUBE, yTile, xTile) {
         // If it is a tube block, its onAddToLevel() event will call updateConnections() which will do the connecting for us,
         // so no need to worry about us doing it for them
         if (b !is TubeBlock) {
-            println("added a block that is not a tube block")
             updateNodeConnections(GeometryHelper.getDir(b.xTile - xTile, b.yTile - yTile))
             updateState()
+        } else {
+            group.convertToIntersection(this)
         }
     }
 
@@ -59,7 +60,6 @@ class TubeBlock(xTile: Int, yTile: Int) : Block(BlockType.TUBE, yTile, xTile) {
         for (i in 0..3) {
             val t = tubeConnections[i]
             if (t != null) {
-                println("merging with $t")
                 mergeGroups(t)
             }
         }
@@ -71,7 +71,6 @@ class TubeBlock(xTile: Int, yTile: Int) : Block(BlockType.TUBE, yTile, xTile) {
         else
             group.combine(t.group)
     }
-
 
     fun updateConnections() {
         for (i in 0..3)
@@ -89,13 +88,11 @@ class TubeBlock(xTile: Int, yTile: Int) : Block(BlockType.TUBE, yTile, xTile) {
             val new = getTubeAt(dir)
             // Don't do anything if there was no change
             if (tubeConnections[dir] != new) {
-                println("tube connection changed")
-                tubeConnections[dir] = getTubeAt(dir)
+                tubeConnections[dir] = new
                 if (new != null) {
                     mergeGroups(new)
                     new.tubeConnections[getOppositeAngle(dir)] = this
                     new.updateState()
-                    group.convertToIntersection(new)
                 }
             }
         }

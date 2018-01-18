@@ -1,4 +1,7 @@
-package screen
+package screen.elements
+
+import screen.ScreenManager
+import screen.WindowGroup
 
 open class GUIWindow(val name: String, xAlignment: () -> Int, yAlignment: () -> Int, widthAlignment: () -> Int, heightAlignment: () -> Int,
                      open: Boolean = false,

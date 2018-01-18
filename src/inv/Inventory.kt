@@ -103,7 +103,7 @@ class Inventory(val width: Int, val height: Int) : StorageNode<ItemType>(Resourc
         return add(i.type, i.quantity, checkForSpace = true)
     }
 
-    override fun spaceFor(resource: ItemType, quantity: Int): Boolean {
+    override fun spaceFor(resource: ItemType, quantity: Int): Boolean { // TODO fix
         var capacity = 0
         for (i in items.indices) {
             val item = items[i]

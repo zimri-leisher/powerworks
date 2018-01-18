@@ -3,7 +3,7 @@ package io
 import main.Game
 import misc.ConcurrentlyModifiableMutableMap
 import misc.WeakMutableList
-import screen.GUIView
+import screen.elements.GUIView
 import screen.Mouse
 import screen.ScreenManager
 import java.awt.event.*

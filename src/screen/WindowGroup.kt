@@ -1,5 +1,7 @@
 package screen
 
+import screen.elements.GUIWindow
+
 class WindowGroup(var layer: Int, val name: String) {
 
     private val _windows = mutableListOf<GUIWindow>()

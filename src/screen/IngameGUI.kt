@@ -8,6 +8,10 @@ import main.Game
 import misc.GeometryHelper
 import player.Camera
 import screen.IngameGUI.views
+import screen.elements.GUIElement
+import screen.elements.GUITexturePane
+import screen.elements.GUIWindow
+import screen.elements.RootGUIElement
 
 private var viewCount = 0
 private val viewControls = mutableListOf<RootGUIElement>()

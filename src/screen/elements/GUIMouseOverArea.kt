@@ -1,4 +1,4 @@
-package screen
+package screen.elements
 
 class GUIMouseOverArea(parent: RootGUIElement, name: String,
                        xAlignment: () -> Int = { 0 }, yAlignment: () -> Int = { 0 },

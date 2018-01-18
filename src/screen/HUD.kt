@@ -7,6 +7,9 @@ import inv.Item
 import inv.ItemType
 import io.*
 import main.State
+import screen.elements.GUIItemSlot
+import screen.elements.GUITexturePane
+import screen.elements.GUIWindow
 
 object HUD {
     const val HOTBAR_SIZE = 8

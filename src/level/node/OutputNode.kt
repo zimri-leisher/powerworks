@@ -24,7 +24,7 @@ class OutputNode<R : ResourceType>(xTile: Int, yTile: Int, dir: Int, storageNode
             return a.input(resource, quantity)
         }
         // TODO make this output based on the direction
-        return Game.currentLevel.add(xTile shl 4, yTile shl 4, resource, quantity) == quantity
+        return Game.currentLevel.add((xTile shl 4) + 8 * GeometryHelper.getXSign(dir), (yTile shl 4) + 8 * GeometryHelper.getYSign(dir), resource, quantity) == quantity
     }
 
     override fun toString(): String {

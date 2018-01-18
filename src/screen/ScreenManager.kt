@@ -1,8 +1,12 @@
 package screen
 
 import io.*
+import main.Game
+import main.State
 import misc.ConcurrentlyModifiableMutableList
 import misc.GeometryHelper
+import screen.elements.GUIWindow
+import screen.elements.RootGUIElement
 
 object ScreenManager : ControlPressHandler {
 
@@ -36,7 +40,7 @@ object ScreenManager : ControlPressHandler {
         val BACKGROUND = WindowGroup(0, "Background")
         val VIEW = WindowGroup(1, "GUIViews")
         val INVENTORY = WindowGroup(2, "Inventories")
-        val CRAFTING = WindowGroup(3, "Crafting")
+        val PLAYER_UTIL = WindowGroup(3, "Player utilities")
         val HOTBAR = WindowGroup(4, "Hotbar")
         val MOUSE = WindowGroup(9999, "Mouse")
         val DEBUG_OVERLAY = WindowGroup(10000, "Debug overlay")
@@ -103,6 +107,8 @@ object ScreenManager : ControlPressHandler {
             it.yPixel = it.yAlignment()
             it.onScreenSizeChange(oldWidth, oldHeight)
         }
+        if(State.CURRENT_STATE == State.INGAME)
+        Game.currentLevel.updateViewBeingInteractedWith()
     }
 
     fun updateSelected() {

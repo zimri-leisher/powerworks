@@ -3,6 +3,10 @@ package screen
 import graphics.Image
 import main.Game
 import main.State
+import screen.elements.AutoFormatGUIGroup
+import screen.elements.GUIButton
+import screen.elements.GUITexturePane
+import screen.elements.GUIWindow
 
 object MainMenuGUI : GUIWindow("Main menu", { 0 }, { 0 }, { Game.WIDTH }, { Game.HEIGHT }, true, 0, ScreenManager.Groups.BACKGROUND) {
 

@@ -16,6 +16,7 @@ enum class Control {
 
     TAKE_SCREENSHOT,
     TOGGLE_VIEW_CONTROLS,
+    TOGGLE_MOVEMENT_TOOLS,
     /* Testing controls */
     GIVE_TEST_ITEM,
     DROP_HELD_ITEM,

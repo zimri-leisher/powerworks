@@ -1,8 +1,10 @@
-package screen
+package screen.elements
 
 import graphics.Renderer
 import graphics.Renderer.params
 import graphics.Texture
+import screen.elements.GUIElement
+import screen.elements.RootGUIElement
 
 class GUITexturePane(parent: RootGUIElement,
                      name: String,

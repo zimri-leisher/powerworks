@@ -1,10 +1,11 @@
-package screen
+package screen.elements
 
 import graphics.Image
 import graphics.Renderer
 import graphics.Texture
 import io.PressType
 import misc.GeometryHelper
+import screen.Mouse
 
 interface VerticalScrollable {
     var viewHeightPixels: Int

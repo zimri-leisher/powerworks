@@ -2,6 +2,10 @@ package screen
 
 import graphics.Image
 import main.Game
+import screen.elements.GUIButton
+import screen.elements.GUIElementList
+import screen.elements.GUITexturePane
+import screen.elements.GUIWindow
 
 object TestGUI : GUIWindow("Testing GUI", 0, 0, Game.WIDTH, Game.HEIGHT, windowGroup = ScreenManager.Groups.BACKGROUND) {
 

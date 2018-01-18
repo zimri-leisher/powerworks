@@ -1,9 +1,10 @@
-package screen
+package screen.elements
 
 import graphics.Image
 import graphics.Renderer
 import io.PressType
 import main.Game
+import screen.Mouse
 
 class GUIDimensionDragGrip(parent: RootGUIElement,
                            name: String,

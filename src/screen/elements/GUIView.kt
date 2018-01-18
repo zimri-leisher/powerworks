@@ -1,4 +1,4 @@
-package screen
+package screen.elements
 
 import graphics.Renderer
 import io.PressType
@@ -6,6 +6,8 @@ import level.LevelObject
 import level.MovementListener
 import level.moving.MovingObject
 import main.Game
+import screen.CameraMovementListener
+import screen.DebugOverlay
 import java.awt.Rectangle
 import java.awt.Transparency
 import java.awt.image.VolatileImage

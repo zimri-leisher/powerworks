@@ -38,7 +38,11 @@ fun main(args: Array<String>) {
         var second: String = "1"
         if (split.size > 1)
             second = split[1]
-        HUD.Hotbar.items.add(Item(ItemType.ALL.first { it.name.toLowerCase().equals(first.toLowerCase().replace("_", " ").trim()) }, second.toInt()))
+        val item = ItemType.ALL.firstOrNull { it.name.toLowerCase().equals(first.toLowerCase().replace("_", " ").trim()) }
+        if (item != null)
+            HUD.Hotbar.items.add(Item(item, second.toInt()))
+        else
+            println("not an item")
     }
 }
 
@@ -171,7 +175,7 @@ object Game : Canvas(), Runnable, ControlPressHandler {
     }
 
     fun update() {
-        if(resized) {
+        if (resized) {
             val oldW = Game.WIDTH
             val oldH = Game.HEIGHT
             Game.WIDTH = Game.width / SCALE
@@ -204,12 +208,11 @@ object Game : Canvas(), Runnable, ControlPressHandler {
         if (SPARK_ANIMATION != -1) {
             val a = MainMenuGUI.logo
             SPARK_ANIMATION++
-            println(SPARK_ANIMATION)
             if (SPARK_ANIMATION == 1) {
                 a.texture == GUI.MAIN_MENU_LOGO_2
-            } else if(SPARK_ANIMATION == 15) {
+            } else if (SPARK_ANIMATION == 15) {
                 a.texture = GUI.MAIN_MENU_LOGO_3
-            } else if(SPARK_ANIMATION > 30){
+            } else if (SPARK_ANIMATION > 30) {
                 SPARK_ANIMATION = -1
                 a.texture = GUI.MAIN_MENU_LOGO
             }
@@ -271,7 +274,8 @@ object Game : Canvas(), Runnable, ControlPressHandler {
         if (Files.notExists(save))
             Files.createDirectory(save)
     }
- // make it so that you place down blocks based ont he mouse held item, etc
+
+    // make it so that you place down blocks based ont he mouse held item, etc
     fun takeScreenshot() {
         val directory = Paths.get(JAR_PATH, "/screenshots/")
         if (Files.notExists(directory))

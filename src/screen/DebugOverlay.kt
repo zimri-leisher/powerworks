@@ -1,6 +1,9 @@
 package screen
 
 import io.*
+import screen.elements.AutoFormatGUIGroup
+import screen.elements.GUIText
+import screen.elements.GUIWindow
 
 object DebugOverlay : GUIWindow("Debug overlay", 0, 0, 0, 0, windowGroup = ScreenManager.Groups.DEBUG_OVERLAY), ControlPressHandler {
 

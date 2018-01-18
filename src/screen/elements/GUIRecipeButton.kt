@@ -1,4 +1,4 @@
-package screen
+package screen.elements
 
 import crafting.Recipe
 import graphics.Image

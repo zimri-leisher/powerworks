@@ -1,4 +1,4 @@
-package screen
+package screen.elements
 
 class AutoFormatGUIGroup(parent: RootGUIElement,
                          name: String,

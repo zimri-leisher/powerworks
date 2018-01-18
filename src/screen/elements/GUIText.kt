@@ -1,4 +1,4 @@
-package screen
+package screen.elements
 
 import graphics.Font
 import graphics.Renderer

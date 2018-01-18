@@ -12,6 +12,7 @@ import level.LevelObject
 import level.tube.TubeBlock
 import main.Game
 import main.State
+import screen.elements.*
 
 object Mouse : ControlPressHandler {
 
@@ -63,8 +64,10 @@ object Mouse : ControlPressHandler {
     }
 
     fun removeHeldItem(quantity: Int) {
-        if(heldItem != null) {
+        if (heldItem != null) {
             getCurrentInventory().remove(heldItem!!.type, quantity)
+            if (heldItem!!.quantity - quantity <= 0)
+                setHeldItem(null)
             Game.currentLevel.updateGhostBlock()
         }
     }
