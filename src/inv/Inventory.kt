@@ -1,11 +1,18 @@
 package inv
 
+import level.node.InputNode
 import level.node.StorageNode
 import level.resource.ResourceType
+
+interface InventoryChangeListener {
+    fun onInventoryChange(inv: Inventory)
+}
 
 class Inventory(val width: Int, val height: Int) : StorageNode<ItemType>(ResourceType.ITEM) {
 
     private val items = arrayOfNulls<Item>(width * height)
+
+    val listeners = mutableListOf<InventoryChangeListener>()
 
     // TODO maybe have a "slotsFull" variable that tells me whether to iterate from the beginning or end
 
@@ -20,7 +27,7 @@ class Inventory(val width: Int, val height: Int) : StorageNode<ItemType>(Resourc
             return false
         }
 
-    override fun add(resource: ItemType, quantity: Int, checkForSpace: Boolean): Boolean {
+    override fun add(resource: ItemType, quantity: Int, inputNode: InputNode<ItemType>?, checkForSpace: Boolean): Boolean {
         if (checkForSpace)
             if (!spaceFor(resource, quantity))
                 return false
@@ -39,6 +46,7 @@ class Inventory(val width: Int, val height: Int) : StorageNode<ItemType>(Resourc
                         if (item.quantity + amountLeftToAdd <= resource.maxStack) {
                             // Add and return successfully
                             item.quantity += amountLeftToAdd
+                            listeners.forEach { it.onInventoryChange(this) }
                             return true
 
                             // We have more than enough to fill the item stack. We know there should only be one item stack
@@ -87,11 +95,12 @@ class Inventory(val width: Int, val height: Int) : StorageNode<ItemType>(Resourc
                 items[i] = Item(resource, amountLeftToAdd)
             }
         }
+        listeners.forEach { it.onInventoryChange(this) }
         return true
     }
 
     fun add(i: Item): Boolean {
-        return add(i.type, i.quantity, true)
+        return add(i.type, i.quantity, checkForSpace = true)
     }
 
     override fun spaceFor(resource: ItemType, quantity: Int): Boolean {
@@ -126,6 +135,7 @@ class Inventory(val width: Int, val height: Int) : StorageNode<ItemType>(Resourc
                 if (item.type == resource) {
                     if (item.quantity > amountLeftToRemove) {
                         item.quantity -= amountLeftToRemove
+                        listeners.forEach { it.onInventoryChange(this) }
                         return true
                     } else {
                         amountLeftToRemove -= item.quantity
@@ -136,10 +146,14 @@ class Inventory(val width: Int, val height: Int) : StorageNode<ItemType>(Resourc
                 }
             }
         }
-        val needsShift = items[indexOfLastStackRemoved + stacksRemoved] != null
-        if (needsShift) {
-            // There must be space to perform this (guaranteed)
-            shiftLeft(indexOfLastStackRemoved, stacksRemoved)
+        // if it's out of bounds then its "null"
+        if(indexOfLastStackRemoved + stacksRemoved <= items.lastIndex) {
+            val needsShift = items[indexOfLastStackRemoved + stacksRemoved] != null
+            if (needsShift) {
+                // There must be space to perform this (guaranteed)
+                shiftLeft(indexOfLastStackRemoved, stacksRemoved)
+            }
+            listeners.forEach { it.onInventoryChange(this) }
         }
         return true
     }
@@ -164,7 +178,7 @@ class Inventory(val width: Int, val height: Int) : StorageNode<ItemType>(Resourc
     /**
      * Inclusive, goes to the end of items from this index
      */
-    fun shiftRight(index: Int, num: Int): Int {
+    private fun shiftRight(index: Int, num: Int): Int {
         var count = 0
         // Don't worry about out of bounds, we assume that we've already checked for space
         while (count < num) {
@@ -179,7 +193,7 @@ class Inventory(val width: Int, val height: Int) : StorageNode<ItemType>(Resourc
     /**
      * Inclusive, goes to the end of items from this index
      */
-    fun shiftLeft(index: Int, num: Int): Int {
+    private fun shiftLeft(index: Int, num: Int): Int {
         var count = 0
         // Don't worry about out of bounds, we assume that we've already checked for space
         while (count < num) {
@@ -204,6 +218,7 @@ class Inventory(val width: Int, val height: Int) : StorageNode<ItemType>(Resourc
         for(i in items.indices) {
             items[i] = null
         }
+        listeners.forEach { it.onInventoryChange(this) }
     }
 
     operator fun iterator(): Iterator<Item?> {
@@ -216,5 +231,6 @@ class Inventory(val width: Int, val height: Int) : StorageNode<ItemType>(Resourc
 
     operator fun set(i: Int, v: Item?) {
         items[i] = v
+        listeners.forEach { it.onInventoryChange(this) }
     }
 }

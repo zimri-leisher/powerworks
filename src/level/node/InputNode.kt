@@ -20,11 +20,15 @@ class InputNode<R : ResourceType>(xTile: Int, yTile: Int,
         if(checkIfAble)
             if(!canInput(resource, quantity))
                 return false
-        return storageNode!!.add(resource, quantity, false)
+        return storageNode!!.add(resource, quantity, this, false)
     }
 
     override fun toString(): String {
         return "Input node at $xTile, $yTile, dir: $dir, resource type: $resourceTypeID, attached storage node: $storageNode"
+    }
+
+    override fun equals(other: Any?): Boolean {
+        return other is InputNode<*> && other.dir == dir && other.xTile == xTile && other.yTile == yTile && other.resourceTypeID == resourceTypeID
     }
 
     companion object {

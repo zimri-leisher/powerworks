@@ -69,9 +69,13 @@ class GUIItemSlot(parent: RootGUIElement, name: String, xPixel: Int, yPixel: Int
                 if (button == 1) {
                     if (mI != null) {
                         if (currentItem != null) {
+                            Mouse.removeHeldItem(mI.quantity)
                             Mouse.setHeldItem(inv, index)
+                            println("adding $mI")
+                            inv.add(mI)
                         } else {
-                            Mouse.setHeldItem(null)
+                            inv.add(mI)
+                            Mouse.removeHeldItem(mI.quantity)
                         }
                     } else {
                         if (currentItem != null) {
@@ -91,7 +95,7 @@ class GUIItemSlot(parent: RootGUIElement, name: String, xPixel: Int, yPixel: Int
 
         init {
             Mouse.addScreenTooltipTemplate({
-                if(it is GUIItemSlot && it.currentItem != null) {
+                if (it is GUIItemSlot && it.currentItem != null) {
                     return@addScreenTooltipTemplate "${it.currentItem!!.type.name} * ${it.currentItem!!.quantity}"
                 }
                 return@addScreenTooltipTemplate null

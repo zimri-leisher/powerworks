@@ -1,7 +1,6 @@
 package level.block
 
 import inv.Inventory
-import inv.ItemType
 import io.*
 import level.node.InputNode
 import level.resource.ResourceType
@@ -12,10 +11,10 @@ class ChestBlock(xTile: Int, yTile: Int, override val type: ChestBlockType) : Bl
 
     val inv = Inventory(type.invWidth, type.invHeight)
     val invGUI = InventoryGUI("Chest at ${this.xTile}, ${this.yTile}'s inventory gui", "Small Chest", inv, Game.WIDTH / 2, Game.HEIGHT / 2)
-    val inputs = arrayOf(InputNode<ItemType>(xTile, yTile, 0, inv, ResourceType.ITEM),
-            InputNode<ItemType>(xTile, yTile, 1, inv, ResourceType.ITEM),
-            InputNode<ItemType>(xTile, yTile, 2, inv, ResourceType.ITEM),
-            InputNode<ItemType>(xTile, yTile, 3, inv, ResourceType.ITEM))
+    val inputs = arrayOf(InputNode(xTile, yTile, 0, inv, ResourceType.ITEM),
+            InputNode(xTile, yTile, 1, inv, ResourceType.ITEM),
+            InputNode(xTile, yTile, 2, inv, ResourceType.ITEM),
+            InputNode(xTile, yTile, 3, inv, ResourceType.ITEM))
 
     init {
         InputManager.registerControlPressHandler(this, ControlPressHandlerType.LEVEL, Control.INTERACT)
@@ -25,6 +24,11 @@ class ChestBlock(xTile: Int, yTile: Int, override val type: ChestBlockType) : Bl
 
     override fun onAddToLevel() {
         InputManager.registerControlPressHandler(this, ControlPressHandlerType.LEVEL, Control.INTERACT)
+        super.onAddToLevel()
+    }
+
+    override fun onRemoveFromLevel() {
+        Game.currentLevel.removeAllTransferNodes(xTile, yTile)
     }
 
     override fun handleControlPress(p: ControlPress) {

@@ -7,29 +7,32 @@ import level.node.OutputNode
 import level.node.StorageNode
 import level.node.TransferNode
 import level.resource.ResourceType
-import misc.ConcurrentlyModifiableMutableList
 import misc.GeometryHelper
+import misc.WeakMutableList
 import java.io.DataOutputStream
+import java.util.*
 
-data class ItemPackage(val item: Item, val goal: OutputNode<ItemType>, var xPixel: Int, var yPixel: Int, var dir: Int = 0)
+data class ItemPackage(val item: Item, val goal: OutputNode<ItemType>, var currentIndex: Int, val path: Map<IntersectionTube, Int>, var xPixel: Int, var yPixel: Int, var dir: Int = 0)
 
-data class IntersectionTube(val tubeBlock: TubeBlock, var connectedTo: Array<IntersectionTube?>)
+data class IntersectionTube(val tubeBlock: TubeBlock, var connectedTo: Array<TubeAndDist?>) {
+    override fun equals(other: Any?): Boolean {
+        return other is IntersectionTube && other.tubeBlock == tubeBlock
+    }
+
+    override fun hashCode(): Int {
+        return tubeBlock.hashCode()
+    }
+
+    override fun toString(): String {
+        return "Intersection at ${tubeBlock.xTile}, ${tubeBlock.yTile}"
+    }
+}
+
+data class TubeAndDist(val intersection: IntersectionTube, val dist: Int)
 
 class TubeBlockGroup {
 
-    val tubes = object : ConcurrentlyModifiableMutableList<TubeBlock>() {
-        override fun add(l: TubeBlock) {
-            super.add(l)
-            if (!combining)
-                createCorrespondingNodes(l)
-        }
-
-        override fun remove(l: TubeBlock) {
-            super.remove(l)
-            if (!combining)
-                removeCorrespondingNodes(l)
-        }
-    }
+    private val tubes = mutableListOf<TubeBlock>()
 
     private var inputs = mutableListOf<InputNode<ItemType>>()
     private var outputs = mutableListOf<OutputNode<ItemType>>()
@@ -37,11 +40,6 @@ class TubeBlockGroup {
     private val storage = TubeBlockGroupInternalStorage(this)
     var ticksSinceLastOutput = 0
     val id = nextId++
-    /**
-     * This is for optimization: if it is true, we will not create connections when a new tube is added because the process
-     * can be simplified to simply combining the lists of ins and outs
-     */
-    private var combining = false
 
     init {
         ALL.add(this)
@@ -52,16 +50,34 @@ class TubeBlockGroup {
      */
     fun combine(other: TubeBlockGroup) {
         // so that they don't bother making or removing connections, because it would just remove a connection and add it again
-        combining = true
         other.tubes.forEach {
-            it.group = this
+            it.group = this@TubeBlockGroup
+            if (it !in tubes)
+                tubes.add(it)
         }
-        combining = false
-        inputs.addAll(other.inputs)
-        outputs.addAll(other.outputs)
+        other.inputs.forEach {
+            if (it !in inputs)
+                inputs.add(it)
+        }
+        other.outputs.forEach {
+            if (it !in outputs)
+                outputs.add(it)
+        }
     }
 
-    // Creates transfer nodes corresponding the inputted nodes
+    fun addTube(t: TubeBlock) {
+        createCorrespondingNodes(t)
+        tubes.add(t)
+    }
+
+    fun removeTube(t: TubeBlock) {
+        removeCorrespondingNodes(t)
+        tubes.remove(t)
+    }
+
+    /**
+     * Creates transfer nodes corresponding the inputted nodes
+     */
     fun createCorrespondingNodes(nodes: List<TransferNode<*>>) {
         for (n in nodes) {
             if (n is InputNode) {
@@ -73,7 +89,9 @@ class TubeBlockGroup {
         }
     }
 
-    // Creates transfer nodes corresponding to the tube's nodes
+    /**
+     * Creates transfer nodes corresponding to the tube's nodes
+     */
     fun createCorrespondingNodes(tubeBlock: TubeBlock) {
         tubeBlock.nodeConnections.forEach { createCorrespondingNodes(it) }
     }
@@ -88,7 +106,7 @@ class TubeBlockGroup {
     // This should only be called on the first intersection of the network
     fun convertToIntersection(tube: TubeBlock): IntersectionTube? {
         if (isIntersection(tube)) {
-            println("intersection found at ${tube.xTile}, ${tube.yTile}")
+            println("tube is an intersection ${tube.xTile}, ${tube.yTile}")
             return getIntersection(tube)
         }
         return null
@@ -96,11 +114,11 @@ class TubeBlockGroup {
 
     private fun getIntersection(tube: TubeBlock): IntersectionTube {
         val i = intersections.firstOrNull { it.tubeBlock == tube }
-        if(i != null) {
-            println("already converted at ${tube.xTile}, ${tube.yTile}")
+        if (i != null) {
+            println("already found")
             return i
         } else {
-            println("creating intersection at ${tube.xTile}, ${tube.yTile}")
+            println("creating")
             val t = IntersectionTube(tube, arrayOfNulls(4))
             intersections.add(t)
             t.connectedTo = findIntersections(t)
@@ -108,30 +126,117 @@ class TubeBlockGroup {
         }
     }
 
-    fun findIntersections(tube: IntersectionTube): Array<IntersectionTube?> {
-        // If it is not a vertical or horizontal pipe, it must be an intersection
-        val arr = arrayOfNulls<IntersectionTube>(4)
+    fun findIntersections(tube: IntersectionTube): Array<TubeAndDist?> {
+        val arr = arrayOfNulls<TubeAndDist>(4)
         for (i in 0..3) {
             var currentTube = tube.tubeBlock.tubeConnections[i]
+            var dist = 1
             // Iterate down the tube until there are no more connections
-            while (currentTube != null && !isIntersection(currentTube))
+            while (currentTube != null && !isIntersection(currentTube)) {
                 currentTube = currentTube.tubeConnections[i]
+                dist++
+            }
             if (currentTube != tube.tubeBlock && currentTube != null) {
-                arr[i] = convertToIntersection(currentTube)!!.apply {
-                    connectedTo[GeometryHelper.getOppositeAngle(i)] = tube
-                }
+                arr[i] = TubeAndDist(convertToIntersection(currentTube)!!.apply {
+                    connectedTo[GeometryHelper.getOppositeAngle(i)] = TubeAndDist(tube, dist)
+                }, dist)
             }
         }
         return arr
     }
 
     fun isIntersection(t: TubeBlock): Boolean {
-        return t.state in TubeState.Group.INTERSECTION
+        return t.state in TubeState.Group.INTERSECTION || t.nodeConnections.any { it.isNotEmpty() }
     }
 
-    //fun route(input: InputNode<*>, output: OutputNode<*>): List<IntersectionTube> {
-    //    return
-    //}
+    class Node(val parent: Node? = null, val goal: IntersectionTube, val intersection: IntersectionTube, val directionFromParent: Int, val g: Int, val h: Int) {
+
+        val xTile: Int
+            get() = intersection.tubeBlock.xTile
+        val yTile: Int
+            get() = intersection.tubeBlock.yTile
+        val f = h + g
+
+        fun getChildren(): List<Node> {
+            val l = mutableListOf<Node>()
+            for (i in 0 until 4) {
+                // if the intersection at this node has a connection in this dir
+                if (intersection.connectedTo[i] != null) {
+                    val newIntersection = intersection.connectedTo[i]!!.intersection
+                    val dist = intersection.connectedTo[i]!!.dist
+                    l.add(Node(this, goal, newIntersection,
+                            i,
+                            g + dist,
+                            Math.abs(goal.tubeBlock.xTile - newIntersection.tubeBlock.xTile) + Math.abs(goal.tubeBlock.yTile - newIntersection.tubeBlock.yTile)))
+                }
+            }
+            return l
+        }
+
+        override fun equals(other: Any?): Boolean {
+            return other is Node && other.xTile == xTile && other.yTile == yTile && other.g == g && other.h == h && other.directionFromParent == directionFromParent
+        }
+
+        override fun toString(): String {
+            return "$xTile, $yTile, dir from parent: $directionFromParent"
+        }
+    }
+
+    private data class IntersectionAndDir(val intersection: IntersectionTube, var dir: Int)
+
+    fun route(input: InputNode<*>, output: OutputNode<*>): Map<IntersectionTube, Int>? {
+        val inp = findCorrespondingIntersection(input)!!
+        val out = findCorrespondingIntersection(output)!!
+        val startNode = Node(null, out, inp, -1, 0, 0)
+
+        val possibleNextNodes = mutableListOf<Node>()
+        val alreadyUsedNodes = mutableListOf<Node>()
+        possibleNextNodes.add(startNode)
+
+        var finalNode: Node? = null
+
+        main@ while (possibleNextNodes.isNotEmpty()) {
+            // next can't be null because it's not empty
+            val nextNode = possibleNextNodes.minBy { it.f }!!
+
+            possibleNextNodes.remove(nextNode)
+
+            val nodeChildren = nextNode.getChildren()
+            for (nodeChild in nodeChildren) {
+                if (nodeChild.xTile == out.tubeBlock.xTile && nodeChild.yTile == out.tubeBlock.yTile) {
+                    finalNode = nodeChild
+                    break@main
+                }
+
+                // there's a better path to here
+                if (possibleNextNodes.any { it.xTile == nodeChild.xTile && it.yTile == nodeChild.yTile && it.f < nodeChild.f }) {
+                    continue
+                }
+                // this node has already been moved to in a better path
+                if (alreadyUsedNodes.any { it.xTile == nodeChild.xTile && it.yTile == nodeChild.yTile && it.f < nodeChild.f }) {
+                    continue
+                }
+                possibleNextNodes.add(nodeChild)
+            }
+            alreadyUsedNodes.add(nextNode)
+        }
+        if (finalNode != null) {
+            val instructions = mutableListOf<IntersectionAndDir>()
+            instructions.add(IntersectionAndDir(finalNode.intersection, -1))
+            val endNode = finalNode
+            while(finalNode!!.parent != null) {
+                instructions.add(IntersectionAndDir(finalNode.parent!!.intersection, finalNode.directionFromParent))
+                finalNode = finalNode.parent
+            }
+            Collections.reverse(instructions)
+            println(instructions.joinToString("\n"))
+        }
+        return null
+    }
+
+    fun findCorrespondingIntersection(t: TransferNode<*>): IntersectionTube? {
+        return intersections.firstOrNull { it.tubeBlock.xTile == t.xTile && it.tubeBlock.yTile == t.yTile }
+    }
 
     val size
         get() = tubes.size
@@ -151,7 +256,7 @@ class TubeBlockGroup {
 
         var nextId = 0
 
-        val ALL = mutableListOf<TubeBlockGroup>()
+        val ALL = WeakMutableList<TubeBlockGroup>()
 
         fun update() {
             ALL.forEach { it.update() }
@@ -172,13 +277,15 @@ class TubeBlockGroup {
 
         val itemsBeingMoved = mutableListOf<ItemPackage>()
 
-        override fun add(resource: ItemType, quantity: Int, checkForSpace: Boolean): Boolean {
-            if (checkForSpace)
-                if (!spaceFor(resource, quantity))
-                    return false
-            // As always, assume that we know it can be sent
-            itemCount += quantity
-            stackCount += Math.ceil(quantity.toDouble() / resource.maxStack).toInt()
+        override fun add(resource: ItemType, quantity: Int, input: InputNode<ItemType>?, checkForSpace: Boolean): Boolean {
+            if (input != null) {
+                val output = parent.outputs.firstOrNull { it.canOutput(resource, quantity) }
+                if (output != null) {
+                    val t = parent.route(input, output)
+                    if (t != null) {
+                    }
+                }
+            }
             return false
         }
 
@@ -186,16 +293,15 @@ class TubeBlockGroup {
             if (checkIfContains)
                 if (!contains(resource, quantity))
                     return false
-
             return false
         }
 
         override fun spaceFor(resource: ItemType, quantity: Int): Boolean {
-            return parent.outputs.any { it.canOutput(resource, quantity) }
+            return true
         }
 
         override fun contains(resource: ItemType, quantity: Int): Boolean {
-            return false
+            return true
         }
 
         override fun clear() {

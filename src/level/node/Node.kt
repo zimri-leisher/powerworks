@@ -17,9 +17,10 @@ abstract class TransferNode<R : ResourceType>(val xTile: Int, val yTile: Int, di
 abstract class StorageNode<R : ResourceType>(val resourceTypeID: Int) {
     /**
      * @param checkForSpace whether or not to call spaceFor before executing. Set to false if you already know there is space
+     * @param inputNode the node that is adding to this, null if none
      * @return true on successful addition
      */
-    abstract fun add(resource: R, quantity: Int, checkForSpace: Boolean = true): Boolean
+    abstract fun add(resource: R, quantity: Int, inputNode: InputNode<R>? = null, checkForSpace: Boolean = true): Boolean
 
     abstract fun spaceFor(resource: R, quantity: Int): Boolean
     /**

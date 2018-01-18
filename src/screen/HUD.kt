@@ -2,6 +2,7 @@ package screen
 
 import graphics.Image
 import inv.Inventory
+import inv.InventoryChangeListener
 import inv.Item
 import inv.ItemType
 import io.*
@@ -23,9 +24,10 @@ object HUD {
             IngameGUI.layer + 2,
             // Above the background, view group and inventory group
             ScreenManager.Groups.HOTBAR),
-            ControlPressHandler {
+            ControlPressHandler,
+            InventoryChangeListener {
 
-        val items = Inventory(8, 1)
+        val items = Inventory(8, 1).apply { listeners.add(this@Hotbar) }
         var selected = 0
             set(value) {
                 field = value
@@ -58,6 +60,12 @@ object HUD {
                     Control.SLOT_8 -> setSlot(7)
                     Control.GIVE_TEST_ITEM -> items.add(Item(ItemType.TUBE))
                 }
+            }
+        }
+
+        override fun onInventoryChange(inv: Inventory) {
+            if(inv == items) {
+                Mouse.setHeldItem(items, selected)
             }
         }
 

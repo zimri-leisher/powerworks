@@ -61,6 +61,7 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
         override fun add(element: GUIView): Boolean {
             val ret = _views.add(element)
             element.moveListeners.add(this@Level)
+            println("adding view")
             updateViewBeingInteractedWith()
             return ret
         }
@@ -223,10 +224,12 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
     }
 
     private fun renderNodeDebug(n: TransferNode<*>) {
+        val xSign = GeometryHelper.getXSign(n.dir)
+        val ySign = GeometryHelper.getYSign(n.dir)
         if (n is OutputNode<*>) {
-            Renderer.renderText("Out: ${n.dir}", (n.xTile shl 4) + 2, (n.yTile shl 4) + 10)
+            Renderer.renderFilledRectangle(((n.xTile shl 4) + 7) + 8 * xSign, ((n.yTile shl 4) + 7) + 8 * ySign, 2, 2, 0xFF0000, 0.25f)
         } else if (n is InputNode<*>) {
-            Renderer.renderText("In: ${n.dir}", (n.xTile shl 4) + 6, (n.yTile shl 4) + 10)
+            Renderer.renderFilledRectangle(((n.xTile shl 4) + 7) + 8 * xSign, ((n.yTile shl 4) + 7) + 8 * ySign, 2, 2, 0xFFFF00, 0.25f)
         }
     }
 
@@ -260,7 +263,7 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
     /**
      * Makes the ghost block that appears on the mouse when holding a placeable item up-to-date
      */
-    private fun updateGhostBlock() {
+    fun updateGhostBlock() {
         val currentItem = Mouse.heldItem
         if (currentItem == null && ghostBlock != null) {
             ghostBlock = null
@@ -291,20 +294,21 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
      * Called by gui views when they are clicked on, used to place the ghost block
      */
     fun onMouseAction(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, control: Boolean, alt: Boolean) {
-        if(button == 1) {
+        if (button == 1) {
             if (ghostBlock != null && ghostBlock!!.placeable) {
+                println("-----placed-----")
                 if (add(ghostBlock!!.type(ghostBlock!!.xTile, ghostBlock!!.yTile))) {
-                    val h = Mouse.heldItem!! // we know it must not be null, otherwise we couldn't place it
-                    h.quantity--
-                    if (h.quantity == 0) {
-                        Mouse.setHeldItem(null)
-                    }
+                    Mouse.removeHeldItem(1)
                 }
                 updateGhostBlock()
             }
-        } else if(button == 3) {
-            if(selectedLevelObject is Block) {
-                remove(selectedLevelObject!!)
+        } else if (button == 3) {
+            if (selectedLevelObject is Block) {
+                //if (remove(selectedLevelObject!!)) {
+                 //   if (HUD.Hotbar.items.full) {
+                 //       // TODO
+                //    }
+                //}
             }
         }
 
@@ -479,6 +483,11 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
         return l
     }
 
+    fun removeAllTransferNodes(xTile: Int, yTile: Int, predicate: (TransferNode<*>) -> Boolean = { true }) {
+        val c = getChunkFromTile(xTile, yTile)
+        getAllTransferNodes(xTile, yTile, predicate).forEach { if (it is InputNode) c.removeInputNode(it) else if (it is OutputNode) c.removeOutputNode(it) }
+    }
+
     fun getDroppedItemsInRadius(xPixel: Int, yPixel: Int, radius: Int, predicate: (DroppedItem) -> Boolean = { true }): List<DroppedItem> {
         val l = mutableListOf<DroppedItem>()
         for (c in getChunksFromPixelRectangle(xPixel - radius, yPixel - radius, radius * 2, radius * 2)) {
@@ -510,10 +519,9 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
         } else if (l is MovingObject) {
             if (l is DroppedItem) {
                 // get nearest dropped item of the same type that is not a full stack
-                val d = getDroppedItemsInRadius(l.xPixel, l.yPixel, DROPPED_ITEM_PICK_UP_RANGE, {it.type == l.type && it.quantity < it.type.maxStack}).firstOrNull()
-                println(d)
-                if(d != null) {
-                    if(d.quantity + l.quantity <= l.type.maxStack) {
+                val d = getDroppedItemsInRadius(l.xPixel, l.yPixel, DROPPED_ITEM_PICK_UP_RANGE, { it.type == l.type && it.quantity < it.type.maxStack }).maxBy { it.quantity }
+                if (d != null) {
+                    if (d.quantity + l.quantity <= l.type.maxStack) {
                         d.quantity += l.quantity
                         // dont set in level because it was never technically called into existence
                         return true
@@ -522,9 +530,9 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
                         d.quantity = l.type.maxStack
                     }
                 }
-                if(l.getCollision(l.xPixel, l.yPixel) == null) {
-                    if(l.hitbox != Hitbox.NONE) {
-                        l.intersectingChunks.forEach {it.movingOnBoundary!!.add(l)}
+                if (l.getCollision(l.xPixel, l.yPixel) == null) {
+                    if (l.hitbox != Hitbox.NONE) {
+                        l.intersectingChunks.forEach { it.movingOnBoundary!!.add(l) }
                     }
                     l.currentChunk.addMoving(l)
                     l.inLevel = true
@@ -568,7 +576,7 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
             if (l is Block) {
                 for (x in 0 until l.type.widthTiles) {
                     for (y in 0 until l.type.heightTiles) {
-                        c.removeBlock(l, l.xTile + x, l.yTile + y, (x == 0 && y == 0))
+                        c.removeBlock(l, l.xTile + x, l.yTile + y, (x == 0 && y == 0)) // TODO fix removing miner
                     }
                 }
                 l.inLevel = false

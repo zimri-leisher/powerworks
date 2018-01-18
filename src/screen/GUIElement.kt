@@ -39,6 +39,7 @@ open class RootGUIElement(val parentWindow: GUIWindow,
                 if (element.parent != this@RootGUIElement) {
                     if (element.matchParentLayer)
                         element.layer = element.parent.layer + 1
+                    println("setting ${element.id}'s parent to ${this@RootGUIElement.id}")
                     element.parent = this@RootGUIElement
                 }
                 if (element.open)
@@ -136,6 +137,11 @@ open class RootGUIElement(val parentWindow: GUIWindow,
 
     open val name
         get() = parentWindow.name
+
+    init {
+        if(open)
+            mouseOn = ScreenManager.isMouseOn(this)
+    }
 
     /* Util */
     /* Gets the specified element by name. If checkChildren is true (default), it checks recursively */
@@ -290,9 +296,9 @@ abstract class GUIElement(parent: RootGUIElement,
                 field.children.remove(this)
                 if (open)
                     field.parentWindow.openChildren.remove(this)
-                value.children.add(this)
                 val v = field
                 field = value
+                value.children.add(this)
                 onParentChange(v)
             }
         }

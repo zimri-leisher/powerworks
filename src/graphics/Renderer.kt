@@ -21,10 +21,6 @@ object Renderer {
         params = defaultParams
     }
 
-    fun feed(graphics2D: Graphics2D) {
-        g2d = graphics2D
-    }
-
     fun setClip(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int) {
         g2d.clip = Rectangle(xPixel * Game.SCALE, yPixel * Game.SCALE, widthPixels * Game.SCALE, heightPixels * Game.SCALE)
     }
@@ -33,9 +29,17 @@ object Renderer {
         g2d.clip = defaultClip
     }
 
-    fun renderFilledRectangle(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int, color: Int = 0xFFFFFF) {
+    fun renderFilledRectangle(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int, color: Int = 0xFFFFFF, alpha: Float = 1.0f) {
+        var oldComposite: Composite? = null
+        if (alpha != 1.0f) {
+            oldComposite = g2d.composite
+            g2d.composite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha)
+        }
         g2d.color = Color(color)
         g2d.fillRect((xPixel + xPixelOffset) * Game.SCALE, (yPixel + yPixelOffset) * Game.SCALE, widthPixels * Game.SCALE, heightPixels * Game.SCALE)
+        if (oldComposite != null) {
+            g2d.composite = oldComposite
+        }
     }
 
     fun renderEmptyRectangle(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int, color: Int = 0xFFFFFF, alpha: Float = 1.0f, borderThickness: Int = 1) {
@@ -111,29 +115,24 @@ object Renderer {
         val scaledScale = Game.SCALE * params.scale
         val absoluteWidthPixels: Float
         val absoluteHeightPixels: Float
-        if (true) {
-            var w = widthPixels
-            var h = heightPixels
-            if (t.widthPixels > t.heightPixels) {
-                if (t.widthPixels > widthPixels) {
-                    w = widthPixels
-                    val ratio = widthPixels.toFloat() / t.widthPixels
-                    h = (t.heightPixels * ratio).toInt()
-                }
+        var w = widthPixels
+        var h = heightPixels
+        if (t.widthPixels > t.heightPixels) {
+            if (t.widthPixels > widthPixels) {
+                w = widthPixels
+                val ratio = widthPixels.toFloat() / t.widthPixels
+                h = (t.heightPixels * ratio).toInt()
             }
-            if (t.heightPixels > t.widthPixels) {
-                if (t.heightPixels > heightPixels) {
-                    h = heightPixels
-                    val ratio = heightPixels.toFloat() / t.heightPixels
-                    w = (t.widthPixels * ratio).toInt()
-                }
-            }
-            absoluteWidthPixels = w * scaledScale * params.scaleWidth
-            absoluteHeightPixels = h * scaledScale * params.scaleHeight
-        } else {
-            absoluteWidthPixels = widthPixels * scaledScale * params.scaleWidth
-            absoluteHeightPixels = heightPixels * scaledScale * params.scaleHeight
         }
+        if (t.heightPixels > t.widthPixels) {
+            if (t.heightPixels > heightPixels) {
+                h = heightPixels
+                val ratio = heightPixels.toFloat() / t.heightPixels
+                w = (t.widthPixels * ratio).toInt()
+            }
+        }
+        absoluteWidthPixels = w * scaledScale * params.scaleWidth
+        absoluteHeightPixels = h * scaledScale * params.scaleHeight
         var oldTransform: AffineTransform? = null
         var oldComposite: Composite? = null
         if (params.rotation != 0f) {

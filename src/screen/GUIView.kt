@@ -70,8 +70,6 @@ class GUIView(parent: RootGUIElement,
         if (camera is MovingObject) {
             camera.moveListeners.add(this)
         }
-        if (open)
-            Game.currentLevel.openViews.add(this)
         viewRectangle = Rectangle(camera.xPixel - viewWidthPixels / 2, camera.yPixel - viewHeightPixels / 2, viewWidthPixels, viewHeightPixels)
         fillPregenBuffers()
     }

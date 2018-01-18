@@ -29,7 +29,7 @@ class DroppedItem(xPixel: Int, yPixel: Int, val type: ItemType, quantity: Int = 
     }
 
     override fun handleControlPress(p: ControlPress) {
-        if (p.control == Control.INTERACT && p.pressType == PressType.PRESSED) {
+        if (p.control == Control.INTERACT && p.pressType == PressType.RELEASED) {
             Game.currentLevel.remove(this)
             if (Mouse.heldItem == null)
                 Mouse.setHeldItem(Item(type, quantity))

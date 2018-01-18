@@ -87,7 +87,7 @@ open class MachineBlockType(name: String,
         BlockType(name, textures, widthTiles, heightTiles, hitbox, textureXPixelOffset, textureYPixelOffset, requiresUpdate) {
 
     companion object {
-        val MINER = object : MachineBlockType("Miner", arrayOf<Texture>(Image.Block.MINER), 2, 2, Hitbox.TILE2X2, textureYPixelOffset = 32, requiresUpdate = true, maxWork = 400) {
+        val MINER = object : MachineBlockType("Miner", arrayOf<Texture>(Image.Block.MINER), 2, 2, Hitbox.TILE2X2, textureYPixelOffset = 32, requiresUpdate = true, maxWork = 200) {
             override operator fun invoke(xTile: Int, yTile: Int) = MinerBlock(xTile, yTile)
         }
     }

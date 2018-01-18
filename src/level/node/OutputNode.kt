@@ -28,7 +28,11 @@ class OutputNode<R : ResourceType>(xTile: Int, yTile: Int, dir: Int, storageNode
     }
 
     override fun toString(): String {
-        return "Output node at $xTile, $yTile, dir: $dir, resource type: $resourceTypeID, attached input node: $attachedInput, attached storage node: $storageNode"
+        return "Output node at $xTile, $yTile, dir: $dir, resource type: $resourceTypeID, attached input node: ${attachedInput?.xTile}, ${attachedInput?.yTile}, attached storage node: $storageNode"
+    }
+
+    override fun equals(other: Any?): Boolean {
+        return other is OutputNode<*> && other.dir == dir && other.xTile == xTile && other.yTile == yTile && other.resourceTypeID == resourceTypeID
     }
 
     companion object {

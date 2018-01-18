@@ -92,6 +92,7 @@ object Game : Canvas(), Runnable, ControlPressHandler {
     lateinit var mainInv: Inventory
 
     val frame: JFrame = JFrame()
+    private var resized = false
 
     init {
         preferredSize = Dimension(WIDTH * SCALE, HEIGHT * SCALE)
@@ -104,11 +105,7 @@ object Game : Canvas(), Runnable, ControlPressHandler {
         frame.iconImage = ImageIO.read(Game::class.java.getResource("/textures/misc/logo.png"))
         frame.addComponentListener(object : ComponentAdapter() {
             override fun componentResized(e: ComponentEvent?) {
-                val oldW = Game.WIDTH
-                val oldH = Game.HEIGHT
-                Game.WIDTH = Game.width / SCALE
-                Game.HEIGHT = Game.height / SCALE
-                ScreenManager.screenSizeChange(oldW, oldH)
+                resized = true
             }
         })
         createData()
@@ -174,6 +171,14 @@ object Game : Canvas(), Runnable, ControlPressHandler {
     }
 
     fun update() {
+        if(resized) {
+            val oldW = Game.WIDTH
+            val oldH = Game.HEIGHT
+            Game.WIDTH = Game.width / SCALE
+            Game.HEIGHT = Game.height / SCALE
+            ScreenManager.screenSizeChange(oldW, oldH)
+            resized = false
+        }
         //spark()
         InputManager.update()
         Mouse.update()

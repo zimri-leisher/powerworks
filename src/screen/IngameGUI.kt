@@ -101,6 +101,8 @@ object IngameGUI : GUIWindow("In game gui",
                     cameras[viewCount - 1],
                     open = viewCount == 1,
                     windowGroup = ScreenManager.Groups.VIEW).run {
+                if (open)
+                    Game.currentLevel.openViews.add(view)
                 controls.forEach {
                     it.matchParentOpening = false
                     it.open = viewControlsOpen

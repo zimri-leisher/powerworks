@@ -1,13 +1,13 @@
-//<initial code>[:<secondary code 1> ... :<secondary code n> [:ONLY (if you want this to activate ONLY when these keys are down, no more, no less)]]:<control name>
+//<initial code>[! (if you want it to be activated only when this key is NOT down)][:<secondary code 1> ... :<secondary code n> [:ONLY (if you want this to activate ONLY when these keys are down, no more, no less)]]:<control name>
 W:UP
-// ^ will always activate when 87 is pressed, regardless of any other keys down
+// ^ will always activate when W is pressed, regardless of any other keys down
 A:LEFT
 S:DOWN
 D:RIGHT
 F3:ONLY:DEBUG
-// ^ will activate only if 114 is pressed and no others at the time
+// ^ will activate only if F3 is pressed and no others at the time
 F3:B:ONLY:TOGGLE_RENDER_HITBOXES
-// ^ will activate only if 114 is pressed and then 66, no other keys
+// ^ will activate only if F3 is pressed and then B, no other keys
 F3:C:ONLY:TOGGLE_CHUNK_INFO
 F3:G:ONLY:TOGGLE_DEBUG_TUBE_GROUP_INFO
 1:SLOT_1
@@ -24,6 +24,7 @@ P:ONLY:TOGGLE_VIEW_CONTROLS
 E:TOGGLE_INVENTORY
 G:ONLY:DROP_HELD_ITEM
 H:ONLY:PICK_UP_DROPPED_ITEMS
+// only activates when mouse 1 is down and not when shift, control or alt are
 MOUSE_1:!SHIFT:!CONTROL:!ALT:INTERACT
 MOUSE_1:SHIFT:SHIFT_INTERACT
 MOUSE_1:CTRL:CONTROL_INTERACT

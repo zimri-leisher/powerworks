@@ -2,6 +2,7 @@ package io
 
 import main.Game
 import misc.ConcurrentlyModifiableMutableMap
+import misc.WeakMutableList
 import screen.GUIView
 import screen.Mouse
 import screen.ScreenManager
@@ -30,8 +31,8 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
                     ControlMap,
                     Array<out Control>?>?>()
 
-    var currentScreenHandlers = mutableListOf<ControlPressHandler>()
-    var currentLevelHandlers = mutableListOf<ControlPressHandler>()
+    var currentScreenHandlers = WeakMutableList<ControlPressHandler>()
+    var currentLevelHandlers = WeakMutableList<ControlPressHandler>()
 
     val inputsBeingPressed = mutableSetOf<String>()
 
@@ -42,7 +43,7 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
 
     var mouseMoved: MouseEvent? = null
 
-    val mouseMovementListeners = mutableListOf<MouseMovementListener>()
+    val mouseMovementListeners = WeakMutableList<MouseMovementListener>()
 
     var mouseOutside = false
 
@@ -63,7 +64,7 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
     }
 
     fun removeControlPressHandler(handler: ControlPressHandler) {
-        for((k, v) in handlers) {
+        for((k, _) in handlers) {
             if(k.first == handler) {
                 handlers.remove(k)
             }
