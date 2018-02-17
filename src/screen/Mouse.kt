@@ -2,6 +2,7 @@ package screen
 
 import graphics.Image
 import graphics.Renderer
+import graphics.Texture
 import graphics.Utils
 import inv.Inventory
 import inv.Item
@@ -17,59 +18,49 @@ import screen.elements.*
 object Mouse : ControlPressHandler {
 
     const val DROPPED_ITEM_PICK_UP_RANGE = 8
+    const val ICON_SIZE = 8
 
     var button = 0
     var xPixel = 0
     var yPixel = 0
-    val heldItem: Item?
-        get() {
-            return getCurrentInventory()[index]
-        }
-    private var index: Int = 0
-
-    /**
-     * The inventory to take from when the held item is placed, and the inventory to add to when an item is picked up
-     */
-    private val internalInventory: Inventory = Inventory(1, 1)
-
-    private var inventory: Inventory? = null
+    var heldItem: Item? = null
+    var inventory: Inventory? = null
 
     private val levelTooltipTemplates = sortedMapOf<Int, (LevelObject) -> String?>()
     private val screenTooltipTemplates = sortedMapOf<Int, (RootGUIElement) -> String?>()
 
-    private var window = GUIWindow("Mouse", { xPixel }, { yPixel }, { xPixel }, { yPixel }, true, 0, ScreenManager.Groups.MOUSE).apply {
+    private var window = GUIWindow("Mouse", { xPixel }, { yPixel }, { 0 }, { 0 }, true, 0, ScreenManager.Groups.MOUSE).apply {
         transparentToInteraction = true
     }
 
-    private var group = GUIGroup(window.rootChild, "Mouse info group", { 0 }, { 0 }, open = true).apply { transparentToInteraction = true }
-    private var text: GUIText? = null
-    private var background: GUITexturePane? = null
+    private var group = GUIGroup(window.rootChild, "Mouse info group", { 0 }, { 0 }, open = true).apply {
+        transparentToInteraction = true
+    }
+    private var text = GUIText(group, "Mouse info group text", 2, 2, "", layer = group.layer + 3).apply {
+        open = false
+    }
+    private var background = GUITexturePane(group, "Mouse info group background", 0, 0, Image(Utils.genRectangle(text.widthPixels + 4, text.heightPixels + 4)), layer = group.layer + 2).apply {
+        open = false
+    }
+    private var icon = GUITexturePane(group, "Mouse icon", 0, 0, Image.Misc.ERROR, ICON_SIZE, ICON_SIZE).apply {
+        open = false
+        updateDimensionAlignmentOnTextureChange = false
+    }
 
     init {
         InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.DROP_HELD_ITEM, Control.PICK_UP_DROPPED_ITEMS)
     }
 
-    fun setHeldItem(inventory: Inventory, index: Int) {
-        this.inventory = inventory
-        this.index = index
-        internalInventory.clear()
-        Game.currentLevel.updateGhostBlock()
+    fun setSecondaryIcon(texture: Texture) {
+        icon.texture = texture
+        icon.open = true
     }
 
-    fun setHeldItem(item: Item?) {
-        inventory = null
-        index = 0
-        internalInventory[0] = item
-        Game.currentLevel.updateGhostBlock()
+    fun setPrimaryIcon(texture: Texture) {
     }
 
-    fun removeHeldItem(quantity: Int) {
-        if (heldItem != null) {
-            getCurrentInventory().remove(heldItem!!.type, quantity)
-            if (heldItem!!.quantity - quantity <= 0)
-                setHeldItem(null)
-            Game.currentLevel.updateGhostBlock()
-        }
+    fun clearIcon() {
+        icon.open = false
     }
 
     fun addLevelTooltipTemplate(f: (LevelObject) -> String?, priority: Int = 0) {
@@ -79,8 +70,6 @@ object Mouse : ControlPressHandler {
     fun addScreenTooltipTemplate(f: (RootGUIElement) -> String?, priority: Int = 0) {
         screenTooltipTemplates.put(priority, f)
     }
-
-    fun getCurrentInventory() = inventory ?: internalInventory
 
     fun update() {
         var s: String? = null
@@ -103,21 +92,13 @@ object Mouse : ControlPressHandler {
             }
         }
         if (s != null) {
-            val t = text
-            if (t != null) {
-                t.text = s
-                background!!.texture = Image(Utils.genRectangle(t.widthPixels + 4, t.heightPixels + 4))
-            } else {
-                text = GUIText(group, "Mouse info group text", 2, 2, s, open = true, layer = group.layer + 2)
-                background = GUITexturePane(group, "Mouse info group background", 0, 0, Image(Utils.genRectangle(text!!.widthPixels + 4, text!!.heightPixels + 4)), open = true)
-                text!!.transparentToInteraction = true
-                background!!.transparentToInteraction = true
-            }
-        } else if (text != null) {
-            group.children.remove(text!!)
-            group.children.remove(background!!)
-            text = null
-            background = null
+            text.text = s
+            text.open = true
+            background.texture = Image(Utils.genRectangle(text.widthPixels + 4, text.heightPixels + 4))
+            background.open = true
+        } else {
+            text.open = false
+            background.open = false
         }
         window.updateAlignment()
     }
@@ -164,41 +145,45 @@ object Mouse : ControlPressHandler {
                         else "Not intersection\n"
                 Renderer.renderText(tubeString + intersectionString, xPixel, yPixel)
             }
+        } else if (Game.DEBUG_SCREEN_INFO) {
+            Renderer.renderText("Element on mouse:\n" +
+                    "  ${ScreenManager.getHighestElement(xPixel, yPixel, predicate = { !it.transparentToInteraction })}\n" +
+                    "Window on mouse:\n" +
+                    "  ${ScreenManager.getHighestWindow(xPixel, yPixel, { !it.transparentToInteraction })}", xPixel, yPixel)
         } else if (DebugOverlay.open) {
             Renderer.renderText("Screen:\n" +
                     "  Pixel: $xPixel, $yPixel\n" +
                     "  Tile: ${xPixel shr 4}, ${yPixel shr 4}\n" +
                     "  Chunk: ${xPixel shr CHUNK_PIXEL_EXP}, ${yPixel shr CHUNK_PIXEL_EXP}\n" +
-                    "Level:\n" +
+                    if(State.CURRENT_STATE == State.INGAME) "Level:\n" +
                     "  Pixel: ${Game.currentLevel.mouseLevelXPixel}, ${Game.currentLevel.mouseLevelYPixel}\n" +
                     "  Tile: ${Game.currentLevel.mouseLevelXPixel shr 4}, ${Game.currentLevel.mouseLevelYPixel shr 4}\n" +
-                    "  Chunk: ${Game.currentLevel.mouseLevelXPixel shr CHUNK_PIXEL_EXP}, ${Game.currentLevel.mouseLevelYPixel shr CHUNK_PIXEL_EXP}", xPixel, yPixel)
+                    "  Chunk: ${Game.currentLevel.mouseLevelXPixel shr CHUNK_PIXEL_EXP}, ${Game.currentLevel.mouseLevelYPixel shr CHUNK_PIXEL_EXP}" else "", xPixel, yPixel)
         }
 
     }
 
     override fun handleControlPress(p: ControlPress) {
         if (p.pressType == PressType.PRESSED) {
-            val inv = getCurrentInventory()
             when (p.control) {
                 Control.DROP_HELD_ITEM -> {
                     if (heldItem != null) {
                         val type = heldItem!!.type
                         if (Game.currentLevel.add(DroppedItem(Game.currentLevel.mouseLevelXPixel, Game.currentLevel.mouseLevelYPixel, type)))
-                            inv.remove(type, 1)
+                            inventory?.remove(type, 1)
                     }
                 }
                 Control.PICK_UP_DROPPED_ITEMS -> {
                     val i = Game.currentLevel.getDroppedItemsInRadius(Game.currentLevel.mouseLevelXPixel, Game.currentLevel.mouseLevelYPixel, DROPPED_ITEM_PICK_UP_RANGE)
                     if (i.isNotEmpty()) {
                         val g = i.first()
-                        if (inv.full) {
+                        if (inventory?.full == true) {
                             if (!Game.mainInv.full) {
                                 Game.mainInv.add(g.type, g.quantity)
                                 Game.currentLevel.remove(g)
                             }
                         } else {
-                            inv.add(g.type, g.quantity)
+                            inventory?.add(g.type, g.quantity)
                             Game.currentLevel.remove(g)
                         }
                     }

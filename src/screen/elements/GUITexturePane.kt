@@ -3,8 +3,6 @@ package screen.elements
 import graphics.Renderer
 import graphics.Renderer.params
 import graphics.Texture
-import screen.elements.GUIElement
-import screen.elements.RootGUIElement
 
 class GUITexturePane(parent: RootGUIElement,
                      name: String,
@@ -16,10 +14,12 @@ class GUITexturePane(parent: RootGUIElement,
                      var keepAspect: Boolean = false) :
         GUIElement(parent, name, xAlignment, yAlignment, widthAlignment, heightAlignment, open, layer) {
 
+    var updateDimensionAlignmentOnTextureChange = true
+
     var texture = texture
         set(value) {
             if (field != value) {
-                if (widthPixels == field.widthPixels && heightPixels == field.heightPixels) {
+                if (widthPixels == field.widthPixels && heightPixels == field.heightPixels && updateDimensionAlignmentOnTextureChange) {
                     widthAlignment = { value.widthPixels }
                     heightAlignment = { value.heightPixels }
                 }

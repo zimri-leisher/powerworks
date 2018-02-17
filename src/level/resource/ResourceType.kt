@@ -5,6 +5,7 @@ import graphics.Texture
 interface ResourceType {
 
     val texture: Texture
+    val typeID: Int
 
     companion object {
         const val ITEM = 0

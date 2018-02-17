@@ -17,7 +17,7 @@ object TestGUI : GUIWindow("Testing GUI", 0, 0, Game.WIDTH, Game.HEIGHT, windowG
             }, {})
             GUIButton(this, "Test GUI test button", 1, 1 + GUIButton.HEIGHT, "Add a component", {
                 this@TestGUI.getChild("Test GUI element list")?.children?.add(
-                        GUITexturePane(this, "Test GUI texture pane", 0, 0, Image.ERROR)
+                        GUITexturePane(this, "Test GUI texture pane", 0, 0, Image.Misc.ERROR)
                 )
             }, {})
             GUIElementList(this, "Test GUI element list", 3 + GUIButton.WIDTH, 1, Game.WIDTH - (3 + GUIButton.WIDTH), Game.HEIGHT - 1)

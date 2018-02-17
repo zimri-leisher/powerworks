@@ -13,17 +13,24 @@ object Utils {
 
     private val rectTable = mutableMapOf<Rectangle, BufferedImage>()
 
+    /**
+     * @return an image of a rectangle using the default parts in res/textures/gui/default
+     */
     fun genRectangle(widthPixels: Int, heightPixels: Int): BufferedImage {
         return genRectangle(Image.GUI.DEFAULT_EDGE_TOP, Image.GUI.DEFAULT_EDGE_BOTTOM, Image.GUI.DEFAULT_EDGE_LEFT, Image.GUI.DEFAULT_EDGE_RIGHT, Image.GUI.DEFAULT_CORNER_TOP_RIGHT,
                 Image.GUI.DEFAULT_CORNER_TOP_LEFT, Image.GUI.DEFAULT_CORNER_BOTTOM_RIGHT, Image.GUI.DEFAULT_CORNER_BOTTOM_LEFT, Image.GUI.DEFAULT_BACKGROUND, widthPixels, heightPixels)
     }
 
+    /**
+     * @return an image of a rectangle using the textures specified
+     */
     fun genRectangle(topEdge: Texture, bottomEdge: Texture, leftEdge: Texture, rightEdge: Texture, topRightCorner: Texture, topLeftCorner: Texture, bottomRightCorner: Texture,
                      bottomLeftCorner: Texture, background: Texture, widthPixels: Int, heightPixels: Int): BufferedImage {
         val rect = Rectangle(widthPixels, heightPixels)
         val previous = rectTable[rect]
-        if(previous != null)
+        if(previous != null) {
             return previous
+        }
         val dest = Game.graphicsConfiguration.createCompatibleImage(widthPixels, heightPixels, Transparency.TRANSLUCENT)
         val g = dest.createGraphics()
         with(g) {
@@ -51,14 +58,26 @@ object Utils {
         return dest
     }
 
+    /**
+     * @param i the original image
+     * @return a BufferedImage object modified according to the ImageParams object
+     */
     fun modify(i: Image, p: ImageParams): BufferedImage {
         return modify(i.currentImage, p)
     }
 
+    /**
+     * @param path the path to the original image
+     * @return a BufferedImage object modified according to the ImageParams object
+     */
     fun modify(path: String, p: ImageParams): BufferedImage {
         return modify(loadImage(path), p)
     }
 
+    /**
+     * @param image the original image
+     * @return a BufferedImage object modified according to the ImageParams object
+     */
     fun modify(image: BufferedImage, p: ImageParams): BufferedImage {
         var newImg: BufferedImage = image
         if (p.scale != 1.0) {
@@ -194,6 +213,9 @@ object Utils {
         return newImg
     }
 
+    /**
+     * @return a BufferedImage object read from the destination, path relative to the inside of the jarfile
+     */
     fun loadImage(path: String): BufferedImage {
         val src = ImageIO.read(Image::class.java.getResource(path))
         val dest = Game.graphicsConfiguration.createCompatibleImage(src.width, src.height, Transparency.TRANSLUCENT)
@@ -252,23 +274,12 @@ class Image private constructor() : Texture {
         }
     }
 
-    companion object {
+    object Misc {
         // TODO definitely rethink how weapon textures are done, apply this to other things in the future like block textures
         val ERROR = Image("/textures/misc/error.png")
-        val IRON_ORE_ITEM = Image("/textures/item/iron_ore_raw.png")
-        val CONVEYOR_BELT_ITEM = Image("/textures/item/conveyor_belt.png")
-        val IRON_INGOT = Image("/textures/item/iron_ingot.png")
         val ARROW = Image(Utils.modify("/textures/misc/arrow.png", ImageParams(alphaMultiplier = 50)))
         val VOID = Image(Color(0))
-        val TUBE_ITEM = Image("/textures/item/tube.png")
-        val COPPER_ORE_ITEM = Image("/textures/item/copper_ore_raw.png")
-    }
-
-    object Weapon {
-        // Could easily change to something that removes boilerplate, but it's nice and consistent this way
-        val ONE = WeaponImages(1)
-        val TWO = WeaponImages(2)
-        //val THREE = WeaponImages(3)
+        val TELEPORT_ICON = Image("/textures/misc/teleport_icon.png")
     }
 
     object Block {
@@ -324,13 +335,18 @@ class Image private constructor() : Texture {
         val MAIN_MENU_BUTTON_BOX = Image("/textures/gui/main_menu_button_box.png")
         val OPTIONS_MENU_BACKGROUND = Image(Color(0x999999))
         val ESCAPE_MENU_BACKGROUND = Image("/textures/gui/escape_menu_background.png")
-        val BUTTON = Image(Utils.genRectangle(64, 16))
-        val BUTTON_HIGHLIGHT = Image(Utils.modify(BUTTON, ImageParams(brightnessMultiplier = 1.2)))
-        val BUTTON_CLICK = Image(Utils.modify(BUTTON, ImageParams(rotation = 2)))
         val MAIN_MENU_BACKGROUND_FILLER = Image(Color(0x515151))
         val HOTBAR_SELECTED_SLOT = Image("/textures/gui/selected_slot.png")
         val CRAFTING_ARROW = Image("/textures/gui/crafting_arrow.png")
         val RECIPE_BUTTON_BACKGROUND = Image(Utils.genRectangle(GUIRecipeButton.WIDTH, GUIRecipeButton.HEIGHT))
+    }
+
+    object Item {
+        val TUBE_ITEM = Image("/textures/item/tube.png")
+        val COPPER_ORE_ITEM = Image("/textures/item/copper_ore_raw.png")
+        val IRON_ORE_ITEM = Image("/textures/item/iron_ore_raw.png")
+        val CONVEYOR_BELT_ITEM = Image("/textures/item/conveyor_belt.png")
+        val IRON_INGOT = Image("/textures/item/iron_ingot.png")
     }
 
 }

@@ -1,17 +1,29 @@
 package level.block
 
 import graphics.Renderer
+import io.*
 import level.CHUNK_TILE_EXP
 import level.Hitbox
 import level.LevelObject
+import level.node.TransferNode
 import main.Game
+import screen.Mouse
 import java.io.DataOutputStream
 
-abstract class Block(open val type: BlockType, yTile: Int, xTile: Int, hitbox: Hitbox = type.hitbox, requiresUpdate: Boolean = type.requiresUpdate) : LevelObject(xTile shl 4, yTile shl 4, hitbox, requiresUpdate) {
+abstract class Block(val type: BlockType, yTile: Int, xTile: Int, hitbox: Hitbox = type.hitbox, requiresUpdate: Boolean = type.requiresUpdate) : LevelObject(xTile shl 4, yTile shl 4, hitbox, requiresUpdate) {
 
     val rotation = 0
 
+    val nodes: List<TransferNode<*>> = listOf()
+
+    init {
+    }
+
+    /**
+     * Don't forget to call super.onAddToLevel() so that the onAdjacentBlockAdd methods of adjacent blocks are called
+     */
     override fun onAddToLevel() {
+        nodes.forEach { Game.currentLevel.addTransferNode(it) }
         for (y in -1..1) {
             for (x in -1..1) {
                 if (Math.abs(x) != Math.abs(y))
@@ -20,7 +32,11 @@ abstract class Block(open val type: BlockType, yTile: Int, xTile: Int, hitbox: H
         }
     }
 
+    /**
+     * Don't forget to call super.onRemoveFromLevel() so that the onAdjacentBlockRemove methods of adjacent blocks are called
+     */
     override fun onRemoveFromLevel() {
+        nodes.forEach { Game.currentLevel.removeTransferNode(it) }
         for (y in -1..1) {
             for (x in -1..1) {
                 if (Math.abs(x) != Math.abs(y))
@@ -93,4 +109,28 @@ abstract class Block(open val type: BlockType, yTile: Int, xTile: Int, hitbox: H
         return result
     }
 
+    companion object : ControlPressHandler {
+
+        init {
+            InputManager.registerControlPressHandler(this, ControlPressHandlerType.LEVEL_ANY, Control.INTERACT, Control.SECONDARY_INTERACT)
+        }
+
+        override fun handleControlPress(p: ControlPress) {
+            if(p.pressType == PressType.PRESSED) {
+                val block = Game.currentLevel.selectedLevelObject
+                if(block is Block) {
+                    if(p.control == Control.SECONDARY_INTERACT) {
+                        Game.currentLevel.remove(block)
+                        // TODO
+                    }
+                } else if(block == null) {
+                    if(p.control == Control.INTERACT && Game.currentLevel.ghostBlock != null) {
+                        val gBlock = Game.currentLevel.ghostBlock!!
+                        Game.currentLevel.add(gBlock.type(gBlock.xTile, gBlock.yTile))
+                        Mouse.heldItem?.quantity?.dec()
+                    }
+                }
+            }
+        }
+    }
 }

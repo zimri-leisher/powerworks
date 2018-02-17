@@ -4,28 +4,36 @@ import level.LevelObject
 import level.MovementListener
 import level.moving.MovingObject
 import main.Game
+import misc.ConcurrentlyModifiableMutableList
 import java.util.*
-import java.util.concurrent.CopyOnWriteArrayList
 
 object AudioManager : MovementListener{
+
     override fun onMove(m: MovingObject, pXPixel: Int, pYPixel: Int) {
-        for (s in levelSounds) {
-            val vol = getVolume(s.xPixel, s.yPixel)
+        levelSounds.forEach {
+            val vol = getVolume(it.xPixel, it.yPixel)
             if (vol != 0.0) {
-                if (!s.playing)
-                    s.playing = true
-                s.s!!.setVolume(getVolume(s.xPixel, s.yPixel), s.instance)
-                s.s!!.setPan(getPan(s.xPixel), s.instance)
+                if (!it.playing)
+                    it.playing = true
+                it.s!!.setVolume(getVolume(it.xPixel, it.yPixel), it.instance)
+                it.s!!.setPan(getPan(it.xPixel), it.instance)
             } else {
-                if (s.playing)
-                    s.playing = false
+                if (it.playing)
+                    it.playing = false
             }
         }
     }
 
     var VOLUME_MULTIPLIER = 1.0
+
+    /**
+     * The distance after which sound cannot be heard
+     */
     val MAX_HEARING_DISTANCE_PIXELS = 100
     var SOUND_ENABLED = true
+    /**
+     * Whether or not to play level sounds
+     */
     var LEVEL_SOUNDS_PAUSED = false
     var ears: LevelObject? = null
         set(value) {
@@ -38,14 +46,20 @@ object AudioManager : MovementListener{
             }
             field = value
         }
-    var levelSounds = CopyOnWriteArrayList<SoundSource>()
-    var forceUpdate = CopyOnWriteArrayList<SoundSource>()
+    var levelSounds = ConcurrentlyModifiableMutableList<SoundSource>()
+    var forceUpdate = ConcurrentlyModifiableMutableList<SoundSource>()
     var otherSounds: MutableMap<Sound, Int> = HashMap()
 
+    /**
+     * Prepares all sounds for playing, must do before using them
+     */
     fun load() {
         Sound.load()
     }
 
+    /**
+     * Frees all sound resources, should happen before quit
+     */
     fun close() {
         Sound.close()
     }
@@ -54,8 +68,8 @@ object AudioManager : MovementListener{
         levelSounds.forEach { it.close() }
     }
 
-    class SoundSource internal constructor(xPixel: Int, yPixel: Int, internal var instance: Int, internal var s: Sound?, internal var loop: Boolean) {
-        internal var playing = true
+    class SoundSource constructor(xPixel: Int, yPixel: Int, var instance: Int, var s: Sound?, var loop: Boolean) {
+        var playing = true
             set(value) {
                 if (!value && field) {
                     s!!.stop(instance)
@@ -101,6 +115,11 @@ object AudioManager : MovementListener{
             otherSounds.put(s, i)
     }
 
+    /**
+     * Starts a sound at a specific point in the level
+     * @param loop continuously play this
+     * @return a SoundSource with the relevant methods and information
+     */
     fun play(s: Sound, xPixel: Int, yPixel: Int, loop: Boolean): SoundSource? {
         if (!SOUND_ENABLED)
             return null
@@ -129,18 +148,16 @@ object AudioManager : MovementListener{
             return
         if (Game.PAUSE_LEVEL_IN_ESCAPE_MENU && Game.LEVEL_PAUSED && !LEVEL_SOUNDS_PAUSED) {
             LEVEL_SOUNDS_PAUSED = true
-            for (s in levelSounds)
-                s.playing = false
+            levelSounds.forEach { it.playing = false }
             return
         } else if (Game.PAUSE_LEVEL_IN_ESCAPE_MENU && !Game.LEVEL_PAUSED && LEVEL_SOUNDS_PAUSED) {
             LEVEL_SOUNDS_PAUSED = false
-            for (s in levelSounds)
-                s.playing = true
+            levelSounds.forEach { it.playing = true }
         }
-        for (s in forceUpdate) {
-            s.s!!.setVolume(getVolume(s.xPixel, s.yPixel), s.instance)
-            s.s!!.setPan(getPan(s.xPixel), s.instance)
-            forceUpdate.remove(s)
+        forceUpdate.forEach {
+            it.s!!.setVolume(getVolume(it.xPixel, it.yPixel), it.instance)
+            it.s!!.setPan(getPan(it.xPixel), it.instance)
+            forceUpdate.remove(it)
         }
     }
 }

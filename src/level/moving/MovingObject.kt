@@ -1,9 +1,7 @@
 package level.moving
 
-import level.CHUNK_TILE_EXP
-import level.Hitbox
-import level.LevelObject
-import level.MovementListener
+import level.*
+import level.Level.Chunks.getChunksFromPixelRectangle
 import main.Game
 import java.io.DataOutputStream
 
@@ -69,7 +67,7 @@ abstract class MovingObject(xPixel: Int, yPixel: Int, hitbox: Hitbox) : LevelObj
             if (hitbox == Hitbox.NONE)
                 mutableListOf()
             else
-                Game.currentLevel.getChunksFromPixelRectangle(hitbox.xStart + xPixel, hitbox.yStart + yPixel, hitbox.width, hitbox.height).toMutableList().
+                Level.Chunks.getChunksFromPixelRectangle(hitbox.xStart + xPixel, hitbox.yStart + yPixel, hitbox.width, hitbox.height).toMutableList().
                         apply { remove(currentChunk) }
     val moveListeners = mutableListOf<MovementListener>()
 

@@ -1,0 +1,5 @@
+package mod
+
+interface Mod {
+
+}

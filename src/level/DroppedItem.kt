@@ -21,7 +21,7 @@ class DroppedItem(xPixel: Int, yPixel: Int, val type: ItemType, quantity: Int = 
         }
 
     override fun onAddToLevel() {
-        InputManager.registerControlPressHandler(this, ControlPressHandlerType.LEVEL, Control.INTERACT)
+        InputManager.registerControlPressHandler(this, ControlPressHandlerType.LEVEL_THIS, Control.INTERACT)
     }
 
     override fun onRemoveFromLevel() {
@@ -32,10 +32,10 @@ class DroppedItem(xPixel: Int, yPixel: Int, val type: ItemType, quantity: Int = 
         if (p.control == Control.INTERACT && p.pressType == PressType.RELEASED) {
             Game.currentLevel.remove(this)
             if (Mouse.heldItem == null)
-                Mouse.setHeldItem(Item(type, quantity))
+                Mouse.heldItem = Item(type, quantity)
             else {
                 Game.currentLevel.add(DroppedItem(xPixel, yPixel, Mouse.heldItem!!.type, Mouse.heldItem!!.quantity))
-                Mouse.setHeldItem(Item(type, quantity))
+                Mouse.heldItem = Item(type, quantity)
             }
         }
     }

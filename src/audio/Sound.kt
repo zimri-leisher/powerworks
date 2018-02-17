@@ -6,67 +6,55 @@ enum class Sound(path: String, maxConcurrent: Int) {
     GRASS_FOOTSTEP("/sounds/footstep/grass.wav", 6),
     MOTHERLODE_SPARK("/sounds/misc/motherlode_spark.wav", 2);
 
-    internal var a: AudioCue = AudioCue.makeStereoCue(Sound::class.java.getResource(path), maxConcurrent)
+    /**
+     * API related instance
+     */
+    var a: AudioCue = AudioCue.makeStereoCue(Sound::class.java.getResource(path), maxConcurrent)
 
-    internal fun play(): Int {
-        val s = a.play()
-        if (s != -1)
-            a.setRecycleWhenDone(s, true)
-        return a.play()
-    }
-
-    internal fun play(vol: Double): Int {
-        val s = a.play(vol)
-        if (s != -1)
-            a.setRecycleWhenDone(s, true)
-        return s
-    }
-
-    internal fun play(vol: Double, pan: Double, speed: Double, loops: Int): Int {
+    /**
+     * Note - use AudioManager.play(Sound) instead
+     *
+     * Plays the sound with the specified volume, at the specified speed, loops + 1 number of times
+     * @return the sound id. Keep track of this if you want to modify it later
+     */
+    fun play(vol: Double = 1.0, pan: Double = 0.0, speed: Double = 1.0, loops: Int = 0): Int {
         val s = a.play(vol, pan, speed, loops)
         if (s != -1)
             a.setRecycleWhenDone(s, true)
         return s
     }
 
-    internal fun play(vol: Double, loop: Int): Int {
-        val s = a.play(vol, 0.0, 1.0, loop)
-        if (s != -1)
-            a.setRecycleWhenDone(s, true)
-        return s
-    }
-
-    internal fun setVolume(vol: Double, instance: Int) {
+    fun setVolume(vol: Double, instance: Int) {
         a.setVolume(instance, vol)
     }
 
-    internal fun setPan(pan: Double, instance: Int) {
+    fun setPan(pan: Double, instance: Int) {
         a.setPan(instance, pan)
     }
 
-    internal fun setLoop(loops: Int, instance: Int) {
+    fun setLoop(loops: Int, instance: Int) {
         a.setLooping(instance, loops)
     }
 
-    internal fun close(instance: Int) {
+    fun close(instance: Int) {
         a.stop(instance)
         a.releaseInstance(instance)
     }
 
-    internal fun stop(instance: Int) {
+    fun stop(instance: Int) {
         a.stop(instance)
     }
 
-    internal fun start(instance: Int) {
+    fun start(instance: Int) {
         a.start(instance)
     }
 
     companion object {
-        internal fun load() {
+        fun load() {
             values().forEach { it.a.open() }
         }
 
-        internal fun close() {
+        fun close() {
             values().forEach { it.a.close() }
         }
     }

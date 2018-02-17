@@ -1,9 +1,7 @@
 package main
 
 import audio.AudioManager
-import audio.Sound
 import graphics.Font
-import graphics.Image.GUI
 import graphics.LocalAnimation
 import graphics.Renderer
 import graphics.SyncAnimation
@@ -85,11 +83,9 @@ object Game : Canvas(), Runnable, ControlPressHandler {
     var LEVEL_PAUSED = false
     var PAUSE_LEVEL_IN_ESCAPE_MENU = false
     var DEBUG_TUBE_INFO = false
+    var DEBUG_SCREEN_INFO = false
     val INVENTORY_WIDTH = 8
     val INVENTOR_HEIGHT = 6
-    val RANDOM_CHANCE_OF_SPARK = 200
-
-    var SPARK_ANIMATION = -1
 
     /* Level */
     lateinit var currentLevel: Level
@@ -120,10 +116,9 @@ object Game : Canvas(), Runnable, ControlPressHandler {
         AudioManager.load()
         cursor = clearCursor
         Font
-        InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.TAKE_SCREENSHOT, Control.TOGGLE_RENDER_HITBOXES, Control.TOGGLE_CHUNK_INFO, Control.TOGGLE_INVENTORY, Control.TOGGLE_DEBUG_TUBE_GROUP_INFO)
-        /* For initializations (objects in Kotlin are loaded the first time they are called */
-        MainMenuGUI.open = true
-        DebugOverlay.open = false
+        InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.TAKE_SCREENSHOT, Control.TOGGLE_RENDER_HITBOXES, Control.TOGGLE_SCREEN_DEBUG_INFO, Control.TOGGLE_CHUNK_INFO, Control.TOGGLE_INVENTORY, Control.TOGGLE_DEBUG_TUBE_GROUP_INFO)
+        MainMenuGUI
+        DebugOverlay
         State.setState(State.MAIN_MENU)
         frame.isVisible = true
         start()
@@ -197,28 +192,6 @@ object Game : Canvas(), Runnable, ControlPressHandler {
         State.update()
     }
 
-    /**
-     * Fun little spark animation that copies motherlode
-     */
-    fun spark() {
-        if ((Math.random() * RANDOM_CHANCE_OF_SPARK).toInt() == 0) {
-            Sound.MOTHERLODE_SPARK.play()
-            SPARK_ANIMATION = 0
-        }
-        if (SPARK_ANIMATION != -1) {
-            val a = MainMenuGUI.logo
-            SPARK_ANIMATION++
-            if (SPARK_ANIMATION == 1) {
-                a.texture == GUI.MAIN_MENU_LOGO_2
-            } else if (SPARK_ANIMATION == 15) {
-                a.texture = GUI.MAIN_MENU_LOGO_3
-            } else if (SPARK_ANIMATION > 30) {
-                SPARK_ANIMATION = -1
-                a.texture = GUI.MAIN_MENU_LOGO
-            }
-        }
-    }
-
     fun render() {
         val bufferStrat = bufferStrategy
         if (bufferStrat == null) {
@@ -275,7 +248,6 @@ object Game : Canvas(), Runnable, ControlPressHandler {
             Files.createDirectory(save)
     }
 
-    // make it so that you place down blocks based ont he mouse held item, etc
     fun takeScreenshot() {
         val directory = Paths.get(JAR_PATH, "/screenshots/")
         if (Files.notExists(directory))
@@ -312,6 +284,7 @@ object Game : Canvas(), Runnable, ControlPressHandler {
                     }
                 }
                 Control.TOGGLE_DEBUG_TUBE_GROUP_INFO -> DEBUG_TUBE_INFO = !DEBUG_TUBE_INFO
+                Control.TOGGLE_SCREEN_DEBUG_INFO -> DEBUG_SCREEN_INFO = !DEBUG_SCREEN_INFO
             }
     }
 

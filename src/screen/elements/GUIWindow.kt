@@ -152,7 +152,7 @@ open class GUIWindow(val name: String, xAlignment: () -> Int, yAlignment: () -> 
     }
 
     private fun getGroup(pos: Int): AutoFormatGUIGroup {
-        when(pos) {
+        when (pos) {
             0 -> return topLeftGroup
             1 -> return topRightGroup
             2 -> return bottomRightGroup

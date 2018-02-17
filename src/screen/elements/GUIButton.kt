@@ -1,31 +1,43 @@
 package screen.elements
 
-import graphics.Image
-import graphics.Renderer
+import graphics.*
 import graphics.Renderer.params
-import graphics.Texture
 import io.PressType
 
 class GUIButton(parent: RootGUIElement,
                 name: String,
                 relXPixel: Int, relYPixel: Int,
+                widthPixels: Int, heightPixels: Int,
                 text: String,
-                private var onPress: () -> (Unit), private var onRelease: () -> (Unit), open: Boolean = false,
+                private var onPress: () -> (Unit) = {}, private var onRelease: () -> (Unit) = {}, open: Boolean = false,
                 layer: Int = parent.layer + 1) :
-        GUIElement(parent, name, relXPixel, relYPixel, WIDTH, HEIGHT, open, layer) {
+        GUIElement(parent, name, relXPixel, relYPixel, widthPixels, heightPixels, open, layer) {
+
+    constructor(parent: RootGUIElement,
+                name: String,
+                relXPixel: Int, relYPixel: Int,
+                text: String,
+                onPress: () -> (Unit) = {}, onRelease: () -> (Unit) = {}, open: Boolean = false,
+                layer: Int = parent.layer + 1) : this(parent, name, relXPixel, relYPixel, WIDTH, HEIGHT, text, onPress, onRelease, open, layer)
 
     var down = false
-    var currentTexture: Texture = Image.GUI.BUTTON
-    var text = GUIText(parent = this, name = name + " text", relXPixel = 0, relYPixel = 0, text = text)
+    private val textures = arrayOf<Texture>(
+            Image(Utils.genRectangle(widthPixels, heightPixels)),
+            Image(Utils.modify(Utils.genRectangle(widthPixels, heightPixels), ImageParams(brightnessMultiplier = 1.2))),
+            Image(Utils.modify(Utils.genRectangle(widthPixels, heightPixels), ImageParams(rotation = 2))))
+    // 0: unhighlighted, 1: highlighted, 2: clicked
+    var currentTexture: Texture = textures[0]
+    var text = GUIText(parent = this, name = name + " text", relXPixel = 0, relYPixel = 0, text = text, size = TEXT_SIZE).apply { transparentToInteraction = true }
 
     init {
         this.text.transparentToInteraction = true
-        this.text.xAlignment = { (WIDTH - this.text.widthPixels) / 2 }
-        this.text.yAlignment = { (HEIGHT - this.text.heightPixels) / 2 }
+        this.text.xAlignment = { (widthPixels - this.text.widthPixels) / 2 }
+        this.text.yAlignment = { (heightPixels - this.text.heightPixels) / 2 }
+        // if it is the default specs
     }
 
     override fun onMouseEnter() {
-        currentTexture = Image.GUI.BUTTON_HIGHLIGHT
+        currentTexture = textures[1]
     }
 
     override fun onMouseLeave() {
@@ -33,17 +45,17 @@ class GUIButton(parent: RootGUIElement,
             down = false
             onRelease.invoke()
         }
-        currentTexture = Image.GUI.BUTTON
+        currentTexture = textures[0]
     }
 
     override fun onMouseActionOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
         if (type == PressType.PRESSED) {
-            currentTexture = Image.GUI.BUTTON_CLICK
+            currentTexture = textures[2]
             onPress.invoke()
             down = true
         } else if (type == PressType.RELEASED) {
             if (down) {
-                currentTexture = Image.GUI.BUTTON_HIGHLIGHT
+                currentTexture = textures[1]
                 onRelease.invoke()
                 down = false
             }
@@ -52,12 +64,12 @@ class GUIButton(parent: RootGUIElement,
 
     override fun onOpen() {
         if (mouseOn)
-            currentTexture = Image.GUI.BUTTON_HIGHLIGHT
-        else currentTexture = Image.GUI.BUTTON
+            currentTexture = textures[1]
+        else currentTexture = textures[0]
     }
 
     override fun onClose() {
-        currentTexture = Image.GUI.BUTTON
+        currentTexture = textures[0]
     }
 
     override fun render() {
@@ -65,7 +77,8 @@ class GUIButton(parent: RootGUIElement,
     }
 
     companion object {
-        val WIDTH = Image.GUI.BUTTON.widthPixels
-        val HEIGHT = Image.GUI.BUTTON.heightPixels
+        val WIDTH = 64
+        val HEIGHT = 16
+        val TEXT_SIZE = Font.DEFAULT_SIZE
     }
 }

@@ -3,9 +3,9 @@ package io
 import main.Game
 import misc.ConcurrentlyModifiableMutableMap
 import misc.WeakMutableList
-import screen.elements.GUIView
 import screen.Mouse
 import screen.ScreenManager
+import screen.elements.GUIView
 import java.awt.event.*
 import io.OutputManager as out
 
@@ -13,11 +13,38 @@ interface ControlPressHandler {
     fun handleControlPress(p: ControlPress)
 }
 
-enum class ControlPressHandlerType { GLOBAL, LEVEL, SCREEN }
+enum class ControlPressHandlerType {
+    /** Anywhere, no matter what */
+    GLOBAL,
+    /** Only this object in the level*/
+    LEVEL_THIS,
+    /** Anywhere in the level*/
+    LEVEL_ANY,
+    /** Only this object on the screen*/
+    SCREEN_THIS
+    /** Anywhere on the screen*/
+    // no need for SCREEN_ANY because that's the same as global
+}
 
 data class ControlPress(val control: Control, val pressType: PressType)
 
 enum class PressType { PRESSED, REPEAT, RELEASED }
+
+enum class SpecialChar(val char: Char) {
+    ESCAPE(''),
+    ENTER('\n'),
+    BACKSPACE('\b'),
+    UP_ARROW('f'),
+    DOWN_ARROW('f'),
+    LEFT_ARROW('f'),
+    RIGHT_ARROW('f');
+
+    companion object {
+        operator fun get(c: Char): SpecialChar? {
+            return values().firstOrNull { it.char == c }
+        }
+    }
+}
 
 object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotionListener {
 
@@ -47,10 +74,32 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
 
     var mouseOutside = false
 
-    fun registerControlPressHandler(h: ControlPressHandler, type: ControlPressHandlerType, controls: Map<ControlMap, Array<out Control>>? = null) {
+    /**
+     * The characters that will be sent to text handler
+     */
+    val charsInTextQueue = mutableListOf<Char>()
+
+    /**
+     * The object that should be sent key type (as in related to pressing, not category) events.
+     * If the character typed is one of the SpecialChars, it will be sent through the handleSpecialChar method,
+     * otherwise it will be send through handleChar
+     */
+    var textHandler: TextHandler? = null
+
+    /**
+     * Registers a control press handler
+     * @param type one of GLOBAL, LEVEL_ANY, LEVEL_THIS and SCREEN_THIS
+     * @param controls the first element is the control map that these controls are active on, the second is the list of controls to send to this
+     */
+    fun registerControlPressHandler(h: ControlPressHandler, type: ControlPressHandlerType, controls: Map<ControlMap, Array<Control>>? = null) {
         handlers.put(Pair(h, type), controls)
     }
 
+    /**
+     * Registers a control press handler
+     * @param type one of GLOBAL, LEVEL_ANY, LEVEL_THIS and SCREEN_THIS
+     * @param controls the list of controls to send to this
+     */
     fun registerControlPressHandler(h: ControlPressHandler, type: ControlPressHandlerType, vararg controls: Control) {
         val m = mutableMapOf<ControlMap, Array<out Control>>()
         for (map in ControlMap.values()) {
@@ -59,30 +108,48 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
         handlers.put(Pair(h, type), m)
     }
 
+    /**
+     * Registers a control press handler
+     * @param type one of GLOBAL, LEVEL_ANY, LEVEL_THIS and SCREEN_THIS
+     * @param map whenever this map is active, all controls will be sent to this
+     */
     fun registerControlPressHandler(h: ControlPressHandler, type: ControlPressHandlerType, map: ControlMap) {
         handlers.put(Pair(h, type), mapOf<ControlMap, Array<Control>?>(Pair(map, null)))
     }
 
+    /**
+     * Removes the entry corresponding with the handler
+     */
     fun removeControlPressHandler(handler: ControlPressHandler) {
-        for((k, _) in handlers) {
-            if(k.first == handler) {
+        for ((k, _) in handlers) {
+            if (k.first == handler) {
                 handlers.remove(k)
             }
         }
     }
 
     fun update() {
+        if (textHandler != null) {
+            charsInTextQueue.forEach {
+                val sp = SpecialChar[it]
+                if(sp != null)
+                    textHandler!!.handleSpecialKey(sp)
+                else
+                    textHandler!!.handleChar(it)
+            }
+            charsInTextQueue.clear()
+        }
         for (i in inputsBeingPressed) {
             map.translate(i, inputsBeingPressed.filter { it != i }.toMutableSet()).forEach { queue.add(ControlPress(it, PressType.REPEAT)) }
         }
         for ((k, v) in inputEvent) {
-            if((v == PressType.PRESSED && !inputsBeingPressed.contains(k)) || (v == PressType.RELEASED && inputsBeingPressed.contains(k))) {
+            if ((v == PressType.PRESSED && !inputsBeingPressed.contains(k)) || (v == PressType.RELEASED && inputsBeingPressed.contains(k))) {
                 map.translate(k, inputsBeingPressed.filter { it != k }.toMutableSet()).forEach { queue.add(ControlPress(it, v)) }
-                if(v == PressType.PRESSED &&
+                if (v == PressType.PRESSED &&
                         /* Wheels are not able to be held down, so you shouldn't add them to the repeat */
                         !k.contains("WHEEL")) {
                     inputsBeingPressed.add(k)
-                } else if(v == PressType.RELEASED) {
+                } else if (v == PressType.RELEASED) {
                     inputsBeingPressed.remove(k)
                 }
             }
@@ -98,13 +165,12 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
             }
             mouseMoved = null
         }
-
-        /* Execute */
         for (p in queue) {
             handlers.forEach { k, v ->
                 if (k.second == ControlPressHandlerType.GLOBAL ||
-                        (k.second == ControlPressHandlerType.SCREEN && currentScreenHandlers.contains(k.first)) ||
-                        (k.second == ControlPressHandlerType.LEVEL &&
+                        (k.second == ControlPressHandlerType.SCREEN_THIS && currentScreenHandlers.contains(k.first)) ||
+                        (k.second == ControlPressHandlerType.LEVEL_ANY && ScreenManager.selectedElement is GUIView) ||
+                        (k.second == ControlPressHandlerType.LEVEL_THIS &&
                                 // we want the part below because otherwise the level controls will trigger even when we
                                 // press on a gui element that is higher. However, we don't care if it is a gui view because
                                 // that's how we're supposed to interact
@@ -134,14 +200,17 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
     }
 
     override fun keyTyped(e: KeyEvent) {
+        charsInTextQueue.add(e.keyChar)
     }
 
     override fun keyPressed(e: KeyEvent) {
-        inputEvent.put(KeyEvent.getKeyText(e.extendedKeyCode).toUpperCase(), PressType.PRESSED)
+        if (textHandler == null)
+            inputEvent.put(KeyEvent.getKeyText(e.extendedKeyCode).toUpperCase(), PressType.PRESSED)
     }
 
     override fun keyReleased(e: KeyEvent) {
-        inputEvent.put(KeyEvent.getKeyText(e.extendedKeyCode).toUpperCase(), PressType.RELEASED)
+        if (textHandler == null)
+            inputEvent.put(KeyEvent.getKeyText(e.extendedKeyCode).toUpperCase(), PressType.RELEASED)
     }
 
     override fun mouseWheelMoved(e: MouseWheelEvent) {
@@ -164,7 +233,7 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
     override fun mouseExited(e: MouseEvent) {
         mouseOutside = true
         Game.resetMouseIcon()
-        for(i in 1..5)
+        for (i in 1..5)
             inputEvent.put("MOUSE_$i", PressType.RELEASED)
     }
 

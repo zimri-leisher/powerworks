@@ -26,13 +26,12 @@ object ScreenManager : ControlPressHandler {
             return result
         }
     }
+
     private val _backwardsWindowGroups = mutableListOf<WindowGroup>()
     val windows = ConcurrentlyModifiableMutableList<GUIWindow>()
     val openWindows = mutableListOf<GUIWindow>()
 
     var selectedElement: RootGUIElement? = null
-
-    // fix the error (mouse level coords not init) TODO
 
     var selectedWindow: GUIWindow? = null
 
@@ -107,8 +106,8 @@ object ScreenManager : ControlPressHandler {
             it.yPixel = it.yAlignment()
             it.onScreenSizeChange(oldWidth, oldHeight)
         }
-        if(State.CURRENT_STATE == State.INGAME)
-        Game.currentLevel.updateViewBeingInteractedWith()
+        if (State.CURRENT_STATE == State.INGAME)
+            Game.currentLevel.updateViewBeingInteractedWith()
     }
 
     fun updateSelected() {
@@ -127,20 +126,20 @@ object ScreenManager : ControlPressHandler {
         InputManager.currentScreenHandlers.clear()
         val x = Mouse.xPixel
         val y = Mouse.yPixel
-            if(selectedElement is ControlPressHandler) {
-                InputManager.currentScreenHandlers.add(selectedElement as ControlPressHandler)
-            }
-        if(selectedWindow != null) {
-            if(selectedWindow is ControlPressHandler) {
+        if (selectedElement is ControlPressHandler) {
+            InputManager.currentScreenHandlers.add(selectedElement as ControlPressHandler)
+        }
+        if (selectedWindow != null) {
+            if (selectedWindow is ControlPressHandler) {
                 InputManager.currentScreenHandlers.add(selectedWindow as ControlPressHandler)
             }
-            if(selectedWindow!!.partOfLevel) {
+            if (selectedWindow!!.partOfLevel) {
                 InputManager.currentScreenHandlers.add(getHighestWindow(x, y, { it is ViewWindow }) as ControlPressHandler)
             }
         }
     }
 
-    // TODO update screen control handlers by going through the selected elements. if one is part of the level, add the gui view under it to the screen handler
+// TODO update screen control handlers by going through the selected elements. if one is part of the level, add the gui view under it to the screen handler
 
     private fun forEachElement(func: ((RootGUIElement) -> Unit), pred: ((RootGUIElement) -> Boolean)? = null) {
         windows.forEach { recursivelyCall(it.rootChild, func, pred) }
@@ -170,7 +169,7 @@ object ScreenManager : ControlPressHandler {
                 selectedElement?.onMouseActionOn(t, x, y, b, (c == Control.SHIFT_INTERACT), (c == Control.CONTROL_INTERACT), (c == Control.ALT_INTERACT))
                 forEachElement({ it.onMouseActionOff(t, x, y, b, (c == Control.SHIFT_INTERACT), (c == Control.CONTROL_INTERACT), (c == Control.ALT_INTERACT)) }, { it != selectedElement && it.open })
             }
-            if(t == PressType.RELEASED)
+            if (t == PressType.RELEASED)
                 updateSelected()
         }
         if (c == Control.DEBUG && t == PressType.PRESSED) {

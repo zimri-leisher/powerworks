@@ -13,13 +13,23 @@ fun ResourceList.enoughIn(other: ResourceList): Boolean {
     return true
 }
 
-class Recipe(val consume: ResourceList,
-             val produce: ResourceList,
-             val icon: ResourceType,
-        /*
-        * Whichever crafter types are able to make this recipe. For example, Crafters#PLAYER
-        * Null means any
-        */
+class Recipe(
+            /**
+             * The resources this recipe needs
+             */
+            val consume: ResourceList,
+            /**
+             * The resources this recipe gives
+             */
+            val produce: ResourceList,
+            /**
+             * The resource to display this recipe as
+             */
+            val icon: ResourceType,
+            /*
+            * Whichever crafter types are able to make this recipe. For example, Crafters#PLAYER
+            * Null means any
+            */
              val validCrafters: List<Crafter>? = null) {
 
     init {

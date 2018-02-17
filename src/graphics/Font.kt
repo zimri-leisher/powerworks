@@ -35,6 +35,10 @@ object Font {
         }
     }
 
+    /**
+     * @return a FontInfo object with information pertinent to the dimensions of each character in the font,
+     * along with the Font object itself
+     */
     fun getFont(size: Int = DEFAULT_SIZE): FontInfo {
         var font = fonts.get(size)
         if (font != null)
@@ -52,6 +56,9 @@ object Font {
         return FontInfo(f, Math.ceil(testBounds.width.toDouble() / TESTING_STRING.length).toInt(), testBounds.height)
     }
 
+    /**
+     * @return the width and height of the given string at the given size, including newlines and assuming monospacing
+     */
     fun getStringBounds(s: String, size: Int = DEFAULT_SIZE): Rectangle {
         if(s.isEmpty())
             return Rectangle(0, 0)

@@ -2,10 +2,22 @@ package graphics
 
 import java.awt.image.BufferedImage
 
-class SyncAnimation(val images: ImageCollection, val frameTimes: Array<Int>, var playing: Boolean = false) : Texture {
+class SyncAnimation(
+        val images: ImageCollection,
+        /**
+         * Each frame time corresponds to how long the animation should stay at the image it's on,
+         */
+        val frameTimes: Array<Int>,
+        /**
+         * Whether or not this should be playing by default
+         */
+        var playing: Boolean = false) : Texture {
 
     constructor(path: String, numberOfFrames: Int, frameTimes: Array<Int>, playing: Boolean = false) : this(ImageCollection(path, numberOfFrames), frameTimes, playing)
 
+    /**
+     * The current frame
+     */
     override var currentImage: BufferedImage = images[0].currentImage
     override val widthPixels: Int
         get() = currentImage.width
@@ -15,20 +27,32 @@ class SyncAnimation(val images: ImageCollection, val frameTimes: Array<Int>, var
     private var tick = 0
     private var frame = 0
 
+    /**
+     * Stops the playing and resets the animation to start
+     */
     fun stop() {
         playing = false
         reset()
     }
 
+    /**
+     * Toggles progression
+     */
     fun toggle() {
         playing = !playing
     }
 
+    /**
+     * Toggles playing and resets to start
+     */
     fun toggleAndReset() {
         toggle()
         reset()
     }
 
+    /**
+     * Resets back to start
+     */
     fun reset() {
         tick = 0
         frame = 0

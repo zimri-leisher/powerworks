@@ -25,7 +25,7 @@ class ViewWindow(name: String,
     val controls = mutableListOf<GUIElement>()
 
     init {
-        InputManager.registerControlPressHandler(this, ControlPressHandlerType.SCREEN, Control.UP, Control.DOWN, Control.LEFT, Control.RIGHT)
+        InputManager.registerControlPressHandler(this, ControlPressHandlerType.SCREEN_THIS, Control.UP, Control.DOWN, Control.LEFT, Control.RIGHT)
         nameText.transparentToInteraction = true
         controls.add(generateDimensionDragGrip(2, 2))
         controls.add(generateDragGrip(2))

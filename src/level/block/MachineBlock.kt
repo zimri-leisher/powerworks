@@ -4,10 +4,11 @@ import audio.AudioManager
 import audio.AudioManager.SoundSource
 import graphics.LocalAnimation
 
-abstract class MachineBlock(xTile: Int, yTile: Int, override val type: MachineBlockType, on: Boolean = false) : Block(type, yTile, xTile) {
+abstract class MachineBlock(xTile: Int, yTile: Int, type: MachineBlockType, on: Boolean = false) : Block(type, yTile, xTile) {
 
     var on = on
         set(value) {
+            type as MachineBlockType
             if (!value && field) {
                 onTurnOff()
                 if(currentSound != null)
@@ -18,7 +19,7 @@ abstract class MachineBlock(xTile: Int, yTile: Int, override val type: MachineBl
             } else if (value && !field) {
                 onTurnOn()
                 if(currentSound == null && type.onSound != null) {
-                    AudioManager.play(type.onSound!!, xPixel, yPixel, true)
+                    AudioManager.play(type.onSound, xPixel, yPixel, true)
                 }
                 if (type.getTexture(rotation) is LocalAnimation) {
                     (type.getTexture(rotation) as LocalAnimation).playing = true
@@ -43,6 +44,7 @@ abstract class MachineBlock(xTile: Int, yTile: Int, override val type: MachineBl
     }
 
     override fun update() {
+        type as MachineBlockType
         if (on) {
             currentWork++
             onWork()

@@ -32,6 +32,9 @@ enum class ControlMap(path: String) {
         }
     }
 
+    /**
+     * Returns the controls that match the current codes
+     */
     fun translate(code: String, otherCodes: MutableSet<String>): Set<Control> {
         val controls = mutableSetOf<Control>()
         val upper = otherCodes.map { it.toUpperCase() }

@@ -11,6 +11,9 @@ class LocalAnimation(val animation: SyncAnimation, var playing: Boolean = false,
 
     private var tick = 0
 
+    /**
+     * Stops and resets this
+     */
     fun stop() {
         playing = false
         tick = 0
@@ -25,13 +28,13 @@ class LocalAnimation(val animation: SyncAnimation, var playing: Boolean = false,
         if(!playing)
             return
         tick++
-        var tot = 0
-        var ind = -1
-        while(tot + (animation.frameTimes[ind + 1] / speed).toInt() < tick) {
-            ind++
-            tot += (animation.frameTimes[ind] / speed).toInt()
+        var total = 0
+        var index = -1
+        while(total + (animation.frameTimes[index + 1] / speed).toInt() < tick) {
+            index++
+            total += (animation.frameTimes[index] / speed).toInt()
         }
-        currentImage = animation.images[ind].currentImage
+        currentImage = animation.images[index].currentImage
     }
 
     companion object {

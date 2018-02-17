@@ -3,11 +3,11 @@ package level.tube
 import graphics.Renderer
 import inv.Item
 import inv.ItemType
-import level.node.InputNode
-import level.node.OutputNode
-import level.node.StorageNode
-import level.node.TransferNode
+import level.Level
+import level.Level.ResourceNodes.addTransferNode
+import level.node.*
 import level.resource.ResourceType
+import main.Game
 import misc.GeometryHelper
 import misc.PixelCoord
 import misc.WeakMutableList
@@ -33,12 +33,10 @@ data class TubeAndDist(val intersection: IntersectionTube, val dist: Int)
 class TubeBlockGroup {
 
     private val tubes = mutableListOf<TubeBlock>()
-
-    private var inputs = mutableListOf<InputNode<ItemType>>()
-    private var outputs = mutableListOf<OutputNode<ItemType>>()
     val intersections = mutableListOf<IntersectionTube>()
     private val storage = TubeBlockGroupInternalStorage(this)
     val id = nextId++
+    private val transferNodes = NodeGroup("Tube block group $id")
 
     init {
         ALL.add(this)
@@ -54,14 +52,7 @@ class TubeBlockGroup {
             if (it !in tubes)
                 tubes.add(it)
         }
-        other.inputs.forEach {
-            if (it !in inputs)
-                inputs.add(it)
-        }
-        other.outputs.forEach {
-            if (it !in outputs)
-                outputs.add(it)
-        }
+        transferNodes.addAll(other.transferNodes)
     }
 
     fun addTube(t: TubeBlock) {
@@ -77,13 +68,17 @@ class TubeBlockGroup {
     /**
      * Creates transfer nodes corresponding the inputted nodes
      */
-    fun createCorrespondingNodes(nodes: List<TransferNode<*>>) {
+    fun createCorrespondingNodes(nodes: List<ResourceTransferNode<*>>) {
         for (n in nodes) {
-            if (n is InputNode) {
+            if (n is InputNode<*>) {
                 // Ok because tubes only connect to item nodes
-                outputs.add(OutputNode.createCorrespondingNode(n as InputNode<ItemType>, storage))
-            } else if (n is OutputNode) {
-                inputs.add(InputNode.createCorrespondingNode(n as OutputNode<ItemType>, storage))
+                val a = OutputNode.createCorrespondingNode(n as InputNode<ItemType>, storage)
+                transferNodes.add(a)
+                Level.ResourceNodes.addTransferNode(a)
+            } else if (n is OutputNode<*>) {
+                val a = InputNode.createCorrespondingNode(n as OutputNode<ItemType>, storage)
+                transferNodes.add(a)
+                Level.ResourceNodes.addTransferNode(a)
             }
         }
     }
@@ -97,8 +92,7 @@ class TubeBlockGroup {
 
     // Removes all nodes that were given to the network because of this
     fun removeCorrespondingNodes(t: TubeBlock) {
-        inputs = inputs.filter { it.xTile != t.xTile && it.yTile != t.yTile }.toMutableList()
-        outputs = outputs.filter { it.xTile != t.xTile && it.yTile != t.yTile }.toMutableList()
+        transferNodes.removeAll{ it is OutputNode<*> || it is InputNode<*> && it.xTile != t.xTile && it.yTile != t.yTile}
     }
 
     fun convertToIntersection(tube: TubeBlock): IntersectionTube? {
@@ -228,7 +222,7 @@ class TubeBlockGroup {
         return null
     }
 
-    fun findCorrespondingIntersection(t: TransferNode<*>): IntersectionTube? {
+    private fun findCorrespondingIntersection(t: ResourceTransferNode<*>): IntersectionTube? {
         return intersections.firstOrNull { it.tubeBlock.xTile == t.xTile && it.tubeBlock.yTile == t.yTile }
     }
 
@@ -274,13 +268,14 @@ class TubeBlockGroup {
 
         private val itemsBeingMoved = mutableListOf<ItemPackage>()
 
-        override fun add(resource: ItemType, quantity: Int, inputNode: InputNode<ItemType>?, checkForSpace: Boolean): Boolean {
-            if (inputNode != null) {
-                val output = parent.outputs.firstOrNull { it.canOutput(resource, quantity) }
+        override fun add(resource: ItemType, quantity: Int, from: InputNode<ItemType>?, checkForSpace: Boolean): Boolean {
+            if (from != null) {
+                // we assume tubes will only carry items
+                val output = parent.transferNodes.firstOrNull { it is OutputNode<*> && (it as OutputNode<ItemType>).canOutput(resource, quantity) }
                 if (output != null) {
-                    val t = parent.route(inputNode, output)
+                    val t = parent.route(from, output)
                     if (t != null) {
-                        itemsBeingMoved.add(ItemPackage(Item(resource, quantity), output, 0, t, inputNode.xTile shl 4, inputNode.yTile shl 4, GeometryHelper.getOppositeAngle(inputNode.dir)))
+                        itemsBeingMoved.add(ItemPackage(Item(resource, quantity), output, 0, t, from.xTile shl 4, from.yTile shl 4, GeometryHelper.getOppositeAngle(from.dir)))
                         return true
                     }
                 }
@@ -312,7 +307,7 @@ class TubeBlockGroup {
             }
         }
 
-        override fun remove(resource: ItemType, quantity: Int, checkIfContains: Boolean): Boolean {
+        override fun remove(resource: ItemType, quantity: Int, to: OutputNode<ItemType>?, checkIfContains: Boolean): Boolean {
             return true
         }
 
@@ -364,7 +359,6 @@ class TubeBlockGroup {
     // if there is a block with no network next to it, they create a new one
     // if there is a block with a network next to it, it joins
     // if it has a network and there is a block with a network the smallest network merges into the largest
-    // TODO optimize algorithim for tube group merging so that if there are multiple groups (more than 2) that have to join tthey both just join the largest
     // on add a block to network:
     //  if the block is an intersection
     //   find the next intersection in each direction it is connected on, set both of them to each other

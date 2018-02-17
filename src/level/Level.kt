@@ -6,7 +6,17 @@ import inv.ItemType
 import io.ControlPressHandler
 import io.InputManager
 import io.MouseMovementListener
-import io.PressType
+import level.Level.Blocks.getBlock
+import level.Level.Chunks.getChunk
+import level.Level.Chunks.getChunkFromPixel
+import level.Level.Chunks.getChunkFromTile
+import level.Level.Chunks.getChunksFromPixelRectangle
+import level.Level.Chunks.getChunksFromTileRectangle
+import level.Level.DroppedItems.getDroppedItemsInRadius
+import level.Level.MovingObjects.getMoving
+import level.Level.MovingObjects.getMovingObjectCollision
+import level.Level.ResourceNodes.getAllTransferNodes
+import level.Level.ResourceNodes.updateNode
 import level.block.Block
 import level.block.BlockType
 import level.block.GhostBlock
@@ -54,7 +64,7 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
 
     val oreNoises = mutableMapOf<OreTileType, Noise>()
 
-    private var viewBeingInteractedWith: GUIView? = null
+    var viewBeingInteractedWith: GUIView? = null
     private var lastViewInteractedWith: GUIView? = null
     private val _views = mutableListOf<GUIView>()
     val openViews = object : MutableList<GUIView> by _views {
@@ -133,12 +143,9 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
         val minX = Math.max(xTile0, 0)
         val minY = Math.max(yTile0, 0)
         var count = 0
-        //lastRenderSteps = 1
-        //if (lastRenderSteps > maxRenderSteps)
-        //    return
         for (y in (maxY - 1) downTo minY) {
             for (x in minX until maxX) {
-                val c = getChunkFromTile(x, y)
+                val c = Chunks.getFromTile(x, y)
                 c.getTile(x, y).render()
                 count++
             }
@@ -147,32 +154,23 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
             val yChunk = y shr CHUNK_TILE_EXP
             // Render the line of blocks
             for (x in minX until maxX) {
-                val c = getChunk(x shr CHUNK_TILE_EXP, yChunk)
+                val c = Chunks.get(x shr CHUNK_TILE_EXP, yChunk)
                 val b = c.getBlock(x, y)
                 if (b != null) {
-                    //lastRenderSteps++
-                    //if (lastRenderSteps > maxRenderSteps)
-                    //    return
                     b.render()
                 }
                 if (ghostBlock != null) {
                     val g = ghostBlock!!
                     if (g.xTile == x && g.yTile == y) {
-                        //lastRenderSteps++
-                        //if (lastRenderSteps > maxRenderSteps)
-                        //    return
                         g.render()
                     }
                 }
             }
             // Render the moving objects in sorted order
             for (xChunk in (minX shr CHUNK_TILE_EXP) until (maxX shr CHUNK_TILE_EXP)) {
-                val c = getChunk(xChunk, yChunk)
+                val c = Chunks.get(xChunk, yChunk)
                 if (c.moving!!.size > 0)
                     c.moving!!.filter { it.yTile >= y && it.yTile < y + 1 }.forEach {
-                        //lastRenderSteps++
-                        //if (lastRenderSteps > maxRenderSteps)
-                        //    return
                         it.render()
                     }
             }
@@ -197,7 +195,7 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
             }
         }
          */
-        val chunksInTileRectangle = getChunksFromTileRectangle(minX, minY, maxX - minX - 1, maxY - minY - 1)
+        val chunksInTileRectangle = Chunks.getFromTileRectangle(minX, minY, maxX - minX - 1, maxY - minY - 1)
         if (Game.CHUNK_BOUNDARIES) {
             for (c in chunksInTileRectangle) {
                 Renderer.renderEmptyRectangle(c.xTile shl 4, c.yTile shl 4, CHUNK_SIZE_PIXELS, CHUNK_SIZE_PIXELS)
@@ -255,7 +253,7 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
             c.beingRendered = false
         }
         for (v in openViews) {
-            for (c in getChunksFromPixelRectangle(v.viewRectangle.x, v.viewRectangle.y, v.viewRectangle.width, v.viewRectangle.height))
+            for (c in Chunks.getFromPixelRectangle(v.viewRectangle.x, v.viewRectangle.y, v.viewRectangle.width, v.viewRectangle.height))
                 c.beingRendered = true
         }
     }
@@ -263,7 +261,7 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
     /**
      * Makes the ghost block that appears on the mouse when holding a placeable item up-to-date
      */
-    fun updateGhostBlock() {
+    private fun updateGhostBlock() {
         val currentItem = Mouse.heldItem
         if (currentItem == null && ghostBlock != null) {
             ghostBlock = null
@@ -287,30 +285,6 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
             }
 
         }
-    }
-
-    /* Listeners and senders */
-    /**
-     * Called by gui views when they are clicked on, used to place the ghost block
-     */
-    fun onMouseAction(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, control: Boolean, alt: Boolean) {
-        if (button == 1) {
-            if (ghostBlock != null && ghostBlock!!.placeable) {
-                if (add(ghostBlock!!.type(ghostBlock!!.xTile, ghostBlock!!.yTile))) {
-                    Mouse.removeHeldItem(1)
-                }
-                updateGhostBlock()
-            }
-        } else if (button == 3) {
-            if (selectedLevelObject is Block) {
-                //if (remove(selectedLevelObject!!)) {
-                 //   if (HUD.Hotbar.items.full) {
-                 //       // TODO
-                //    }
-                //}
-            }
-        }
-
     }
 
     /**
@@ -346,8 +320,8 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
      */
     private fun updateSelectedLevelObject() {
         InputManager.currentLevelHandlers.clear()
-        val block = getBlock(mouseLevelXPixel shr 4, mouseLevelYPixel shr 4)
-        val moving = getMoving(mouseLevelXPixel, mouseLevelYPixel)
+        val block = Blocks.get(mouseLevelXPixel shr 4, mouseLevelYPixel shr 4)
+        val moving = MovingObjects.get(mouseLevelXPixel, mouseLevelYPixel)
         selectedLevelObject = moving ?: block
         if (block is ControlPressHandler)
             InputManager.currentLevelHandlers.add(block)
@@ -382,319 +356,344 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
     protected abstract fun genBlocks(xChunk: Int, yChunk: Int): Array<Block?>
 
     /* Util */
-    /** Whether or not this collides with a block */
-    fun getBlockCollision(l: LevelObject, xPixel: Int = l.xPixel, yPixel: Int = l.yPixel, predicate: ((LevelObject) -> Boolean)? = null): LevelObject? {
-        // Blocks won't have a hitbox bigger than their width/height tiles
-        val blocks = getIntersectingBlocksFromPixelRectangle(l.hitbox.xStart + xPixel, l.hitbox.yStart + yPixel, l.hitbox.width, l.hitbox.height)
-        for (b in blocks) {
-            if ((predicate != null && predicate(b) && doesPairCollide(l, xPixel, yPixel, b)) || doesPairCollide(l, xPixel, yPixel, b))
-                return b
-        }
-        return null
-    }
 
-    /** Whether or not this collides with a moving object */
-    fun getMovingObjectCollision(l: LevelObject, xPixel: Int = l.xPixel, yPixel: Int = l.yPixel, predicate: ((MovingObject) -> Boolean)? = null): LevelObject? {
-        val c = getChunk(l.xChunk, l.yChunk)
-        for (m in c.moving!!) {
-            if (m != l) {
-                if (m.hitbox != Hitbox.NONE && ((predicate != null && predicate(m) && doesPairCollide(l, xPixel, yPixel, m)) || doesPairCollide(l, xPixel, yPixel, m))) {
-                    return m
+    object Blocks {
+        /** @return whether or not this collides with a block */
+        fun getCollision(l: LevelObject, xPixel: Int = l.xPixel, yPixel: Int = l.yPixel, predicate: ((LevelObject) -> Boolean)? = null): LevelObject? {
+            // Blocks won't have a hitbox bigger than their width/height tiles
+            val blocks = getIntersectingFromPixelRectangle(l.hitbox.xStart + xPixel, l.hitbox.yStart + yPixel, l.hitbox.width, l.hitbox.height)
+            for (b in blocks) {
+                if ((predicate != null && predicate(b) && doesPairCollide(l, xPixel, yPixel, b)) || doesPairCollide(l, xPixel, yPixel, b))
+                    return b
+            }
+            return null
+        }
+
+        /**
+         * Will load the chunk if necessary
+         */
+        fun get(xTile: Int, yTile: Int): Block? {
+            return Chunks.getFromTile(xTile, yTile).getBlock(xTile, yTile)
+        }
+
+        fun getIntersectingFromRectangle(xTile: Int, yTile: Int, widthTiles: Int, heightTiles: Int): Set<Block> {
+            val m = mutableSetOf<Block>()
+            for (x in xTile..(xTile + widthTiles)) {
+                for (y in yTile..(yTile + heightTiles)) {
+                    val b = get(x, y)
+                    if (b != null)
+                        m.add(b)
                 }
             }
-        }
-        // In the future, use async?
-        for (m in c.movingOnBoundary!!) {
-            if (m != l) {
-                if (m.hitbox != Hitbox.NONE && ((predicate != null && predicate(m) && doesPairCollide(l, xPixel, yPixel, m)) || doesPairCollide(l, xPixel, yPixel, m))) {
-                    return m
-                }
-            }
-        }
-        return null
-    }
-
-    fun getCollision(l: LevelObject, xPixel: Int = l.xPixel, yPixel: Int = l.yPixel, predicate: ((LevelObject) -> Boolean)? = null): LevelObject? {
-        val m = getMovingObjectCollision(l, xPixel, yPixel, predicate)
-        if (m != null)
             return m
-        val b = getBlockCollision(l, xPixel, yPixel, predicate)
-        if (b != null)
-            return b
-        return null
-    }
-
-    fun doesPairCollide(l: LevelObject, xPixel: Int = l.xPixel, yPixel: Int = l.yPixel, l2: LevelObject, xPixel2: Int = l2.xPixel, yPixel2: Int = l2.yPixel): Boolean {
-        return GeometryHelper.intersects(xPixel + l.hitbox.xStart, yPixel + l.hitbox.yStart, l.hitbox.width, l.hitbox.height, xPixel2 + l2.hitbox.xStart, yPixel2 + l2.hitbox.yStart, l2.hitbox.width, l2.hitbox.height)
-    }
-
-    suspend fun doesPairCollideAsync(l: LevelObject, xPixel: Int = l.xPixel, yPixel: Int = l.yPixel, l2: LevelObject, xPixel2: Int = l2.xPixel, yPixel2: Int = l2.yPixel): Boolean {
-        return GeometryHelper.intersects(xPixel + l.hitbox.xStart, yPixel + l.hitbox.yStart, l.hitbox.width, l.hitbox.height, xPixel2 + l2.hitbox.xStart, yPixel2 + l2.hitbox.yStart, l2.hitbox.width, l2.hitbox.height)
-    }
-
-    fun updateChunk(o: MovingObject) {
-        val currentChunk = getChunk(o.xChunk, o.yChunk)
-        if (o.hitbox != Hitbox.NONE) {
-            val intersectingChunks = getChunksFromPixelRectangle(o.hitbox.xStart + o.xPixel, o.hitbox.yStart + o.yPixel, o.hitbox.width, o.hitbox.height).toMutableList()
-            intersectingChunks.remove(currentChunk)
-            if (o.intersectingChunks != intersectingChunks) {
-                o.intersectingChunks.forEach { it.movingOnBoundary!!.remove(o) }
-                intersectingChunks.forEach { it.movingOnBoundary!!.add(o) }
-                o.intersectingChunks = intersectingChunks
-            }
         }
-        if (o.currentChunk != currentChunk) {
-            o.currentChunk.removeMoving(o)
-            o.currentChunk = currentChunk
-            currentChunk.addMoving(o)
+
+        fun getIntersectingFromPixelRectangle(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int): Set<Block> {
+            return getIntersectingFromRectangle(xPixel shr 4, yPixel shr 4, widthPixels shr 4, heightPixels shr 4)
         }
     }
 
-    fun updateNode(o: TransferNode<*>) {
-        if (o is OutputNode) {
-            attachInputToOutput(o)
-        }
-    }
-
-    private fun <R : ResourceType> attachInputToOutput(o: OutputNode<R>) {
-        val i = getInputNode<R>(o.xTile + GeometryHelper.getXSign(o.dir), o.yTile + GeometryHelper.getYSign(o.dir), o.dir, o.resourceTypeID)
-        o.attachedInput = i
-    }
-
-    fun <R : ResourceType> getInputNode(xTile: Int, yTile: Int, dir: Int, resourceTypeID: Int): InputNode<R>? {
-        // THIS IS OK - we know they are of the same type because we can assume that when you
-        // initialize it, you use the corresponding ResourceType ID
-        return getChunkFromTile(xTile, yTile).inputNodes!![resourceTypeID].firstOrNull { it.xTile == xTile && it.yTile == yTile && GeometryHelper.isOppositeAngle(it.dir, dir) } as InputNode<R>?
-    }
-
-    fun <R : ResourceType> getOutputNode(xTile: Int, yTile: Int, dir: Int, resourceTypeID: Int): OutputNode<R>? {
-        // THIS IS OK - we know they are of the same type because we can assume that when you
-        // initialize it, you use the corresponding ResourceType ID
-        return getChunkFromTile(xTile, yTile).outputNodes!![resourceTypeID].firstOrNull { it.xTile == xTile && it.yTile == yTile && GeometryHelper.isOppositeAngle(it.dir, dir) } as OutputNode<R>?
-    }
-
-    fun getAllTransferNodes(xTile: Int, yTile: Int, predicate: (TransferNode<*>) -> Boolean = { true }): MutableList<TransferNode<*>> {
-        val l = mutableListOf<TransferNode<*>>()
-        with(getChunkFromTile(xTile, yTile)) {
-            inputNodes!!.forEach { l.addAll(it.filter { predicate(it) && it.xTile == xTile && it.yTile == yTile }) }
-            outputNodes!!.forEach { l.addAll(it.filter { predicate(it) && it.xTile == xTile && it.yTile == yTile }) }
-        }
-        return l
-    }
-
-    fun removeAllTransferNodes(xTile: Int, yTile: Int, predicate: (TransferNode<*>) -> Boolean = { true }) {
-        val c = getChunkFromTile(xTile, yTile)
-        getAllTransferNodes(xTile, yTile, predicate).forEach { if (it is InputNode) c.removeInputNode(it) else if (it is OutputNode) c.removeOutputNode(it) }
-    }
-
-    fun getDroppedItemsInRadius(xPixel: Int, yPixel: Int, radius: Int, predicate: (DroppedItem) -> Boolean = { true }): List<DroppedItem> {
-        val l = mutableListOf<DroppedItem>()
-        for (c in getChunksFromPixelRectangle(xPixel - radius, yPixel - radius, radius * 2, radius * 2)) {
-            for (d in c.droppedItems!!) {
-                if (predicate(d) && GeometryHelper.intersects(xPixel - radius, yPixel - radius, radius * 2, radius * 2, d.xPixel - d.hitbox.xStart, d.yPixel - d.hitbox.yStart, d.hitbox.width, d.hitbox.height)) {
-                    l.add(d)
-                }
-            }
-        }
-        return l
-    }
-
-    /**
-     * Does everything necessary to put the object to the level
-     * @return if the object was added
-     */
-    fun add(l: LevelObject): Boolean {
-        if (l is Block) {
-            if (l.getCollision(l.xPixel, l.yPixel) != null) {
-                return false
-            }
-            for (x in 0 until l.type.widthTiles) {
-                for (y in 0 until l.type.heightTiles) {
-                    getChunkFromTile(l.xTile + x, l.yTile + y).setBlock(l, l.xTile + x, l.yTile + y, (x == 0 && y == 0))
-                }
-            }
-            l.inLevel = true
-            return true
-        } else if (l is MovingObject) {
-            if (l is DroppedItem) {
-                // get nearest dropped item of the same type that is not a full stack
-                val d = getDroppedItemsInRadius(l.xPixel, l.yPixel, DROPPED_ITEM_PICK_UP_RANGE, { it.type == l.type && it.quantity < it.type.maxStack }).maxBy { it.quantity }
-                if (d != null) {
-                    if (d.quantity + l.quantity <= l.type.maxStack) {
-                        d.quantity += l.quantity
-                        // dont set in level because it was never technically called into existence
-                        return true
-                    } else {
-                        l.quantity -= (l.type.maxStack - d.quantity)
-                        d.quantity = l.type.maxStack
+    object MovingObjects {
+        /** Whether or not this collides with a moving object */
+        fun getCollision(l: LevelObject, xPixel: Int = l.xPixel, yPixel: Int = l.yPixel, predicate: ((MovingObject) -> Boolean)? = null): LevelObject? {
+            val c = Chunks.get(l.xChunk, l.yChunk)
+            for (m in c.moving!!) {
+                if (m != l) {
+                    if (m.hitbox != Hitbox.NONE && ((predicate != null && predicate(m) && doesPairCollide(l, xPixel, yPixel, m)) || doesPairCollide(l, xPixel, yPixel, m))) {
+                        return m
                     }
                 }
-                if (l.getCollision(l.xPixel, l.yPixel) == null) {
+            }
+            // In the future, use async?
+            for (m in c.movingOnBoundary!!) {
+                if (m != l) {
+                    if (m.hitbox != Hitbox.NONE && ((predicate != null && predicate(m) && doesPairCollide(l, xPixel, yPixel, m)) || doesPairCollide(l, xPixel, yPixel, m))) {
+                        return m
+                    }
+                }
+            }
+            return null
+        }
+
+        fun get(xPixel: Int, yPixel: Int): MovingObject? {
+            val chunk = Chunks.getFromPixel(xPixel, yPixel)
+            var ret: MovingObject? = null
+            ret = chunk.moving!!.firstOrNull { GeometryHelper.contains(it.xPixel + it.hitbox.xStart, it.yPixel + it.hitbox.yStart, it.hitbox.width, it.hitbox.height, xPixel, yPixel, 0, 0) }
+            if (ret == null)
+                ret = chunk.movingOnBoundary!!.firstOrNull { GeometryHelper.contains(it.xPixel + it.hitbox.xStart, it.yPixel + it.hitbox.yStart, it.hitbox.width, it.hitbox.height, xPixel, yPixel, 0, 0) }
+            return ret
+        }
+    }
+
+    object Chunks {
+        fun updateChunkOf(o: MovingObject) {
+            val currentChunk = get(o.xChunk, o.yChunk)
+            if (o.hitbox != Hitbox.NONE) {
+                val intersectingChunks = getFromPixelRectangle(o.hitbox.xStart + o.xPixel, o.hitbox.yStart + o.yPixel, o.hitbox.width, o.hitbox.height).toMutableList()
+                intersectingChunks.remove(currentChunk)
+                if (o.intersectingChunks != intersectingChunks) {
+                    o.intersectingChunks.forEach { it.movingOnBoundary!!.remove(o) }
+                    intersectingChunks.forEach { it.movingOnBoundary!!.add(o) }
+                    o.intersectingChunks = intersectingChunks
+                }
+            }
+            if (o.currentChunk != currentChunk) {
+                o.currentChunk.removeMoving(o)
+                o.currentChunk = currentChunk
+                currentChunk.addMoving(o)
+            }
+        }
+
+        /* Getting and setting */
+        /**
+         * Loads and returns the specified chunk
+         */
+        fun load(xChunk: Int, yChunk: Int): Chunk {
+            val c = Game.currentLevel.chunks[xChunk + yChunk * Game.currentLevel.widthChunks]
+            c.load(Game.currentLevel.genBlocks(xChunk, yChunk), Game.currentLevel.genTiles(xChunk, yChunk))
+            return c
+        }
+
+        /**
+         * If load is true, it will load the chunk if necessary
+         */
+        fun get(xChunk: Int, yChunk: Int, load: Boolean = true): Chunk {
+            val c = Game.currentLevel.chunks[xChunk + yChunk * Game.currentLevel.widthChunks]
+            if (load && !c.loaded) {
+                load(xChunk, yChunk)
+            }
+            return c
+        }
+
+        /**
+         * If load is true, it will load the chunk if necessary
+         */
+        fun getFromTile(xTile: Int, yTile: Int, load: Boolean = true): Chunk {
+            return get(xTile shr CHUNK_TILE_EXP, yTile shr CHUNK_TILE_EXP, load)
+        }
+
+        fun getFromPixel(xPixel: Int, yPixel: Int, load: Boolean = true): Chunk {
+            return getFromTile(xPixel shr 4, yPixel shr 4, load)
+        }
+
+        fun getFromRectangle(xChunk: Int, yChunk: Int, xChunk2: Int, yChunk2: Int): List<Chunk> {
+            val l = mutableListOf<Chunk>()
+            for (x in xChunk..xChunk2) {
+                for (y in yChunk..yChunk2) {
+                    l.add(get(x, y))
+                }
+            }
+            return l
+        }
+
+        fun getFromTileRectangle(xTile: Int, yTile: Int, widthTiles: Int, heightTiles: Int): List<Chunk> {
+            return getFromRectangle(xTile shr CHUNK_TILE_EXP, yTile shr CHUNK_TILE_EXP, (xTile + widthTiles) shr CHUNK_TILE_EXP, (yTile + heightTiles) shr CHUNK_TILE_EXP)
+        }
+
+        fun getFromPixelRectangle(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int): List<Chunk> {
+            return getFromRectangle(xPixel shr CHUNK_PIXEL_EXP, yPixel shr CHUNK_PIXEL_EXP, (xPixel + widthPixels) shr CHUNK_PIXEL_EXP, (yPixel + heightPixels) shr CHUNK_PIXEL_EXP)
+        }
+    }
+
+    object ResourceNodes {
+        fun updateAttachments(o: TransferNode<*>) {
+            if (o is OutputNode) {
+                attachInputToOutput(o)
+            }
+        }
+
+        private fun <R : ResourceType> attachInputToOutput(o: OutputNode<R>) {
+            val i = getInputNode<R>(o.xTile + GeometryHelper.getXSign(o.dir), o.yTile + GeometryHelper.getYSign(o.dir), o.dir, o.resourceTypeID)
+            o.attachedInput = i
+        }
+
+        fun <R : ResourceType> getInputNode(xTile: Int, yTile: Int, dir: Int, resourceTypeID: Int): InputNode<R>? {
+            // THIS IS OK - we know they are of the same type because we can assume that when you
+            // initialize it, you use the corresponding ResourceType ID
+            return Chunks.getFromTile(xTile, yTile).inputNodes!![resourceTypeID].firstOrNull { it.xTile == xTile && it.yTile == yTile && GeometryHelper.isOppositeAngle(it.dir, dir) } as InputNode<R>?
+        }
+
+        fun <R : ResourceType> getOutputNode(xTile: Int, yTile: Int, dir: Int, resourceTypeID: Int): OutputNode<R>? {
+            // THIS IS OK - we know they are of the same type because we can assume that when you
+            // initialize it, you use the corresponding ResourceType ID
+            return Chunks.getFromTile(xTile, yTile).outputNodes!![resourceTypeID].firstOrNull { it.xTile == xTile && it.yTile == yTile && GeometryHelper.isOppositeAngle(it.dir, dir) } as OutputNode<R>?
+        }
+
+        fun removeTransferNode(n: TransferNode<*>) {
+            if(!n.inLevel)
+                return
+            if (n is InputNode)
+                Chunks.getFromTile(n.xTile, n.yTile).removeInputNode(n)
+            else if (n is OutputNode)
+                Chunks.getFromTile(n.xTile, n.yTile).removeOutputNode(n)
+        }
+
+        fun getAllTransferNodes(xTile: Int, yTile: Int, predicate: (TransferNode<*>) -> Boolean = { true }): MutableList<TransferNode<*>> {
+            val l = mutableListOf<TransferNode<*>>()
+            with(Chunks.getFromTile(xTile, yTile)) {
+                inputNodes!!.forEach { l.addAll(it.filter { predicate(it) && it.xTile == xTile && it.yTile == yTile }) }
+                outputNodes!!.forEach { l.addAll(it.filter { predicate(it) && it.xTile == xTile && it.yTile == yTile }) }
+            }
+            return l
+        }
+
+        fun removeAllTransferNodes(xTile: Int, yTile: Int, predicate: (TransferNode<*>) -> Boolean = { true }) {
+            val c = Chunks.getFromTile(xTile, yTile)
+            getAllTransferNodes(xTile, yTile, predicate).forEach { if (it is InputNode) c.removeInputNode(it) else if (it is OutputNode) c.removeOutputNode(it) }
+        }
+
+        fun addTransferNode(o: TransferNode<*>) {
+            if(o.inLevel)
+                return
+            val c = Chunks.getFromTile(o.xTile, o.yTile)
+            if (o is InputNode) {
+                c.addInputNode(o)
+                o.inLevel = true
+            } else if (o is OutputNode) {
+                c.addOutputNode(o)
+                o.inLevel = true
+            }
+            updateAttachments(o)
+            for (x in -1..1) {
+                for (y in -1..1) {
+                    if (Math.abs(x) != Math.abs(y))
+                        getAllTransferNodes(o.xTile + x, o.yTile + y).forEach { updateNode(it) }
+                }
+            }
+        }
+    }
+
+    object DroppedItems {
+        fun getInRadius(xPixel: Int, yPixel: Int, radius: Int, predicate: (DroppedItem) -> Boolean = { true }): List<DroppedItem> {
+            val l = mutableListOf<DroppedItem>()
+            for (c in Chunks.getFromPixelRectangle(xPixel - radius, yPixel - radius, radius * 2, radius * 2)) {
+                for (d in c.droppedItems!!) {
+                    if (predicate(d) && GeometryHelper.intersects(xPixel - radius, yPixel - radius, radius * 2, radius * 2, d.xPixel - d.hitbox.xStart, d.yPixel - d.hitbox.yStart, d.hitbox.width, d.hitbox.height)) {
+                        l.add(d)
+                    }
+                }
+            }
+            return l
+        }
+    }
+
+
+    object Tiles {
+        /**
+         * Will load the chunk if necessary
+         */
+        fun get(xTile: Int, yTile: Int): Tile {
+            return Chunks.getFromTile(xTile, yTile).getTile(xTile, yTile)
+        }
+    }
+
+    companion object {
+        fun getCollision(l: LevelObject, xPixel: Int = l.xPixel, yPixel: Int = l.yPixel, predicate: ((LevelObject) -> Boolean)? = null): LevelObject? {
+            val m = MovingObjects.getCollision(l, xPixel, yPixel, predicate)
+            if (m != null)
+                return m
+            val b = Blocks.getCollision(l, xPixel, yPixel, predicate)
+            if (b != null)
+                return b
+            return null
+        }
+        // TODO do this async
+        fun doesPairCollide(l: LevelObject, xPixel: Int = l.xPixel, yPixel: Int = l.yPixel, l2: LevelObject, xPixel2: Int = l2.xPixel, yPixel2: Int = l2.yPixel): Boolean {
+            return GeometryHelper.intersects(xPixel + l.hitbox.xStart, yPixel + l.hitbox.yStart, l.hitbox.width, l.hitbox.height, xPixel2 + l2.hitbox.xStart, yPixel2 + l2.hitbox.yStart, l2.hitbox.width, l2.hitbox.height)
+        }
+
+        /**
+         * Does everything necessary to put the object to the level
+         * @return if the object was added
+         */
+        fun add(l: LevelObject): Boolean {
+            if (l is Block) {
+                if (l.getCollision(l.xPixel, l.yPixel) != null) {
+                    return false
+                }
+                for (x in 0 until l.type.widthTiles) {
+                    for (y in 0 until l.type.heightTiles) {
+                        Chunks.getFromTile(l.xTile + x, l.yTile + y).setBlock(l, l.xTile + x, l.yTile + y, (x == 0 && y == 0))
+                    }
+                }
+                l.inLevel = true
+                return true
+            } else if (l is MovingObject) {
+                if (l is DroppedItem) {
+                    // get nearest dropped item of the same type that is not a full stack
+                    val d = DroppedItems.getInRadius(l.xPixel, l.yPixel, DROPPED_ITEM_PICK_UP_RANGE, { it.type == l.type && it.quantity < it.type.maxStack }).maxBy { it.quantity }
+                    if (d != null) {
+                        if (d.quantity + l.quantity <= l.type.maxStack) {
+                            d.quantity += l.quantity
+                            // dont set in level because it was never technically called into existence
+                            return true
+                        } else {
+                            l.quantity -= (l.type.maxStack - d.quantity)
+                            d.quantity = l.type.maxStack
+                        }
+                    }
+                    if (l.getCollision(l.xPixel, l.yPixel) == null) {
+                        if (l.hitbox != Hitbox.NONE) {
+                            l.intersectingChunks.forEach { it.movingOnBoundary!!.add(l) }
+                        }
+                        l.currentChunk.addMoving(l)
+                        l.inLevel = true
+                        l.currentChunk.addDroppedItem(l)
+                        return true
+                    }
+                    return false
+                } else {
+                    if (l.getCollision(l.xPixel, l.yPixel) != null)
+                        return false
                     if (l.hitbox != Hitbox.NONE) {
                         l.intersectingChunks.forEach { it.movingOnBoundary!!.add(l) }
                     }
                     l.currentChunk.addMoving(l)
                     l.inLevel = true
-                    l.currentChunk.addDroppedItem(l)
                     return true
                 }
-                return false
-            } else {
-                if (l.getCollision(l.xPixel, l.yPixel) != null)
-                    return false
-                if (l.hitbox != Hitbox.NONE) {
-                    l.intersectingChunks.forEach { it.movingOnBoundary!!.add(l) }
-                }
-                l.currentChunk.addMoving(l)
-                l.inLevel = true
-                return true
             }
+            return false
         }
-        return false
-    }
 
-    fun addTransferNode(o: TransferNode<*>) {
-        val c = getChunkFromTile(o.xTile, o.yTile)
-        if (o is InputNode) {
-            c.addInputNode(o)
-        } else if (o is OutputNode) {
-            c.addOutputNode(o)
-        }
-        updateNode(o)
-        for (x in -1..1) {
-            for (y in -1..1) {
-                if (Math.abs(x) != Math.abs(y))
-                    getAllTransferNodes(o.xTile + x, o.yTile + y).forEach { updateNode(it) }
-            }
-        }
-    }
-
-    fun remove(l: LevelObject): Boolean {
-        val c = getChunk(l.xChunk, l.yChunk)
-        if (l.inLevel) {
-            if (l is Block) {
-                for (x in 0 until l.type.widthTiles) {
-                    for (y in 0 until l.type.heightTiles) {
-                        c.removeBlock(l, l.xTile + x, l.yTile + y, (x == 0 && y == 0)) // TODO fix removing miner
+        fun remove(l: LevelObject): Boolean {
+            val c = Chunks.get(l.xChunk, l.yChunk)
+            if (l.inLevel) {
+                if (l is Block) {
+                    for (x in 0 until l.type.widthTiles) {
+                        for (y in 0 until l.type.heightTiles) {
+                            c.removeBlock(l, l.xTile + x, l.yTile + y, (x == 0 && y == 0)) // TODO fix removing miner
+                        }
                     }
+                    l.inLevel = false
+                    return true
+                } else if (l is MovingObject) {
+                    if (l is DroppedItem) {
+                        l.currentChunk.removeDroppedItem(l)
+                    }
+                    if (l.hitbox != Hitbox.NONE)
+                        l.intersectingChunks.forEach { it.movingOnBoundary!!.remove(l) }
+                    l.currentChunk.removeMoving(l)
+                    l.inLevel = false
                 }
-                l.inLevel = false
                 return true
-            } else if (l is MovingObject) {
-                if (l is DroppedItem) {
-                    l.currentChunk.removeDroppedItem(l)
-                }
-                if (l.hitbox != Hitbox.NONE)
-                    l.intersectingChunks.forEach { it.movingOnBoundary!!.remove(l) }
-                l.currentChunk.removeMoving(l)
-                l.inLevel = false
             }
-            return true
+            return false
         }
-        return false
-    }
 
-    /**
-     * Tries to 'materialize' this resource where specified. Note: most resources have no physical representation
-     * other than some purely decorative particles
-     * @return the quantity of the resource that was able to be materialized
-     */
-    fun add(xPixel: Int, yPixel: Int, r: ResourceType, quantity: Int): Int {
-        if (r is ItemType) {
-            if(!add(DroppedItem(xPixel, yPixel, r, quantity)))
-                return 0
-            return quantity
-        }
-        return 0
-    }
-
-    /* Getting and setting */
-    /**
-     * Loads and returns the specified chunk
-     */
-    fun loadChunk(xChunk: Int, yChunk: Int): Chunk {
-        val c = chunks[xChunk + yChunk * widthChunks]
-        c.load(genBlocks(xChunk, yChunk), genTiles(xChunk, yChunk))
-        return c
-    }
-
-    /**
-     * If load is true, it will load the chunk if necessary
-     */
-    fun getChunk(xChunk: Int, yChunk: Int, load: Boolean = true): Chunk {
-        val c = chunks[xChunk + yChunk * widthChunks]
-        if (load && !c.loaded) {
-            loadChunk(xChunk, yChunk)
-        }
-        return c
-    }
-
-    /**
-     * If load is true, it will load the chunk if necessary
-     */
-    fun getChunkFromTile(xTile: Int, yTile: Int, load: Boolean = true): Chunk {
-        return getChunk(xTile shr CHUNK_TILE_EXP, yTile shr CHUNK_TILE_EXP, load)
-    }
-
-    fun getChunkFromPixel(xPixel: Int, yPixel: Int, load: Boolean = true): Chunk {
-        return getChunkFromTile(xPixel shr 4, yPixel shr 4, load)
-    }
-
-    fun getChunksFromRectangle(xChunk: Int, yChunk: Int, xChunk2: Int, yChunk2: Int): List<Chunk> {
-        val l = mutableListOf<Chunk>()
-        for (x in xChunk..xChunk2) {
-            for (y in yChunk..yChunk2) {
-                l.add(getChunk(x, y))
+        /**
+         * Tries to 'materialize' this resource where specified. Note: most resources have no physical representation
+         * other than some purely decorative particles
+         * @return the quantity of the resource that was able to be materialized
+         */
+        fun add(xPixel: Int, yPixel: Int, r: ResourceType, quantity: Int): Int {
+            if (r is ItemType) {
+                if (!add(DroppedItem(xPixel, yPixel, r, quantity)))
+                    return 0
+                return quantity
             }
+            return 0
         }
-        return l
-    }
-
-    fun getChunksFromTileRectangle(xTile: Int, yTile: Int, widthTiles: Int, heightTiles: Int): List<Chunk> {
-        return getChunksFromRectangle(xTile shr CHUNK_TILE_EXP, yTile shr CHUNK_TILE_EXP, (xTile + widthTiles) shr CHUNK_TILE_EXP, (yTile + heightTiles) shr CHUNK_TILE_EXP)
-    }
-
-    fun getChunksFromPixelRectangle(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int): List<Chunk> {
-        return getChunksFromRectangle(xPixel shr CHUNK_PIXEL_EXP, yPixel shr CHUNK_PIXEL_EXP, (xPixel + widthPixels) shr CHUNK_PIXEL_EXP, (yPixel + heightPixels) shr CHUNK_PIXEL_EXP)
-    }
-
-    fun getMoving(xPixel: Int, yPixel: Int): MovingObject? {
-        val chunk = getChunkFromPixel(xPixel, yPixel)
-        var ret: MovingObject? = null
-        ret = chunk.moving!!.firstOrNull { GeometryHelper.contains(it.xPixel + it.hitbox.xStart, it.yPixel + it.hitbox.yStart, it.hitbox.width, it.hitbox.height, xPixel, yPixel, 0, 0) }
-        if (ret == null)
-            ret = chunk.movingOnBoundary!!.firstOrNull { GeometryHelper.contains(it.xPixel + it.hitbox.xStart, it.yPixel + it.hitbox.yStart, it.hitbox.width, it.hitbox.height, xPixel, yPixel, 0, 0) }
-        return ret
-    }
-
-    /**
-     * Will load the chunk if necessary
-     */
-    fun getBlock(xTile: Int, yTile: Int): Block? {
-        return getChunkFromTile(xTile, yTile).getBlock(xTile, yTile)
-    }
-
-    fun getIntersectingBlocksFromRectangle(xTile: Int, yTile: Int, widthTiles: Int, heightTiles: Int): Set<Block> {
-        val m = mutableSetOf<Block>()
-        for (x in xTile..(xTile + widthTiles)) {
-            for (y in yTile..(yTile + heightTiles)) {
-                val b = getBlock(x, y)
-                if (b != null)
-                    m.add(b)
-            }
-        }
-        return m
-    }
-
-    fun getIntersectingBlocksFromPixelRectangle(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int): Set<Block> {
-        return getIntersectingBlocksFromRectangle(xPixel shr 4, yPixel shr 4, widthPixels shr 4, heightPixels shr 4)
-    }
-
-    /**
-     * Will load the chunk if necessary
-     */
-    fun getTile(xTile: Int, yTile: Int): Tile {
-        return getChunkFromTile(xTile, yTile).getTile(xTile, yTile)
     }
 
     fun save() {

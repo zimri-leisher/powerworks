@@ -67,14 +67,18 @@ object HUD {
         }
 
         override fun onInventoryChange(inv: Inventory) {
-            if(inv == items) {
-                Mouse.setHeldItem(items, selected)
+            if (inv == items) {
+                if (Mouse.heldItem == null) {
+                    Mouse.heldItem = items[selected]
+                }
             }
         }
 
         private fun setSlot(slot: Int) {
             selected = slot
-            Mouse.setHeldItem(items, slot)
+            Mouse.inventory = items
+            if (Mouse.heldItem != null)
+                Mouse.heldItem = items[slot]
         }
     }
 }

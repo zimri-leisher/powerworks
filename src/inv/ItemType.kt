@@ -18,6 +18,8 @@ open class ItemType(val name: String, override val texture: Texture, val stretch
 
     val id = nextID++
 
+    override val typeID = ResourceType.ITEM
+
     init {
         ALL.add(this)
     }
@@ -36,7 +38,7 @@ open class ItemType(val name: String, override val texture: Texture, val stretch
         val ALL = mutableListOf<ItemType>()
 
         val ERROR = ItemType("Error",
-                Image.ERROR,
+                Image.Misc.ERROR,
                 maxStack = 5)
 
         val MINER = ItemType("Miner",
@@ -45,11 +47,11 @@ open class ItemType(val name: String, override val texture: Texture, val stretch
                 maxStack = 10)
 
         val IRON_ORE = ItemType("Iron Ore",
-                Image.IRON_ORE_ITEM,
+                Image.Item.IRON_ORE_ITEM,
                 maxStack = 100)
 
         val TUBE = ItemType("Item Transport Tube",
-                Image.TUBE_ITEM,
+                Image.Item.TUBE_ITEM,
                 false,
                 BlockType.TUBE.id,
                 50)
@@ -59,6 +61,8 @@ open class ItemType(val name: String, override val texture: Texture, val stretch
                 placedBlockID = ChestBlockType.CHEST_SMALL.id,
                 maxStack = 20)
 
-        val COPPER_ORE = ItemType("Copper Ore", Image.COPPER_ORE_ITEM, maxStack = 100)
+        val COPPER_ORE = ItemType("Copper Ore",
+                Image.Item.COPPER_ORE_ITEM,
+                maxStack = 100)
     }
 }

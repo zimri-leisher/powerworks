@@ -70,21 +70,24 @@ class GUIItemSlot(parent: RootGUIElement, name: String, xPixel: Int, yPixel: Int
             } else {
                 currentTexture = Image.GUI.ITEM_SLOT_CLICK
                 val mI = Mouse.heldItem
+                val cI = currentItem
                 if (button == 1) {
-                    if (mI != null) {
-                        if (currentItem != null) {
-                            Mouse.removeHeldItem(mI.quantity)
-                            Mouse.setHeldItem(inv, index)
+                    if(mI != null) {
+                        if(cI != null) {
+                            inv.remove(cI)
                             inv.add(mI)
+                            Mouse.heldItem = cI
                         } else {
                             inv.add(mI)
-                            Mouse.removeHeldItem(mI.quantity)
+                            Mouse.heldItem = null
                         }
                     } else {
-                        if (currentItem != null) {
-                            Mouse.setHeldItem(inv, index)
+                        if(cI != null) {
+                            Mouse.heldItem = cI
+                            inv.remove(cI)
                         }
                     }
+                    Mouse.inventory = inv
                 }
             }
         } else if (type == PressType.RELEASED) {

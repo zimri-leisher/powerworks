@@ -35,13 +35,11 @@ object MainMenuGUI : GUIWindow("Main menu", { 0 }, { 0 }, { Game.WIDTH }, { Game
 
                             GUIButton(this, "Main menu play button", 0, 0, "Play", {
                                 State.setState(State.INGAME)
-                            }, {
                             }, layer = this.layer + 2)
 
                             GUIButton(this, "Main menu test button", 0, 0, "Test", {
                                 this@MainMenuGUI.open = false
                                 TestGUI.open = true
-                            }, {
                             }, layer = this.layer + 2)
 
                         },

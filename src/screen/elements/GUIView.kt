@@ -1,7 +1,6 @@
 package screen.elements
 
 import graphics.Renderer
-import io.PressType
 import level.LevelObject
 import level.MovementListener
 import level.moving.MovingObject
@@ -155,10 +154,6 @@ class GUIView(parent: RootGUIElement,
                 zoomLevel--
         }
         DebugOverlay.setInfo(name + " zoom level", zoomLevel.toString())
-    }
-
-    override fun onMouseActionOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
-        Game.currentLevel.onMouseAction(type, xPixel, yPixel, button, shift, ctrl, alt)
     }
 
     companion object {
