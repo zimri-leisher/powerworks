@@ -4,25 +4,25 @@ import audio.AudioManager
 import audio.AudioManager.SoundSource
 import graphics.LocalAnimation
 
-abstract class MachineBlock(xTile: Int, yTile: Int, type: MachineBlockType, on: Boolean = false) : Block(type, yTile, xTile) {
+abstract class MachineBlock(override val type: MachineBlockTemplate, xTile: Int, yTile: Int, rotation: Int, on: Boolean = false) : Block(type, xTile, yTile, rotation) {
 
     var on = on
         set(value) {
-            type as MachineBlockType
+            val texture = type.textures[rotation]
             if (!value && field) {
                 onTurnOff()
                 if(currentSound != null)
                     currentSound!!.playing = false
-                if (type.getTexture(rotation) is LocalAnimation) {
-                    (type.getTexture(rotation) as LocalAnimation).playing = false
+                if (texture.texture is LocalAnimation) {
+                    texture.texture.playing = false
                 }
             } else if (value && !field) {
                 onTurnOn()
                 if(currentSound == null && type.onSound != null) {
-                    AudioManager.play(type.onSound, xPixel, yPixel, true)
+                    AudioManager.play(type.onSound!!, xPixel, yPixel, true)
                 }
-                if (type.getTexture(rotation) is LocalAnimation) {
-                    (type.getTexture(rotation) as LocalAnimation).playing = true
+                if (texture.texture is LocalAnimation) {
+                    texture.texture.playing = true
                 }
             }
             field = value
@@ -44,11 +44,10 @@ abstract class MachineBlock(xTile: Int, yTile: Int, type: MachineBlockType, on: 
     }
 
     override fun update() {
-        type as MachineBlockType
         if (on) {
             currentWork++
             onWork()
-            if (currentWork >= (type.maxWork / type.defaultSpeed).toInt()) {
+            if (currentWork >= (type.maxWork / type.speed).toInt()) {
                 currentWork = 0
                 onFinishWork()
                 if (!type.loop)

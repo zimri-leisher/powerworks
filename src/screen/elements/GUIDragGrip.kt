@@ -23,16 +23,14 @@ class GUIDragGrip(parent: RootGUIElement,
     var actOnSYPixel = 0
 
     override fun onMouseActionOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
-        when (type) {
-            PressType.PRESSED -> {
-                dragging = true
-                sXPixel = Mouse.xPixel
-                sYPixel = Mouse.yPixel
-                actOnSXPixel = actOn.xPixel
-                actOnSYPixel = actOn.yPixel
-            }
-            PressType.RELEASED -> dragging = false
+        if (type == PressType.PRESSED) {
+            dragging = true
+            sXPixel = Mouse.xPixel
+            sYPixel = Mouse.yPixel
+            actOnSXPixel = actOn.xPixel
+            actOnSYPixel = actOn.yPixel
         }
+        else if (type == PressType.RELEASED) dragging = false
     }
 
     override fun onClose() {

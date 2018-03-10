@@ -1,3 +1,3 @@
 package level.block
 
-class DefaultBlock(xTile: Int, yTile: Int, type: BlockType) : Block(type, yTile, xTile)
+class DefaultBlock(type: BlockTemplate<DefaultBlock>, xTile: Int, yTile: Int, rotation: Int) : Block(type, xTile, yTile, rotation)

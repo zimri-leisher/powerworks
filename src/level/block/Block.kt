@@ -4,30 +4,29 @@ import graphics.Renderer
 import io.*
 import level.CHUNK_TILE_EXP
 import level.Hitbox
+import level.Level
 import level.LevelObject
-import level.node.TransferNode
+import level.node.ResourceNodeGroup
 import main.Game
 import screen.Mouse
 import java.io.DataOutputStream
 
-abstract class Block(val type: BlockType, yTile: Int, xTile: Int, hitbox: Hitbox = type.hitbox, requiresUpdate: Boolean = type.requiresUpdate) : LevelObject(xTile shl 4, yTile shl 4, hitbox, requiresUpdate) {
+abstract class Block(type: BlockTemplate<out Block>, xTile: Int, yTile: Int, var rotation: Int = 0, hitbox: Hitbox = type.hitbox, requiresUpdate: Boolean = type.requiresUpdate) : LevelObject(xTile shl 4, yTile shl 4, hitbox, requiresUpdate) {
 
-    val rotation = 0
+    open val type = type
 
-    val nodes: List<TransferNode<*>> = listOf()
-
-    init {
-    }
+    val nodes = ResourceNodeGroup("$this node group", type.nodesTemplate.instantiate(xTile, yTile, rotation))
 
     /**
      * Don't forget to call super.onAddToLevel() so that the onAdjacentBlockAdd methods of adjacent blocks are called
      */
     override fun onAddToLevel() {
-        nodes.forEach { Game.currentLevel.addTransferNode(it) }
+        nodes.forEach { Level.add(it) }
         for (y in -1..1) {
             for (x in -1..1) {
-                if (Math.abs(x) != Math.abs(y))
-                    Game.currentLevel.getBlock(xTile + x, yTile + y)?.onAdjacentBlockAdd(this)
+                if (Math.abs(x) != Math.abs(y)) {
+                    Level.Blocks.get(xTile + x, yTile + y)?.onAdjacentBlockAdd(this)
+                }
             }
         }
     }
@@ -36,17 +35,18 @@ abstract class Block(val type: BlockType, yTile: Int, xTile: Int, hitbox: Hitbox
      * Don't forget to call super.onRemoveFromLevel() so that the onAdjacentBlockRemove methods of adjacent blocks are called
      */
     override fun onRemoveFromLevel() {
-        nodes.forEach { Game.currentLevel.removeTransferNode(it) }
+        nodes.forEach { Level.remove(it) }
         for (y in -1..1) {
             for (x in -1..1) {
                 if (Math.abs(x) != Math.abs(y))
-                    Game.currentLevel.getBlock(xTile + x, yTile + y)?.onAdjacentBlockRemove(this)
+                    Level.Blocks.get(xTile + x, yTile + y)?.onAdjacentBlockRemove(this)
             }
         }
     }
 
     override fun render() {
-        Renderer.renderTexture(type.getTexture(rotation), xPixel - type.textureXPixelOffset, yPixel - type.textureYPixelOffset)
+        val texture = type.textures[rotation]
+        Renderer.renderTexture(texture.texture, xPixel - texture.xPixelOffset, yPixel - texture.yPixelOffset)
         super.render()
     }
 
@@ -70,7 +70,7 @@ abstract class Block(val type: BlockType, yTile: Int, xTile: Int, hitbox: Hitbox
         val nYTile = yPixel shr 4
         for (x in nXTile until (nXTile + type.widthTiles)) {
             for (y in nYTile until (nYTile + type.heightTiles)) {
-                val c = Game.currentLevel.getChunk(x shr CHUNK_TILE_EXP, y shr CHUNK_TILE_EXP)
+                val c = Level.Chunks.get(x shr CHUNK_TILE_EXP, y shr CHUNK_TILE_EXP)
                 val b = c.getBlock(x, y)
                 if (b != null) {
                     if (predicate != null && !predicate(b)) {
@@ -84,7 +84,7 @@ abstract class Block(val type: BlockType, yTile: Int, xTile: Int, hitbox: Hitbox
             }
         }
         // Checks for moving objects. Don't worry about blocks, because no block has a hitbox of over a tile
-        return Game.currentLevel.getMovingObjectCollision(this, xPixel, yPixel, predicate)
+        return Level.MovingObjects.getCollision(this, xPixel, yPixel, predicate)
     }
 
     override fun save(out: DataOutputStream) {
@@ -120,13 +120,13 @@ abstract class Block(val type: BlockType, yTile: Int, xTile: Int, hitbox: Hitbox
                 val block = Game.currentLevel.selectedLevelObject
                 if(block is Block) {
                     if(p.control == Control.SECONDARY_INTERACT) {
-                        Game.currentLevel.remove(block)
+                        Level.remove(block)
                         // TODO
                     }
                 } else if(block == null) {
                     if(p.control == Control.INTERACT && Game.currentLevel.ghostBlock != null) {
                         val gBlock = Game.currentLevel.ghostBlock!!
-                        Game.currentLevel.add(gBlock.type(gBlock.xTile, gBlock.yTile))
+                        Level.add(gBlock.type.instantiate(gBlock.xTile, gBlock.yTile, gBlock.rotation))
                         Mouse.heldItem?.quantity?.dec()
                     }
                 }

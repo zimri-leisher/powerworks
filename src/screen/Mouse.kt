@@ -9,6 +9,7 @@ import inv.Item
 import io.*
 import level.CHUNK_PIXEL_EXP
 import level.DroppedItem
+import level.Level
 import level.LevelObject
 import level.tube.TubeBlock
 import main.Game
@@ -140,7 +141,7 @@ object Mouse : ControlPressHandler {
                                     "  Right: ${intersection.connectedTo[1]?.dist}\n" +
                                     "  Down: ${intersection.connectedTo[2]?.dist}\n" +
                                     "  Left: ${intersection.connectedTo[3]?.dist}\n"
-                        else if (t.group.isIntersection(t) == true && intersection == null)
+                        else if (t.group.isIntersection(t) && intersection == null)
                             "Should be intersection but hasn't been added"
                         else "Not intersection\n"
                 Renderer.renderText(tubeString + intersectionString, xPixel, yPixel)
@@ -169,22 +170,22 @@ object Mouse : ControlPressHandler {
                 Control.DROP_HELD_ITEM -> {
                     if (heldItem != null) {
                         val type = heldItem!!.type
-                        if (Game.currentLevel.add(DroppedItem(Game.currentLevel.mouseLevelXPixel, Game.currentLevel.mouseLevelYPixel, type)))
+                        if (Level.add(DroppedItem(Game.currentLevel.mouseLevelXPixel, Game.currentLevel.mouseLevelYPixel, type)))
                             inventory?.remove(type, 1)
                     }
                 }
                 Control.PICK_UP_DROPPED_ITEMS -> {
-                    val i = Game.currentLevel.getDroppedItemsInRadius(Game.currentLevel.mouseLevelXPixel, Game.currentLevel.mouseLevelYPixel, DROPPED_ITEM_PICK_UP_RANGE)
+                    val i = Level.DroppedItems.getInRadius(Game.currentLevel.mouseLevelXPixel, Game.currentLevel.mouseLevelYPixel, DROPPED_ITEM_PICK_UP_RANGE)
                     if (i.isNotEmpty()) {
                         val g = i.first()
                         if (inventory?.full == true) {
                             if (!Game.mainInv.full) {
                                 Game.mainInv.add(g.type, g.quantity)
-                                Game.currentLevel.remove(g)
+                                Level.remove(g)
                             }
                         } else {
                             inventory?.add(g.type, g.quantity)
-                            Game.currentLevel.remove(g)
+                            Level.remove(g)
                         }
                     }
                 }

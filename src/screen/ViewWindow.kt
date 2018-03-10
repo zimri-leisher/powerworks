@@ -16,6 +16,8 @@ class ViewWindow(name: String,
         GUIWindow(name, xPixel, yPixel, widthPixels, heightPixels, open, layer, windowGroup),
         ControlPressHandler {
 
+    var CAMERA_SPEED = 1
+
     val view = GUIView(rootChild, name,
             { 0 }, { 0 },
             { this.widthPixels }, { this.heightPixels },
@@ -40,13 +42,13 @@ class ViewWindow(name: String,
         val c = p.control
         val m = camera as MovingObject
         if (c == Control.UP) {
-            m.yVel--
+            m.yVel -= CAMERA_SPEED
         } else if (c == Control.DOWN) {
-            m.yVel++
+            m.yVel += CAMERA_SPEED
         } else if (c == Control.RIGHT) {
-            m.xVel++
+            m.xVel += CAMERA_SPEED
         } else if (c == Control.LEFT) {
-            m.xVel--
+            m.xVel -= CAMERA_SPEED
         }
     }
 }

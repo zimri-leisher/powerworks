@@ -2,9 +2,12 @@ package level.tube
 
 import graphics.Image
 import graphics.Renderer
+import inv.ItemType
+import level.Level
 import level.block.Block
-import level.block.BlockType
-import level.node.TransferNode
+import level.block.BlockTemplate
+import level.node.ResourceNode
+import level.resource.ResourceType
 import main.Game
 import misc.GeometryHelper
 import misc.GeometryHelper.getOppositeAngle
@@ -12,13 +15,13 @@ import misc.GeometryHelper.getXSign
 import misc.GeometryHelper.getYSign
 import misc.GeometryHelper.isOppositeAngle
 
-class TubeBlock(xTile: Int, yTile: Int) : Block(BlockType.TUBE, yTile, xTile) {
+class TubeBlock(xTile: Int, yTile: Int) : Block(BlockTemplate.TUBE, xTile, yTile) {
 
     var state = TubeState.NONE
 
     val tubeConnections = arrayOfNulls<TubeBlock>(4)
     val nodeConnections = arrayOf<
-            MutableList<TransferNode<*>>
+            MutableList<ResourceNode<ItemType>>
             >(mutableListOf(), mutableListOf(), mutableListOf(), mutableListOf())
 
     val closedEnds: Array<Boolean>
@@ -102,7 +105,7 @@ class TubeBlock(xTile: Int, yTile: Int) : Block(BlockType.TUBE, yTile, xTile) {
         // If there is a node connection, and tubes can't have nodes connecting to other tubes, then no need to check
         if (tubeConnections[dir] == null) {
             // Get all nodes that could possibly disconnect to a node if placed here
-            val nodes = Game.currentLevel.getAllTransferNodes(xTile + getXSign(dir), yTile + getYSign(dir), { isOppositeAngle(it.dir, dir) })
+            val nodes = Level.ResourceNodes.getAll<ItemType>(xTile + getXSign(dir), yTile + getYSign(dir), ResourceType.ITEM, { isOppositeAngle(it.dir, dir) })
             nodeConnections[dir] = nodes
             if (nodes.isNotEmpty()) {
                 group.createCorrespondingNodes(nodes)
@@ -124,7 +127,7 @@ class TubeBlock(xTile: Int, yTile: Int) : Block(BlockType.TUBE, yTile, xTile) {
     }
 
     fun getTubeAt(dir: Int): TubeBlock? {
-        val b = Game.currentLevel.getBlock(xTile + getXSign(dir), yTile + getYSign(dir))
+        val b = Level.Blocks.get(xTile + getXSign(dir), yTile + getYSign(dir))
         if (b != null && b is TubeBlock) {
             return b
         }
@@ -132,7 +135,7 @@ class TubeBlock(xTile: Int, yTile: Int) : Block(BlockType.TUBE, yTile, xTile) {
     }
 
     override fun render() {
-        Renderer.renderTexture(state.texture, xPixel - type.textureXPixelOffset, yPixel - type.textureYPixelOffset)
+        Renderer.renderTexture(state.texture, xPixel, yPixel)
         if (closedEnds[0])
             Renderer.renderTexture(Image.Block.TUBE_UP_CLOSE, xPixel, yPixel - Image.Block.TUBE_UP_CLOSE.heightPixels + 4)
         if (closedEnds[1])
@@ -144,28 +147,4 @@ class TubeBlock(xTile: Int, yTile: Int) : Block(BlockType.TUBE, yTile, xTile) {
         if (Game.RENDER_HITBOXES)
             renderHitbox()
     }
-
-    // state = getState(connections)
-    // connections = for each dir, if there is a tube connection or a node connection
-    //
-    // updateTubeConnection(dir)
-    // if there is a tube at dir
-    //   tubeconnections[dir] = that tube
-    //   if it has changed
-    //     updateIntersectionsAround(this)
-    //     if our groups are different
-    //       merge them
-    //
-    // updateNodeConnections(dir)
-    // if there is a node at dir
-    //   nodeconnections[dir] = all the nodes at dir
-    //   if it has changed
-    //      add corresponding nodes to group
-    //      updateIntersectionsAround(this)
-
-    /*
-     * on add tube block
-     *   if not combining
-     *
-     */
 }

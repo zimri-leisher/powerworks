@@ -1,46 +1,51 @@
 package level.block
 
-import inv.Inventory
-import inv.ItemType
-import level.node.InputNode
-import level.node.OutputNode
-import level.node.StorageNode
-import level.node.TransferNode
-import level.resource.ResourceType
+import level.node.ResourceContainer
+import level.node.ResourceNode
 import misc.GeometryHelper
+import misc.TileCoord
 
-sealed class TransferNodeTemplate<R : ResourceType, T : TransferNode<R>>(val xTileOffset: Int, val yTileOffset: Int, val dir: Int, val storageNodeTemplate: StorageNodeTemplate<R>? = null, val resourceTypeID: Int) {
-    abstract fun instantiate(xTile: Int, yTile: Int, dir: Int): T
-}
-
-class InputNodeTemplate<R : ResourceType>(xTileOffset: Int, yTileOffset: Int, dir: Int, storageNodeTemplate: StorageNodeTemplate<R>? = null, resourceTypeID: Int) : TransferNodeTemplate<R, InputNode<R>>(xTileOffset, yTileOffset, dir, storageNodeTemplate, resourceTypeID) {
-    override fun instantiate(xTile: Int, yTile: Int, dir: Int) = InputNode(xTile + xTileOffset, yTile + yTileOffset, GeometryHelper.addAngles(dir, this.dir), storageNodeTemplate?.getInstance(), resourceTypeID)
-}
-
-class OutputNodeTemplate<R : ResourceType>(xTileOffset: Int, yTileOffset: Int, dir: Int, storageNodeTemplate: StorageNodeTemplate<R>? = null, resourceTypeID: Int) : TransferNodeTemplate<R, OutputNode<R>>(xTileOffset, yTileOffset, dir, storageNodeTemplate, resourceTypeID) {
-    override fun instantiate(xTile: Int, yTile: Int, dir: Int) = OutputNode(xTile + xTileOffset, yTile + yTileOffset, GeometryHelper.addAngles(dir, this.dir), storageNodeTemplate?.getInstance(), resourceTypeID)
-}
-
-sealed class StorageNodeTemplate<R : ResourceType>(val resourceTypeID: Int) {
-    var instantiated: StorageNode<R>? = null
-    abstract fun getInstance(): StorageNode<R>
-}
-
-class InventoryTemplate(val width: Int, val height: Int) : StorageNodeTemplate<ItemType>(ResourceType.ITEM) {
-    override fun getInstance() = if(instantiated != null) instantiated!! else Inventory(width, height).apply { instantiated = this }
-}
-
-class BlockNodesTemplate(init: BlockNodesTemplate.() -> Unit = {}, val blockTemplate: BlockTemplate) {
-    val nodeTemplates = mutableListOf<TransferNodeTemplate<*, *>>()
-    val storageNodeTemplates = mutableListOf<StorageNodeTemplate<*>>()
+class BlockNodesTemplate(val widthTiles: Int, val heightTiles: Int, nodesInitializer: BlockNodesTemplate.() -> List<ResourceNode<*>> = { listOf() }) {
+    val nodes = mutableListOf<ResourceNode<*>>()
+    val containers = mutableListOf<ResourceContainer<*>>()
 
     init {
-        init()
+        nodes.addAll(nodesInitializer())
+        // get all the containers of the nodes, only one of each. Later, we will use memory equivalence to check what new instantiated node will have which new instantiated container
+        containers.addAll(nodes.mapNotNull { if (it.attachedContainer !in containers) it.attachedContainer else null })
     }
 
+    private fun instantiateContainers(): Map<ResourceContainer<*>, ResourceContainer<*>> {
+        val map = mutableMapOf<ResourceContainer<*>, ResourceContainer<*>>()
+        val newContainers = containers.map { it.copy() }
+        for (i in containers.indices) {
+            map.put(containers[i], newContainers[i])
+        }
+        return map
+    }
 
+    fun instantiate(xTile: Int, yTile: Int, dir: Int): List<ResourceNode<*>> {
+        val ret = mutableListOf<ResourceNode<*>>()
+        val containers = instantiateContainers()
+        for (node in nodes) {
+            val coord = rotate(node.xTile, node.yTile, widthTiles, heightTiles, GeometryHelper.addAngles(node.dir, dir))
+            val newContainer = containers.filter { it.key === node.attachedContainer }.entries.firstOrNull()?.value
+            // we know that the container is the same type as the node because they were originally together
+            ret.add(node.copy(coord.xTile + xTile, coord.yTile + yTile, GeometryHelper.addAngles(node.dir, dir), attachedContainer = newContainer))
+        }
+        return ret
+    }
 
     companion object {
-        val NONE = BlockNodesTemplate(blockTemplate = BlockTemplate.ERROR)
+        private fun rotate(xTile: Int, yTile: Int, widthTiles: Int, heightTiles: Int, dir: Int): TileCoord {
+            return when (dir % 4) {
+                1 -> TileCoord(widthTiles - yTile - 1, xTile)
+                2 -> TileCoord(widthTiles - xTile - 1, heightTiles - yTile - 1)
+                3 -> TileCoord(yTile, heightTiles - xTile - 1)
+                else -> TileCoord(xTile, yTile)
+            }
+        }
+
+        val NONE = BlockNodesTemplate(1, 1)
     }
 }

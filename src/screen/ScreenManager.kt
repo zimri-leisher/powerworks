@@ -134,7 +134,9 @@ object ScreenManager : ControlPressHandler {
                 InputManager.currentScreenHandlers.add(selectedWindow as ControlPressHandler)
             }
             if (selectedWindow!!.partOfLevel) {
-                InputManager.currentScreenHandlers.add(getHighestWindow(x, y, { it is ViewWindow }) as ControlPressHandler)
+                val h = getHighestWindow(x, y, { it is ViewWindow }) as ControlPressHandler?
+                if (h != null)
+                    InputManager.currentScreenHandlers.add(h)
             }
         }
     }

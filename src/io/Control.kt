@@ -22,6 +22,7 @@ enum class Control {
 
     GIVE_TEST_ITEM,
     DROP_HELD_ITEM,
+    ROTATE_BLOCK,
     PICK_UP_DROPPED_ITEMS;
 
     enum class Group(vararg val controls: Control) {

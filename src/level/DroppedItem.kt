@@ -5,7 +5,6 @@ import inv.Item
 import inv.ItemType
 import io.*
 import level.moving.MovingObject
-import main.Game
 import screen.Mouse
 
 class DroppedItem(xPixel: Int, yPixel: Int, val type: ItemType, quantity: Int = 1) :
@@ -14,7 +13,7 @@ class DroppedItem(xPixel: Int, yPixel: Int, val type: ItemType, quantity: Int = 
     var quantity = quantity
         set(value) {
             if (quantity < 1) {
-                Game.currentLevel.remove(this)
+                Level.remove(this)
             } else {
                 field = value
             }
@@ -30,11 +29,11 @@ class DroppedItem(xPixel: Int, yPixel: Int, val type: ItemType, quantity: Int = 
 
     override fun handleControlPress(p: ControlPress) {
         if (p.control == Control.INTERACT && p.pressType == PressType.RELEASED) {
-            Game.currentLevel.remove(this)
+            Level.remove(this)
             if (Mouse.heldItem == null)
                 Mouse.heldItem = Item(type, quantity)
             else {
-                Game.currentLevel.add(DroppedItem(xPixel, yPixel, Mouse.heldItem!!.type, Mouse.heldItem!!.quantity))
+                Level.add(DroppedItem(xPixel, yPixel, Mouse.heldItem!!.type, Mouse.heldItem!!.quantity))
                 Mouse.heldItem = Item(type, quantity)
             }
         }

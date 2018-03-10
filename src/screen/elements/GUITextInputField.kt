@@ -12,7 +12,8 @@ class GUITextInputField(parent: RootGUIElement, name: String,
                         widthAlignment: () -> Int, heightAlignment: () -> Int,
                         var prompt: String = "",
                         val inputRule: (Char) -> Boolean = { true },
-                        val onPressEnter: (String) -> Unit = {},
+                        val onPressEnter: GUITextInputField.(String) -> Unit = {},
+                        var limitTextLength: Boolean = true,
                         open: Boolean = false,
                         layer: Int = parent.layer + 1) :
         GUIElement(parent, name, xAlignment, yAlignment, widthAlignment, heightAlignment, open, layer),
@@ -61,8 +62,10 @@ class GUITextInputField(parent: RootGUIElement, name: String,
 
     override fun handleChar(c: Char) {
         if (inputRule(c)) {
-            text.insert(cursorIndex, c)
-            cursorIndex++
+            if((limitTextLength && widthPixels / Font.getFont().charWidth > cursorIndex) || !limitTextLength) {
+                text.insert(cursorIndex, c)
+                cursorIndex++
+            }
         }
     }
 

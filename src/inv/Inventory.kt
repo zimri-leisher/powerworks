@@ -1,16 +1,14 @@
 package inv
 
-import level.node.InputNode
-import level.node.StorageNode
+import level.node.ResourceContainer
+import level.node.ResourceNode
 import level.resource.ResourceType
 
 interface InventoryChangeListener {
     fun onInventoryChange(inv: Inventory)
 }
 
-class Inventory(val width: Int, val height: Int) : StorageNode<ItemType>(ResourceType.ITEM) {
-
-    private val items = arrayOfNulls<Item>(width * height)
+class Inventory(val width: Int, val height: Int, private val items: Array<Item?> = arrayOfNulls(width * height) ) : ResourceContainer<ItemType>(ResourceType.ITEM) {
 
     val listeners = mutableListOf<InventoryChangeListener>()
 
@@ -27,12 +25,11 @@ class Inventory(val width: Int, val height: Int) : StorageNode<ItemType>(Resourc
             return false
         }
 
-    override fun add(resource: ItemType, quantity: Int, inputNode: InputNode<ItemType>?, checkForSpace: Boolean): Boolean {
+    override fun add(resource: ItemType, quantity: Int, from: ResourceNode<ItemType>?, checkForSpace: Boolean): Boolean {
         if (checkForSpace)
             if (!spaceFor(resource, quantity))
                 return false
         var amountLeftToAdd = quantity
-
         itemCount += quantity
         // Find if there is a slot that has this type but is not full
         for (i in items.indices) {
@@ -120,7 +117,7 @@ class Inventory(val width: Int, val height: Int) : StorageNode<ItemType>(Resourc
         return capacity >= quantity
     }
 
-    override fun remove(resource: ItemType, quantity: Int, checkIfContains: Boolean): Boolean {
+    override fun remove(resource: ItemType, quantity: Int, to: ResourceNode<ItemType>?, checkIfContains: Boolean): Boolean {
         if (checkIfContains)
             if (!contains(resource, quantity))
                 return false
@@ -220,6 +217,8 @@ class Inventory(val width: Int, val height: Int) : StorageNode<ItemType>(Resourc
         }
         listeners.forEach { it.onInventoryChange(this) }
     }
+
+    override fun copy() = Inventory(width, height, items.copyOf())
 
     operator fun iterator(): Iterator<Item?> {
         return items.iterator()

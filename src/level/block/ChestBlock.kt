@@ -1,20 +1,15 @@
 package level.block
 
 import inv.Inventory
+import inv.ItemType
 import io.*
-import level.node.InputNode
-import level.resource.ResourceType
 import main.Game
 import screen.InventoryGUI
 
-class ChestBlock(xTile: Int, yTile: Int, type: ChestBlockType) : Block(type, yTile, xTile), ControlPressHandler {
+class ChestBlock(override val type: ChestBlockTemplate, xTile: Int, yTile: Int, rotation: Int) : Block(type, xTile, yTile, rotation), ControlPressHandler {
 
-    val inv = Inventory(8, 3)
-    val invGUI = InventoryGUI("Chest at ${this.xTile}, ${this.yTile}'s inventory gui", "Small Chest", inv, Game.WIDTH / 2, Game.HEIGHT / 2)
-    val inputs = arrayOf(InputNode(xTile, yTile, 0, inv, ResourceType.ITEM),
-            InputNode(xTile, yTile, 1, inv, ResourceType.ITEM),
-            InputNode(xTile, yTile, 2, inv, ResourceType.ITEM),
-            InputNode(xTile, yTile, 3, inv, ResourceType.ITEM))
+    val inv = nodes.getAttachedContainers<ItemType>().first() as Inventory
+    val invGUI = InventoryGUI("Chest at ${this.xTile}, ${this.yTile}'s inventory gui", type.invName, inv, Game.WIDTH / 2, Game.HEIGHT / 2)
 
     init {
         InputManager.registerControlPressHandler(this, ControlPressHandlerType.LEVEL_THIS, Control.INTERACT)

@@ -13,7 +13,6 @@ interface ResourceType {
         const val GAS = 2
         const val FLUID = 3
         const val HEAT = 4
-
         const val NUM_TYPES = 5
     }
 }

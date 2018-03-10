@@ -27,7 +27,7 @@ abstract class LevelObject protected constructor(open val xPixel: Int, open val 
 
     var requiresUpdate: Boolean = requiresUpdate
         set(value) {
-            val c = Game.currentLevel.getChunk(xChunk, yChunk)
+            val c = Level.Chunks.get(xChunk, yChunk)
             if (field && !value) {
                 c.updatesRequired!!.remove(this)
             } else if (!field && value) {
@@ -74,7 +74,7 @@ abstract class LevelObject protected constructor(open val xPixel: Int, open val 
     open fun getCollision(xPixel: Int, yPixel: Int, predicate: ((LevelObject) -> Boolean)? = null): LevelObject? {
         if (hitbox == Hitbox.NONE)
             return null
-        return Game.currentLevel.getCollision(this, xPixel, yPixel, predicate)
+        return Level.getCollision(this, xPixel, yPixel, predicate)
     }
 
     open fun save(out: DataOutputStream) {

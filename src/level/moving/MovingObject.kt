@@ -1,8 +1,6 @@
 package level.moving
 
 import level.*
-import level.Level.Chunks.getChunksFromPixelRectangle
-import main.Game
 import java.io.DataOutputStream
 
 const val DEFAULT_MAX_SPEED = 20
@@ -59,7 +57,7 @@ abstract class MovingObject(xPixel: Int, yPixel: Int, hitbox: Hitbox) : LevelObj
     /**
      * The chunk that this object's coordinates are in
      */
-    var currentChunk = Game.currentLevel.getChunk(xChunk, yChunk)
+    var currentChunk = Level.Chunks.get(xChunk, yChunk)
     /**
      * The chunks that this object's hitbox intersects but not the chunk that its coordinates are in
      */
@@ -67,7 +65,7 @@ abstract class MovingObject(xPixel: Int, yPixel: Int, hitbox: Hitbox) : LevelObj
             if (hitbox == Hitbox.NONE)
                 mutableListOf()
             else
-                Level.Chunks.getChunksFromPixelRectangle(hitbox.xStart + xPixel, hitbox.yStart + yPixel, hitbox.width, hitbox.height).toMutableList().
+                Level.Chunks.getFromPixelRectangle(hitbox.xStart + xPixel, hitbox.yStart + yPixel, hitbox.width, hitbox.height).toMutableList().
                         apply { remove(currentChunk) }
     val moveListeners = mutableListOf<MovementListener>()
 
@@ -88,7 +86,7 @@ abstract class MovingObject(xPixel: Int, yPixel: Int, hitbox: Hitbox) : LevelObj
     }
 
     protected open fun onMove(pXPixel: Int, pYPixel: Int) {
-        Game.currentLevel.updateChunk(this)
+        Level.Chunks.updateChunkOf(this)
         moveListeners.forEach { it.onMove(this, pXPixel, pYPixel) }
     }
 

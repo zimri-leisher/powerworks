@@ -57,17 +57,30 @@ object Renderer {
         }
     }
 
-    fun renderEmptyRectangle(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int, color: Int = 0xFFFFFF, alpha: Float = 1.0f, borderThickness: Int = 1) {
+    fun renderEmptyRectangle(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int, color: Int = 0xFFFFFF, params: RenderParams = defaultParams, borderThickness: Int = 1) {
+        val absoluteXPixel = (xPixel + params.xPixelOffset + xPixelOffset) * Game.SCALE
+        val absoluteYPixel = (yPixel + params.yPixelOffset + yPixelOffset) * Game.SCALE
+        val scaledScale = Game.SCALE * params.scale
+        val absoluteWidthPixels = widthPixels * scaledScale * params.scaleWidth
+        val absoluteHeightPixels = heightPixels * scaledScale * params.scaleHeight
         g2d.color = Color(color)
         var oldComposite: Composite? = null
-        if (alpha != 1.0f) {
+        var oldTransform: AffineTransform? = null
+        if (params.alpha != 1.0f) {
             oldComposite = g2d.composite
-            g2d.composite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha)
+            g2d.composite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, params.alpha)
+        }
+        if(params.rotation != 0f) {
+            oldTransform = g2d.transform
+            g2d.rotate(Math.toRadians(params.rotation.toDouble()), (absoluteXPixel + widthPixels / 2).toDouble(), (yPixel + heightPixels / 2).toDouble())
         }
         g2d.stroke = BasicStroke(Game.SCALE.toFloat() * borderThickness)
-        g2d.drawRect((xPixel + xPixelOffset) * Game.SCALE, (yPixel + yPixelOffset) * Game.SCALE, widthPixels * Game.SCALE, heightPixels * Game.SCALE)
-        if (alpha != 1.0f) {
+        g2d.drawRect(absoluteXPixel, absoluteYPixel, absoluteWidthPixels.toInt(), absoluteHeightPixels.toInt())
+        if (params.alpha != 1.0f) {
             g2d.composite = oldComposite
+        }
+        if(params.rotation != 0f) {
+            g2d.transform = oldTransform
         }
     }
 

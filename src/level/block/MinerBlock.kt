@@ -1,23 +1,21 @@
 package level.block
 
+import level.Level
 import level.tile.OreTile
-import main.Game
 
-class MinerBlock(xTile: Int, yTile: Int) : MachineBlock(xTile, yTile, MachineBlockType.MINER, true) {
+class MinerBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(MachineBlockTemplate.MINER, xTile, yTile, rotation, true) {
 
     override fun onFinishWork() {
         for(x in 0 until type.widthTiles) {
             for(y in 0 until type.heightTiles) {
-                val tile = Game.currentLevel.getTile(xTile + x, yTile + y)
+                val tile = Level.Tiles.get(xTile + x, yTile + y)
                 if(tile is OreTile) {
-                    /*
-                    if(.output(tile.type.minedItem, 1)) {
+                    if(nodes.output(tile.type.minedItem, 1, false)) {
                         tile.amount -= 1
                         if(tile.amount == 0)
                             requiresUpdate = false
                     }
                     return
-                    */
                 }
             }
         }

@@ -2,19 +2,19 @@ package inv
 
 import graphics.Image
 import graphics.Texture
-import level.block.BlockType
-import level.block.ChestBlockType
-import level.block.MachineBlockType
+import level.block.BlockTemplate
+import level.block.ChestBlockTemplate
+import level.block.MachineBlockTemplate
 import level.resource.ResourceType
 
 private var nextID = 0
 
-open class ItemType(val name: String, override val texture: Texture, val stretchTexture: Boolean = true, private val placedBlockID: Int = BlockType.ERROR.id, val maxStack: Int) : ResourceType {
+open class ItemType(val name: String, override val texture: Texture, val stretchTexture: Boolean = true, private val placedBlockID: Int = BlockTemplate.ERROR.id, val maxStack: Int) : ResourceType {
 
     constructor(parent: ItemType) : this(parent.name, parent.texture, parent.stretchTexture, parent.placedBlockID, parent.maxStack)
 
-    val placedBlock: BlockType
-        get() = BlockType.getByID(placedBlockID)!!
+    val placedBlock: BlockTemplate<*>
+        get() = BlockTemplate.ALL.first { it.id == placedBlockID }
 
     val id = nextID++
 
@@ -43,7 +43,7 @@ open class ItemType(val name: String, override val texture: Texture, val stretch
 
         val MINER = ItemType("Miner",
                 Image.Block.MINER,
-                placedBlockID = MachineBlockType.MINER.id,
+                placedBlockID = MachineBlockTemplate.MINER.id,
                 maxStack = 10)
 
         val IRON_ORE = ItemType("Iron Ore",
@@ -53,12 +53,12 @@ open class ItemType(val name: String, override val texture: Texture, val stretch
         val TUBE = ItemType("Item Transport Tube",
                 Image.Item.TUBE_ITEM,
                 false,
-                BlockType.TUBE.id,
+                BlockTemplate.TUBE.id,
                 50)
 
         val CHEST_SMALL = ItemType("Small Chest",
                 Image.Block.CHEST_SMALL,
-                placedBlockID = ChestBlockType.CHEST_SMALL.id,
+                placedBlockID = ChestBlockTemplate.CHEST_SMALL.id,
                 maxStack = 20)
 
         val COPPER_ORE = ItemType("Copper Ore",

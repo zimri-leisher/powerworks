@@ -1,29 +1,15 @@
 package level
 
 import audio.AudioManager
+import graphics.RenderParams
 import graphics.Renderer
 import inv.ItemType
-import io.ControlPressHandler
-import io.InputManager
-import io.MouseMovementListener
-import level.Level.Blocks.getBlock
-import level.Level.Chunks.getChunk
-import level.Level.Chunks.getChunkFromPixel
-import level.Level.Chunks.getChunkFromTile
-import level.Level.Chunks.getChunksFromPixelRectangle
-import level.Level.Chunks.getChunksFromTileRectangle
-import level.Level.DroppedItems.getDroppedItemsInRadius
-import level.Level.MovingObjects.getMoving
-import level.Level.MovingObjects.getMovingObjectCollision
-import level.Level.ResourceNodes.getAllTransferNodes
-import level.Level.ResourceNodes.updateNode
+import io.*
 import level.block.Block
-import level.block.BlockType
+import level.block.BlockTemplate
 import level.block.GhostBlock
 import level.moving.MovingObject
-import level.node.InputNode
-import level.node.OutputNode
-import level.node.TransferNode
+import level.node.ResourceNode
 import level.resource.ResourceType
 import level.tile.OreTileType
 import level.tile.Tile
@@ -47,7 +33,7 @@ val CHUNK_TILE_EXP = (Math.log(CHUNK_SIZE_TILES.toDouble()) / Math.log(2.0)).toI
 val CHUNK_PIXEL_EXP = CHUNK_TILE_EXP + 4
 val CHUNK_SIZE_PIXELS = CHUNK_SIZE_TILES shl 4
 
-abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles: Int) : CameraMovementListener, MouseMovementListener {
+abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles: Int) : CameraMovementListener, MouseMovementListener, ControlPressHandler {
 
     val levelFile: File
 
@@ -83,12 +69,14 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
         }
     }
 
+    // TODO come up with final solution for this - make a new type of level object?
+    var ghostBlockRotation = 0
+
     var ghostBlock: GhostBlock? = null
 
     var selectedLevelObject: LevelObject? = null
 
     var maxRenderSteps = 0
-    var lastRenderSteps = 0
 
     var mouseOnLevel = false
     var mouseLevelXPixel = 0
@@ -125,6 +113,7 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
             }
         }
         chunks = gen.requireNoNulls()
+        InputManager.registerControlPressHandler(this, ControlPressHandlerType.LEVEL_ANY, Control.ROTATE_BLOCK)
     }
 
     fun render(view: GUIView) {
@@ -179,9 +168,9 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
             val s = selectedLevelObject!!
             if (r.contains(s.xPixel, s.yPixel)) {
                 if (s is Block)
-                    Renderer.renderEmptyRectangle(s.xPixel, s.yPixel, s.type.widthTiles shl 4, s.type.heightTiles shl 4, 0x1A6AF4, .45f)
+                    Renderer.renderEmptyRectangle(s.xPixel, s.yPixel, s.type.widthTiles shl 4, s.type.heightTiles shl 4, 0x1A6AF4, RenderParams(alpha = .45f))
                 else if (s is MovingObject)
-                    Renderer.renderEmptyRectangle(s.xPixel, s.yPixel, s.hitbox.width, s.hitbox.height, 0x1A6AF4, .45f)
+                    Renderer.renderEmptyRectangle(s.xPixel, s.yPixel, s.hitbox.width, s.hitbox.height, 0x1A6AF4, RenderParams(alpha = .45f))
             }
         }
         TubeBlockGroup.render()
@@ -206,12 +195,7 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
         }
         if (Game.DEBUG_TUBE_INFO) {
             for (c in chunksInTileRectangle) {
-                for (nList in c.inputNodes!!) {
-                    for (n in nList) {
-                        renderNodeDebug(n)
-                    }
-                }
-                for (nList in c.outputNodes!!) {
+                for (nList in c.resourceNodes!!) {
                     for (n in nList) {
                         renderNodeDebug(n)
                     }
@@ -221,13 +205,14 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
         DebugOverlay.setInfo("${view.name} tile render count", count.toString())
     }
 
-    private fun renderNodeDebug(n: TransferNode<*>) {
+    private fun renderNodeDebug(n: ResourceNode<*>) {
         val xSign = GeometryHelper.getXSign(n.dir)
         val ySign = GeometryHelper.getYSign(n.dir)
-        if (n is OutputNode<*>) {
-            Renderer.renderFilledRectangle(((n.xTile shl 4) + 7) + 8 * xSign, ((n.yTile shl 4) + 7) + 8 * ySign, 2, 2, 0xFF0000, 0.25f)
-        } else if (n is InputNode<*>) {
-            Renderer.renderFilledRectangle(((n.xTile shl 4) + 7) + 8 * xSign, ((n.yTile shl 4) + 7) + 8 * ySign, 2, 2, 0xFFFF00, 0.25f)
+        if (n.allowOut) {
+            Renderer.renderFilledRectangle(((n.xTile shl 4) + 7) + 8 * xSign, ((n.yTile shl 4) + 7) + 8 * ySign, 2, 2, 0x0200FF, 0.25f)
+        }
+        if (n.allowIn) {
+            Renderer.renderFilledRectangle(((n.xTile shl 4) + 7) + 8 * xSign, ((n.yTile shl 4) + 7) + 8 * ySign, 2, 2, 0xFFF700, 0.25f)
         }
     }
 
@@ -236,7 +221,7 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
         TubeBlockGroup.update()
         updateChunksBeingRendered()
         for (c in loadedChunks) {
-            if (c.updatesRequired!!.size == 0 && !c.beingRendered && c.inputNodes!!.all { it.isEmpty() } && c.outputNodes!!.all { it.isEmpty() }) {
+            if (c.updatesRequired!!.size == 0 && !c.beingRendered && c.resourceNodes!!.all { it.isEmpty() }) {
                 c.unload()
             } else {
                 c.update()
@@ -267,23 +252,29 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
             ghostBlock = null
         } else if (currentItem != null) {
             val placedType = currentItem.type.placedBlock
-            if (placedType == BlockType.ERROR) {
+            if (placedType == BlockTemplate.ERROR) {
                 ghostBlock = null
             } else {
                 val xTile = ((mouseLevelXPixel) shr 4) - placedType.widthTiles / 2
                 val yTile = ((mouseLevelYPixel) shr 4) - placedType.heightTiles / 2
                 if (ghostBlock == null) {
-                    ghostBlock = GhostBlock(xTile, yTile, placedType)
+                    ghostBlock = GhostBlock(placedType, xTile, yTile, ghostBlockRotation)
                 } else {
                     val g = ghostBlock!!
                     if (xTile != g.xTile || yTile != g.yTile || g.type != placedType) {
-                        ghostBlock = GhostBlock(xTile, yTile, placedType)
+                        ghostBlock = GhostBlock(placedType, xTile, yTile, ghostBlockRotation)
                     } else {
                         g.placeable = ghostBlock!!.getCollision(xTile shl 4, yTile shl 4) == null
                     }
                 }
             }
 
+        }
+    }
+
+    override fun handleControlPress(p: ControlPress) {
+        if(p.control == Control.ROTATE_BLOCK && p.pressType == PressType.PRESSED) {
+            ghostBlockRotation = (ghostBlockRotation + 1) % 4
         }
     }
 
@@ -496,70 +487,56 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
     }
 
     object ResourceNodes {
-        fun updateAttachments(o: TransferNode<*>) {
-            if (o is OutputNode) {
-                attachInputToOutput(o)
+        fun <R : ResourceType> updateAttachments(o: ResourceNode<R>) {
+            val attached = get<R>(o.xTile + GeometryHelper.getXSign(o.dir), o.yTile + GeometryHelper.getYSign(o.dir), o.resourceTypeID).filter { it.dir == GeometryHelper.getOppositeAngle(o.dir) }
+            if(o.allowOut && o.allowIn) {
+                o.attachedNode = attached.firstOrNull { it.allowIn && it.allowOut }
+            } else if(o.allowOut) {
+                o.attachedNode = attached.firstOrNull { it.allowIn }
+            } else if(o.allowIn) {
+                o.attachedNode = attached.firstOrNull { it.allowOut }
+            } else {
+                o.attachedNode = null
             }
         }
 
-        private fun <R : ResourceType> attachInputToOutput(o: OutputNode<R>) {
-            val i = getInputNode<R>(o.xTile + GeometryHelper.getXSign(o.dir), o.yTile + GeometryHelper.getYSign(o.dir), o.dir, o.resourceTypeID)
-            o.attachedInput = i
+        fun get(xTile: Int, yTile: Int): List<ResourceNode<*>> {
+            val ret = mutableListOf<ResourceNode<*>>()
+            Chunks.getFromTile(xTile, yTile).resourceNodes!!.forEach { it.filter { it.xTile == xTile && it.yTile == yTile }.forEach { ret.add(it) } }
+            return ret
         }
 
-        fun <R : ResourceType> getInputNode(xTile: Int, yTile: Int, dir: Int, resourceTypeID: Int): InputNode<R>? {
-            // THIS IS OK - we know they are of the same type because we can assume that when you
-            // initialize it, you use the corresponding ResourceType ID
-            return Chunks.getFromTile(xTile, yTile).inputNodes!![resourceTypeID].firstOrNull { it.xTile == xTile && it.yTile == yTile && GeometryHelper.isOppositeAngle(it.dir, dir) } as InputNode<R>?
+        fun <R : ResourceType> get(xTile: Int, yTile: Int, resourceTypeID: Int): List<ResourceNode<R>> {
+            return get(xTile, yTile).filter { it.resourceTypeID == resourceTypeID } as List<ResourceNode<R>>
         }
 
-        fun <R : ResourceType> getOutputNode(xTile: Int, yTile: Int, dir: Int, resourceTypeID: Int): OutputNode<R>? {
-            // THIS IS OK - we know they are of the same type because we can assume that when you
-            // initialize it, you use the corresponding ResourceType ID
-            return Chunks.getFromTile(xTile, yTile).outputNodes!![resourceTypeID].firstOrNull { it.xTile == xTile && it.yTile == yTile && GeometryHelper.isOppositeAngle(it.dir, dir) } as OutputNode<R>?
+        fun <R : ResourceType> getOutputs(xTile: Int, yTile: Int, resourceTypeID: Int): List<ResourceNode<R>> {
+            return get<R>(xTile, yTile, resourceTypeID).filter { it.allowOut }
         }
 
-        fun removeTransferNode(n: TransferNode<*>) {
-            if(!n.inLevel)
-                return
-            if (n is InputNode)
-                Chunks.getFromTile(n.xTile, n.yTile).removeInputNode(n)
-            else if (n is OutputNode)
-                Chunks.getFromTile(n.xTile, n.yTile).removeOutputNode(n)
+        fun <R : ResourceType> getInputs(xTile: Int, yTile: Int, resourceTypeID: Int): List<ResourceNode<R>> {
+            return get<R>(xTile, yTile, resourceTypeID).filter { it.allowIn }
         }
 
-        fun getAllTransferNodes(xTile: Int, yTile: Int, predicate: (TransferNode<*>) -> Boolean = { true }): MutableList<TransferNode<*>> {
-            val l = mutableListOf<TransferNode<*>>()
+        fun getAll(xTile: Int, yTile: Int, predicate: (ResourceNode<*>) -> Boolean = { true }): MutableList<ResourceNode<*>> {
+            val l = mutableListOf<ResourceNode<*>>()
             with(Chunks.getFromTile(xTile, yTile)) {
-                inputNodes!!.forEach { l.addAll(it.filter { predicate(it) && it.xTile == xTile && it.yTile == yTile }) }
-                outputNodes!!.forEach { l.addAll(it.filter { predicate(it) && it.xTile == xTile && it.yTile == yTile }) }
+                resourceNodes!!.forEach { l.addAll(it.filter { predicate(it) && it.xTile == xTile && it.yTile == yTile }) }
             }
             return l
         }
 
-        fun removeAllTransferNodes(xTile: Int, yTile: Int, predicate: (TransferNode<*>) -> Boolean = { true }) {
-            val c = Chunks.getFromTile(xTile, yTile)
-            getAllTransferNodes(xTile, yTile, predicate).forEach { if (it is InputNode) c.removeInputNode(it) else if (it is OutputNode) c.removeOutputNode(it) }
+        fun <R : ResourceType> getAll(xTile: Int, yTile: Int, resourceTypeID: Int, predicate: (ResourceNode<*>) -> Boolean = { true }): MutableList<ResourceNode<R>> {
+            val l = mutableListOf<ResourceNode<R>>()
+            with(Chunks.getFromTile(xTile, yTile)) {
+                resourceNodes!!.forEach { l.addAll(it.filter { predicate(it) && it.resourceTypeID == resourceTypeID && it.xTile == xTile && it.yTile == yTile } as List<ResourceNode<R>>) }
+            }
+            return l
         }
 
-        fun addTransferNode(o: TransferNode<*>) {
-            if(o.inLevel)
-                return
-            val c = Chunks.getFromTile(o.xTile, o.yTile)
-            if (o is InputNode) {
-                c.addInputNode(o)
-                o.inLevel = true
-            } else if (o is OutputNode) {
-                c.addOutputNode(o)
-                o.inLevel = true
-            }
-            updateAttachments(o)
-            for (x in -1..1) {
-                for (y in -1..1) {
-                    if (Math.abs(x) != Math.abs(y))
-                        getAllTransferNodes(o.xTile + x, o.yTile + y).forEach { updateNode(it) }
-                }
-            }
+        fun removeAll(xTile: Int, yTile: Int, predicate: (ResourceNode<*>) -> Boolean = { true }) {
+            val c = Chunks.getFromTile(xTile, yTile)
+            getAll(xTile, yTile, predicate).forEach { remove(it) }
         }
     }
 
@@ -597,6 +574,7 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
                 return b
             return null
         }
+
         // TODO do this async
         fun doesPairCollide(l: LevelObject, xPixel: Int = l.xPixel, yPixel: Int = l.yPixel, l2: LevelObject, xPixel2: Int = l2.xPixel, yPixel2: Int = l2.yPixel): Boolean {
             return GeometryHelper.intersects(xPixel + l.hitbox.xStart, yPixel + l.hitbox.yStart, l.hitbox.width, l.hitbox.height, xPixel2 + l2.hitbox.xStart, yPixel2 + l2.hitbox.yStart, l2.hitbox.width, l2.hitbox.height)
@@ -694,9 +672,39 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
             }
             return 0
         }
-    }
 
-    fun save() {
+        fun add(resourceNode: ResourceNode<*>) {
+            if (resourceNode.inLevel)
+                return
+            val c = Chunks.getFromTile(resourceNode.xTile, resourceNode.yTile)
+            c.addResourceNode(resourceNode)
+            resourceNode.inLevel = true
+            ResourceNodes.updateAttachments(resourceNode)
+            for (x in -1..1) {
+                for (y in -1..1) {
+                    if (Math.abs(x) != Math.abs(y))
+                        ResourceNodes.get(resourceNode.xTile + x, resourceNode.yTile + y).forEach { ResourceNodes.updateAttachments(it) }
+                }
+            }
+        }
+
+        fun remove(resourceNode: ResourceNode<*>) {
+            if(!resourceNode.inLevel)
+                return
+            val c = Chunks.getFromTile(resourceNode.xTile, resourceNode.yTile)
+            c.removeResourceNode(resourceNode)
+            resourceNode.inLevel = false
+            for (x in -1..1) {
+                for (y in -1..1) {
+                    if (Math.abs(x) != Math.abs(y))
+                        ResourceNodes.get(resourceNode.xTile + x, resourceNode.yTile + y).forEach { ResourceNodes.updateAttachments(it) }
+                }
+            }
+        }
+
+        fun save() {
+
+        }
 
     }
 }

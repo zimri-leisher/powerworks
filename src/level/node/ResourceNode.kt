@@ -1,46 +1,110 @@
 package level.node
 
+import level.Level
 import level.resource.ResourceType
+import misc.GeometryHelper
 
-/**
- * Anything that moves or stores this resource type
- */
-abstract class ResourceNode<R : ResourceType>(val xTile: Int, val yTile: Int)
-
-abstract class ResourceTransferNode<R : ResourceType>(xTile: Int, yTile: Int, var dir: Int, val resourceTypeID: Int) : ResourceNode<R>(xTile, yTile) {
+class ResourceNode<R : ResourceType>(val xTile: Int, val yTile: Int, val dir: Int, var allowIn: Boolean = false, var allowOut: Boolean = false, val resourceTypeID: Int, var attachedContainer: ResourceContainer<R>? = null) {
     var inLevel = false
-    var attachedStorageNode: StorageNode<R>? = null
+    var attachedNode: ResourceNode<R>? = null
+
+    /**
+     * @return whether the resource is of the right type. Does not check container or attached node for anything
+     */
+    fun isAcceptableResource(resource: ResourceType) = resource.typeID == resourceTypeID
+
+    /**
+     * @return whether the container contains adequate amounts of it. If there is no container, it will return false
+     */
+    fun canOutputFromContainer(resource: ResourceType, quantity: Int): Boolean {
+        if (!allowOut) return false
+        resource as R
+        if (attachedContainer != null && attachedContainer!!.contains(resource, quantity))
+            return true
+        return false
+    }
+
+    /**
+     * @return whether space is available in the container. If there is no container, it will return false
+     */
+    fun canInputToContainer(resource: ResourceType, quantity: Int): Boolean {
+        if (!allowIn) return false
+        resource as R
+        if (attachedContainer != null && attachedContainer!!.spaceFor(resource, quantity))
+            return true
+        return false
+    }
+
+    /**
+     * @param checkIfSpaceFor whether or not to check if the resource is valid and space is available
+     * @return true if the resources were moved
+     */
+    fun input(resource: ResourceType, quantity: Int, checkIfSpaceFor: Boolean = true): Boolean {
+        if (!isAcceptableResource(resource))
+            return false
+        if (checkIfSpaceFor)
+            if (!canInputToContainer(resource, quantity))
+                return false
+        resource as R
+        return attachedContainer!!.add(resource, quantity, this)
+    }
+
+    /**
+     * @param checkIfContains whether or not to check if the resource is valid and the container has enough
+     * @return true if the resources were moved
+     */
+    fun output(resource: ResourceType, quantity: Int, checkIfContains: Boolean = true): Boolean {
+        if (!isAcceptableResource(resource))
+            return false
+        if (checkIfContains)
+            if (!canOutputFromContainer(resource, quantity))
+                return false
+        resource as R
+        attachedContainer?.remove(resource, quantity, this)
+        if(attachedNode != null) {
+            return attachedNode!!.input(resource, quantity)
+        } else {
+            val xSign = GeometryHelper.getXSign(dir)
+            val ySign = GeometryHelper.getYSign(dir)
+            return Level.add(((xTile shl 4) + 7) + 8 * xSign, ((yTile shl 4) + 7) + 8 * ySign, resource, quantity) == quantity
+        }
+    }
+
+    fun copy(xTile: Int = this.xTile, yTile: Int = this.yTile, dir: Int = this.dir, allowIn: Boolean = this.allowIn, allowOut: Boolean = this.allowOut, attachedContainer: ResourceContainer<*>? = this.attachedContainer) =
+            ResourceNode(xTile, yTile, dir, allowIn, allowOut, resourceTypeID, attachedContainer)
+
+    override fun toString() = "Resource node at $xTile, $yTile, out: $allowOut, in: $allowIn, dir: $dir, has attached: ${attachedNode != null}"
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        other as ResourceNode<*>
+        if (xTile != other.xTile) return false
+        if (yTile != other.yTile) return false
+        if (dir != other.dir) return false
+        if (resourceTypeID != other.resourceTypeID) return false
+        if (attachedContainer != other.attachedContainer) return false
+        if (inLevel != other.inLevel) return false
+        if (allowOut != other.allowOut) return false
+        if (allowIn != other.allowIn) return false
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = xTile
+        result = 31 * result + yTile
+        result = 31 * result + dir
+        result = 31 * result + resourceTypeID
+        result = 31 * result + (attachedContainer?.hashCode() ?: 0)
+        result = 31 * result + inLevel.hashCode()
+        result = 31 * result + allowOut.hashCode()
+        result = 31 * result + allowIn.hashCode()
+        return result
+    }
+
+    companion object {
+        fun <R : ResourceType> createCorresponding(n: ResourceNode<R>, attachedContainer: ResourceContainer<R>? = null) =
+                ResourceNode(n.xTile + GeometryHelper.getXSign(n.dir), n.yTile + GeometryHelper.getYSign(n.dir), GeometryHelper.getOppositeAngle(n.dir), n.allowOut, n.allowIn, n.resourceTypeID, attachedContainer)
+    }
 }
 
-abstract class StorageNode<R : ResourceType>(xTile: Int, yTile: Int, val resourceTypeID: Int) : ResourceNode<R>(xTile, yTile) {
-    /**
-     * Adds the specified resource with the specified quantity to this node
-     * @param checkForSpace whether or not to call spaceFor before executing. Set to false if you already know there is space
-     * @param from the node that is adding to this, null if none
-     * @return true on successful addition
-     */
-    abstract fun add(resource: R, quantity: Int, from: InputNode<R>? = null, checkForSpace: Boolean = true): Boolean
-
-    /**
-     * If this is able to accept the specified resource in the specified quantity
-     */
-    abstract fun spaceFor(resource: R, quantity: Int): Boolean
-
-    /**
-     * Removes the specified resource with the specified quantity from this node
-     * @param checkIfContains whether or not to call contains before executing. Set to false if you already know that it contains sufficient amounts
-     * @param to the node that is removing from this, null if none
-     * @return true on successful removal
-     */
-    abstract fun remove(resource: R, quantity: Int, to: OutputNode<R>? = null, checkIfContains: Boolean = true): Boolean
-
-    /**
-     * If this has the specified resource in the specified quantity
-     */
-    abstract fun contains(resource: R, quantity: Int): Boolean
-
-    /**
-     * Removes all reources from this node
-     */
-    abstract fun clear()
-}

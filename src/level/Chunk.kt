@@ -2,8 +2,7 @@ package level
 
 import level.block.Block
 import level.moving.MovingObject
-import level.node.InputNode
-import level.node.OutputNode
+import level.node.ResourceNode
 import level.tile.Tile
 import misc.ConcurrentlyModifiableMutableList
 
@@ -18,9 +17,7 @@ class Chunk(val parent: Level, val xChunk: Int, val yChunk: Int) {
     var movingOnBoundary: MutableList<MovingObject>? = null
     var updatesRequired: ConcurrentlyModifiableMutableList<LevelObject>? = null
     var droppedItems: MutableList<DroppedItem>? = null
-    // One list for each resource type
-    var outputNodes: Array<MutableList<OutputNode<*>>>? = null
-    var inputNodes: Array<MutableList<InputNode<*>>>? = null
+    var resourceNodes: Array<MutableList<ResourceNode<*>>>? = null
     var beingRendered = false
 
     /* Convenience methods. Assume it is loaded */
@@ -67,20 +64,12 @@ class Chunk(val parent: Level, val xChunk: Int, val yChunk: Int) {
             updatesRequired!!.remove(m)
     }
 
-    fun addInputNode(i: InputNode<*>) {
-        inputNodes!![i.resourceTypeID].add(i)
+    fun addResourceNode(r: ResourceNode<*>) {
+        resourceNodes!![r.resourceTypeID].add(r)
     }
 
-    fun removeInputNode(i: InputNode<*>) {
-        inputNodes!![i.resourceTypeID].remove(i)
-    }
-
-    fun addOutputNode(o: OutputNode<*>) {
-        outputNodes!![o.resourceTypeID].add(o)
-    }
-
-    fun removeOutputNode(o: OutputNode<*>) {
-        outputNodes!![o.resourceTypeID].remove(o)
+    fun removeResourceNode(r: ResourceNode<*>) {
+        resourceNodes!![r.resourceTypeID].remove(r)
     }
 
     fun update() {
@@ -98,10 +87,7 @@ class Chunk(val parent: Level, val xChunk: Int, val yChunk: Int) {
         this.updatesRequired = ConcurrentlyModifiableMutableList()
         this.movingOnBoundary = mutableListOf()
         this.droppedItems = mutableListOf()
-        this.outputNodes = arrayOf(
-                mutableListOf()
-        )
-        this.inputNodes = arrayOf(
+        this.resourceNodes = arrayOf(
                 mutableListOf()
         )
         loaded = true
@@ -116,8 +102,7 @@ class Chunk(val parent: Level, val xChunk: Int, val yChunk: Int) {
         loaded = false
         movingOnBoundary = null
         droppedItems = null
-        outputNodes = null
-        inputNodes = null
+        resourceNodes = null
         parent.loadedChunks.remove(this)
     }
 
