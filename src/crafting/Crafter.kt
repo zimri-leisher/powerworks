@@ -4,6 +4,12 @@ package crafting
  * All the methods of crafting
  * Used for limiting available recipes
  */
-enum class Crafter {
-    PLAYER
+interface Crafter {
+
+    val crafterType: Int
+
+    companion object {
+        val PLAYER = 1
+        val ITEM_CRAFTER = 2
+    }
 }

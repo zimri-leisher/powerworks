@@ -1,10 +1,12 @@
 package level
 
 import graphics.Renderer
-import inv.Item
-import inv.ItemType
 import io.*
+import item.Item
+import item.ItemType
 import level.moving.MovingObject
+import main.Game
+import screen.HUD
 import screen.Mouse
 
 class DroppedItem(xPixel: Int, yPixel: Int, val type: ItemType, quantity: Int = 1) :
@@ -30,12 +32,9 @@ class DroppedItem(xPixel: Int, yPixel: Int, val type: ItemType, quantity: Int = 
     override fun handleControlPress(p: ControlPress) {
         if (p.control == Control.INTERACT && p.pressType == PressType.RELEASED) {
             Level.remove(this)
-            if (Mouse.heldItem == null)
-                Mouse.heldItem = Item(type, quantity)
-            else {
-                Level.add(DroppedItem(xPixel, yPixel, Mouse.heldItem!!.type, Mouse.heldItem!!.quantity))
-                Mouse.heldItem = Item(type, quantity)
-            }
+            Game.mainInv.add(Item(type, quantity))
+            Mouse.heldItemType = type
+            HUD.Hotbar.items.add(type)
         }
     }
 

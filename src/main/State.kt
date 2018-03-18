@@ -1,13 +1,10 @@
 package main
 
 import audio.AudioManager
-import inv.Inventory
-import inv.ItemType
+import item.Inventory
+import item.ItemType
 import level.SimplexLevel
-import screen.HUD
-import screen.IngameGUI
-import screen.MainMenuGUI
-import screen.MovementToolsGUI
+import screen.*
 
 
 class State(val activate: (State) -> (Unit), val deactivate: (State) -> (Unit)) {
@@ -24,6 +21,8 @@ class State(val activate: (State) -> (Unit), val deactivate: (State) -> (Unit)) 
         val INGAME = State({
             Game.currentLevel = SimplexLevel("level1", 256, 256)
             Game.mainInv = Inventory(Game.INVENTORY_WIDTH, Game.INVENTOR_HEIGHT)
+            // the mouse listens to changes so that if there are no more items of the selected type in the main inventory, then it will switch the type to null
+            Game.mainInv.listeners.add(Mouse)
             for(i in ItemType.ALL) {
                 Game.mainInv.add(i, 1)
             }

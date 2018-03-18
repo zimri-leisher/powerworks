@@ -4,9 +4,9 @@ import graphics.Image
 import graphics.Renderer
 import graphics.Texture
 import graphics.Utils
-import inv.Inventory
-import inv.Item
 import io.*
+import item.Inventory
+import item.ItemType
 import level.CHUNK_PIXEL_EXP
 import level.DroppedItem
 import level.Level
@@ -14,32 +14,37 @@ import level.LevelObject
 import level.tube.TubeBlock
 import main.Game
 import main.State
+import resource.ResourceContainer
+import resource.ResourceContainerChangeListener
+import resource.ResourceType
 import screen.elements.*
 
-object Mouse : ControlPressHandler {
-
+object Mouse : ControlPressHandler, ResourceContainerChangeListener {
     const val DROPPED_ITEM_PICK_UP_RANGE = 8
+
     const val ICON_SIZE = 8
 
     var button = 0
     var xPixel = 0
+
     var yPixel = 0
-    var heldItem: Item? = null
-    var inventory: Inventory? = null
+    var heldItemType: ItemType? = null
 
     private val levelTooltipTemplates = sortedMapOf<Int, (LevelObject) -> String?>()
+
     private val screenTooltipTemplates = sortedMapOf<Int, (RootGUIElement) -> String?>()
 
     private var window = GUIWindow("Mouse", { xPixel }, { yPixel }, { 0 }, { 0 }, true, 0, ScreenManager.Groups.MOUSE).apply {
         transparentToInteraction = true
     }
-
     private var group = GUIGroup(window.rootChild, "Mouse info group", { 0 }, { 0 }, open = true).apply {
         transparentToInteraction = true
     }
+
     private var text = GUIText(group, "Mouse info group text", 2, 2, "", layer = group.layer + 3).apply {
         open = false
     }
+
     private var background = GUITexturePane(group, "Mouse info group background", 0, 0, Image(Utils.genRectangle(text.widthPixels + 4, text.heightPixels + 4)), layer = group.layer + 2).apply {
         open = false
     }
@@ -47,7 +52,6 @@ object Mouse : ControlPressHandler {
         open = false
         updateDimensionAlignmentOnTextureChange = false
     }
-
     init {
         InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.DROP_HELD_ITEM, Control.PICK_UP_DROPPED_ITEMS)
     }
@@ -105,11 +109,12 @@ object Mouse : ControlPressHandler {
     }
 
     fun render() {
-        if (heldItem != null) {
-            val i = heldItem!!
+        if (heldItemType != null) {
+            val i = heldItemType!!
+            val q = Game.mainInv.getQuantity(i)
             var w = GUIItemSlot.WIDTH
             var h = GUIItemSlot.HEIGHT
-            val t = i.type.texture
+            val t = i.texture
             if (t.widthPixels > t.heightPixels) {
                 if (t.widthPixels > GUIItemSlot.WIDTH) {
                     w = GUIItemSlot.WIDTH
@@ -125,7 +130,7 @@ object Mouse : ControlPressHandler {
                 }
             }
             Renderer.renderTexture(t, xPixel + (GUIItemSlot.WIDTH - w) / 2, yPixel + (GUIItemSlot.HEIGHT - h) / 2, w, h)
-            Renderer.renderText(i.quantity.toString(), xPixel, yPixel)
+            Renderer.renderText(q, xPixel, yPixel)
         }
         if (Game.DEBUG_TUBE_INFO) {
             val t = Game.currentLevel.selectedLevelObject
@@ -156,36 +161,52 @@ object Mouse : ControlPressHandler {
                     "  Pixel: $xPixel, $yPixel\n" +
                     "  Tile: ${xPixel shr 4}, ${yPixel shr 4}\n" +
                     "  Chunk: ${xPixel shr CHUNK_PIXEL_EXP}, ${yPixel shr CHUNK_PIXEL_EXP}\n" +
-                    if(State.CURRENT_STATE == State.INGAME) "Level:\n" +
-                    "  Pixel: ${Game.currentLevel.mouseLevelXPixel}, ${Game.currentLevel.mouseLevelYPixel}\n" +
-                    "  Tile: ${Game.currentLevel.mouseLevelXPixel shr 4}, ${Game.currentLevel.mouseLevelYPixel shr 4}\n" +
-                    "  Chunk: ${Game.currentLevel.mouseLevelXPixel shr CHUNK_PIXEL_EXP}, ${Game.currentLevel.mouseLevelYPixel shr CHUNK_PIXEL_EXP}" else "", xPixel, yPixel)
+                    if (State.CURRENT_STATE == State.INGAME) "Level:\n" +
+                            "  Pixel: ${Game.currentLevel.mouseLevelXPixel}, ${Game.currentLevel.mouseLevelYPixel}\n" +
+                            "  Tile: ${Game.currentLevel.mouseLevelXPixel shr 4}, ${Game.currentLevel.mouseLevelYPixel shr 4}\n" +
+                            "  Chunk: ${Game.currentLevel.mouseLevelXPixel shr CHUNK_PIXEL_EXP}, ${Game.currentLevel.mouseLevelYPixel shr CHUNK_PIXEL_EXP}" else "", xPixel, yPixel)
         }
+    }
 
+    fun dropHeldItem(q: Int = 1) {
+        if (heldItemType != null) {
+            val type = heldItemType!!
+            if (Level.add(DroppedItem(Game.currentLevel.mouseLevelXPixel, Game.currentLevel.mouseLevelYPixel, type, q)))
+                Game.mainInv.remove(type, q)
+        }
+    }
+
+    override fun onContainerAdd(container: ResourceContainer<*>, resource: ResourceType, quantity: Int) {
+    }
+
+    override fun onContainerRemove(inv: Inventory, resource: ResourceType, quantity: Int) {
+    }
+
+    override fun onContainerClear(container: ResourceContainer<*>) {
+    }
+
+    override fun onContainerChange(container: ResourceContainer<*>) {
+        if(container == Game.mainInv && heldItemType != null) {
+            if(Game.mainInv.getQuantity(heldItemType!!) == 0)
+                heldItemType = null
+        }
     }
 
     override fun handleControlPress(p: ControlPress) {
         if (p.pressType == PressType.PRESSED) {
             when (p.control) {
-                Control.DROP_HELD_ITEM -> {
-                    if (heldItem != null) {
-                        val type = heldItem!!.type
-                        if (Level.add(DroppedItem(Game.currentLevel.mouseLevelXPixel, Game.currentLevel.mouseLevelYPixel, type)))
-                            inventory?.remove(type, 1)
-                    }
-                }
+                Control.DROP_HELD_ITEM -> dropHeldItem()
                 Control.PICK_UP_DROPPED_ITEMS -> {
                     val i = Level.DroppedItems.getInRadius(Game.currentLevel.mouseLevelXPixel, Game.currentLevel.mouseLevelYPixel, DROPPED_ITEM_PICK_UP_RANGE)
                     if (i.isNotEmpty()) {
                         val g = i.first()
-                        if (inventory?.full == true) {
-                            if (!Game.mainInv.full) {
-                                Game.mainInv.add(g.type, g.quantity)
-                                Level.remove(g)
-                            }
-                        } else {
-                            inventory?.add(g.type, g.quantity)
+                        if (!Game.mainInv.full) {
+                            Game.mainInv.add(g.type, g.quantity)
                             Level.remove(g)
+                            if(heldItemType == null) {
+                                heldItemType = g.type
+                            }
+                            HUD.Hotbar.items.add(g.type)
                         }
                     }
                 }

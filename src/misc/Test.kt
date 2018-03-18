@@ -1,7 +1,7 @@
 package misc
 
-import inv.Inventory
-import inv.ItemType
+import item.Inventory
+import item.ItemType
 
 fun testInventory() {
     try {

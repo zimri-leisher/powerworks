@@ -2,16 +2,19 @@ package screen.elements
 
 import graphics.Image
 import graphics.Renderer
-import inv.Inventory
-import inv.Item
 import io.PressType
+import item.Inventory
+import item.Item
+import item.ItemType
+import main.Game
+import resource.ResourceContainer
 import screen.HUD
 import screen.InventoryGUI
 import screen.Mouse
 import screen.ScreenManager
 
 
-class GUIItemSlot(parent: RootGUIElement, name: String, xPixel: Int, yPixel: Int, var index: Int, var inv: Inventory,
+class GUIItemSlot(parent: RootGUIElement, name: String, xPixel: Int, yPixel: Int, var index: Int, var inv: ResourceContainer<ItemType>,
                   var isDisplay: Boolean = false, open: Boolean = false, layer: Int = parent.layer + 1) :
         GUIElement(parent, name, xPixel, yPixel, WIDTH, HEIGHT, open, layer) {
 
@@ -20,7 +23,17 @@ class GUIItemSlot(parent: RootGUIElement, name: String, xPixel: Int, yPixel: Int
     var currentItem: Item? = null
 
     override fun update() {
-        currentItem = inv[index]
+        if (inv is Inventory) {
+            currentItem = (inv as Inventory)[index]
+        } else if (inv is HUD.Hotbar.HotbarInventory) {
+            val invItemType = (inv as HUD.Hotbar.HotbarInventory)[index]
+            if (invItemType != null) {
+                currentItem = Item(invItemType, Game.mainInv.getQuantity(invItemType))
+            } else {
+                currentItem = null
+            }
+        }
+
     }
 
     override fun render() {
@@ -50,49 +63,49 @@ class GUIItemSlot(parent: RootGUIElement, name: String, xPixel: Int, yPixel: Int
         if (isDisplay)
             return
         if (type == PressType.PRESSED) {
+            HUD.Hotbar.selected = -1
+            currentTexture = Image.GUI.ITEM_SLOT_CLICK
             if (shift) {
                 if (currentItem != null) {
                     val i = currentItem!!
-                    val invGUIs = ScreenManager.Groups.INVENTORY.windows
-                    if (invGUIs.isNotEmpty()) {
-                        val highestOtherWindow = invGUIs.filter { it.open && it != parentWindow }.maxBy { it.layer }
-                        if (highestOtherWindow != null && highestOtherWindow is InventoryGUI) {
-                            if (highestOtherWindow.inv.add(i))
-                                inv.remove(i)
-                        } else {
-                            if (parentWindow != HUD.Hotbar) {
-                                if (HUD.Hotbar.items.add(i))
-                                    inv.remove(i)
-                            }
-                        }
+                    val other = getSecondaryInventory()
+                    if (other != null) {
+                        other.add(i)
+                        inv.remove(i.type, i.quantity)
+                    } else {
+                        HUD.Hotbar.items.add(i.type)
+                    }
+                }
+            } else if (ctrl) {
+                if (currentItem != null) {
+                    val i = currentItem!!
+                    val other = getSecondaryInventory()
+                    if (other != null) {
+                        val q = inv.getQuantity(i.type)
+                        other.add(i.type, q)
+                        inv.remove(i.type, q)
                     }
                 }
             } else {
-                currentTexture = Image.GUI.ITEM_SLOT_CLICK
-                val mI = Mouse.heldItem
                 val cI = currentItem
                 if (button == 1) {
-                    if(mI != null) {
-                        if(cI != null) {
-                            inv.remove(cI)
-                            inv.add(mI)
-                            Mouse.heldItem = cI
-                        } else {
-                            inv.add(mI)
-                            Mouse.heldItem = null
-                        }
-                    } else {
-                        if(cI != null) {
-                            Mouse.heldItem = cI
-                            inv.remove(cI)
-                        }
-                    }
-                    Mouse.inventory = inv
+                    Mouse.heldItemType = cI?.type
                 }
             }
         } else if (type == PressType.RELEASED) {
             currentTexture = Image.GUI.ITEM_SLOT
         }
+    }
+
+    private fun getSecondaryInventory(): Inventory? {
+        val invGUIs = ScreenManager.Groups.INVENTORY.windows
+        if (invGUIs.isNotEmpty()) {
+            val highestOtherWindow = invGUIs.filter { it.open && it != parentWindow }.maxBy { it.layer }
+            if (highestOtherWindow != null && highestOtherWindow is InventoryGUI) {
+                return highestOtherWindow.inv
+            }
+        }
+        return null
     }
 
     companion object {

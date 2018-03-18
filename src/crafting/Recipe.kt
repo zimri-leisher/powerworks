@@ -1,28 +1,19 @@
 package crafting
 
-import inv.ItemType
-import level.resource.ResourceType
-
-typealias ResourceList = Map<ResourceType, Int>
-
-fun ResourceList.enoughIn(other: ResourceList): Boolean {
-    for ((k, v) in this) {
-        if (!other.containsKey(k) || other.get(k)!! < v)
-            return false
-    }
-    return true
-}
+import item.ItemType
+import resource.ResourceList
+import resource.ResourceType
 
 class Recipe(
-            /**
+        /**
              * The resources this recipe needs
              */
             val consume: ResourceList,
-            /**
+        /**
              * The resources this recipe gives
              */
             val produce: ResourceList,
-            /**
+        /**
              * The resource to display this recipe as
              */
             val icon: ResourceType,
@@ -39,7 +30,7 @@ class Recipe(
     companion object {
         val ALL = mutableListOf<Recipe>()
 
-        val TEST = Recipe(mapOf(Pair(ItemType.IRON_ORE, 1)), mapOf(Pair(ItemType.CHEST_SMALL, 1)), ItemType.CHEST_SMALL)
+        val TEST = Recipe(ResourceList(ItemType.IRON_ORE to 1), ResourceList(ItemType.CHEST_SMALL to 1), ItemType.CHEST_SMALL)
 
         fun craft(resources: ResourceList): ResourceList? {
             return ALL.firstOrNull { resources.enoughIn(it.consume) }?.produce

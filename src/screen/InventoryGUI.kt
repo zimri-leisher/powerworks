@@ -2,7 +2,7 @@ package screen
 
 import graphics.Image
 import graphics.Utils
-import inv.Inventory
+import item.Inventory
 import screen.elements.GUIItemSlot
 import screen.elements.GUIText
 import screen.elements.GUITexturePane

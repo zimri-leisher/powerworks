@@ -1,4 +1,4 @@
-package level.resource
+package resource
 
 import graphics.Texture
 

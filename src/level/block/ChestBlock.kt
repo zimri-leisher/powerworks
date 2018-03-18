@@ -1,14 +1,15 @@
 package level.block
 
-import inv.Inventory
-import inv.ItemType
+import item.Inventory
+import item.ItemType
 import io.*
+import resource.ResourceType
 import main.Game
 import screen.InventoryGUI
 
 class ChestBlock(override val type: ChestBlockTemplate, xTile: Int, yTile: Int, rotation: Int) : Block(type, xTile, yTile, rotation), ControlPressHandler {
 
-    val inv = nodes.getAttachedContainers<ItemType>().first() as Inventory
+    val inv = nodes.getAttachedContainers<ItemType>(ResourceType.ITEM).first() as Inventory
     val invGUI = InventoryGUI("Chest at ${this.xTile}, ${this.yTile}'s inventory gui", type.invName, inv, Game.WIDTH / 2, Game.HEIGHT / 2)
 
     init {

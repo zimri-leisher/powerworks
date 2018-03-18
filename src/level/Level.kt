@@ -3,20 +3,20 @@ package level
 import audio.AudioManager
 import graphics.RenderParams
 import graphics.Renderer
-import inv.ItemType
 import io.*
+import item.ItemType
 import level.block.Block
 import level.block.BlockTemplate
 import level.block.GhostBlock
 import level.moving.MovingObject
-import level.node.ResourceNode
-import level.resource.ResourceType
 import level.tile.OreTileType
 import level.tile.Tile
 import level.tube.TubeBlockGroup
 import main.Game
 import misc.GeometryHelper
 import misc.Numbers
+import resource.ResourceNode
+import resource.ResourceType
 import screen.CameraMovementListener
 import screen.DebugOverlay
 import screen.Mouse
@@ -247,11 +247,11 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
      * Makes the ghost block that appears on the mouse when holding a placeable item up-to-date
      */
     private fun updateGhostBlock() {
-        val currentItem = Mouse.heldItem
+        val currentItem = Mouse.heldItemType
         if (currentItem == null && ghostBlock != null) {
             ghostBlock = null
         } else if (currentItem != null) {
-            val placedType = currentItem.type.placedBlock
+            val placedType = currentItem.placedBlock
             if (placedType == BlockTemplate.ERROR) {
                 ghostBlock = null
             } else {

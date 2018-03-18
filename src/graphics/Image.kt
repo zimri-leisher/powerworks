@@ -285,6 +285,7 @@ class Image private constructor() : Texture {
     object Block {
         val CHEST_SMALL = Image("/textures/block/chest_small.png")
         val MINER = Image("/textures/block/miner.png")
+        val CRAFTER = Image("/textures/block/crafter.png")
         val TUBE_4_WAY = Image("/textures/block/tube/4_way.png")
         val TUBE_2_WAY_VERTICAL = Image("/textures/block/tube/2_way_vertical.png")
         val TUBE_2_WAY_HORIZONTAL = Image("/textures/block/tube/2_way_horizontal.png")
@@ -326,6 +327,7 @@ class Image private constructor() : Texture {
         val DEFAULT_EDGE_RIGHT = Image("/textures/gui/default/right_edge.png")
         val DEFAULT_EDGE_LEFT = Image("/textures/gui/default/left_edge.png")
         val DEFAULT_BACKGROUND = Image("/textures/gui/default/background.png")
+        val RESOURCE_DISPLAY_SLOT = Image("/textures/gui/resource_display_slot.png")
         val ITEM_SLOT = Image("/textures/gui/item_slot.png")
         val ITEM_SLOT_HIGHLIGHT = Image("/textures/gui/item_slot_highlight.png")
         val ITEM_SLOT_DISPLAY = Image("/textures/gui/item_slot_display.png")

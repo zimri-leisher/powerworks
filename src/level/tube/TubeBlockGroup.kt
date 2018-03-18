@@ -1,16 +1,13 @@
 package level.tube
 
 import graphics.Renderer
-import inv.Item
-import inv.ItemType
+import item.Item
+import item.ItemType
 import level.Level
-import level.node.ResourceContainer
-import level.node.ResourceNode
-import level.node.ResourceNodeGroup
-import level.resource.ResourceType
 import misc.GeometryHelper
 import misc.PixelCoord
 import misc.WeakMutableList
+import resource.*
 import java.io.DataOutputStream
 
 data class IntersectionTube(val tubeBlock: TubeBlock, var connectedTo: Array<TubeAndDist?>) {
@@ -261,7 +258,10 @@ class TubeBlockGroup {
 
         private val itemsBeingMoved = mutableListOf<ItemPackage>()
 
-        override fun add(resource: ItemType, quantity: Int, from: ResourceNode<ItemType>?, checkForSpace: Boolean): Boolean {
+        override fun add(resource: ResourceType, quantity: Int, from: ResourceNode<ItemType>?, checkIfAble: Boolean): Boolean {
+            if(!isValid(resource))
+                return false
+            resource as ItemType
             if (from != null) {
                 // we assume tubes will only carry items
                 val output = parent.nodes.getPossibleOutputter(resource, quantity)
@@ -300,15 +300,15 @@ class TubeBlockGroup {
             }
         }
 
-        override fun remove(resource: ItemType, quantity: Int, to: ResourceNode<ItemType>?, checkIfContains: Boolean): Boolean {
+        override fun remove(resource: ResourceType, quantity: Int, to: ResourceNode<ItemType>?, checkIfContains: Boolean): Boolean {
             return true
         }
 
-        override fun spaceFor(resource: ItemType, quantity: Int): Boolean {
+        override fun spaceFor(resource: ResourceType, quantity: Int): Boolean {
             return true
         }
 
-        override fun contains(resource: ItemType, quantity: Int): Boolean {
+        override fun contains(resource: ResourceType, quantity: Int): Boolean {
             return true
         }
 
@@ -317,6 +317,20 @@ class TubeBlockGroup {
 
         override fun copy(): ResourceContainer<ItemType> {
             return TubeBlockGroupInternalStorage(parent)
+        }
+
+        override fun toList(): ResourceList {
+            val map = mutableMapOf<ResourceType, Int>()
+            for(i in itemsBeingMoved) {
+                map.put(i.item.type, i.item.quantity)
+            }
+            return ResourceList(map)
+        }
+
+        override fun getQuantity(resource: ResourceType): Int {
+            var q = 0
+            itemsBeingMoved.forEach { if(it.item.type == resource) q += it.item.quantity }
+            return q
         }
 
         companion object {

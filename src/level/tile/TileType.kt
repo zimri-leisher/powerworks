@@ -2,7 +2,7 @@ package level.tile
 
 import graphics.ImageCollection
 import graphics.Texture
-import inv.ItemType
+import item.ItemType
 
 private var nextID = 0
 

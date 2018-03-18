@@ -5,10 +5,10 @@ import graphics.Font
 import graphics.LocalAnimation
 import graphics.Renderer
 import graphics.SyncAnimation
-import inv.Inventory
-import inv.Item
-import inv.ItemType
 import io.*
+import item.Inventory
+import item.Item
+import item.ItemType
 import level.Level
 import screen.*
 import java.awt.*
@@ -38,7 +38,7 @@ fun main(args: Array<String>) {
             second = split[1]
         val item = ItemType.ALL.firstOrNull { it.name.toLowerCase().equals(first.toLowerCase().replace("_", " ").trim()) }
         if (item != null)
-            HUD.Hotbar.items.add(Item(item, second.toInt()))
+            Game.mainInv.add(Item(item, second.toInt()))
         else
             println("not an item")
     }

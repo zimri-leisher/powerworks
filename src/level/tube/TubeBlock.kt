@@ -2,12 +2,12 @@ package level.tube
 
 import graphics.Image
 import graphics.Renderer
-import inv.ItemType
+import item.ItemType
 import level.Level
 import level.block.Block
 import level.block.BlockTemplate
-import level.node.ResourceNode
-import level.resource.ResourceType
+import resource.ResourceNode
+import resource.ResourceType
 import main.Game
 import misc.GeometryHelper
 import misc.GeometryHelper.getOppositeAngle

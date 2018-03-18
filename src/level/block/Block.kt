@@ -6,8 +6,8 @@ import level.CHUNK_TILE_EXP
 import level.Hitbox
 import level.Level
 import level.LevelObject
-import level.node.ResourceNodeGroup
 import main.Game
+import resource.ResourceNodeGroup
 import screen.Mouse
 import java.io.DataOutputStream
 
@@ -127,7 +127,8 @@ abstract class Block(type: BlockTemplate<out Block>, xTile: Int, yTile: Int, var
                     if(p.control == Control.INTERACT && Game.currentLevel.ghostBlock != null) {
                         val gBlock = Game.currentLevel.ghostBlock!!
                         Level.add(gBlock.type.instantiate(gBlock.xTile, gBlock.yTile, gBlock.rotation))
-                        Mouse.heldItem?.quantity?.dec()
+                        val h = Mouse.heldItemType!!
+                        Game.mainInv.remove(h, 1)
                     }
                 }
             }

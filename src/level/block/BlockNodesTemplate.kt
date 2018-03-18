@@ -1,7 +1,7 @@
 package level.block
 
-import level.node.ResourceContainer
-import level.node.ResourceNode
+import resource.ResourceContainer
+import resource.ResourceNode
 import misc.GeometryHelper
 import misc.TileCoord
 

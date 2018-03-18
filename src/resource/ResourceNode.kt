@@ -1,7 +1,6 @@
-package level.node
+package resource
 
 import level.Level
-import level.resource.ResourceType
 import misc.GeometryHelper
 
 class ResourceNode<R : ResourceType>(val xTile: Int, val yTile: Int, val dir: Int, var allowIn: Boolean = false, var allowOut: Boolean = false, val resourceTypeID: Int, var attachedContainer: ResourceContainer<R>? = null) {
@@ -36,7 +35,7 @@ class ResourceNode<R : ResourceType>(val xTile: Int, val yTile: Int, val dir: In
     }
 
     /**
-     * @param checkIfSpaceFor whether or not to check if the resource is valid and space is available
+     * @param checkIfSpaceFor whether or not to check if the resource space is available
      * @return true if the resources were moved
      */
     fun input(resource: ResourceType, quantity: Int, checkIfSpaceFor: Boolean = true): Boolean {
@@ -45,12 +44,19 @@ class ResourceNode<R : ResourceType>(val xTile: Int, val yTile: Int, val dir: In
         if (checkIfSpaceFor)
             if (!canInputToContainer(resource, quantity))
                 return false
-        resource as R
         return attachedContainer!!.add(resource, quantity, this)
     }
 
     /**
-     * @param checkIfContains whether or not to check if the resource is valid and the container has enough
+     * @param checkIfSpaceFor whether or not to check if the resource is valid and space is available
+     * @return true if all were successfully inputted
+     */
+    fun input(list: ResourceList, checkIfSpaceFor: Boolean): Boolean {
+        return list.any { !input(it.key, it.value, checkIfSpaceFor) }
+    }
+
+    /**
+     * @param checkIfContains whether or not to check if the container has enough
      * @return true if the resources were moved
      */
     fun output(resource: ResourceType, quantity: Int, checkIfContains: Boolean = true): Boolean {
@@ -59,7 +65,6 @@ class ResourceNode<R : ResourceType>(val xTile: Int, val yTile: Int, val dir: In
         if (checkIfContains)
             if (!canOutputFromContainer(resource, quantity))
                 return false
-        resource as R
         attachedContainer?.remove(resource, quantity, this)
         if(attachedNode != null) {
             return attachedNode!!.input(resource, quantity)

@@ -1,4 +1,4 @@
-package inv
+package item
 
 class Item(val type: ItemType, var quantity: Int = 1) {
     override fun toString(): String {

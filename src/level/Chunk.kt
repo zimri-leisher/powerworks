@@ -2,7 +2,7 @@ package level
 
 import level.block.Block
 import level.moving.MovingObject
-import level.node.ResourceNode
+import resource.ResourceNode
 import level.tile.Tile
 import misc.ConcurrentlyModifiableMutableList
 

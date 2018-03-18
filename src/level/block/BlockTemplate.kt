@@ -1,14 +1,15 @@
 package level.block
 
 import audio.Sound
+import crafting.Crafter
 import graphics.Image
 import graphics.Texture
-import inv.Inventory
-import inv.ItemType
+import item.Inventory
+import item.ItemType
 import level.Hitbox
-import level.node.ResourceNode
-import level.resource.ResourceType
 import level.tube.TubeBlock
+import resource.ResourceNode
+import resource.ResourceType
 
 private var nextID = 0
 
@@ -54,7 +55,7 @@ open class BlockTemplate<T : Block>(init: BlockTemplate<T>.() -> Unit = {}) {
     }
 }
 
-class MachineBlockTemplate(init: MachineBlockTemplate.() -> Unit) : BlockTemplate<MachineBlock>() {
+open class MachineBlockTemplate<T : MachineBlock>(init: MachineBlockTemplate<T>.() -> Unit = {}) : BlockTemplate<T>() {
     /**
      * Power consumption multiplier, inverse of this
      */
@@ -69,7 +70,7 @@ class MachineBlockTemplate(init: MachineBlockTemplate.() -> Unit) : BlockTemplat
     }
 
     companion object {
-        val MINER = MachineBlockTemplate {
+        val MINER = MachineBlockTemplate<MinerBlock> {
             name = "Miner"
             instantiate = { xTile, yTile, rotation -> MinerBlock(xTile, yTile, rotation) }
             textures = BlockTextures(BlockTexture(Image.Block.MINER, yPixelOffset = 32))
@@ -79,7 +80,34 @@ class MachineBlockTemplate(init: MachineBlockTemplate.() -> Unit) : BlockTemplat
             hitbox = Hitbox.TILE2X2
             nodesTemplate = BlockNodesTemplate(widthTiles, heightTiles) {
                 listOf(
-                    ResourceNode<ItemType>(0, 0, 0, false, true, ResourceType.ITEM)
+                        ResourceNode<ItemType>(0, 0, 0, false, true, ResourceType.ITEM)
+                )
+            }
+        }
+    }
+}
+
+class CrafterBlockTemplate(init: CrafterBlockTemplate.() -> Unit) : MachineBlockTemplate<CrafterBlock>() {
+    var craftingType = Crafter.ITEM_CRAFTER
+    var internalStorageSize = 2
+
+    init {
+        widthTiles = 2
+        heightTiles = 2
+        init()
+    }
+
+    companion object {
+        val ITEM_CRAFTER = CrafterBlockTemplate {
+            name = "Crafter"
+            instantiate = { xTile, yTile, rotation -> CrafterBlock(this, xTile, yTile, rotation) }
+            textures = BlockTextures(BlockTexture(Image.Block.CRAFTER, yPixelOffset = 32))
+            requiresUpdate = true
+            nodesTemplate = BlockNodesTemplate(widthTiles, heightTiles) {
+                val internalInventory = Inventory(internalStorageSize, 1)
+                listOf<ResourceNode<ItemType>>(
+                        ResourceNode(0, 0, 0, true, false, ResourceType.ITEM),
+                        ResourceNode(1, 1, 2, false, true, ResourceType.ITEM)
                 )
             }
         }

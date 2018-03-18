@@ -1,11 +1,12 @@
-package inv
+package item
 
 import graphics.Image
 import graphics.Texture
 import level.block.BlockTemplate
 import level.block.ChestBlockTemplate
+import level.block.CrafterBlockTemplate
 import level.block.MachineBlockTemplate
-import level.resource.ResourceType
+import resource.ResourceType
 
 private var nextID = 0
 
@@ -44,6 +45,11 @@ open class ItemType(val name: String, override val texture: Texture, val stretch
         val MINER = ItemType("Miner",
                 Image.Block.MINER,
                 placedBlockID = MachineBlockTemplate.MINER.id,
+                maxStack = 10)
+
+        val CRAFTER = ItemType("Crafter",
+                Image.Block.CRAFTER,
+                placedBlockID = CrafterBlockTemplate.ITEM_CRAFTER.id,
                 maxStack = 10)
 
         val IRON_ORE = ItemType("Iron Ore",
