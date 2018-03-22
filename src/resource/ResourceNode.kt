@@ -1,5 +1,6 @@
 package resource
 
+import level.Hitbox
 import level.Level
 import misc.GeometryHelper
 
@@ -71,14 +72,14 @@ class ResourceNode<R : ResourceType>(val xTile: Int, val yTile: Int, val dir: In
         } else {
             val xSign = GeometryHelper.getXSign(dir)
             val ySign = GeometryHelper.getYSign(dir)
-            return Level.add(((xTile shl 4) + 7) + 8 * xSign, ((yTile shl 4) + 7) + 8 * ySign, resource, quantity) == quantity
+            return Level.add(((xTile shl 4) + 7) + (8 + Hitbox.DROPPED_ITEM.width) * xSign, ((yTile shl 4) + 7) + (8 + Hitbox.DROPPED_ITEM.height) * ySign, resource, quantity) == quantity
         }
     }
 
     fun copy(xTile: Int = this.xTile, yTile: Int = this.yTile, dir: Int = this.dir, allowIn: Boolean = this.allowIn, allowOut: Boolean = this.allowOut, attachedContainer: ResourceContainer<*>? = this.attachedContainer) =
             ResourceNode(xTile, yTile, dir, allowIn, allowOut, resourceTypeID, attachedContainer)
 
-    override fun toString() = "Resource node at $xTile, $yTile, out: $allowOut, in: $allowIn, dir: $dir, has attached: ${attachedNode != null}"
+    override fun toString() = "Resource node at $xTile, $yTile, out: $allowOut, in: $allowIn, dir: $dir"
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

@@ -15,20 +15,29 @@ abstract class Block(type: BlockTemplate<out Block>, xTile: Int, yTile: Int, var
 
     open val type = type
 
-    val nodes = ResourceNodeGroup("$this node group", type.nodesTemplate.instantiate(xTile, yTile, rotation))
+    val nodes = ResourceNodeGroup("Block at $xTile, $yTile, type: $type's node group", type.nodesTemplate.instantiate(xTile, yTile, rotation))
 
     /**
      * Don't forget to call super.onAddToLevel() so that the onAdjacentBlockAdd methods of adjacent blocks are called
      */
     override fun onAddToLevel() {
         nodes.forEach { Level.add(it) }
-        for (y in -1..1) {
-            for (x in -1..1) {
-                if (Math.abs(x) != Math.abs(y)) {
-                    Level.Blocks.get(xTile + x, yTile + y)?.onAdjacentBlockAdd(this)
+        // loop through each block touching this one, accounting for width and height
+        val adjacent = mutableSetOf<Block>()
+        for(w in 0 until type.widthTiles) {
+            for(h in 0 until type.heightTiles) {
+                for (y in -1..1) {
+                    for (x in -1..1) {
+                        if (Math.abs(x) != Math.abs(y)) {
+                            val b = Level.Blocks.get(xTile + x + w, yTile + y + h)
+                            if(b != null && b != this)
+                                adjacent.add(b)
+                        }
+                    }
                 }
             }
         }
+        adjacent.forEach { it.onAdjacentBlockAdd(this) }
     }
 
     /**
@@ -36,12 +45,22 @@ abstract class Block(type: BlockTemplate<out Block>, xTile: Int, yTile: Int, var
      */
     override fun onRemoveFromLevel() {
         nodes.forEach { Level.remove(it) }
-        for (y in -1..1) {
-            for (x in -1..1) {
-                if (Math.abs(x) != Math.abs(y))
-                    Level.Blocks.get(xTile + x, yTile + y)?.onAdjacentBlockRemove(this)
+        // loop through each block touching this one, accounting for width and height
+        val adjacent = mutableSetOf<Block>()
+        for(w in 0 until type.widthTiles) {
+            for(h in 0 until type.heightTiles) {
+                for (y in -1..1) {
+                    for (x in -1..1) {
+                        if (Math.abs(x) != Math.abs(y)) {
+                            val b = Level.Blocks.get(xTile + x + w, yTile + y + h)
+                            if(b != null && b != this)
+                                adjacent.add(b)
+                        }
+                    }
+                }
             }
         }
+        adjacent.forEach { it.onAdjacentBlockRemove(this) }
     }
 
     override fun render() {
@@ -116,15 +135,15 @@ abstract class Block(type: BlockTemplate<out Block>, xTile: Int, yTile: Int, var
         }
 
         override fun handleControlPress(p: ControlPress) {
-            if(p.pressType == PressType.PRESSED) {
+            if (p.pressType == PressType.PRESSED) {
                 val block = Game.currentLevel.selectedLevelObject
-                if(block is Block) {
-                    if(p.control == Control.SECONDARY_INTERACT) {
+                if (block is Block) {
+                    if (p.control == Control.SECONDARY_INTERACT) {
                         Level.remove(block)
                         // TODO
                     }
-                } else if(block == null) {
-                    if(p.control == Control.INTERACT && Game.currentLevel.ghostBlock != null) {
+                } else if (block == null) {
+                    if (p.control == Control.INTERACT && Game.currentLevel.ghostBlock != null) {
                         val gBlock = Game.currentLevel.ghostBlock!!
                         Level.add(gBlock.type.instantiate(gBlock.xTile, gBlock.yTile, gBlock.rotation))
                         val h = Mouse.heldItemType!!

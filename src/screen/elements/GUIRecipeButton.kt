@@ -12,7 +12,11 @@ class GUIRecipeButton(parent: RootGUIElement,
 
     init {
         GUITexturePane(this, name + " background", 0, 0, Image.GUI.RECIPE_BUTTON_BACKGROUND).run {
-            GUITexturePane(this, name + " consume icon", 0, 0, recipe.icon.texture)
+            GUITexturePane(this, name + " icon", 0, 0, recipe.icon.texture).run {
+                GUIMouseOverArea(this, name + " mouse over text", { 0 }, {0}, this.widthAlignment, this.heightAlignment, {
+
+                })
+            }
         }
     }
 

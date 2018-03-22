@@ -151,6 +151,13 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
                         else "Not intersection\n"
                 Renderer.renderText(tubeString + intersectionString, xPixel, yPixel)
             }
+        } else if(Game.RESOURCE_NODES_INFO) {
+            val nodes = Level.ResourceNodes.get(Game.currentLevel.mouseLevelXPixel shr 4, Game.currentLevel.mouseLevelYPixel shr 4)
+            val s = StringBuilder()
+            for(n in nodes) {
+                s.append("    in: ${n.allowIn}, out: ${n.allowOut}, dir: ${n.dir}\n")
+            }
+            Renderer.renderText("Resource nodes:\n$s", xPixel, yPixel)
         } else if (Game.DEBUG_SCREEN_INFO) {
             Renderer.renderText("Element on mouse:\n" +
                     "  ${ScreenManager.getHighestElement(xPixel, yPixel, predicate = { !it.transparentToInteraction })}\n" +

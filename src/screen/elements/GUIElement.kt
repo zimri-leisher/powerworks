@@ -1,6 +1,7 @@
 package screen.elements
 
 import io.PressType
+import screen.Mouse
 import screen.ScreenManager
 
 private var nextID = 0
@@ -69,6 +70,9 @@ open class RootGUIElement(val parentWindow: GUIWindow,
                 field = false
                 mouseOn = false
                 parentWindow.openChildren.remove(this)
+                if(ScreenManager.selectedElement == this) {
+                    ScreenManager.selectedElement = ScreenManager.getHighestElement(Mouse.xPixel, Mouse.yPixel)
+                }
                 onClose()
                 children.forEach { if (it.matchParentClosing) it.open = false }
             } else if (value && !field) {

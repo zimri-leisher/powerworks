@@ -48,7 +48,12 @@ class TubeBlockGroup {
             if (it !in tubes)
                 tubes.add(it)
         }
-        nodes.addAll(other.nodes)
+        other.nodes.forEach {
+            it as ResourceNode<ItemType>
+            it.attachedContainer = storage
+            if(it !in nodes)
+                nodes.add(it)
+        }
     }
 
     fun addTube(t: TubeBlock) {
@@ -186,7 +191,6 @@ class TubeBlockGroup {
                     finalNode = nodeChild
                     break@main
                 }
-
                 // there's a better path to here
                 if (possibleNextNodes.any { it.xTile == nodeChild.xTile && it.yTile == nodeChild.yTile && it.f < nodeChild.f }) {
                     continue

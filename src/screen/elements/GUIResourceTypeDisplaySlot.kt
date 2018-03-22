@@ -21,7 +21,6 @@ class GUIResourceTypeDisplaySlot(parent: RootGUIElement, name: String, xAlignmen
                     } else if (button == 1) {
                         if (Mouse.heldItemType != null) {
                             this.type = Mouse.heldItemType
-                            println("test")
                         }
                     }
                 }

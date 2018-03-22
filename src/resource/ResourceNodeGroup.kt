@@ -39,11 +39,23 @@ class ResourceNodeGroup(val name: String, nodes: List<ResourceNode<*>> = listOf(
 
     fun filter(predicate: (ResourceNode<*>) -> Boolean) = nodes.filter(predicate)
 
-    fun <R : ResourceType> getPossibleOutputter(resourceType: R, quantity: Int = 1, checkIfContains: Boolean = true) =
-            nodes.firstOrNull { if (checkIfContains) it.canOutputFromContainer(resourceType, quantity) && it.isAcceptableResource(resourceType) else it.isAcceptableResource(resourceType) } as ResourceNode<R>?
+    fun <R : ResourceType> getPossibleOutputter(resourceType: R, quantity: Int = 1, checkIfContains: Boolean = true): ResourceNode<R>? {
+        val r = nodes.firstOrNull {
+            if (checkIfContains) {
+                it.canOutputFromContainer(resourceType, quantity) && it.isAcceptableResource(resourceType)
+            } else
+                it.isAcceptableResource(resourceType) && it.allowOut
+        } as ResourceNode<R>?
+        return r
+    }
 
     fun <R : ResourceType> getPossibleInputter(resourceType: R, quantity: Int = 1, checkIfSpaceFor: Boolean = true) =
-            nodes.firstOrNull { if (checkIfSpaceFor) it.canInputToContainer(resourceType, quantity) && it.isAcceptableResource(resourceType) else it.isAcceptableResource(resourceType) } as ResourceNode<R>?
+            nodes.firstOrNull {
+                if (checkIfSpaceFor)
+                    it.canInputToContainer(resourceType, quantity) && it.isAcceptableResource(resourceType)
+                else
+                    it.isAcceptableResource(resourceType) && it.allowIn
+            } as ResourceNode<R>?
 
     fun output(resourceType: ResourceType, quantity: Int, checkIfContains: Boolean = true): Boolean {
         return getPossibleOutputter(resourceType, quantity, checkIfContains)?.output(resourceType, quantity, false) == true
@@ -61,15 +73,15 @@ class ResourceNodeGroup(val name: String, nodes: List<ResourceNode<*>> = listOf(
     }
 
     fun addAll(other: ResourceNodeGroup) {
-        other.nodes.filter { it !in nodes }.forEach { nodes.add(it) }
+        other.nodes.filter { it !in nodes }.forEach { add(it) }
     }
 
     fun addAll(other: List<ResourceNode<*>>) {
-        other.filter { it !in nodes }.forEach { nodes.add(it) }
+        other.filter { it !in nodes }.forEach { add(it) }
     }
 
     fun addAll(vararg other: ResourceNode<*>) {
-        other.filter { it !in nodes }.forEach { nodes.add(it) }
+        other.filter { it !in nodes }.forEach { add(it) }
     }
 
     fun forEach(f: (ResourceNode<*>) -> Unit) = nodes.forEach(f)
@@ -77,4 +89,5 @@ class ResourceNodeGroup(val name: String, nodes: List<ResourceNode<*>> = listOf(
     fun firstOrNull(f: (ResourceNode<*>) -> Boolean) = nodes.firstOrNull(f)
 
     override fun toString() = nodes.joinToString()
+    operator fun contains(it: ResourceNode<*>) = nodes.contains(it)
 }

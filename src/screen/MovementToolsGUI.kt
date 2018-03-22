@@ -27,7 +27,6 @@ object MovementToolsGUI : GUIWindow("Player movement tools", { Game.WIDTH - 80 }
             GUIButton(this, this@MovementToolsGUI.name + " teleporter button", 2, 2, teleporterBounds.width + 2, teleporterBounds.height + 2, "Teleporter", {
                 teleporter = !teleporter
             })
-            val yPixel = teleporterBounds.height + 4
             val runSpeedPrompt = GUIText(this, this@MovementToolsGUI.name + " run speed prompt", 2, teleporterBounds.height + 4, "Movement speed:")
             val inputBounds = Font.getStringBounds("1 ")
             GUITextInputField(this, this@MovementToolsGUI.name + " run speed input", { runSpeedPrompt.widthPixels + 4 }, { teleporterBounds.height + 4 }, { inputBounds.width + 2 }, { inputBounds.height + 1 },

@@ -175,7 +175,7 @@ object ScreenManager : ControlPressHandler {
                 updateSelected()
         }
         if (c == Control.DEBUG && t == PressType.PRESSED) {
-            printDebug()
+            //printDebug()
         }
     }
 

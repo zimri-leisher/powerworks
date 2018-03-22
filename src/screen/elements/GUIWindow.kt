@@ -1,5 +1,6 @@
 package screen.elements
 
+import screen.Mouse
 import screen.ScreenManager
 import screen.WindowGroup
 
@@ -54,6 +55,9 @@ open class GUIWindow(val name: String, xAlignment: () -> Int, yAlignment: () -> 
                 field = value
                 ScreenManager.openWindows.remove(this)
                 rootChild.open = false
+                if(ScreenManager.selectedWindow == this) {
+                    ScreenManager.selectedWindow = ScreenManager.getHighestWindow(Mouse.xPixel, Mouse.yPixel)
+                }
                 onClose()
             }
         }

@@ -1,9 +1,9 @@
 package level.block
 
-import resource.ResourceContainer
-import resource.ResourceNode
 import misc.GeometryHelper
 import misc.TileCoord
+import resource.ResourceContainer
+import resource.ResourceNode
 
 class BlockNodesTemplate(val widthTiles: Int, val heightTiles: Int, nodesInitializer: BlockNodesTemplate.() -> List<ResourceNode<*>> = { listOf() }) {
     val nodes = mutableListOf<ResourceNode<*>>()
@@ -28,7 +28,7 @@ class BlockNodesTemplate(val widthTiles: Int, val heightTiles: Int, nodesInitial
         val ret = mutableListOf<ResourceNode<*>>()
         val containers = instantiateContainers()
         for (node in nodes) {
-            val coord = rotate(node.xTile, node.yTile, widthTiles, heightTiles, GeometryHelper.addAngles(node.dir, dir))
+            val coord = rotate(node.xTile, node.yTile, widthTiles, heightTiles, dir)
             val newContainer = containers.filter { it.key === node.attachedContainer }.entries.firstOrNull()?.value
             // we know that the container is the same type as the node because they were originally together
             ret.add(node.copy(coord.xTile + xTile, coord.yTile + yTile, GeometryHelper.addAngles(node.dir, dir), attachedContainer = newContainer))

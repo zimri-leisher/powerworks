@@ -63,7 +63,7 @@ object HUD {
                 throw Exception("Please use checkIfAble when calling this and not knowing if it has adequate space left")
             }
 
-            override fun spaceFor(resource: ResourceType, quantity: Int) = items.any { it == null }
+            override fun spaceFor(resource: ResourceType, quantity: Int) = items.all { it != resource }
 
             override fun remove(resource: ResourceType, quantity: Int, to: ResourceNode<ItemType>?, checkIfAble: Boolean): Boolean {
                 if (!isValid(resource))
@@ -98,13 +98,6 @@ object HUD {
                 return 0
             }
 
-            fun clearZeroes() {
-                for(i in items.indices) {
-                    if(items[i] != null && Game.mainInv.getQuantity(items[i]!!) == 0)
-                        items[i] = null
-                }
-            }
-
             operator fun get(i: Int) = items[i]
 
             override fun toList(): ResourceList {
@@ -118,6 +111,7 @@ object HUD {
             }
 
         }
+
         val selectOverlay = GUITexturePane(rootChild, "Hotbar slot selected overlay", { selected * GUIItemSlot.WIDTH }, { 0 }, texture = Image.GUI.HOTBAR_SELECTED_SLOT, layer = layer + 2)
 
         init {
@@ -159,7 +153,8 @@ object HUD {
 
         override fun onContainerChange(container: ResourceContainer<*>) {
             if(container == Game.mainInv) {
-                items.clearZeroes()
+                if(selected != -1 && items[selected] != null && Game.mainInv.getQuantity(items[selected]!!) > 0)
+                    Mouse.heldItemType = items[selected]
             }
         }
 

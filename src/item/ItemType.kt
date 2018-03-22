@@ -40,7 +40,7 @@ open class ItemType(val name: String, override val texture: Texture, val stretch
 
         val ERROR = ItemType("Error",
                 Image.Misc.ERROR,
-                maxStack = 5)
+                maxStack = 10)
 
         val MINER = ItemType("Miner",
                 Image.Block.MINER,

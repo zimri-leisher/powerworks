@@ -6,14 +6,14 @@ import item.ItemType
 import level.Level
 import level.block.Block
 import level.block.BlockTemplate
-import resource.ResourceNode
-import resource.ResourceType
 import main.Game
 import misc.GeometryHelper
 import misc.GeometryHelper.getOppositeAngle
 import misc.GeometryHelper.getXSign
 import misc.GeometryHelper.getYSign
 import misc.GeometryHelper.isOppositeAngle
+import resource.ResourceNode
+import resource.ResourceType
 
 class TubeBlock(xTile: Int, yTile: Int) : Block(BlockTemplate.TUBE, xTile, yTile) {
 
@@ -42,6 +42,7 @@ class TubeBlock(xTile: Int, yTile: Int) : Block(BlockTemplate.TUBE, xTile, yTile
     }
 
     override fun onAdjacentBlockAdd(b: Block) {
+        println("adjacent added next to $this")
         // If it is a tube block, its onAddToLevel() event will call updateConnections() which will do the connecting for us,
         // so no need to worry about us doing it for them
         if (b !is TubeBlock) {

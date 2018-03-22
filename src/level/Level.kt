@@ -113,7 +113,7 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
             }
         }
         chunks = gen.requireNoNulls()
-        InputManager.registerControlPressHandler(this, ControlPressHandlerType.LEVEL_ANY, Control.ROTATE_BLOCK)
+        InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.ROTATE_BLOCK)
     }
 
     fun render(view: GUIView) {
@@ -193,7 +193,7 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
                 Renderer.renderText("moving objects: ${c.moving!!.size} (${c.movingOnBoundary!!.size} on boundary)", (c.xTile shl 4), (c.yTile shl 4) + 8)
             }
         }
-        if (Game.DEBUG_TUBE_INFO) {
+        if (Game.DEBUG_TUBE_INFO || Game.RESOURCE_NODES_INFO) {
             for (c in chunksInTileRectangle) {
                 for (nList in c.resourceNodes!!) {
                     for (n in nList) {
@@ -209,10 +209,10 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
         val xSign = GeometryHelper.getXSign(n.dir)
         val ySign = GeometryHelper.getYSign(n.dir)
         if (n.allowOut) {
-            Renderer.renderFilledRectangle(((n.xTile shl 4) + 7) + 8 * xSign, ((n.yTile shl 4) + 7) + 8 * ySign, 2, 2, 0x0200FF, 0.25f)
+            Renderer.renderFilledRectangle(((n.xTile shl 4) + 7) + 8 * xSign, ((n.yTile shl 4) + 7) + 8 * ySign, 2, 2, 0x0200FF, 0.5f)
         }
         if (n.allowIn) {
-            Renderer.renderFilledRectangle(((n.xTile shl 4) + 7) + 8 * xSign, ((n.yTile shl 4) + 7) + 8 * ySign, 2, 2, 0xFFF700, 0.25f)
+            Renderer.renderFilledRectangle(((n.xTile shl 4) + 7) + 8 * xSign, ((n.yTile shl 4) + 7) + 8 * ySign, 2, 2, 0xFFF700, 0.5f)
         }
     }
 
@@ -248,32 +248,18 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
      */
     private fun updateGhostBlock() {
         val currentItem = Mouse.heldItemType
-        if (currentItem == null && ghostBlock != null) {
+        if (currentItem == null || (currentItem != null && Game.mainInv.getQuantity(currentItem) == 0)) {
             ghostBlock = null
-        } else if (currentItem != null) {
+        } else if (currentItem.placedBlock != BlockTemplate.ERROR) {
             val placedType = currentItem.placedBlock
-            if (placedType == BlockTemplate.ERROR) {
-                ghostBlock = null
-            } else {
-                val xTile = ((mouseLevelXPixel) shr 4) - placedType.widthTiles / 2
-                val yTile = ((mouseLevelYPixel) shr 4) - placedType.heightTiles / 2
-                if (ghostBlock == null) {
-                    ghostBlock = GhostBlock(placedType, xTile, yTile, ghostBlockRotation)
-                } else {
-                    val g = ghostBlock!!
-                    if (xTile != g.xTile || yTile != g.yTile || g.type != placedType) {
-                        ghostBlock = GhostBlock(placedType, xTile, yTile, ghostBlockRotation)
-                    } else {
-                        g.placeable = ghostBlock!!.getCollision(xTile shl 4, yTile shl 4) == null
-                    }
-                }
-            }
-
+            val xTile = ((mouseLevelXPixel) shr 4) - placedType.widthTiles / 2
+            val yTile = ((mouseLevelYPixel) shr 4) - placedType.heightTiles / 2
+            ghostBlock = GhostBlock(placedType, xTile, yTile, ghostBlockRotation)
         }
     }
 
     override fun handleControlPress(p: ControlPress) {
-        if(p.control == Control.ROTATE_BLOCK && p.pressType == PressType.PRESSED) {
+        if (p.control == Control.ROTATE_BLOCK && p.pressType == PressType.PRESSED) {
             ghostBlockRotation = (ghostBlockRotation + 1) % 4
         }
     }
@@ -489,11 +475,11 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
     object ResourceNodes {
         fun <R : ResourceType> updateAttachments(o: ResourceNode<R>) {
             val attached = get<R>(o.xTile + GeometryHelper.getXSign(o.dir), o.yTile + GeometryHelper.getYSign(o.dir), o.resourceTypeID).filter { it.dir == GeometryHelper.getOppositeAngle(o.dir) }
-            if(o.allowOut && o.allowIn) {
+            if (o.allowOut && o.allowIn) {
                 o.attachedNode = attached.firstOrNull { it.allowIn && it.allowOut }
-            } else if(o.allowOut) {
+            } else if (o.allowOut) {
                 o.attachedNode = attached.firstOrNull { it.allowIn }
-            } else if(o.allowIn) {
+            } else if (o.allowIn) {
                 o.attachedNode = attached.firstOrNull { it.allowOut }
             } else {
                 o.attachedNode = null
@@ -689,7 +675,7 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
         }
 
         fun remove(resourceNode: ResourceNode<*>) {
-            if(!resourceNode.inLevel)
+            if (!resourceNode.inLevel)
                 return
             val c = Chunks.getFromTile(resourceNode.xTile, resourceNode.yTile)
             c.removeResourceNode(resourceNode)

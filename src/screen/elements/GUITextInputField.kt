@@ -40,7 +40,6 @@ class GUITextInputField(parent: RootGUIElement, name: String,
     override fun onMouseActionOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
         if (type == PressType.PRESSED) {
             cursorIndex = getIndexOfTextAt(xPixel)
-            println(cursorIndex)
             highlightStart = cursorIndex
             highlightEnd = cursorIndex
             selected = true

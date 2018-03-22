@@ -84,6 +84,7 @@ object Game : Canvas(), Runnable, ControlPressHandler {
     var PAUSE_LEVEL_IN_ESCAPE_MENU = false
     var DEBUG_TUBE_INFO = false
     var DEBUG_SCREEN_INFO = false
+    var RESOURCE_NODES_INFO = false
     val INVENTORY_WIDTH = 8
     val INVENTOR_HEIGHT = 6
 
@@ -116,7 +117,7 @@ object Game : Canvas(), Runnable, ControlPressHandler {
         AudioManager.load()
         cursor = clearCursor
         Font
-        InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.TAKE_SCREENSHOT, Control.TOGGLE_RENDER_HITBOXES, Control.TOGGLE_SCREEN_DEBUG_INFO, Control.TOGGLE_CHUNK_INFO, Control.TOGGLE_INVENTORY, Control.TOGGLE_DEBUG_TUBE_GROUP_INFO)
+        InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.TAKE_SCREENSHOT, Control.TOGGLE_RESOURCE_NODES_INFO, Control.TOGGLE_RENDER_HITBOXES, Control.TOGGLE_SCREEN_DEBUG_INFO, Control.TOGGLE_CHUNK_INFO, Control.TOGGLE_INVENTORY, Control.TOGGLE_DEBUG_TUBE_GROUP_INFO)
         MainMenuGUI
         DebugOverlay
         State.setState(State.MAIN_MENU)
@@ -274,6 +275,7 @@ object Game : Canvas(), Runnable, ControlPressHandler {
                 Control.TAKE_SCREENSHOT -> takeScreenshot()
                 Control.TOGGLE_RENDER_HITBOXES -> RENDER_HITBOXES = !RENDER_HITBOXES
                 Control.TOGGLE_CHUNK_INFO -> CHUNK_BOUNDARIES = !CHUNK_BOUNDARIES
+                Control.TOGGLE_RESOURCE_NODES_INFO -> RESOURCE_NODES_INFO = !RESOURCE_NODES_INFO
                 Control.TOGGLE_INVENTORY -> {
                     if (State.CURRENT_STATE != State.INGAME)
                         return
