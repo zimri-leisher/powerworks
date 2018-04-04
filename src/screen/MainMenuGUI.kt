@@ -10,7 +10,7 @@ import screen.elements.GUIWindow
 
 object MainMenuGUI : GUIWindow("Main menu", { 0 }, { 0 }, { Game.WIDTH }, { Game.HEIGHT }, true, 0, ScreenManager.Groups.BACKGROUND) {
 
-    var logo: GUITexturePane
+    internal var logo: GUITexturePane
 
     init {
         adjustDimensions = true

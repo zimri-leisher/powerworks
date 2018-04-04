@@ -1,6 +1,7 @@
 package level
 
 import audio.AudioManager
+import graphics.Image
 import graphics.RenderParams
 import graphics.Renderer
 import io.*
@@ -21,7 +22,7 @@ import screen.CameraMovementListener
 import screen.DebugOverlay
 import screen.Mouse
 import screen.Mouse.DROPPED_ITEM_PICK_UP_RANGE
-import screen.elements.GUIView
+import screen.elements.GUILevelView
 import java.io.*
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -50,18 +51,18 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
 
     val oreNoises = mutableMapOf<OreTileType, Noise>()
 
-    var viewBeingInteractedWith: GUIView? = null
-    private var lastViewInteractedWith: GUIView? = null
-    private val _views = mutableListOf<GUIView>()
-    val openViews = object : MutableList<GUIView> by _views {
-        override fun add(element: GUIView): Boolean {
+    var viewBeingInteractedWith: GUILevelView? = null
+    private var lastViewInteractedWith: GUILevelView? = null
+    private val _views = mutableListOf<GUILevelView>()
+    val openViews = object : MutableList<GUILevelView> by _views {
+        override fun add(element: GUILevelView): Boolean {
             val ret = _views.add(element)
             element.moveListeners.add(this@Level)
             updateViewBeingInteractedWith()
             return ret
         }
 
-        override fun remove(element: GUIView): Boolean {
+        override fun remove(element: GUILevelView): Boolean {
             val ret = _views.remove(element)
             element.moveListeners.remove(this@Level)
             updateViewBeingInteractedWith()
@@ -83,7 +84,7 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
     var mouseLevelYPixel = 0
 
     init {
-        val p = Paths.get(Game.JAR_PATH, "data/save/$levelName/")
+        val p = Paths.get(Game.ENCLOSING_FOLDER_PATH, "data/save/$levelName/")
         if (Files.notExists(p)) {
             Files.createDirectory(p)
             seed = (Math.random() * 4096).toLong()
@@ -116,7 +117,7 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
         InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.ROTATE_BLOCK)
     }
 
-    fun render(view: GUIView) {
+    fun render(view: GUILevelView) {
         // Assume it is already added to views list
         val r = view.viewRectangle
         val xPixel0 = r.minX.toInt()
@@ -209,10 +210,10 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
         val xSign = GeometryHelper.getXSign(n.dir)
         val ySign = GeometryHelper.getYSign(n.dir)
         if (n.allowOut) {
-            Renderer.renderFilledRectangle(((n.xTile shl 4) + 7) + 8 * xSign, ((n.yTile shl 4) + 7) + 8 * ySign, 2, 2, 0x0200FF, 0.5f)
+            Renderer.renderTexture(Image.Misc.THIN_ARROW, (n.xTile shl 4) + 4 + 8 * xSign, (n.yTile shl 4) + 4 + 8 * ySign, RenderParams(rotation = 90f * n.dir))
         }
         if (n.allowIn) {
-            Renderer.renderFilledRectangle(((n.xTile shl 4) + 7) + 8 * xSign, ((n.yTile shl 4) + 7) + 8 * ySign, 2, 2, 0xFFF700, 0.5f)
+            Renderer.renderTexture(Image.Misc.THIN_ARROW, (n.xTile shl 4) + 4 + 8 * xSign, (n.yTile shl 4) + 4 + 8 * ySign, RenderParams(rotation = 90f * GeometryHelper.getOppositeAngle(n.dir)))
         }
     }
 
@@ -267,7 +268,7 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
     /**
      * Called when any view moves
      */
-    override fun onCameraMove(view: GUIView, pXPixel: Int, pYPixel: Int) {
+    override fun onCameraMove(view: GUILevelView, pXPixel: Int, pYPixel: Int) {
         if (view == viewBeingInteractedWith) {
             updateMouseLevelLocation()
         }
@@ -392,10 +393,21 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
             return null
         }
 
+        fun getInRadius(xPixel: Int, yPixel: Int, radius: Int, predicate: (MovingObject) -> Boolean = { true }): List<MovingObject> {
+            val l = mutableListOf<MovingObject>()
+            for (c in Chunks.getFromPixelRectangle(xPixel - radius, yPixel - radius, radius * 2, radius * 2)) {
+                for (d in c.moving!!) {
+                    if (predicate(d) && GeometryHelper.intersects(xPixel - radius, yPixel - radius, radius * 2, radius * 2, d.xPixel - d.hitbox.xStart, d.yPixel - d.hitbox.yStart, d.hitbox.width, d.hitbox.height)) {
+                        l.add(d)
+                    }
+                }
+            }
+            return l
+        }
+
         fun get(xPixel: Int, yPixel: Int): MovingObject? {
             val chunk = Chunks.getFromPixel(xPixel, yPixel)
-            var ret: MovingObject? = null
-            ret = chunk.moving!!.firstOrNull { GeometryHelper.contains(it.xPixel + it.hitbox.xStart, it.yPixel + it.hitbox.yStart, it.hitbox.width, it.hitbox.height, xPixel, yPixel, 0, 0) }
+            var ret = chunk.moving!!.firstOrNull { GeometryHelper.contains(it.xPixel + it.hitbox.xStart, it.yPixel + it.hitbox.yStart, it.hitbox.width, it.hitbox.height, xPixel, yPixel, 0, 0) }
             if (ret == null)
                 ret = chunk.movingOnBoundary!!.firstOrNull { GeometryHelper.contains(it.xPixel + it.hitbox.xStart, it.yPixel + it.hitbox.yStart, it.hitbox.width, it.hitbox.height, xPixel, yPixel, 0, 0) }
             return ret

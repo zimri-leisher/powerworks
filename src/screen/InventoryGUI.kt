@@ -4,10 +4,13 @@ import graphics.Image
 import graphics.Utils
 import item.Inventory
 import screen.elements.GUIItemSlot
-import screen.elements.GUIText
 import screen.elements.GUITexturePane
 import screen.elements.GUIWindow
 
+/**
+ * A GUIWindow that you can instantiate for any inventory
+ * It will display the current contents in GUIItemSlots, and it has a drag grip and a close button
+ */
 class InventoryGUI(name: String,
                    displayName: String,
                    val inv: Inventory,
@@ -22,9 +25,8 @@ class InventoryGUI(name: String,
 
     // TODO make this use init functions for x and y so that u can have it start in the center
 
-    val itemSlots: Array<GUIItemSlot>
-    val background = GUITexturePane(this.rootChild, name + " background", 0, 0, texture = Image(Utils.genRectangle(widthPixels, heightPixels)))
-    val nameText = GUIText(background, name + " name text", 2, -3, displayName)
+    private val itemSlots: Array<GUIItemSlot>
+    private val background = GUITexturePane(this.rootChild, name + " background", 0, 0, texture = Image(Utils.genRectangle(widthPixels, heightPixels)))
 
     init {
         generateCloseButton(background.layer + 1)

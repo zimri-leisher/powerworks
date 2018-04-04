@@ -60,6 +60,16 @@ open class RootGUIElement(val parentWindow: GUIWindow,
             }
             return result
         }
+
+        override fun clear() {
+            val i = _children.iterator()
+            for(child in i) {
+                i.remove()
+                if(child.open)
+                    parentWindow.openChildren.remove(child)
+                this@RootGUIElement.onRemoveChild(child)
+            }
+        }
     }
     var open: Boolean = open
         set(value) {

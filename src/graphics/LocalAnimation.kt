@@ -29,12 +29,15 @@ class LocalAnimation(val animation: SyncAnimation, var playing: Boolean = false,
             return
         tick++
         var total = 0
-        var index = -1
-        while(total + (animation.frameTimes[index + 1] / speed).toInt() < tick) {
+        var index = 0
+        while(index < animation.frameTimes.lastIndex && total + (animation.frameTimes[index + 1] / speed).toInt() < tick) {
             index++
             total += (animation.frameTimes[index] / speed).toInt()
         }
         currentImage = animation.images[index].currentImage
+        if(index == animation.frameTimes.lastIndex) {
+            tick = 0
+        }
     }
 
     companion object {

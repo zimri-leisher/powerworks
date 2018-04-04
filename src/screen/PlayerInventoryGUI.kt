@@ -1,3 +1,0 @@
-package screen
-
-class PlayerInventoryGUI()

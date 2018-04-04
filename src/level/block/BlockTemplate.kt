@@ -3,6 +3,8 @@ package level.block
 import audio.Sound
 import crafting.Crafter
 import graphics.Image
+import graphics.LocalAnimation
+import graphics.SyncAnimation
 import graphics.Texture
 import item.Inventory
 import item.ItemType
@@ -17,6 +19,7 @@ data class BlockTexture(val texture: Texture, val xPixelOffset: Int = 0, val yPi
 
 class BlockTextures(private vararg val textures: BlockTexture) {
     operator fun get(i: Int) = textures[Math.min(i, textures.lastIndex)]
+    operator fun iterator() = textures.iterator()
 }
 
 open class BlockTemplate<T : Block>(init: BlockTemplate<T>.() -> Unit = {}) {
@@ -73,7 +76,7 @@ open class MachineBlockTemplate<T : MachineBlock>(init: MachineBlockTemplate<T>.
         val MINER = MachineBlockTemplate<MinerBlock> {
             name = "Miner"
             instantiate = { xTile, yTile, rotation -> MinerBlock(xTile, yTile, rotation) }
-            textures = BlockTextures(BlockTexture(Image.Block.MINER, yPixelOffset = 32))
+            textures = BlockTextures(BlockTexture(LocalAnimation(SyncAnimation.MINER, true), yPixelOffset = 32))
             widthTiles = 2
             heightTiles = 2
             requiresUpdate = true
@@ -100,14 +103,15 @@ class CrafterBlockTemplate(init: CrafterBlockTemplate.() -> Unit) : MachineBlock
     companion object {
         val ITEM_CRAFTER = CrafterBlockTemplate {
             name = "Crafter"
+            hitbox = Hitbox.TILE2X2
             instantiate = { xTile, yTile, rotation -> CrafterBlock(this, xTile, yTile, rotation) }
             textures = BlockTextures(BlockTexture(Image.Block.CRAFTER, yPixelOffset = 32))
             requiresUpdate = true
             nodesTemplate = BlockNodesTemplate(widthTiles, heightTiles) {
                 val internalInventory = Inventory(internalStorageSize, 1)
-                listOf<ResourceNode<ItemType>>(
-                        ResourceNode(0, 0, 0, true, false, ResourceType.ITEM),
-                        ResourceNode(1, 1, 2, false, true, ResourceType.ITEM)
+                listOf(
+                        ResourceNode(0, 0, 0, true, false, ResourceType.ITEM, internalInventory),
+                        ResourceNode(1, 1, 2, false, true, ResourceType.ITEM, internalInventory)
                 )
             }
         }
@@ -125,10 +129,10 @@ class ChestBlockTemplate(init: ChestBlockTemplate.() -> Unit) : BlockTemplate<Ch
         val storage = Inventory(invWidth, invHeight)
         nodesTemplate = BlockNodesTemplate(widthTiles, heightTiles) {
             listOf(
-                    ResourceNode(0, 0, 0, true, false, ResourceType.ITEM, storage),
-                    ResourceNode(0, 0, 1, true, false, ResourceType.ITEM, storage),
-                    ResourceNode(0, 0, 2, true, false, ResourceType.ITEM, storage),
-                    ResourceNode(0, 0, 3, true, false, ResourceType.ITEM, storage))
+                    ResourceNode(0, 0, 0, true, true, ResourceType.ITEM, storage),
+                    ResourceNode(0, 0, 1, true, true, ResourceType.ITEM, storage),
+                    ResourceNode(0, 0, 2, true, true, ResourceType.ITEM, storage),
+                    ResourceNode(0, 0, 3, true, true, ResourceType.ITEM, storage))
         }
     }
 
@@ -139,6 +143,13 @@ class ChestBlockTemplate(init: ChestBlockTemplate.() -> Unit) : BlockTemplate<Ch
             textures = BlockTextures(BlockTexture(Image.Block.CHEST_SMALL, yPixelOffset = 16))
             invWidth = 8
             invHeight = 3
+        }
+        val CHEST_LARGE = ChestBlockTemplate {
+            name = "Large chest"
+            invName = "Large chest"
+            textures = BlockTextures(BlockTexture(Image.Block.CHEST_SMALL, yPixelOffset = 16))
+            invWidth = 8
+            invHeight = 6
         }
     }
 }

@@ -1,6 +1,7 @@
 package graphics
 
 import main.Game
+import main.ResourceManager
 import screen.elements.GUIRecipeButton
 import java.awt.AlphaComposite
 import java.awt.Color
@@ -217,7 +218,7 @@ object Utils {
      * @return a BufferedImage object read from the destination, path relative to the inside of the jarfile
      */
     fun loadImage(path: String): BufferedImage {
-        val src = ImageIO.read(Image::class.java.getResource(path))
+        val src = ImageIO.read(ResourceManager.getResource(path))
         val dest = Game.graphicsConfiguration.createCompatibleImage(src.width, src.height, Transparency.TRANSLUCENT)
         val g2d = dest.createGraphics()
         g2d.composite = AlphaComposite.SrcOver
@@ -277,14 +278,14 @@ class Image private constructor() : Texture {
     object Misc {
         // TODO definitely rethink how weapon textures are done, apply this to other things in the future like block textures
         val ERROR = Image("/textures/misc/error.png")
-        val ARROW = Image(Utils.modify("/textures/misc/arrow.png", ImageParams(alphaMultiplier = 50)))
+        val ARROW = Image(Utils.modify("/textures/misc/arrow.png", ImageParams(alphaMultiplier = 100)))
         val VOID = Image(Color(0))
         val TELEPORT_ICON = Image("/textures/misc/teleport_icon.png")
+        val THIN_ARROW = Image("/textures/misc/thin_arrow.png")
     }
 
     object Block {
         val CHEST_SMALL = Image("/textures/block/chest_small.png")
-        val MINER = Image("/textures/block/miner.png")
         val CRAFTER = Image("/textures/block/crafter.png")
         val TUBE_4_WAY = Image("/textures/block/tube/4_way.png")
         val TUBE_2_WAY_VERTICAL = Image("/textures/block/tube/2_way_vertical.png")

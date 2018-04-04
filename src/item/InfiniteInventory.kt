@@ -11,7 +11,7 @@ class InfiniteInventory(rule: (ResourceType) -> Boolean = { true }) : ResourceCo
     var items = mutableListOf<Item>()
         private set
 
-    override fun add(resource: ResourceType, quantity: Int, from: ResourceNode<ItemType>?, checkIfAble: Boolean): Boolean {
+    override fun add(resource: ResourceType, quantity: Int, from: ResourceNode<*>?, checkIfAble: Boolean): Boolean {
         if(!isValid(resource))
             return false
         resource as ItemType
@@ -39,7 +39,7 @@ class InfiniteInventory(rule: (ResourceType) -> Boolean = { true }) : ResourceCo
 
     override fun spaceFor(resource: ResourceType, quantity: Int) = true
 
-    override fun remove(resource: ResourceType, quantity: Int, to: ResourceNode<ItemType>?, checkIfAble: Boolean): Boolean {
+    override fun remove(resource: ResourceType, quantity: Int, to: ResourceNode<*>?, checkIfAble: Boolean): Boolean {
         if (checkIfAble)
             if (!contains(resource, quantity))
                 return false

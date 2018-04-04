@@ -11,13 +11,13 @@ import java.awt.Rectangle
 import java.awt.Transparency
 import java.awt.image.VolatileImage
 
-class GUIView(parent: RootGUIElement,
-              name: String,
-              xAlignment: () -> Int, yAlignment: () -> Int,
-              widthAlignment: () -> Int, heightAlignment: () -> Int,
-              camera: LevelObject, zoomLevel: Int = 10,
-              open: Boolean = false,
-              layer: Int = parent.layer + 1) :
+class GUILevelView(parent: RootGUIElement,
+                   name: String,
+                   xAlignment: () -> Int, yAlignment: () -> Int,
+                   widthAlignment: () -> Int, heightAlignment: () -> Int,
+                   camera: LevelObject, zoomLevel: Int = 10,
+                   open: Boolean = false,
+                   layer: Int = parent.layer + 1) :
         GUIElement(parent, name, xAlignment, yAlignment, widthAlignment, heightAlignment, open, layer), MovementListener {
 
     constructor(parent: RootGUIElement,

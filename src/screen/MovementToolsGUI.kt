@@ -8,6 +8,9 @@ import level.moving.MovingObject
 import main.Game
 import screen.elements.*
 
+/**
+ * A bunch of tools for moving where you want
+ */
 object MovementToolsGUI : GUIWindow("Player movement tools", { Game.WIDTH - 80 }, { GUICloseButton.HEIGHT }, { 80 }, { 40 }, windowGroup = ScreenManager.Groups.PLAYER_UTIL), ControlPressHandler {
 
     var teleporter = false
@@ -16,7 +19,7 @@ object MovementToolsGUI : GUIWindow("Player movement tools", { Game.WIDTH - 80 }
             if (field)
                 Mouse.setSecondaryIcon(Image.Misc.TELEPORT_ICON)
             else
-                Mouse.clearIcon()
+                Mouse.clearSecondaryIcon()
         }
 
     init {

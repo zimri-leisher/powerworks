@@ -70,7 +70,10 @@ abstract class LevelObject protected constructor(open val xPixel: Int, open val 
     open fun onCollide(o: LevelObject) {
     }
 
-    /** X and Y pixel are where to check if this would collide with */
+    /**
+     * Checks if this level object would have a collision at the given coordinates, excludes all collisions that would happen with a level object not matching the given predicate
+     * @param predicate if null, all level objects are checked
+     * */
     open fun getCollision(xPixel: Int, yPixel: Int, predicate: ((LevelObject) -> Boolean)? = null): LevelObject? {
         if (hitbox == Hitbox.NONE)
             return null

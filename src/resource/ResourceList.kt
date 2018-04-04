@@ -4,25 +4,15 @@ class ResourceList(private val resources: MutableMap<ResourceType, Int> = mutabl
 
     constructor(vararg pairs: Pair<ResourceType, Int>) : this(pairs.toMap().toMutableMap())
 
+    /**
+     * If there are more resources of each in this list in the other list
+     */
     fun enoughIn(other: ResourceList): Boolean {
         for ((k, v) in resources) {
             if (!other.resources.containsKey(k) || other.resources.get(k)!! < v)
                 return false
         }
         return true
-    }
-
-    /**
-     * @return a resource list that is equivalent to its quantities minus those in this list
-     */
-    fun consumeFrom(other: ResourceList, checkIfEnough: Boolean = true): ResourceList? {
-        if(!enoughIn(other))
-            return null
-        val newMap = other.resources.toMutableMap()
-        for((res, q) in resources) {
-            newMap.replace(res, newMap.get(res)!! - q)
-        }
-        return ResourceList(newMap)
     }
 
     fun forEach(f: (ResourceType, Int) -> Unit) = resources.forEach(f)
@@ -44,4 +34,6 @@ class ResourceList(private val resources: MutableMap<ResourceType, Int> = mutabl
     fun clear() = resources.clear()
 
     operator fun contains(resource: ResourceType) = resources.containsKey(resource)
+
+    override fun toString() = resources.toString()
 }

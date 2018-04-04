@@ -20,9 +20,9 @@ class Inventory(val width: Int, val height: Int, rule: (ResourceType) -> Boolean
             return false
         }
 
-    override fun add(resource: ResourceType, quantity: Int, from: ResourceNode<ItemType>?, checkIfAble: Boolean): Boolean {
+    override fun add(resource: ResourceType, quantity: Int, from: ResourceNode<*>?, checkIfAble: Boolean): Boolean {
         if (checkIfAble)
-            if (!spaceFor(resource, quantity) || !rule(resource) || !isValid(resource))
+            if (!isValid(resource) || !spaceFor(resource, quantity))
                 return false
         resource as ItemType
         var amountLeftToAdd = quantity
@@ -77,7 +77,7 @@ class Inventory(val width: Int, val height: Int, rule: (ResourceType) -> Boolean
         return add(i.type, i.quantity, checkIfAble = true)
     }
 
-    override fun spaceFor(resource: ResourceType, quantity: Int): Boolean { // TODO fix
+    override fun spaceFor(resource: ResourceType, quantity: Int): Boolean {
         resource as ItemType
         var capacity = 0
         for (i in items.indices) {
@@ -93,9 +93,9 @@ class Inventory(val width: Int, val height: Int, rule: (ResourceType) -> Boolean
         return capacity >= quantity
     }
 
-    override fun remove(resource: ResourceType, quantity: Int, to: ResourceNode<ItemType>?, checkIfAble: Boolean): Boolean {
+    override fun remove(resource: ResourceType, quantity: Int, to: ResourceNode<*>?, checkIfAble: Boolean): Boolean {
         if (checkIfAble)
-            if (!contains(resource, quantity) || !isValid(resource))
+            if (!isValid(resource) || !contains(resource, quantity))
                 return false
         var amountLeftToRemove = quantity
         itemCount -= quantity
@@ -122,6 +122,7 @@ class Inventory(val width: Int, val height: Int, rule: (ResourceType) -> Boolean
     }
 
     override fun contains(resource: ResourceType, quantity: Int): Boolean {
+        resource as ItemType
         var contains = 0
         for (i in items.indices) {
             if (items[i] != null) {
@@ -208,4 +209,6 @@ class Inventory(val width: Int, val height: Int, rule: (ResourceType) -> Boolean
     operator fun set(i: Int, v: Item?) {
         items[i] = v
     }
+
+    override fun toString() = "Inventory width: $width, height: $height, $itemCount"
 }

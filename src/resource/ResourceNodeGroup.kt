@@ -8,13 +8,25 @@ class ResourceNodeGroup(val name: String, nodes: List<ResourceNode<*>> = listOf(
 
     constructor(name: String, vararg nodes: ResourceNode<*>) : this(name, mutableListOf(*nodes))
 
+    /**
+     * @return a list of all unique attached containers in this node group with the given resourceTypeID
+     */
     fun <R : ResourceType> getAttachedContainers(resourceTypeID: Int) = nodes.filter { it.resourceTypeID == resourceTypeID }.mapNotNull { it.attachedContainer } as List<ResourceContainer<R>>
 
-    fun getAttachedContainers() = nodes.mapNotNull { it.attachedContainer }
+    /**
+     * @return a list of all unique attached containers in this node group
+     */
+    fun getAttachedContainers() = nodes.mapNotNull { it.attachedContainer }.distinct()
 
     fun <R : ResourceType> getPossibleOutputters(resourceType: R, quantity: Int = 1): List<ResourceNode<R>> {
         val ret = mutableListOf<ResourceNode<R>>()
         nodes.filter { it.canOutputFromContainer(resourceType, quantity) }.forEach { ret.add(it as ResourceNode<R>) }
+        return ret
+    }
+
+    fun <R : ResourceType> getPossibleInputters(resourceType: R, quantity: Int = 1): List<ResourceNode<R>> {
+        val ret = mutableListOf<ResourceNode<R>>()
+        nodes.filter { it.canInputToContainer(resourceType, quantity) }.forEach { ret.add(it as ResourceNode<R>) }
         return ret
     }
 
@@ -26,6 +38,9 @@ class ResourceNodeGroup(val name: String, nodes: List<ResourceNode<*>> = listOf(
         nodes.remove(n)
     }
 
+    /**
+     * Removes all nodes that match this predicate
+     */
     fun removeAll(predicate: (ResourceNode<*>) -> Boolean) {
         val i = nodes.iterator()
         for (n in i) {
@@ -42,9 +57,9 @@ class ResourceNodeGroup(val name: String, nodes: List<ResourceNode<*>> = listOf(
     fun <R : ResourceType> getPossibleOutputter(resourceType: R, quantity: Int = 1, checkIfContains: Boolean = true): ResourceNode<R>? {
         val r = nodes.firstOrNull {
             if (checkIfContains) {
-                it.canOutputFromContainer(resourceType, quantity) && it.isAcceptableResource(resourceType)
+                it.canOutputFromContainer(resourceType, quantity) && it.isValid(resourceType)
             } else
-                it.isAcceptableResource(resourceType) && it.allowOut
+                it.isValid(resourceType) && it.allowOut
         } as ResourceNode<R>?
         return r
     }
@@ -52,9 +67,9 @@ class ResourceNodeGroup(val name: String, nodes: List<ResourceNode<*>> = listOf(
     fun <R : ResourceType> getPossibleInputter(resourceType: R, quantity: Int = 1, checkIfSpaceFor: Boolean = true) =
             nodes.firstOrNull {
                 if (checkIfSpaceFor)
-                    it.canInputToContainer(resourceType, quantity) && it.isAcceptableResource(resourceType)
+                    it.canInputToContainer(resourceType, quantity) && it.isValid(resourceType)
                 else
-                    it.isAcceptableResource(resourceType) && it.allowIn
+                    it.isValid(resourceType) && it.allowIn
             } as ResourceNode<R>?
 
     fun output(resourceType: ResourceType, quantity: Int, checkIfContains: Boolean = true): Boolean {
@@ -62,31 +77,29 @@ class ResourceNodeGroup(val name: String, nodes: List<ResourceNode<*>> = listOf(
     }
 
     /**
+     * Tries outputting every resource in this list from any available node in this group
      * @return true if all were successfully outputted
      */
     fun output(list: ResourceList, checkIfContains: Boolean = true): Boolean {
-        return list.any { !output(it.key, it.value, checkIfContains) }
+        return !list.any { !output(it.key, it.value, checkIfContains) }
     }
 
+    /**
+     * Tries to input resources into any available node in this group
+     */
     fun input(resourceType: ResourceType, quantity: Int, checkIfSpaceFor: Boolean = true): Boolean {
         return getPossibleInputter(resourceType, quantity, checkIfSpaceFor)?.input(resourceType, quantity, false) == true
-    }
-
-    fun addAll(other: ResourceNodeGroup) {
-        other.nodes.filter { it !in nodes }.forEach { add(it) }
     }
 
     fun addAll(other: List<ResourceNode<*>>) {
         other.filter { it !in nodes }.forEach { add(it) }
     }
 
-    fun addAll(vararg other: ResourceNode<*>) {
-        other.filter { it !in nodes }.forEach { add(it) }
-    }
+    fun canOutput(resourceType: ResourceType, quantity: Int) = getPossibleOutputter(resourceType, quantity) != null
+
+    fun canInput(resourceType: ResourceType, quantity: Int) = getPossibleInputter(resourceType, quantity) != null
 
     fun forEach(f: (ResourceNode<*>) -> Unit) = nodes.forEach(f)
-
-    fun firstOrNull(f: (ResourceNode<*>) -> Boolean) = nodes.firstOrNull(f)
 
     override fun toString() = nodes.joinToString()
     operator fun contains(it: ResourceNode<*>) = nodes.contains(it)

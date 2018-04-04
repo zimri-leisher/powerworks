@@ -4,10 +4,8 @@ import graphics.Image
 import graphics.Renderer
 import io.*
 import level.Level
-import level.LevelObject
 import main.Game
 import misc.GeometryHelper
-import player.Camera
 import screen.IngameGUI.views
 import screen.elements.GUIElement
 import screen.elements.GUITexturePane
@@ -18,10 +16,14 @@ private var viewCount = 0
 private val viewControls = mutableListOf<RootGUIElement>()
 private var viewControlsOpen = false
 
+/**
+ * The set of 4 little buttons allowing you to open up new ViewWindows
+ * Opened on pressing Control.TOGGLE_VIEW_CONTROLS
+ */
 object ViewControlGUI : GUIWindow("In game view selector window", { Game.WIDTH - 30 }, { Game.HEIGHT - 7 }, { 28 }, { 5 }, windowGroup = ScreenManager.Groups.HOTBAR) {
 
-    val VIEW_SELECTOR_BUTTON_WIDTH = 5
-    var viewHighlighted = -1
+    private const val VIEW_SELECTOR_BUTTON_WIDTH = 5
+    private var viewHighlighted = -1
 
     init {
         children.add(
@@ -72,6 +74,9 @@ object ViewControlGUI : GUIWindow("In game view selector window", { Game.WIDTH -
     }
 }
 
+/**
+ * The background of the interface in level, along with some utility methods for creating ViewWindows
+ */
 object IngameGUI : GUIWindow("In game gui",
         { 0 }, { 0 },
         { Game.WIDTH }, { Game.HEIGHT },
@@ -82,8 +87,8 @@ object IngameGUI : GUIWindow("In game gui",
 
     val mainInvGUI = InventoryGUI("In game main inventory gui", "Inventory", Game.mainInv, 20, 20, layer = MAX_VIEWS * 3 + 2)
 
-    val cameras = arrayOf<LevelObject>(newCamera(), newCamera(), newCamera(), newCamera())
-    val views = arrayOf<ViewWindow>(newView(), newView(), newView(), newView())
+    val cameras = arrayOf(newCamera(), newCamera(), newCamera(), newCamera())
+    val views = arrayOf(newView(), newView(), newView(), newView())
 
     init {
         InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.TOGGLE_VIEW_CONTROLS)

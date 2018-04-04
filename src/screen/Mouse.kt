@@ -24,10 +24,19 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
 
     const val ICON_SIZE = 8
 
+    /**
+     * 1: left mouse button
+     * 2: middle mouse button
+     * 3: right mouse button
+     */
     var button = 0
-    var xPixel = 0
 
+    var xPixel = 0
     var yPixel = 0
+
+    /**
+     * The current item type being held. Used for movement between inventories, placing blocks and other interactions
+     */
     var heldItemType: ItemType? = null
 
     private val levelTooltipTemplates = sortedMapOf<Int, (LevelObject) -> String?>()
@@ -56,27 +65,33 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
         InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.DROP_HELD_ITEM, Control.PICK_UP_DROPPED_ITEMS)
     }
 
+    /**
+     * An icon that renders under the cursor, for example, the teleportation icon
+     */
     fun setSecondaryIcon(texture: Texture) {
         icon.texture = texture
         icon.open = true
     }
 
-    fun setPrimaryIcon(texture: Texture) {
-    }
-
-    fun clearIcon() {
+    fun clearSecondaryIcon() {
         icon.open = false
     }
 
+    /**
+     * @param f called for each LevelObject under the mouse. Returned text will be rendered at mouse
+     */
     fun addLevelTooltipTemplate(f: (LevelObject) -> String?, priority: Int = 0) {
         levelTooltipTemplates.put(priority, f)
     }
 
+    /**
+     * @param f called for each GUIElement under the mouse. Returned text will be rendered at mouse
+     */
     fun addScreenTooltipTemplate(f: (RootGUIElement) -> String?, priority: Int = 0) {
         screenTooltipTemplates.put(priority, f)
     }
 
-    fun update() {
+    internal fun update() {
         var s: String? = null
         val screen = ScreenManager.getHighestElement(xPixel, yPixel, ScreenManager.getHighestWindow(xPixel, yPixel, { !it.transparentToInteraction }), { !it.transparentToInteraction })
         if (screen != null) {
@@ -108,7 +123,7 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
         window.updateAlignment()
     }
 
-    fun render() {
+    internal fun render() {
         if (heldItemType != null) {
             val i = heldItemType!!
             val q = Game.mainInv.getQuantity(i)
@@ -157,7 +172,7 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
             for(n in nodes) {
                 s.append("    in: ${n.allowIn}, out: ${n.allowOut}, dir: ${n.dir}\n")
             }
-            Renderer.renderText("Resource nodes:\n$s", xPixel, yPixel)
+            Renderer.renderText("Resource nodes at ${Game.currentLevel.mouseLevelXPixel shr 4}, ${Game.currentLevel.mouseLevelYPixel shr 4}:\n$s", xPixel, yPixel)
         } else if (Game.DEBUG_SCREEN_INFO) {
             Renderer.renderText("Element on mouse:\n" +
                     "  ${ScreenManager.getHighestElement(xPixel, yPixel, predicate = { !it.transparentToInteraction })}\n" +
@@ -175,6 +190,10 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
         }
     }
 
+    /**
+     * Tries to place the held item on the level
+     * @param q how many to drop
+     */
     fun dropHeldItem(q: Int = 1) {
         if (heldItemType != null) {
             val type = heldItemType!!

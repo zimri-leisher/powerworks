@@ -1,5 +1,6 @@
 package graphics
 
+import main.ResourceManager
 import java.awt.GraphicsEnvironment
 import java.awt.image.BufferedImage
 import javax.imageio.ImageIO
@@ -16,6 +17,7 @@ class ImageCollection(path: String, numberOfImages: Int) {
         val PLAYER = ImageCollection("/textures/player/player.png", 4)
         val TUBE_CORNER = ImageCollection("/textures/block/tube/corner.png", 4)
         val TUBE_3_WAY = ImageCollection("/textures/block/tube/3_way.png", 4)
+        val MINER = ImageCollection("/textures/block/miner/miner.png", 2)
     }
 
     val textures: Array<Texture>
@@ -27,7 +29,7 @@ class ImageCollection(path: String, numberOfImages: Int) {
     }
 
     init {
-        val image = ImageIO.read(ImageCollection::class.java.getResource(path))
+        val image = ImageIO.read(ResourceManager.getResource(path))
         if (image.width % numberOfImages != 0)
             throw Exception("Image is not properly formatted")
         width = image.width / numberOfImages

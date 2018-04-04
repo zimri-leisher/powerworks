@@ -1,15 +1,21 @@
 package level.block
 
+import crafting.Crafter
 import crafting.Recipe
+import io.*
 import item.Inventory
 import resource.ResourceContainer
 import resource.ResourceContainerChangeListener
 import resource.ResourceList
 import resource.ResourceType
+import screen.CraftingBlockGUI
 
-class CrafterBlock(override val type: CrafterBlockTemplate, xTile: Int, yTile: Int, rotation: Int, recipe: Recipe? = null) : MachineBlock(type, xTile, yTile, rotation), ResourceContainerChangeListener {
+class CrafterBlock(override val type: CrafterBlockTemplate, xTile: Int, yTile: Int, rotation: Int, recipe: Recipe? = null) : MachineBlock(type, xTile, yTile, rotation), ResourceContainerChangeListener, ControlPressHandler, Crafter {
 
-    private val containers = nodes.getAttachedContainers()
+    override val crafterType: Int
+        get() = type.craftingType
+
+    val crafterGUI = CraftingBlockGUI(this)
     var recipe = recipe
         set(value) {
             field = value
@@ -23,7 +29,8 @@ class CrafterBlock(override val type: CrafterBlockTemplate, xTile: Int, yTile: I
     val currentResources = ResourceList()
 
     init {
-        containers.forEach { it.listeners.add(this) }
+        containers.forEach { it.listeners.add(this); it.rule = { false } }
+        InputManager.registerControlPressHandler(this, ControlPressHandlerType.LEVEL_THIS, Control.INTERACT)
     }
 
     override fun onContainerAdd(container: ResourceContainer<*>, resource: ResourceType, quantity: Int) {
@@ -55,6 +62,16 @@ class CrafterBlock(override val type: CrafterBlockTemplate, xTile: Int, yTile: I
                     continue@outer
             }
         }
-        nodes.output(recipe!!.produce)
+        println(containers.toList())
+        for((r, q) in recipe!!.produce) {
+            println(nodes.getPossibleOutputter(r, q, false))
+        }
+        println("outputting: ${nodes.output(recipe!!.produce, false)}")
+    }
+
+    override fun handleControlPress(p: ControlPress) {
+        if(p.pressType == PressType.PRESSED && p.control == Control.INTERACT) {
+            crafterGUI.toggle()
+        }
     }
 }

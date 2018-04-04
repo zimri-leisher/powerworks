@@ -1,6 +1,7 @@
 package audio
 
 import audio.audiocue.AudioCue
+import main.ResourceManager
 
 enum class Sound(path: String, maxConcurrent: Int) {
     GRASS_FOOTSTEP("/sounds/footstep/grass.wav", 6),
@@ -9,7 +10,7 @@ enum class Sound(path: String, maxConcurrent: Int) {
     /**
      * API related instance
      */
-    var a: AudioCue = AudioCue.makeStereoCue(Sound::class.java.getResource(path), maxConcurrent)
+    var a: AudioCue = AudioCue.makeStereoCue(ResourceManager.getResource(path), maxConcurrent)
 
     /**
      * Note - use AudioManager.play(Sound) instead

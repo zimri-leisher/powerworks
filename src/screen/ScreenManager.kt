@@ -10,7 +10,7 @@ import screen.elements.RootGUIElement
 
 object ScreenManager : ControlPressHandler {
 
-    val _windowGroups = mutableListOf<WindowGroup>()
+    private val _windowGroups = mutableListOf<WindowGroup>()
     val windowGroups = object : MutableList<WindowGroup> by _windowGroups {
         override fun add(element: WindowGroup): Boolean {
             val result = _windowGroups.add(element)
@@ -29,10 +29,16 @@ object ScreenManager : ControlPressHandler {
 
     private val _backwardsWindowGroups = mutableListOf<WindowGroup>()
     val windows = ConcurrentlyModifiableMutableList<GUIWindow>()
-    val openWindows = mutableListOf<GUIWindow>()
+    internal val openWindows = mutableListOf<GUIWindow>()
 
+    /**
+     * The last GUIElement interacted with. Keep in mind this doesn't look at elements with the transparentToInteraction flag set to true
+     */
     var selectedElement: RootGUIElement? = null
 
+    /**
+     * The last GUIWindow interacted with. Keep in mind this doesn't look at elements with the transparentToInteraction flag set to true
+     */
     var selectedWindow: GUIWindow? = null
 
     object Groups {

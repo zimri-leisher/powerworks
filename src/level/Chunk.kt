@@ -2,10 +2,13 @@ package level
 
 import level.block.Block
 import level.moving.MovingObject
-import resource.ResourceNode
 import level.tile.Tile
 import misc.ConcurrentlyModifiableMutableList
+import resource.ResourceNode
 
+/**
+ * A very low level class, basically for data storage. Interaction with the level should be done through the Level object and not any of these
+ */
 class Chunk(val parent: Level, val xChunk: Int, val yChunk: Int) {
 
     var xTile = xChunk shl 3

@@ -10,7 +10,7 @@ class AutoFormatGUIGroup(parent: RootGUIElement,
                          val xPixelSeparation: Int = 0,
                          val accountForChildWidth: Boolean = false,
                          val accountForChildHeight: Boolean = false) :
-        GUIGroup(parent, name, xAlignment, yAlignment, open, layer) {
+        GUIGroup(parent, name, xAlignment, yAlignment, {}, open, layer) {
 
     constructor(parent: RootGUIElement,
                 name: String,
@@ -31,6 +31,12 @@ class AutoFormatGUIGroup(parent: RootGUIElement,
         if (initializerList != null)
             initializerList()
         updateDimensions()
+    }
+
+    fun clear() {
+        children.clear()
+        nextXPixel = 0
+        nextXPixel = 0
     }
 
     override fun onAddChild(child: GUIElement) {

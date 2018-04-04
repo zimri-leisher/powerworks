@@ -48,7 +48,7 @@ class DroppedItem(xPixel: Int, yPixel: Int, val type: ItemType, quantity: Int = 
         init {
             Mouse.addLevelTooltipTemplate({
                 if (it is DroppedItem)
-                    return@addLevelTooltipTemplate it.type.name
+                    return@addLevelTooltipTemplate "${it.type.name} * ${it.quantity}"
                 return@addLevelTooltipTemplate null
             })
         }

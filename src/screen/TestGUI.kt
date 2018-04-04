@@ -7,7 +7,7 @@ import screen.elements.GUIElementList
 import screen.elements.GUITexturePane
 import screen.elements.GUIWindow
 
-object TestGUI : GUIWindow("Testing GUI", 0, 0, Game.WIDTH, Game.HEIGHT, windowGroup = ScreenManager.Groups.BACKGROUND) {
+internal object TestGUI : GUIWindow("Testing GUI", 0, 0, Game.WIDTH, Game.HEIGHT, windowGroup = ScreenManager.Groups.BACKGROUND) {
 
     init {
         GUITexturePane(rootChild, "Test GUI background", 0, 0, Image.GUI.MAIN_MENU_BACKGROUND, Game.WIDTH, Game.HEIGHT).run {

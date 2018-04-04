@@ -42,7 +42,6 @@ class TubeBlock(xTile: Int, yTile: Int) : Block(BlockTemplate.TUBE, xTile, yTile
     }
 
     override fun onAdjacentBlockAdd(b: Block) {
-        println("adjacent added next to $this")
         // If it is a tube block, its onAddToLevel() event will call updateConnections() which will do the connecting for us,
         // so no need to worry about us doing it for them
         if (b !is TubeBlock) {

@@ -27,7 +27,7 @@ class GUIButton(parent: RootGUIElement,
             Image(Utils.modify(Utils.genRectangle(widthPixels, heightPixels), ImageParams(rotation = 2))))
     // 0: unhighlighted, 1: highlighted, 2: clicked
     var currentTexture: Texture = textures[0]
-    var text = GUIText(parent = this, name = name + " text", relXPixel = 0, relYPixel = 0, text = text, size = TEXT_SIZE).apply { transparentToInteraction = true }
+    var text = GUIText(this, name + " text", 0, 0, text, TEXT_SIZE).apply { transparentToInteraction = true }
 
     init {
         this.text.transparentToInteraction = true

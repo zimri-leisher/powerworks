@@ -7,9 +7,11 @@ import graphics.Renderer
 import graphics.SyncAnimation
 import io.*
 import item.Inventory
-import item.Item
 import item.ItemType
 import level.Level
+import level.block.BlockTemplate
+import mod.ModManager
+import mod.ModPermissionsPolicy
 import screen.*
 import java.awt.*
 import java.awt.event.ComponentAdapter
@@ -17,6 +19,7 @@ import java.awt.event.ComponentEvent
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.security.Policy
 import java.util.*
 import javax.imageio.ImageIO
 import javax.swing.JFrame
@@ -27,21 +30,6 @@ const val TRACE_GRAPHICS = false
 fun main(args: Array<String>) {
     initializeProperties()
     Game
-    val `in` = Scanner(System.`in`)
-    var s: String? = null
-    while (`in`.hasNext()) {
-        s = `in`.nextLine()
-        val split = s!!.split(" ")
-        val first = split[0]
-        var second: String = "1"
-        if (split.size > 1)
-            second = split[1]
-        val item = ItemType.ALL.firstOrNull { it.name.toLowerCase().equals(first.toLowerCase().replace("_", " ").trim()) }
-        if (item != null)
-            Game.mainInv.add(Item(item, second.toInt()))
-        else
-            println("not an item")
-    }
 }
 
 fun initializeProperties() {
@@ -54,7 +42,10 @@ fun initializeProperties() {
 
 object Game : Canvas(), Runnable, ControlPressHandler {
 
-    val JAR_PATH = Game::class.java.protectionDomain.codeSource.location.toURI().path.substring(1 until Game::class.java.protectionDomain.codeSource.location.toURI().path.lastIndexOf("/"))
+    val JAR_PATH = Game::class.java.protectionDomain.codeSource.location.toURI().path.drop(1)
+    val ENCLOSING_FOLDER_PATH = JAR_PATH.substring(0 until JAR_PATH.lastIndexOf("/"))
+    val MOD_FOLDER_PATH = ENCLOSING_FOLDER_PATH + "/mods"
+    val TMP_DIR = System.getProperty("java.io.tmpdir")
 
     /* Dimensions */
     var WIDTH = 300
@@ -72,9 +63,11 @@ object Game : Canvas(), Runnable, ControlPressHandler {
     var framesCount = 0
     var updatesCount = 0
     var secondsCount = 0
+
     private var running = false
+
     private var defaultCursor = Cursor.getDefaultCursor()
-    private var clearCursor = Toolkit.getDefaultToolkit().createCustomCursor(ImageIO.read(Game::class.java.getResource("/textures/cursor/cursor_default.png")), Point(0, 0), "Blank cursor")
+    private var clearCursor = Toolkit.getDefaultToolkit().createCustomCursor(ImageIO.read(ResourceManager.getResource("/textures/cursor/cursor_default.png")), Point(0, 0), "Blank cursor")
 
     /* Settings */
     var THREAD_WAITING = true
@@ -103,13 +96,13 @@ object Game : Canvas(), Runnable, ControlPressHandler {
         frame.defaultCloseOperation = JFrame.EXIT_ON_CLOSE
         frame.setLocationRelativeTo(null)
         requestFocusInWindow()
-        frame.iconImage = ImageIO.read(Game::class.java.getResource("/textures/misc/logo.png"))
+        frame.iconImage = ImageIO.read(ResourceManager.getResource("/textures/misc/logo.png"))
         frame.addComponentListener(object : ComponentAdapter() {
             override fun componentResized(e: ComponentEvent?) {
                 resized = true
             }
         })
-        createData()
+        createFoldersAndDefaults()
         addKeyListener(InputManager)
         addMouseWheelListener(InputManager)
         addMouseMotionListener(InputManager)
@@ -118,9 +111,16 @@ object Game : Canvas(), Runnable, ControlPressHandler {
         cursor = clearCursor
         Font
         InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.TAKE_SCREENSHOT, Control.TOGGLE_RESOURCE_NODES_INFO, Control.TOGGLE_RENDER_HITBOXES, Control.TOGGLE_SCREEN_DEBUG_INFO, Control.TOGGLE_CHUNK_INFO, Control.TOGGLE_INVENTORY, Control.TOGGLE_DEBUG_TUBE_GROUP_INFO)
+        // the main menu GUI is by default open, but it won't get initialized till we call it somewhere
         MainMenuGUI
         DebugOverlay
+        // just making sure these are loaded before mods load
+        ItemType
+        BlockTemplate
         State.setState(State.MAIN_MENU)
+        Policy.setPolicy(ModPermissionsPolicy())
+        System.setSecurityManager(SecurityManager())
+        ModManager.initialize()
         frame.isVisible = true
         start()
     }
@@ -224,6 +224,7 @@ object Game : Canvas(), Runnable, ControlPressHandler {
             e.printStackTrace()
         }
         AudioManager.close()
+        ModManager.shutdown()
     }
 
     fun resetMouseIcon() {
@@ -234,23 +235,25 @@ object Game : Canvas(), Runnable, ControlPressHandler {
         cursor = clearCursor
     }
 
-    fun createData() {
-        val controls = Paths.get(JAR_PATH, "data/settings/controls/")
+    fun createFoldersAndDefaults() {
+        val controls = Paths.get(ENCLOSING_FOLDER_PATH, "data/settings/controls/")
         if (Files.notExists(controls))
             Files.createDirectories(controls)
-        val defaultMap = Paths.get(JAR_PATH, "data/settings/controls/default.txt")
+        val defaultMap = Paths.get(ENCLOSING_FOLDER_PATH, "data/settings/controls/default.txt")
         if (Files.notExists(defaultMap)) {
             Files.createFile(defaultMap)
         }
         val f = defaultMap.toFile()
-        f.writeText(Game::class.java.getResource("/settings/controls/default.txt").readText())
-        val save = Paths.get(JAR_PATH, "data/save/")
+        f.writeText(ResourceManager.getResource("/settings/controls/default.txt").readText())
+        val save = Paths.get(ENCLOSING_FOLDER_PATH, "data/save/")
         if (Files.notExists(save))
             Files.createDirectory(save)
+        if(Files.notExists(Paths.get(MOD_FOLDER_PATH)))
+            Files.createDirectories(Paths.get(MOD_FOLDER_PATH))
     }
 
     fun takeScreenshot() {
-        val directory = Paths.get(JAR_PATH, "/screenshots/")
+        val directory = Paths.get(ENCLOSING_FOLDER_PATH, "/screenshots/")
         if (Files.notExists(directory))
             Files.createDirectory(directory)
         val ss = graphicsConfiguration.createCompatibleImage(Game.WIDTH * Game.SCALE, Game.HEIGHT * Game.SCALE)
@@ -258,7 +261,7 @@ object Game : Canvas(), Runnable, ControlPressHandler {
         ScreenManager.render()
         Renderer.g2d.dispose()
         val calInstance = Calendar.getInstance()
-        val fileName = "${JAR_PATH}/screenshots/${calInstance.get(Calendar.MONTH) + 1}-${calInstance.get(Calendar.DATE)}-${calInstance.get(Calendar.YEAR)}"
+        val fileName = "${ENCLOSING_FOLDER_PATH}/screenshots/${calInstance.get(Calendar.MONTH) + 1}-${calInstance.get(Calendar.DATE)}-${calInstance.get(Calendar.YEAR)}"
         var i = 0
         var file = File(fileName + " #$i.png")
         while (file.exists()) {

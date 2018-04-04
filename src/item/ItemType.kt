@@ -1,6 +1,7 @@
 package item
 
 import graphics.Image
+import graphics.SyncAnimation
 import graphics.Texture
 import level.block.BlockTemplate
 import level.block.ChestBlockTemplate
@@ -10,9 +11,13 @@ import resource.ResourceType
 
 private var nextID = 0
 
-open class ItemType(val name: String, override val texture: Texture, val stretchTexture: Boolean = true, private val placedBlockID: Int = BlockTemplate.ERROR.id, val maxStack: Int) : ResourceType {
+open class ItemType(init: ItemType.() -> Unit) : ResourceType {
 
-    constructor(parent: ItemType) : this(parent.name, parent.texture, parent.stretchTexture, parent.placedBlockID, parent.maxStack)
+    var name = "Error"
+    override var texture: Texture = Image.Misc.ERROR
+    var placedBlockID = BlockTemplate.ERROR.id
+    var maxStack = 10
+
 
     val placedBlock: BlockTemplate<*>
         get() = BlockTemplate.ALL.first { it.id == placedBlockID }
@@ -22,6 +27,7 @@ open class ItemType(val name: String, override val texture: Texture, val stretch
     override val typeID = ResourceType.ITEM
 
     init {
+        init()
         ALL.add(this)
     }
 
@@ -38,37 +44,53 @@ open class ItemType(val name: String, override val texture: Texture, val stretch
     companion object {
         val ALL = mutableListOf<ItemType>()
 
-        val ERROR = ItemType("Error",
-                Image.Misc.ERROR,
-                maxStack = 10)
+        val ERROR = ItemType {
+            name = "Error"
+        }
 
-        val MINER = ItemType("Miner",
-                Image.Block.MINER,
-                placedBlockID = MachineBlockTemplate.MINER.id,
-                maxStack = 10)
+        val MINER = ItemType {
+            name = "Miner"
+            texture = SyncAnimation.MINER.images[0]
+            placedBlockID = MachineBlockTemplate.MINER.id
+        }
 
-        val CRAFTER = ItemType("Crafter",
-                Image.Block.CRAFTER,
-                placedBlockID = CrafterBlockTemplate.ITEM_CRAFTER.id,
-                maxStack = 10)
+        val CRAFTER = ItemType {
+            name = "Crafter"
+            texture = Image.Block.CRAFTER
+            placedBlockID = CrafterBlockTemplate.ITEM_CRAFTER.id
+        }
 
-        val IRON_ORE = ItemType("Iron Ore",
-                Image.Item.IRON_ORE_ITEM,
-                maxStack = 100)
+        val IRON_ORE = ItemType {
+            name = "Iron Ore"
+            texture = Image.Item.IRON_ORE_ITEM
+            maxStack = 100
+        }
 
-        val TUBE = ItemType("Item Transport Tube",
-                Image.Item.TUBE_ITEM,
-                false,
-                BlockTemplate.TUBE.id,
-                50)
+        val TUBE = ItemType {
+            name = "Item Transport Tube"
+            texture = Image.Item.TUBE_ITEM
+            placedBlockID = BlockTemplate.TUBE.id
+            maxStack = 50
+        }
 
-        val CHEST_SMALL = ItemType("Small Chest",
-                Image.Block.CHEST_SMALL,
-                placedBlockID = ChestBlockTemplate.CHEST_SMALL.id,
-                maxStack = 20)
+        val CHEST_SMALL = ItemType {
+            name = "Small Chest"
+            texture = Image.Block.CHEST_SMALL
+            placedBlockID = ChestBlockTemplate.CHEST_SMALL.id
+            maxStack = 20
+        }
 
-        val COPPER_ORE = ItemType("Copper Ore",
-                Image.Item.COPPER_ORE_ITEM,
-                maxStack = 100)
+        val CHEST_LARGE = ItemType {
+            name = "Large Chest"
+            texture = Image.Block.CHEST_SMALL
+            placedBlockID = ChestBlockTemplate.CHEST_LARGE.id
+            maxStack = 20
+        }
+
+        val COPPER_ORE = ItemType {
+            name = "Copper Ore"
+            texture = Image.Item.COPPER_ORE_ITEM
+            maxStack = 100
+        }
     }
 }

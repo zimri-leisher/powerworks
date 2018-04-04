@@ -12,7 +12,7 @@ enum class ControlMap(path: String) {
     private val binds = mutableListOf<ControlBind>()
 
     init {
-        val text = Paths.get(Game.JAR_PATH, "data/settings/controls/$path.txt").toFile().readText()
+        val text = Paths.get(Game.ENCLOSING_FOLDER_PATH, "data/settings/controls/$path.txt").toFile().readText()
         val lines = text.split(delimiters = "\n")
         var mode = 0
         for (a in lines) {

@@ -166,11 +166,17 @@ class TubeBlockGroup {
         }
     }
 
-    private data class IntersectionAndDir(val intersection: IntersectionTube, var dir: Int)
+    data class Step(val coord: PixelCoord, val nextDir: Int)
 
     private fun route(input: ResourceNode<*>, output: ResourceNode<*>): ItemPath? {
-        val inp = findCorrespondingIntersection(input)!!
-        val out = findCorrespondingIntersection(output)!!
+        if(input.xTile == output.xTile && input.yTile == output.yTile) {
+            val instructions = mutableListOf<Step>()
+            instructions.add(Step(PixelCoord(input.xTile shl 4, input.yTile shl 4), output.dir))
+            instructions.add(Step(PixelCoord(output.attachedNode!!.xTile shl 4, output.attachedNode!!.yTile shl 4), -1))
+            return ItemPath(instructions.toTypedArray())
+        }
+        val inp = getIntersection(tubes.first { it.xTile == input.xTile && it.yTile == input.yTile })
+        val out = getIntersection(tubes.first { it.xTile == output.xTile && it.yTile == output.yTile })
         val startNode = RoutingNode(null, out, inp, -1, 0, 0)
 
         val possibleNextNodes = mutableListOf<RoutingNode>()
@@ -204,14 +210,16 @@ class TubeBlockGroup {
             alreadyUsedNodes.add(nextNode)
         }
         if (finalNode != null) {
-            val instructions = mutableListOf<IntersectionAndDir>()
-            instructions.add(IntersectionAndDir(finalNode.intersection, -1))
+            val instructions = mutableListOf<Step>()
+            val finalIntersection = finalNode.intersection
+            instructions.add(Step(PixelCoord(output.attachedNode!!.xTile shl 4, output.attachedNode!!.yTile shl 4), -1))
+            instructions.add(Step(PixelCoord(finalIntersection.tubeBlock.xPixel, finalIntersection.tubeBlock.yPixel), output.dir))
             while (finalNode!!.parent != null) {
-                instructions.add(IntersectionAndDir(finalNode.parent!!.intersection, finalNode.directionFromParent))
+                instructions.add(Step(PixelCoord(finalNode.parent!!.intersection.tubeBlock.xPixel, finalNode.parent!!.intersection.tubeBlock.yPixel), finalNode.directionFromParent))
                 finalNode = finalNode.parent
             }
             instructions.reverse()
-            return ItemPath(instructions)
+            return ItemPath(instructions.toTypedArray())
         }
         return null
     }
@@ -262,7 +270,7 @@ class TubeBlockGroup {
 
         private val itemsBeingMoved = mutableListOf<ItemPackage>()
 
-        override fun add(resource: ResourceType, quantity: Int, from: ResourceNode<ItemType>?, checkIfAble: Boolean): Boolean {
+        override fun add(resource: ResourceType, quantity: Int, from: ResourceNode<*>?, checkIfAble: Boolean): Boolean {
             if(!isValid(resource))
                 return false
             resource as ItemType
@@ -272,7 +280,8 @@ class TubeBlockGroup {
                 if (output != null) {
                     val t = parent.route(from, output)
                     if (t != null) {
-                        itemsBeingMoved.add(ItemPackage(Item(resource, quantity), output, 0, t, from.xTile shl 4, from.yTile shl 4, GeometryHelper.getOppositeAngle(from.dir)))
+                        val p = ItemPackage(Item(resource, quantity), output, 0, t, from.attachedNode!!.xTile shl 4, from.attachedNode!!.yTile shl 4, GeometryHelper.getOppositeAngle(from.dir))
+                        itemsBeingMoved.add(p)
                         return true
                     }
                 }
@@ -299,17 +308,17 @@ class TubeBlockGroup {
 
         fun render() {
             for (item in itemsBeingMoved) {
-                Renderer.renderTexture(item.item.type.texture, item.xPixel + 4, item.yPixel + 4, 8, 8)
+                Renderer.renderTextureKeepAspect(item.item.type.texture, item.xPixel + 4, item.yPixel + 4, 8, 8)
                 Renderer.renderText(item.item.quantity, item.xPixel + 4, item.yPixel + 4)
             }
         }
 
-        override fun remove(resource: ResourceType, quantity: Int, to: ResourceNode<ItemType>?, checkIfContains: Boolean): Boolean {
+        override fun remove(resource: ResourceType, quantity: Int, to: ResourceNode<*>?, checkIfContains: Boolean): Boolean {
             return true
         }
 
         override fun spaceFor(resource: ResourceType, quantity: Int): Boolean {
-            return true
+            return parent.nodes.canOutput(resource, quantity)
         }
 
         override fun contains(resource: ResourceType, quantity: Int): Boolean {
@@ -342,19 +351,7 @@ class TubeBlockGroup {
         }
     }
 
-    private class ItemPath(p: List<IntersectionAndDir>) {
-
-        data class Step(val coord: PixelCoord, val nextDir: Int)
-
-        private val steps: Array<Step>
-
-        init {
-            val a = arrayOfNulls<Step>(p.size)
-            for (index in p.indices) {
-                a[index] = Step(PixelCoord(p[index].intersection.tubeBlock.xPixel, p[index].intersection.tubeBlock.yPixel), p[index].dir)
-            }
-            steps = a as Array<Step>
-        }
+    private class ItemPath(private val steps: Array<Step>) {
 
         val size: Int
             get() = steps.size

@@ -5,6 +5,11 @@ import level.LevelObject
 import level.moving.MovingObject
 import screen.elements.*
 
+/**
+ * A pre-built GUIWindow for interaction with the level.
+ * Has a GUILevelView, a GUIOutline around it, some miscellaneous controls for movement, resizing, etc.
+ * By default, the IngameGUI has 4 of these. Control.TOGGLE_VIEW_CONTROLS goes through that to toggle the controls mentioned above, meaning by default these are not toggleable
+ */
 class ViewWindow(name: String,
                  xPixel: Int, yPixel: Int,
                  widthPixels: Int, heightPixels: Int,
@@ -18,7 +23,7 @@ class ViewWindow(name: String,
 
     var CAMERA_SPEED = 1
 
-    val view = GUIView(rootChild, name,
+    val view = GUILevelView(rootChild, name,
             { 0 }, { 0 },
             { this.widthPixels }, { this.heightPixels },
             camera, zoomLevel, open)

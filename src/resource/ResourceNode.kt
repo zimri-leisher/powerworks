@@ -11,15 +11,19 @@ class ResourceNode<R : ResourceType>(val xTile: Int, val yTile: Int, val dir: In
     /**
      * @return whether the resource is of the right type. Does not check container or attached node for anything
      */
-    fun isAcceptableResource(resource: ResourceType) = resource.typeID == resourceTypeID
+    fun isValid(resource: ResourceType) = resource.typeID == resourceTypeID
 
     /**
      * @return whether the container contains adequate amounts of it. If there is no container, it will return false
      */
     fun canOutputFromContainer(resource: ResourceType, quantity: Int): Boolean {
-        if (!allowOut) return false
         resource as R
-        if (attachedContainer != null && attachedContainer!!.contains(resource, quantity))
+        if (!allowOut) return false
+        // space in place where it will output to
+        if (attachedNode != null && !attachedNode!!.canInputToContainer(resource, quantity))
+            return false
+        // enough in place where it's taking from, and the resource is valid
+        if (attachedContainer != null && attachedContainer!!.isValid(resource) && attachedContainer!!.contains(resource, quantity))
             return true
         return false
     }
@@ -30,45 +34,41 @@ class ResourceNode<R : ResourceType>(val xTile: Int, val yTile: Int, val dir: In
     fun canInputToContainer(resource: ResourceType, quantity: Int): Boolean {
         if (!allowIn) return false
         resource as R
-        if (attachedContainer != null && attachedContainer!!.spaceFor(resource, quantity))
+        if (attachedContainer != null && attachedContainer!!.isValid(resource) && attachedContainer!!.spaceFor(resource, quantity))
             return true
         return false
     }
 
     /**
-     * @param checkIfSpaceFor whether or not to check if the resource space is available
+     * @param checkIfAble whether or not to check if space is available and the resource is valid
      * @return true if the resources were moved
      */
-    fun input(resource: ResourceType, quantity: Int, checkIfSpaceFor: Boolean = true): Boolean {
-        if (!isAcceptableResource(resource))
+    fun input(resource: ResourceType, quantity: Int, checkIfAble: Boolean = true): Boolean {
+        if (!isValid(resource))
             return false
-        if (checkIfSpaceFor)
-            if (!canInputToContainer(resource, quantity))
+        if (checkIfAble) {
+            if (!canInputToContainer(resource, quantity)) {
                 return false
+            }
+        }
         return attachedContainer!!.add(resource, quantity, this)
     }
 
     /**
-     * @param checkIfSpaceFor whether or not to check if the resource is valid and space is available
-     * @return true if all were successfully inputted
-     */
-    fun input(list: ResourceList, checkIfSpaceFor: Boolean): Boolean {
-        return list.any { !input(it.key, it.value, checkIfSpaceFor) }
-    }
-
-    /**
-     * @param checkIfContains whether or not to check if the container has enough
+     * @param checkIfAble whether or not to check if the container has enough and the resource is valid
      * @return true if the resources were moved
      */
-    fun output(resource: ResourceType, quantity: Int, checkIfContains: Boolean = true): Boolean {
-        if (!isAcceptableResource(resource))
+    fun output(resource: ResourceType, quantity: Int, checkIfAble: Boolean = true): Boolean {
+        if (!isValid(resource)) {
             return false
-        if (checkIfContains)
+        }
+        if (checkIfAble)
             if (!canOutputFromContainer(resource, quantity))
                 return false
         attachedContainer?.remove(resource, quantity, this)
-        if(attachedNode != null) {
-            return attachedNode!!.input(resource, quantity)
+        if (attachedNode != null) {
+            val r = attachedNode!!.input(resource, quantity)
+            return r
         } else {
             val xSign = GeometryHelper.getXSign(dir)
             val ySign = GeometryHelper.getYSign(dir)

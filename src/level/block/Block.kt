@@ -1,5 +1,6 @@
 package level.block
 
+import graphics.LocalAnimation
 import graphics.Renderer
 import io.*
 import level.CHUNK_TILE_EXP
@@ -7,6 +8,7 @@ import level.Hitbox
 import level.Level
 import level.LevelObject
 import main.Game
+import resource.ResourceContainerGroup
 import resource.ResourceNodeGroup
 import screen.Mouse
 import java.io.DataOutputStream
@@ -15,7 +17,22 @@ abstract class Block(type: BlockTemplate<out Block>, xTile: Int, yTile: Int, var
 
     open val type = type
 
+    val textures: BlockTextures
+
     val nodes = ResourceNodeGroup("Block at $xTile, $yTile, type: $type's node group", type.nodesTemplate.instantiate(xTile, yTile, rotation))
+    val containers = ResourceContainerGroup(nodes.getAttachedContainers())
+
+    init {
+        val newTextures = mutableListOf<BlockTexture>()
+        for(texture in type.textures) {
+            if(texture.texture is LocalAnimation) {
+                newTextures.add(BlockTexture(LocalAnimation(texture.texture.animation, texture.texture.playing, texture.texture.speed), texture.xPixelOffset, texture.yPixelOffset))
+            } else {
+                newTextures.add(texture)
+            }
+        }
+        textures = BlockTextures(*newTextures.toTypedArray())
+    }
 
     /**
      * Don't forget to call super.onAddToLevel() so that the onAdjacentBlockAdd methods of adjacent blocks are called
@@ -64,7 +81,7 @@ abstract class Block(type: BlockTemplate<out Block>, xTile: Int, yTile: Int, var
     }
 
     override fun render() {
-        val texture = type.textures[rotation]
+        val texture = textures[rotation]
         Renderer.renderTexture(texture.texture, xPixel - texture.xPixelOffset, yPixel - texture.yPixelOffset)
         super.render()
     }

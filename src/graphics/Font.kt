@@ -1,6 +1,7 @@
 package graphics
 
 import main.Game
+import main.ResourceManager
 import java.awt.Font
 import java.awt.FontFormatException
 import java.awt.GraphicsEnvironment
@@ -20,7 +21,7 @@ object Font {
 
     init {
         try {
-            val font = Font.createFont(Font.TRUETYPE_FONT, Game::class.java.getResourceAsStream("/font/Graph-35-pix.ttf")).deriveFont(Font.PLAIN, DEFAULT_SIZE.toFloat())
+            val font = Font.createFont(Font.TRUETYPE_FONT, ResourceManager.getResourceAsStream("/font/Graph-35-pix.ttf")).deriveFont(Font.PLAIN, DEFAULT_SIZE.toFloat())
             val ge = GraphicsEnvironment.getLocalGraphicsEnvironment()
             ge.registerFont(font)
             defaultFont = font

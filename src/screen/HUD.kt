@@ -12,6 +12,9 @@ import screen.elements.GUIItemSlot
 import screen.elements.GUITexturePane
 import screen.elements.GUIWindow
 
+/**
+ * The heads-up-display, consisting of handy information that remains on the screen when in game
+ */
 object HUD {
     const val HOTBAR_SIZE = 8
 
@@ -19,6 +22,11 @@ object HUD {
         Hotbar
     }
 
+    /**
+     * A set of item slots at the bottom of the screen which allows the user to quickly switch between held items for block placement purposes
+     * It does not store anything itself, even if it looks like it does. Instead, each slot, when containing an item type, displays the total amount of that item in the
+     * main inventory, meaning it could potentially have a larger value than the max stack of that type.
+     */
     object Hotbar : GUIWindow("In game default hotbar",
             { (IngameGUI.widthPixels - (HOTBAR_SIZE * GUIItemSlot.WIDTH)) / 2 },
             { IngameGUI.heightPixels - GUIItemSlot.HEIGHT },
@@ -30,9 +38,12 @@ object HUD {
             ScreenManager.Groups.HOTBAR),
             ControlPressHandler,
             ResourceContainerChangeListener {
-        const val WIDTH = 8
 
-        val items = HotbarInventory()
+        internal val items = HotbarInventory()
+        /**
+         * The selected slot
+         * When it is -1, that means the currently held item isn't on the hotbar, usually indicating it is from an inventory
+         */
         var selected = -1
             set(value) {
                 field = value
@@ -41,13 +52,14 @@ object HUD {
                 } else {
                     selectOverlay.open = true
                     selectOverlay.updateAlignment()
+                    Mouse.heldItemType = items[value]
                 }
             }
-        class HotbarInventory : ResourceContainer<ItemType>(ResourceType.ITEM) {
+        internal class HotbarInventory : ResourceContainer<ItemType>(ResourceType.ITEM) {
 
             val items = arrayOfNulls<ItemType>(HOTBAR_SIZE)
 
-            override fun add(resource: ResourceType, quantity: Int, from: ResourceNode<ItemType>?, checkIfAble: Boolean): Boolean {
+            override fun add(resource: ResourceType, quantity: Int, from: ResourceNode<*>?, checkIfAble: Boolean): Boolean {
                 if (!isValid(resource))
                     return false
                 if (checkIfAble)
@@ -65,7 +77,7 @@ object HUD {
 
             override fun spaceFor(resource: ResourceType, quantity: Int) = items.all { it != resource }
 
-            override fun remove(resource: ResourceType, quantity: Int, to: ResourceNode<ItemType>?, checkIfAble: Boolean): Boolean {
+            override fun remove(resource: ResourceType, quantity: Int, to: ResourceNode<*>?, checkIfAble: Boolean): Boolean {
                 if (!isValid(resource))
                     return false
                 if (checkIfAble)
@@ -112,7 +124,7 @@ object HUD {
 
         }
 
-        val selectOverlay = GUITexturePane(rootChild, "Hotbar slot selected overlay", { selected * GUIItemSlot.WIDTH }, { 0 }, texture = Image.GUI.HOTBAR_SELECTED_SLOT, layer = layer + 2)
+        private val selectOverlay = GUITexturePane(rootChild, "Hotbar slot selected overlay", { selected * GUIItemSlot.WIDTH }, { 0 }, texture = Image.GUI.HOTBAR_SELECTED_SLOT, layer = layer + 2)
 
         init {
             partOfLevel = true
@@ -129,14 +141,14 @@ object HUD {
                 return
             if (State.CURRENT_STATE == State.INGAME) {
                 when (p.control) {
-                    Control.SLOT_1 -> setSlot(0)
-                    Control.SLOT_2 -> setSlot(1)
-                    Control.SLOT_3 -> setSlot(2)
-                    Control.SLOT_4 -> setSlot(3)
-                    Control.SLOT_5 -> setSlot(4)
-                    Control.SLOT_6 -> setSlot(5)
-                    Control.SLOT_7 -> setSlot(6)
-                    Control.SLOT_8 -> setSlot(7)
+                    Control.SLOT_1 -> selected = 0
+                    Control.SLOT_2 -> selected = 1
+                    Control.SLOT_3 -> selected = 2
+                    Control.SLOT_4 -> selected = 3
+                    Control.SLOT_5 -> selected = 4
+                    Control.SLOT_6 -> selected = 5
+                    Control.SLOT_7 -> selected = 6
+                    Control.SLOT_8 -> selected = 7
                     Control.GIVE_TEST_ITEM -> Game.mainInv.add(Item(ItemType.TUBE))
                 }
             }
@@ -156,11 +168,6 @@ object HUD {
                 if(selected != -1 && items[selected] != null && Game.mainInv.getQuantity(items[selected]!!) > 0)
                     Mouse.heldItemType = items[selected]
             }
-        }
-
-        private fun setSlot(slot: Int) {
-            selected = slot
-            Mouse.heldItemType = items[slot]
         }
     }
 }

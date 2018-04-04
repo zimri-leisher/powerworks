@@ -1,4 +1,4 @@
-package player
+package screen
 
 import level.Hitbox
 import level.moving.MovingObject

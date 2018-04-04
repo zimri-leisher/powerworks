@@ -5,9 +5,13 @@ import screen.elements.AutoFormatGUIGroup
 import screen.elements.GUIText
 import screen.elements.GUIWindow
 
+/**
+ * Contains debugging information.
+ * Easily allows for addition of new information - see the setInfo method
+ */
 object DebugOverlay : GUIWindow("Debug overlay", 0, 0, 0, 0, windowGroup = ScreenManager.Groups.DEBUG_OVERLAY), ControlPressHandler {
 
-    val group: AutoFormatGUIGroup
+    private val group: AutoFormatGUIGroup
 
     init {
         transparentToInteraction = true
@@ -17,6 +21,11 @@ object DebugOverlay : GUIWindow("Debug overlay", 0, 0, 0, 0, windowGroup = Scree
         }, yPixelSeparation = 4, accountForChildHeight = true)
     }
 
+    /**
+     * If this has not already been set before, it will create a new section for it. Otherwise, it updates the previous section
+     * @param the name of the info
+     * @param value the value to be displayed
+     */
     fun setInfo(key: String, value: String) {
         val c = group.getChild(key + " text")
         if (c == null) {

@@ -5,7 +5,7 @@ import misc.ConcurrentlyModifiableMutableMap
 import misc.WeakMutableList
 import screen.Mouse
 import screen.ScreenManager
-import screen.elements.GUIView
+import screen.elements.GUILevelView
 import java.awt.event.*
 import io.OutputManager as out
 
@@ -169,12 +169,12 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
             handlers.forEach { k, v ->
                 if (k.second == ControlPressHandlerType.GLOBAL ||
                         (k.second == ControlPressHandlerType.SCREEN_THIS && currentScreenHandlers.contains(k.first)) ||
-                        (k.second == ControlPressHandlerType.LEVEL_ANY && ScreenManager.selectedElement is GUIView) ||
+                        (k.second == ControlPressHandlerType.LEVEL_ANY && ScreenManager.selectedElement is GUILevelView) ||
                         (k.second == ControlPressHandlerType.LEVEL_THIS &&
                                 // we want the part below because otherwise the level controls will trigger even when we
                                 // press on a gui element that is higher. However, we don't care if it is a gui view because
                                 // that's how we're supposed to interact
-                                (ScreenManager.selectedWindow == null || ScreenManager.selectedElement is GUIView)
+                                (ScreenManager.selectedWindow == null || ScreenManager.selectedElement is GUILevelView)
                                 && currentLevelHandlers.contains(k.first))) {
                     sendPress(p, k.first, v)
                 }
