@@ -6,6 +6,7 @@ interface ResourceType {
 
     val texture: Texture
     val typeID: Int
+    val name: String
 
     companion object {
         const val ITEM = 0

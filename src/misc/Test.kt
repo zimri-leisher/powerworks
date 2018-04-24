@@ -12,7 +12,6 @@ fun testInventory() {
                 if (item != null) {
                     if (currentlyInNulls)
                         return false
-                    println(item)
                     if (item.type.id >= currentID)
                         currentID = item.type.id
                     else

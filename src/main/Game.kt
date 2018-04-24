@@ -9,7 +9,7 @@ import io.*
 import item.Inventory
 import item.ItemType
 import level.Level
-import level.block.BlockTemplate
+import level.block.BlockType
 import mod.ModManager
 import mod.ModPermissionsPolicy
 import screen.*
@@ -28,6 +28,7 @@ import io.OutputManager as out
 const val TRACE_GRAPHICS = false
 
 fun main(args: Array<String>) {
+    println(args.joinToString())
     initializeProperties()
     Game
 }
@@ -116,7 +117,7 @@ object Game : Canvas(), Runnable, ControlPressHandler {
         DebugOverlay
         // just making sure these are loaded before mods load
         ItemType
-        BlockTemplate
+        BlockType
         State.setState(State.MAIN_MENU)
         Policy.setPolicy(ModPermissionsPolicy())
         System.setSecurityManager(SecurityManager())

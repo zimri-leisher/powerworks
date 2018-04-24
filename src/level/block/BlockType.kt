@@ -22,7 +22,7 @@ class BlockTextures(private vararg val textures: BlockTexture) {
     operator fun iterator() = textures.iterator()
 }
 
-open class BlockTemplate<T : Block>(init: BlockTemplate<T>.() -> Unit = {}) {
+open class BlockType<T : Block>(init: BlockType<T>.() -> Unit = {}) {
 
     var textures = BlockTextures(BlockTexture(Image.Misc.ERROR))
     var name = "Error"
@@ -38,7 +38,7 @@ open class BlockTemplate<T : Block>(init: BlockTemplate<T>.() -> Unit = {}) {
      * 2: y tile
      * 3: rotation
      */
-    var instantiate: (Int, Int, Int) -> T = { xTile, yTile, rotation -> DefaultBlock(this as BlockTemplate<DefaultBlock>, xTile, yTile, rotation) as T }
+    var instantiate: (Int, Int, Int) -> T = { xTile, yTile, rotation -> DefaultBlock(this as BlockType<DefaultBlock>, xTile, yTile, rotation) as T }
 
     init {
         init()
@@ -48,9 +48,9 @@ open class BlockTemplate<T : Block>(init: BlockTemplate<T>.() -> Unit = {}) {
     override fun toString() = name
 
     companion object {
-        val ALL = mutableListOf<BlockTemplate<*>>()
-        val ERROR = BlockTemplate<DefaultBlock>()
-        val TUBE = BlockTemplate<TubeBlock> {
+        val ALL = mutableListOf<BlockType<*>>()
+        val ERROR = BlockType<DefaultBlock>()
+        val TUBE = BlockType<TubeBlock> {
             name = "Tube"
             textures = BlockTextures(BlockTexture(Image.Block.TUBE_2_WAY_VERTICAL))
             instantiate = { xTile, yTile, rotation -> TubeBlock(xTile, yTile) }
@@ -58,7 +58,7 @@ open class BlockTemplate<T : Block>(init: BlockTemplate<T>.() -> Unit = {}) {
     }
 }
 
-open class MachineBlockTemplate<T : MachineBlock>(init: MachineBlockTemplate<T>.() -> Unit = {}) : BlockTemplate<T>() {
+open class MachineBlockType<T : MachineBlock>(init: MachineBlockType<T>.() -> Unit = {}) : BlockType<T>() {
     /**
      * Power consumption multiplier, inverse of this
      */
@@ -73,7 +73,7 @@ open class MachineBlockTemplate<T : MachineBlock>(init: MachineBlockTemplate<T>.
     }
 
     companion object {
-        val MINER = MachineBlockTemplate<MinerBlock> {
+        val MINER = MachineBlockType<MinerBlock> {
             name = "Miner"
             instantiate = { xTile, yTile, rotation -> MinerBlock(xTile, yTile, rotation) }
             textures = BlockTextures(BlockTexture(LocalAnimation(SyncAnimation.MINER, true), yPixelOffset = 32))
@@ -90,7 +90,7 @@ open class MachineBlockTemplate<T : MachineBlock>(init: MachineBlockTemplate<T>.
     }
 }
 
-class CrafterBlockTemplate(init: CrafterBlockTemplate.() -> Unit) : MachineBlockTemplate<CrafterBlock>() {
+class CrafterBlockType(init: CrafterBlockType.() -> Unit) : MachineBlockType<CrafterBlock>() {
     var craftingType = Crafter.ITEM_CRAFTER
     var internalStorageSize = 2
 
@@ -101,7 +101,7 @@ class CrafterBlockTemplate(init: CrafterBlockTemplate.() -> Unit) : MachineBlock
     }
 
     companion object {
-        val ITEM_CRAFTER = CrafterBlockTemplate {
+        val ITEM_CRAFTER = CrafterBlockType {
             name = "Crafter"
             hitbox = Hitbox.TILE2X2
             instantiate = { xTile, yTile, rotation -> CrafterBlock(this, xTile, yTile, rotation) }
@@ -118,7 +118,7 @@ class CrafterBlockTemplate(init: CrafterBlockTemplate.() -> Unit) : MachineBlock
     }
 }
 
-class ChestBlockTemplate(init: ChestBlockTemplate.() -> Unit) : BlockTemplate<ChestBlock>() {
+class ChestBlockType(init: ChestBlockType.() -> Unit) : BlockType<ChestBlock>() {
     var invWidth = 1
     var invHeight = 1
     var invName = "Chest"
@@ -137,17 +137,17 @@ class ChestBlockTemplate(init: ChestBlockTemplate.() -> Unit) : BlockTemplate<Ch
     }
 
     companion object {
-        val CHEST_SMALL = ChestBlockTemplate {
+        val CHEST_SMALL = ChestBlockType {
             name = "Small chest"
             invName = "Small chest"
             textures = BlockTextures(BlockTexture(Image.Block.CHEST_SMALL, yPixelOffset = 16))
             invWidth = 8
             invHeight = 3
         }
-        val CHEST_LARGE = ChestBlockTemplate {
+        val CHEST_LARGE = ChestBlockType {
             name = "Large chest"
             invName = "Large chest"
-            textures = BlockTextures(BlockTexture(Image.Block.CHEST_SMALL, yPixelOffset = 16))
+            textures = BlockTextures(BlockTexture(Image.Block.CHEST_LARGE, yPixelOffset = 16))
             invWidth = 8
             invHeight = 6
         }

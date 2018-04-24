@@ -3,14 +3,13 @@ package level.block
 import crafting.Crafter
 import crafting.Recipe
 import io.*
-import item.Inventory
 import resource.ResourceContainer
 import resource.ResourceContainerChangeListener
 import resource.ResourceList
 import resource.ResourceType
 import screen.CraftingBlockGUI
 
-class CrafterBlock(override val type: CrafterBlockTemplate, xTile: Int, yTile: Int, rotation: Int, recipe: Recipe? = null) : MachineBlock(type, xTile, yTile, rotation), ResourceContainerChangeListener, ControlPressHandler, Crafter {
+class CrafterBlock(override val type: CrafterBlockType, xTile: Int, yTile: Int, rotation: Int, recipe: Recipe? = null) : MachineBlock(type, xTile, yTile, rotation), ResourceContainerChangeListener, ControlPressHandler, Crafter {
 
     override val crafterType: Int
         get() = type.craftingType
@@ -20,31 +19,33 @@ class CrafterBlock(override val type: CrafterBlockTemplate, xTile: Int, yTile: I
         set(value) {
             field = value
             if (value != null) {
-                containers.forEach { it.rule = { it in value.consume } }
+                // enable inputting of resources
+                containers.forEach { it.typeRule = { true } }
+                containers.forEach { container -> container.additionRule = { resource, quantity -> resource in value.consume && container.getQuantity(resource) + quantity <= value.consume.getQuantity(resource) } }
             } else {
-                containers.forEach { it.rule = { false } }
+                // disable inputting
+                containers.forEach { it.typeRule = { false } }
             }
         }
 
     val currentResources = ResourceList()
 
     init {
-        containers.forEach { it.listeners.add(this); it.rule = { false } }
+        containers.forEach { it.listeners.add(this); it.typeRule = { false } }
         InputManager.registerControlPressHandler(this, ControlPressHandlerType.LEVEL_THIS, Control.INTERACT)
     }
 
-    override fun onContainerAdd(container: ResourceContainer<*>, resource: ResourceType, quantity: Int) {
-    }
-
-    override fun onContainerRemove(inv: Inventory, resource: ResourceType, quantity: Int) {
-    }
-
     override fun onContainerClear(container: ResourceContainer<*>) {
-    }
-
-    override fun onContainerChange(container: ResourceContainer<*>) {
         currentResources.clear()
         containers.forEach { currentResources.addAll(it.toList()) }
+    }
+
+    override fun onContainerChange(container: ResourceContainer<*>, resource: ResourceType, quantity: Int) {
+        if (quantity < 0) {
+            currentResources.remove(resource, -quantity)
+        } else if (quantity > 0) {
+            currentResources.add(resource, quantity)
+        }
         val canCraft = canCraft()
         if (on && !canCraft) {
             currentWork = 0
@@ -55,22 +56,12 @@ class CrafterBlock(override val type: CrafterBlockTemplate, xTile: Int, yTile: I
     fun canCraft() = recipe?.consume?.enoughIn(currentResources) == true
 
     override fun onFinishWork() {
-        val consume = recipe!!.consume
-        outer@ for ((r, q) in consume) {
-            for (c in containers) {
-                if (c.remove(r, q))
-                    continue@outer
-            }
-        }
-        println(containers.toList())
-        for((r, q) in recipe!!.produce) {
-            println(nodes.getPossibleOutputter(r, q, false))
-        }
-        println("outputting: ${nodes.output(recipe!!.produce, false)}")
+        if (containers.remove(recipe!!.consume))
+            nodes.output(recipe!!.produce, false)
     }
 
     override fun handleControlPress(p: ControlPress) {
-        if(p.pressType == PressType.PRESSED && p.control == Control.INTERACT) {
+        if (p.pressType == PressType.PRESSED && p.control == Control.INTERACT) {
             crafterGUI.toggle()
         }
     }

@@ -121,7 +121,7 @@ open class RootGUIElement(val parentWindow: GUIWindow,
      * This will be calculated and assigned to the width pixels every time a dimension or position of this or a parent changes,
      * or the updateAlignment() function is called
      */
-    var widthPixels = widthAlignment()
+    open var widthPixels = widthAlignment()
         set(value) {
             if (field != value) {
                 val old = field
@@ -137,7 +137,7 @@ open class RootGUIElement(val parentWindow: GUIWindow,
      * This will be calculated and assigned to the height pixels every time a dimension or position of this or a parent changes,
      * or the updateAlignment() function is called
      */
-    var heightPixels = heightAlignment()
+    open var heightPixels = heightAlignment()
         set(value) {
             if (field != value) {
                 val old = field
@@ -207,19 +207,19 @@ open class RootGUIElement(val parentWindow: GUIWindow,
     open fun update() {}
 
     /* Events */
-    /** When this is opened after being closed */
     open fun onOpen() {
     }
 
-    /** When this is closed after being open */
     open fun onClose() {
     }
 
-    /** When this gains a child */
     open fun onAddChild(child: GUIElement) {
     }
 
     open fun onRemoveChild(child: GUIElement) {
+    }
+
+    open fun onChildDimensionChange(child: GUIElement) {
     }
 
     /** When the mouse is clicked on this and it is on the highest layer, unless transparentToInteraction is true */
@@ -350,17 +350,29 @@ abstract class GUIElement(parent: RootGUIElement,
             }
         }
 
+    override var widthPixels: Int
+        get() = super.widthPixels
+        set(value) {
+            if(super.widthPixels != value) {
+                super.widthPixels = value
+                parent.onChildDimensionChange(this)
+            }
+        }
+
+    override var heightPixels: Int
+        get() = super.heightPixels
+        set(value) {
+            if(super.heightPixels != value) {
+                super.heightPixels = value
+                parent.onChildDimensionChange(this)
+            }
+        }
+
     init {
         parent.children.add(this)
     }
 
     /* Util */
-    /** Makes this and all it's children's layers their respective parent's layer + 1 */
-    fun compressLayer() {
-        layer = parent.layer + 1
-        children.forEach { it.compressLayer() }
-    }
-
     fun updateAlignment() {
         xPixel = xAlignment() + parent.xPixel
         yPixel = yAlignment() + parent.yPixel

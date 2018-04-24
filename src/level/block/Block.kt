@@ -13,7 +13,7 @@ import resource.ResourceNodeGroup
 import screen.Mouse
 import java.io.DataOutputStream
 
-abstract class Block(type: BlockTemplate<out Block>, xTile: Int, yTile: Int, var rotation: Int = 0, hitbox: Hitbox = type.hitbox, requiresUpdate: Boolean = type.requiresUpdate) : LevelObject(xTile shl 4, yTile shl 4, hitbox, requiresUpdate) {
+abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, var rotation: Int = 0, hitbox: Hitbox = type.hitbox, requiresUpdate: Boolean = type.requiresUpdate) : LevelObject(xTile shl 4, yTile shl 4, hitbox, requiresUpdate) {
 
     open val type = type
 

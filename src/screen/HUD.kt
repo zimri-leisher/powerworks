@@ -2,7 +2,6 @@ package screen
 
 import graphics.Image
 import io.*
-import item.Inventory
 import item.Item
 import item.ItemType
 import main.Game
@@ -154,16 +153,10 @@ object HUD {
             }
         }
 
-        override fun onContainerAdd(container: ResourceContainer<*>, resource: ResourceType, quantity: Int) {
-        }
-
-        override fun onContainerRemove(inv: Inventory, resource: ResourceType, quantity: Int) {
-        }
-
         override fun onContainerClear(container: ResourceContainer<*>) {
         }
 
-        override fun onContainerChange(container: ResourceContainer<*>) {
+        override fun onContainerChange(container: ResourceContainer<*>, resource: ResourceType, quantity: Int) {
             if(container == Game.mainInv) {
                 if(selected != -1 && items[selected] != null && Game.mainInv.getQuantity(items[selected]!!) > 0)
                     Mouse.heldItemType = items[selected]

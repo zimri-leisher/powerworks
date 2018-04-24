@@ -7,8 +7,6 @@ import resource.ResourceType
 
 class Inventory(val width: Int, val height: Int, rule: (ResourceType) -> Boolean = { true }, private val items: Array<Item?> = arrayOfNulls(width * height)) : ResourceContainer<ItemType>(ResourceType.ITEM, rule) {
 
-    // TODO maybe have a "slotsFull" variable that tells me whether to iterate from the beginning or end
-
     var itemCount = 0
         private set
 
@@ -22,7 +20,7 @@ class Inventory(val width: Int, val height: Int, rule: (ResourceType) -> Boolean
 
     override fun add(resource: ResourceType, quantity: Int, from: ResourceNode<*>?, checkIfAble: Boolean): Boolean {
         if (checkIfAble)
-            if (!isValid(resource) || !spaceFor(resource, quantity))
+            if (!canAdd(resource, quantity))
                 return false
         resource as ItemType
         var amountLeftToAdd = quantity
@@ -35,7 +33,7 @@ class Inventory(val width: Int, val height: Int, rule: (ResourceType) -> Boolean
                     item.quantity = resource.maxStack
                 } else {
                     item.quantity += amountLeftToAdd
-                    listeners.forEach { it.onContainerAdd(this, resource, quantity); it.onContainerChange(this) }
+                    listeners.forEach { it.onContainerChange(this, resource, quantity) }
                     return true
                 }
             }
@@ -48,7 +46,7 @@ class Inventory(val width: Int, val height: Int, rule: (ResourceType) -> Boolean
                 amountLeftToAdd -= q
             }
             if (amountLeftToAdd <= 0) {
-                listeners.forEach { it.onContainerAdd(this, resource, quantity); it.onContainerChange(this) }
+                listeners.forEach { it.onContainerChange(this, resource, quantity) }
                 return true
             }
         }
@@ -95,7 +93,7 @@ class Inventory(val width: Int, val height: Int, rule: (ResourceType) -> Boolean
 
     override fun remove(resource: ResourceType, quantity: Int, to: ResourceNode<*>?, checkIfAble: Boolean): Boolean {
         if (checkIfAble)
-            if (!isValid(resource) || !contains(resource, quantity))
+            if (!canRemove(resource, quantity))
                 return false
         var amountLeftToRemove = quantity
         itemCount -= quantity
@@ -109,7 +107,7 @@ class Inventory(val width: Int, val height: Int, rule: (ResourceType) -> Boolean
                 }
                 amountLeftToRemove -= prevQ - item.quantity
                 if (amountLeftToRemove <= 0) {
-                    listeners.forEach { it.onContainerRemove(this, resource, quantity); it.onContainerChange(this) }
+                    listeners.forEach { it.onContainerChange(this, resource, -quantity) }
                     return true
                 }
             }
@@ -193,10 +191,10 @@ class Inventory(val width: Int, val height: Int, rule: (ResourceType) -> Boolean
         for (i in items.indices) {
             items[i] = null
         }
-        listeners.forEach { it.onContainerClear(this); it.onContainerChange(this) }
+        listeners.forEach { it.onContainerClear(this) }
     }
 
-    override fun copy() = Inventory(width, height, rule, items.copyOf())
+    override fun copy() = Inventory(width, height, typeRule, items.copyOf()).apply { this@apply.additionRule = this@Inventory.additionRule; this@apply.removalRule = this@Inventory.removalRule }
 
     operator fun iterator(): Iterator<Item?> {
         return items.iterator()

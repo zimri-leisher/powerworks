@@ -4,7 +4,7 @@ import audio.AudioManager
 import audio.AudioManager.SoundSource
 import graphics.LocalAnimation
 
-abstract class MachineBlock(override val type: MachineBlockTemplate<out MachineBlock>, xTile: Int, yTile: Int, rotation: Int, on: Boolean = false) : Block(type, xTile, yTile, rotation) {
+abstract class MachineBlock(override val type: MachineBlockType<out MachineBlock>, xTile: Int, yTile: Int, rotation: Int, on: Boolean = false) : Block(type, xTile, yTile, rotation) {
 
     var on = on
         set(value) {
@@ -49,9 +49,9 @@ abstract class MachineBlock(override val type: MachineBlockTemplate<out MachineB
             onWork()
             if (currentWork >= (type.maxWork / type.speed).toInt()) {
                 currentWork = 0
-                onFinishWork()
                 if (!type.loop)
                     on = false
+                onFinishWork()
             }
         }
     }

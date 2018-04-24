@@ -23,7 +23,7 @@ class ResourceNode<R : ResourceType>(val xTile: Int, val yTile: Int, val dir: In
         if (attachedNode != null && !attachedNode!!.canInputToContainer(resource, quantity))
             return false
         // enough in place where it's taking from, and the resource is valid
-        if (attachedContainer != null && attachedContainer!!.isValid(resource) && attachedContainer!!.contains(resource, quantity))
+        if (attachedContainer != null && attachedContainer!!.canRemove(resource, quantity))
             return true
         return false
     }
@@ -34,7 +34,7 @@ class ResourceNode<R : ResourceType>(val xTile: Int, val yTile: Int, val dir: In
     fun canInputToContainer(resource: ResourceType, quantity: Int): Boolean {
         if (!allowIn) return false
         resource as R
-        if (attachedContainer != null && attachedContainer!!.isValid(resource) && attachedContainer!!.spaceFor(resource, quantity))
+        if (attachedContainer != null && attachedContainer!!.canAdd(resource, quantity))
             return true
         return false
     }

@@ -1,0 +1,84 @@
+package screen.elements
+
+import crafting.Recipe
+import graphics.Image
+import graphics.Utils
+
+class GUIRecipeDisplay(parent: RootGUIElement, name: String, xAlignment: () -> Int, yAlignment: () -> Int, recipe: Recipe? = null, open: Boolean = false, layer: Int = parent.layer + 1) :
+        GUIElement(parent, name, xAlignment, yAlignment, { WIDTH }, { HEIGHT }, open, layer) {
+
+    var recipe = recipe
+        set(value) {
+            if (field != null && value == null) {
+                icon.open = false
+            } else if (field == null && value != null) {
+                icon.open = true
+                icon.texture = value.icon.texture
+                consumeList.currentResources = value.consume
+                consumeList.width = value.consume.size
+                produceList.currentResources = value.produce
+                produceList.width = value.produce.size
+                mouseOverAreaOpenGroup.children.remove(background)
+                background = genBackground(mouseOverArea, mouseOverAreaOpenGroup, icon)
+            } else if (field != value) {
+                value!! // must not be null because null == null
+                icon.texture = value.icon.texture
+                consumeList.currentResources = value.consume
+                consumeList.width = value.consume.size
+                produceList.currentResources = value.produce
+                produceList.width = value.produce.size
+                mouseOverAreaOpenGroup.children.remove(background)
+                background = genBackground(mouseOverArea, mouseOverAreaOpenGroup, icon)
+            }
+            field = value
+        }
+
+    private lateinit var icon: GUITexturePane
+    private lateinit var consumeList: GUIResourceListDisplay
+    private lateinit var produceList: GUIResourceListDisplay
+    private lateinit var mouseOverAreaOpenGroup: GUIGroup
+    private lateinit var mouseOverArea: GUIMouseOverArea
+    private lateinit var background: GUITexturePane
+
+    init {
+        val fakeRecipe = recipe ?: Recipe.ERROR
+        GUITexturePane(this, name + " background", 0, 0, Image.GUI.RECIPE_BUTTON_BACKGROUND).run {
+            transparentToInteraction = true
+            icon = GUITexturePane(this, name + " icon", 0, 0, fakeRecipe.icon.texture, 16, 16, keepAspect = true).apply {
+                updateDimensionAlignmentOnTextureChange = false
+                transparentToInteraction = true
+                matchParentOpening = false
+                mouseOverArea = GUIMouseOverArea(this, name + " mouse over info", { 0 }, { 0 }, this.widthAlignment, this.heightAlignment, {
+                    transparentToInteraction = true
+                    val mouseOver = this
+                    mouseOverAreaOpenGroup = GUIGroup(this, "Open group", { 0 }, { 0 }, {
+                        val consumeText = GUIText(this, "consume text", this@apply.widthPixels + 3, 1, "Consume:", layer = this.layer + 2)
+                        consumeList = GUIResourceListDisplay(this, "consume list display", fakeRecipe.consume, { consumeText.xAlignment() }, { consumeText.yAlignment() + consumeText.heightPixels + 1 }, fakeRecipe.consume.size, 1)
+                        val produceText = GUIText(this, "produce text", consumeText.xAlignment(), consumeList.yAlignment() + consumeList.heightPixels + 1, "Produce:", layer = this.layer + 2)
+                        produceList = GUIResourceListDisplay(this, "produce list icons", fakeRecipe.produce, { consumeText.xAlignment() }, { produceText.yAlignment() + produceText.heightPixels + 1 }, fakeRecipe.produce.size, 1)
+                    })
+                    background = genBackground(mouseOver, mouseOverAreaOpenGroup, this@apply)
+                    /*
+                    GUITexturePane(this, this.name + " background", this@apply.widthPixels + 1, -1,
+                    Image(Utils.genRectangle(
+                            Numbers.max(consumeText.widthPixels, produceText.widthPixels, consumeList.widthPixels, produceList.widthPixels) + 3,
+                            consumeList.heightPixels + produceList.heightPixels + produceText.heightPixels + consumeText.heightPixels + 6)))
+                            */
+                }).apply { transparentToInteraction = true }
+            }
+        }
+    }
+
+    private fun genBackground(parent: GUIMouseOverArea, actionGroup: GUIGroup, icon: GUITexturePane) = GUITexturePane(parent, this.name + " background", icon.widthPixels + 1, -1,
+            Image(Utils.genRectangle(actionGroup.widthPixels, actionGroup.heightPixels)))
+
+    override fun onOpen() {
+        if (recipe != null)
+            icon.open = true
+    }
+
+    companion object {
+        val WIDTH = 16
+        val HEIGHT = 16
+    }
+}

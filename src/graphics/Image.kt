@@ -2,7 +2,7 @@ package graphics
 
 import main.Game
 import main.ResourceManager
-import screen.elements.GUIRecipeButton
+import screen.elements.GUIRecipeDisplay
 import java.awt.AlphaComposite
 import java.awt.Color
 import java.awt.Rectangle
@@ -286,7 +286,8 @@ class Image private constructor() : Texture {
 
     object Block {
         val CHEST_SMALL = Image("/textures/block/chest_small.png")
-        val CRAFTER = Image("/textures/block/crafter.png")
+        val CHEST_LARGE = Image("/textures/block/chest_large.png")
+        val CRAFTER = Image("/textures/block/crafter_2.png")
         val TUBE_4_WAY = Image("/textures/block/tube/4_way.png")
         val TUBE_2_WAY_VERTICAL = Image("/textures/block/tube/2_way_vertical.png")
         val TUBE_2_WAY_HORIZONTAL = Image("/textures/block/tube/2_way_horizontal.png")
@@ -341,14 +342,13 @@ class Image private constructor() : Texture {
         val MAIN_MENU_BACKGROUND_FILLER = Image(Color(0x515151))
         val HOTBAR_SELECTED_SLOT = Image("/textures/gui/selected_slot.png")
         val CRAFTING_ARROW = Image("/textures/gui/crafting_arrow.png")
-        val RECIPE_BUTTON_BACKGROUND = Image(Utils.genRectangle(GUIRecipeButton.WIDTH, GUIRecipeButton.HEIGHT))
+        val RECIPE_BUTTON_BACKGROUND = Image(Utils.genRectangle(GUIRecipeDisplay.WIDTH, GUIRecipeDisplay.HEIGHT))
     }
 
     object Item {
         val TUBE_ITEM = Image("/textures/item/tube.png")
         val COPPER_ORE_ITEM = Image("/textures/item/copper_ore_raw.png")
         val IRON_ORE_ITEM = Image("/textures/item/iron_ore_raw.png")
-        val CONVEYOR_BELT_ITEM = Image("/textures/item/conveyor_belt.png")
         val IRON_INGOT = Image("/textures/item/iron_ingot.png")
     }
 

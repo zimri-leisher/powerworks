@@ -66,6 +66,7 @@ object ScreenManager : ControlPressHandler {
     fun update() {
         updateMouseOn()
         forEachElement(func = { it.update() })
+        openWindows.forEach { it.update() }
     }
 
     fun updateMouseOn() {
@@ -140,7 +141,7 @@ object ScreenManager : ControlPressHandler {
                 InputManager.currentScreenHandlers.add(selectedWindow as ControlPressHandler)
             }
             if (selectedWindow!!.partOfLevel) {
-                val h = getHighestWindow(x, y, { it is ViewWindow }) as ControlPressHandler?
+                val h = getHighestWindow(x, y, { it is LevelViewWindow }) as ControlPressHandler?
                 if (h != null)
                     InputManager.currentScreenHandlers.add(h)
             }

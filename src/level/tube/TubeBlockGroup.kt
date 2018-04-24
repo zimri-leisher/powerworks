@@ -4,6 +4,7 @@ import graphics.Renderer
 import item.Item
 import item.ItemType
 import level.Level
+import main.Game
 import misc.GeometryHelper
 import misc.PixelCoord
 import misc.WeakMutableList
@@ -51,7 +52,7 @@ class TubeBlockGroup {
         other.nodes.forEach {
             it as ResourceNode<ItemType>
             it.attachedContainer = storage
-            if(it !in nodes)
+            if (it !in nodes)
                 nodes.add(it)
         }
     }
@@ -98,13 +99,14 @@ class TubeBlockGroup {
         return null
     }
 
-    private fun getIntersection(tube: TubeBlock): IntersectionTube {
+    private fun getIntersection(tube: TubeBlock, isTemporary: Boolean = false): IntersectionTube {
         val i = intersections.firstOrNull { it.tubeBlock == tube }
         if (i != null) {
             return i
         } else {
             val t = IntersectionTube(tube, arrayOfNulls(4))
-            intersections.add(t)
+            if (!isTemporary)
+                intersections.add(t)
             t.connectedTo = findIntersections(t)
             return t
         }
@@ -169,14 +171,20 @@ class TubeBlockGroup {
     data class Step(val coord: PixelCoord, val nextDir: Int)
 
     private fun route(input: ResourceNode<*>, output: ResourceNode<*>): ItemPath? {
-        if(input.xTile == output.xTile && input.yTile == output.yTile) {
+
+        return route(input.xTile, input.yTile, output)
+    }
+
+    private fun route(startXTile: Int, startYTile: Int, output: ResourceNode<*>): ItemPath? {
+        if (startXTile == output.xTile && startYTile == output.yTile) {
             val instructions = mutableListOf<Step>()
-            instructions.add(Step(PixelCoord(input.xTile shl 4, input.yTile shl 4), output.dir))
+            instructions.add(Step(PixelCoord(startXTile shl 4, startYTile shl 4), output.dir))
             instructions.add(Step(PixelCoord(output.attachedNode!!.xTile shl 4, output.attachedNode!!.yTile shl 4), -1))
             return ItemPath(instructions.toTypedArray())
         }
-        val inp = getIntersection(tubes.first { it.xTile == input.xTile && it.yTile == input.yTile })
-        val out = getIntersection(tubes.first { it.xTile == output.xTile && it.yTile == output.yTile })
+        // temporary means that this node is only an intersection for routing purposes
+        val inp = getIntersection(tubes.first { it.xTile == startXTile && it.yTile == startYTile }, true)
+        val out = getIntersection(tubes.first { it.xTile == output.xTile && it.yTile == output.yTile }, true)
         val startNode = RoutingNode(null, out, inp, -1, 0, 0)
 
         val possibleNextNodes = mutableListOf<RoutingNode>()
@@ -212,7 +220,9 @@ class TubeBlockGroup {
         if (finalNode != null) {
             val instructions = mutableListOf<Step>()
             val finalIntersection = finalNode.intersection
-            instructions.add(Step(PixelCoord(output.attachedNode!!.xTile shl 4, output.attachedNode!!.yTile shl 4), -1))
+            val endXTile = output.xTile + GeometryHelper.getXSign(output.dir)
+            val endYTile = output.yTile + GeometryHelper.getYSign(output.dir)
+            instructions.add(Step(PixelCoord(endXTile shl 4, endYTile shl 4), -1))
             instructions.add(Step(PixelCoord(finalIntersection.tubeBlock.xPixel, finalIntersection.tubeBlock.yPixel), output.dir))
             while (finalNode!!.parent != null) {
                 instructions.add(Step(PixelCoord(finalNode.parent!!.intersection.tubeBlock.xPixel, finalNode.parent!!.intersection.tubeBlock.yPixel), finalNode.directionFromParent))
@@ -222,10 +232,6 @@ class TubeBlockGroup {
             return ItemPath(instructions.toTypedArray())
         }
         return null
-    }
-
-    private fun findCorrespondingIntersection(t: ResourceNode<*>): IntersectionTube? {
-        return intersections.firstOrNull { it.tubeBlock.xTile == t.xTile && it.tubeBlock.yTile == t.yTile }
     }
 
     val size
@@ -261,7 +267,7 @@ class TubeBlockGroup {
         }
     }
 
-    private data class ItemPackage(val item: Item, val goal: ResourceNode<ItemType>, var currentIndex: Int, val path: ItemPath, var xPixel: Int, var yPixel: Int, var dir: Int = 0)
+    private data class ItemPackage(var item: Item, var start: ResourceNode<ItemType>, var goal: ResourceNode<ItemType>, var currentIndex: Int, var path: ItemPath, var xPixel: Int, var yPixel: Int, var dir: Int = 0)
 
     // When an output node tries to input into this, do nothing if there is nowhere to put it
     // Each stack inputted is stored as separate, even if they could be combined. If there is more than 1 stack inputted at a time,
@@ -271,16 +277,16 @@ class TubeBlockGroup {
         private val itemsBeingMoved = mutableListOf<ItemPackage>()
 
         override fun add(resource: ResourceType, quantity: Int, from: ResourceNode<*>?, checkIfAble: Boolean): Boolean {
-            if(!isValid(resource))
+            if (!isValid(resource))
                 return false
+            from as ResourceNode<ItemType>?
             resource as ItemType
             if (from != null) {
-                // we assume tubes will only carry items
-                val output = parent.nodes.getPossibleOutputter(resource, quantity)
+                val output = parent.nodes.getPossibleOutputter(resource, quantity, onlyTo = { it != from })
                 if (output != null) {
                     val t = parent.route(from, output)
                     if (t != null) {
-                        val p = ItemPackage(Item(resource, quantity), output, 0, t, from.attachedNode!!.xTile shl 4, from.attachedNode!!.yTile shl 4, GeometryHelper.getOppositeAngle(from.dir))
+                        val p = ItemPackage(Item(resource, quantity), from, output, 0, t, from.attachedNode!!.xTile shl 4, from.attachedNode!!.yTile shl 4, GeometryHelper.getOppositeAngle(from.dir))
                         itemsBeingMoved.add(p)
                         return true
                     }
@@ -292,7 +298,34 @@ class TubeBlockGroup {
         fun update() {
             val iterator = itemsBeingMoved.iterator()
             for (item in iterator) {
-                if (item.xPixel == item.path[item.currentIndex].coord.xPixel && item.yPixel == item.path[item.currentIndex].coord.yPixel) {
+                if (!item.goal.canOutputFromContainer(item.item.type, item.item.quantity)) {
+                    if (item.start.canOutputFromContainer(item.item.type, item.item.quantity)) {
+                        val path = parent.route((item.xPixel shr 4) - GeometryHelper.getXSign(item.dir), (item.yPixel shr 4) - GeometryHelper.getYSign(item.dir), item.start)
+                        if (path != null) {
+                            item.path = path
+                            val dir = GeometryHelper.getDir((item.xPixel shr 4) - (item.path[0].coord.xPixel shr 4), (item.yPixel shr 4) - (item.path[0].coord.yPixel shr 4))
+                            item.dir = dir
+                            val goal = item.start
+                            item.start = item.goal
+                            item.goal = goal
+                            item.currentIndex = 0
+                        }
+                    } else {
+                        val output = parent.nodes.getPossibleOutputter(item.item.type, item.item.quantity)
+                        println("can output to: $output")
+                        if (output != null) {
+                            val path = parent.route(item.xPixel shr 4, item.yPixel shr 4, output)
+                            if (path != null) {
+                                item.path = path
+                                println(path)
+                                item.dir = item.path[0].nextDir
+                                item.start = item.goal
+                                item.goal = output
+                                item.currentIndex = 0
+                            }
+                        }
+                    }
+                } else if (item.xPixel == item.path[item.currentIndex].coord.xPixel && item.yPixel == item.path[item.currentIndex].coord.yPixel) {
                     item.dir = item.path[item.currentIndex].nextDir
                     item.currentIndex++
                     if (item.currentIndex > item.path.lastIndex) {
@@ -310,6 +343,18 @@ class TubeBlockGroup {
             for (item in itemsBeingMoved) {
                 Renderer.renderTextureKeepAspect(item.item.type.texture, item.xPixel + 4, item.yPixel + 4, 8, 8)
                 Renderer.renderText(item.item.quantity, item.xPixel + 4, item.yPixel + 4)
+                if (Game.DEBUG_TUBE_INFO)
+                    renderPath(item)
+            }
+        }
+
+        private fun renderPath(p: ItemPackage) {
+            var lastStep: Step? = null
+            for ((i, step) in p.path.withIndex()) {
+                if (i >= p.currentIndex && lastStep != null) {
+                    Renderer.renderFilledRectangle(lastStep.coord.xPixel + 8, lastStep.coord.yPixel + 8, step.coord.xPixel - lastStep.coord.xPixel + 4, step.coord.yPixel - lastStep.coord.yPixel + 4)
+                }
+                lastStep = step
             }
         }
 
@@ -334,7 +379,7 @@ class TubeBlockGroup {
 
         override fun toList(): ResourceList {
             val map = mutableMapOf<ResourceType, Int>()
-            for(i in itemsBeingMoved) {
+            for (i in itemsBeingMoved) {
                 map.put(i.item.type, i.item.quantity)
             }
             return ResourceList(map)
@@ -342,7 +387,7 @@ class TubeBlockGroup {
 
         override fun getQuantity(resource: ResourceType): Int {
             var q = 0
-            itemsBeingMoved.forEach { if(it.item.type == resource) q += it.item.quantity }
+            itemsBeingMoved.forEach { if (it.item.type == resource) q += it.item.quantity }
             return q
         }
 
@@ -362,6 +407,10 @@ class TubeBlockGroup {
         operator fun get(i: Int): Step {
             return steps[i]
         }
+
+        fun withIndex() = steps.withIndex()
+
+        operator fun iterator() = steps.iterator()
 
         override fun toString(): String {
             return "\n" + steps.joinToString("\n")

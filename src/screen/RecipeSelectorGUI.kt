@@ -4,10 +4,7 @@ import crafting.Recipe
 import graphics.Image
 import graphics.Utils
 import io.PressType
-import screen.elements.GUIClickableRegion
-import screen.elements.GUIText
-import screen.elements.GUITexturePane
-import screen.elements.GUIWindow
+import screen.elements.*
 
 /**
  * A handy little thing that any class can open up and accept a choice from
@@ -16,21 +13,20 @@ import screen.elements.GUIWindow
 object RecipeSelectorGUI : GUIWindow("Recipe selector", 20, 20, 100, 120, windowGroup = ScreenManager.Groups.PLAYER_UTIL) {
 
     private const val RECIPIES_PER_ROW = 6
-    const val RECIPE_WIDTH = 16
-    const val RECIPE_HEIGHT = 16
 
     private var selected: Recipe? = null
 
     init {
+        partOfLevel = true
         val background = GUITexturePane(this.rootChild, "Background", 0, 0, Image(Utils.genRectangle(widthPixels, heightPixels)))
         GUIText(background, "Name text", 0, 0, "Select a recipe:")
         for ((i, recipe) in Recipe.ALL.withIndex()) {
-            val icon = GUITexturePane(background, "Recipe $i icon", (i % RECIPIES_PER_ROW) * RECIPE_WIDTH + 1, (i / RECIPIES_PER_ROW) * RECIPE_HEIGHT + 6, recipe.icon.texture, RECIPE_WIDTH, RECIPE_HEIGHT, keepAspect = true)
-            GUIClickableRegion(icon, "Recipe $i click region", { 0 }, { 0 }, { RECIPE_WIDTH }, { RECIPE_HEIGHT }, { pressType, _, _, button, shift, ctrl, alt ->
+            val display = GUIRecipeDisplay(background, "Recipe $i display", {(i % RECIPIES_PER_ROW) * GUIRecipeDisplay.WIDTH + 1}, {(i / RECIPIES_PER_ROW) * GUIRecipeDisplay.HEIGHT + 6}, recipe)
+            GUIClickableRegion(display, "Recipe $i click region", { 0 }, { 0 }, { GUIRecipeDisplay.WIDTH }, { GUIRecipeDisplay.HEIGHT }, { pressType, _, _, button, shift, ctrl, alt ->
                 if (pressType == PressType.PRESSED && button == 1) {
                     selected = recipe
                 }
-            })
+            }, layer = display.layer + 2)
         }
     }
 
@@ -39,7 +35,6 @@ object RecipeSelectorGUI : GUIWindow("Recipe selector", 20, 20, 100, 120, window
         val y = Mouse.yPixel
         xAlignment = { x }
         yAlignment = { y }
-
     }
 
     /**

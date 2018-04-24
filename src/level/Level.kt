@@ -7,7 +7,7 @@ import graphics.Renderer
 import io.*
 import item.ItemType
 import level.block.Block
-import level.block.BlockTemplate
+import level.block.BlockType
 import level.block.GhostBlock
 import level.moving.MovingObject
 import level.tile.OreTileType
@@ -251,7 +251,7 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
         val currentItem = Mouse.heldItemType
         if (currentItem == null || (currentItem != null && Game.mainInv.getQuantity(currentItem) == 0)) {
             ghostBlock = null
-        } else if (currentItem.placedBlock != BlockTemplate.ERROR) {
+        } else if (currentItem.placedBlock != BlockType.ERROR) {
             val placedType = currentItem.placedBlock
             val xTile = ((mouseLevelXPixel) shr 4) - placedType.widthTiles / 2
             val yTile = ((mouseLevelYPixel) shr 4) - placedType.heightTiles / 2

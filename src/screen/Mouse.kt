@@ -5,7 +5,6 @@ import graphics.Renderer
 import graphics.Texture
 import graphics.Utils
 import io.*
-import item.Inventory
 import item.ItemType
 import level.CHUNK_PIXEL_EXP
 import level.DroppedItem
@@ -39,9 +38,9 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
      */
     var heldItemType: ItemType? = null
 
-    private val levelTooltipTemplates = sortedMapOf<Int, (LevelObject) -> String?>()
+    private val levelTooltipTemplates = sortedMapOf<Int, MutableList<(LevelObject) -> String?>>()
 
-    private val screenTooltipTemplates = sortedMapOf<Int, (RootGUIElement) -> String?>()
+    private val screenTooltipTemplates = sortedMapOf<Int, MutableList<(RootGUIElement) -> String?>>()
 
     private var window = GUIWindow("Mouse", { xPixel }, { yPixel }, { 0 }, { 0 }, true, 0, ScreenManager.Groups.MOUSE).apply {
         transparentToInteraction = true
@@ -50,17 +49,19 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
         transparentToInteraction = true
     }
 
+    private var background = GUITexturePane(group, "Mouse info group background", 0, 0, Image(Utils.genRectangle(4, 4)), layer = group.layer + 2).apply {
+        open = false
+    }
+
     private var text = GUIText(group, "Mouse info group text", 2, 2, "", layer = group.layer + 3).apply {
         open = false
     }
 
-    private var background = GUITexturePane(group, "Mouse info group background", 0, 0, Image(Utils.genRectangle(text.widthPixels + 4, text.heightPixels + 4)), layer = group.layer + 2).apply {
-        open = false
-    }
     private var icon = GUITexturePane(group, "Mouse icon", 0, 0, Image.Misc.ERROR, ICON_SIZE, ICON_SIZE).apply {
         open = false
         updateDimensionAlignmentOnTextureChange = false
     }
+
     init {
         InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.DROP_HELD_ITEM, Control.PICK_UP_DROPPED_ITEMS)
     }
@@ -81,14 +82,18 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
      * @param f called for each LevelObject under the mouse. Returned text will be rendered at mouse
      */
     fun addLevelTooltipTemplate(f: (LevelObject) -> String?, priority: Int = 0) {
-        levelTooltipTemplates.put(priority, f)
+        if (levelTooltipTemplates.get(priority) == null)
+            levelTooltipTemplates.put(priority, mutableListOf())
+        levelTooltipTemplates.get(priority)!!.add(f)
     }
 
     /**
      * @param f called for each GUIElement under the mouse. Returned text will be rendered at mouse
      */
     fun addScreenTooltipTemplate(f: (RootGUIElement) -> String?, priority: Int = 0) {
-        screenTooltipTemplates.put(priority, f)
+        if (screenTooltipTemplates.get(priority) == null)
+            screenTooltipTemplates.put(priority, mutableListOf())
+        screenTooltipTemplates.get(priority)!!.add(f)
     }
 
     internal fun update() {
@@ -96,18 +101,22 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
         val screen = ScreenManager.getHighestElement(xPixel, yPixel, ScreenManager.getHighestWindow(xPixel, yPixel, { !it.transparentToInteraction }), { !it.transparentToInteraction })
         if (screen != null) {
             for (v in screenTooltipTemplates.values) {
-                s = v(screen)
-                if (s != null)
-                    break
+                for (f in v) {
+                    s = f(screen)
+                    if (s != null)
+                        break
+                }
             }
         }
         if (s == null && State.CURRENT_STATE == State.INGAME) {
             val level = Game.currentLevel.selectedLevelObject
             if (level != null) {
                 for (v in levelTooltipTemplates.values) {
-                    s = v(level)
-                    if (s != null)
-                        break
+                    for (f in v) {
+                        s = f(level)
+                        if (s != null)
+                            break
+                    }
                 }
             }
         }
@@ -166,10 +175,10 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
                         else "Not intersection\n"
                 Renderer.renderText(tubeString + intersectionString, xPixel, yPixel)
             }
-        } else if(Game.RESOURCE_NODES_INFO) {
+        } else if (Game.RESOURCE_NODES_INFO) {
             val nodes = Level.ResourceNodes.get(Game.currentLevel.mouseLevelXPixel shr 4, Game.currentLevel.mouseLevelYPixel shr 4)
             val s = StringBuilder()
-            for(n in nodes) {
+            for (n in nodes) {
                 s.append("    in: ${n.allowIn}, out: ${n.allowOut}, dir: ${n.dir}\n")
             }
             Renderer.renderText("Resource nodes at ${Game.currentLevel.mouseLevelXPixel shr 4}, ${Game.currentLevel.mouseLevelYPixel shr 4}:\n$s", xPixel, yPixel)
@@ -202,18 +211,12 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
         }
     }
 
-    override fun onContainerAdd(container: ResourceContainer<*>, resource: ResourceType, quantity: Int) {
-    }
-
-    override fun onContainerRemove(inv: Inventory, resource: ResourceType, quantity: Int) {
-    }
-
     override fun onContainerClear(container: ResourceContainer<*>) {
     }
 
-    override fun onContainerChange(container: ResourceContainer<*>) {
-        if(container == Game.mainInv && heldItemType != null) {
-            if(Game.mainInv.getQuantity(heldItemType!!) == 0)
+    override fun onContainerChange(container: ResourceContainer<*>, resourceType: ResourceType, quantity: Int) {
+        if (container == Game.mainInv && heldItemType != null) {
+            if (Game.mainInv.getQuantity(heldItemType!!) == 0)
                 heldItemType = null
         }
     }
@@ -229,7 +232,7 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
                         if (!Game.mainInv.full) {
                             Game.mainInv.add(g.type, g.quantity)
                             Level.remove(g)
-                            if(heldItemType == null) {
+                            if (heldItemType == null) {
                                 heldItemType = g.type
                             }
                             HUD.Hotbar.items.add(g.type)

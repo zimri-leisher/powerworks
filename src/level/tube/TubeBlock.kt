@@ -5,7 +5,7 @@ import graphics.Renderer
 import item.ItemType
 import level.Level
 import level.block.Block
-import level.block.BlockTemplate
+import level.block.BlockType
 import main.Game
 import misc.GeometryHelper
 import misc.GeometryHelper.getOppositeAngle
@@ -15,7 +15,7 @@ import misc.GeometryHelper.isOppositeAngle
 import resource.ResourceNode
 import resource.ResourceType
 
-class TubeBlock(xTile: Int, yTile: Int) : Block(BlockTemplate.TUBE, xTile, yTile) {
+class TubeBlock(xTile: Int, yTile: Int) : Block(BlockType.TUBE, xTile, yTile) {
 
     var state = TubeState.NONE
 
@@ -45,7 +45,13 @@ class TubeBlock(xTile: Int, yTile: Int) : Block(BlockTemplate.TUBE, xTile, yTile
         // If it is a tube block, its onAddToLevel() event will call updateConnections() which will do the connecting for us,
         // so no need to worry about us doing it for them
         if (b !is TubeBlock) {
-            updateNodeConnections(GeometryHelper.getDir(b.xTile - xTile, b.yTile - yTile))
+            val dir = GeometryHelper.getDir(b.xTile - xTile, b.yTile - yTile)
+            if (dir != -1) {
+                updateNodeConnections(dir)
+            } else {
+                for(i in 0..3)
+                    updateNodeConnections(i)
+            }
             updateState()
         } else {
             group.convertToIntersection(this)

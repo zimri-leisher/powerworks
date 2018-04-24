@@ -3,24 +3,24 @@ package item
 import graphics.Image
 import graphics.SyncAnimation
 import graphics.Texture
-import level.block.BlockTemplate
-import level.block.ChestBlockTemplate
-import level.block.CrafterBlockTemplate
-import level.block.MachineBlockTemplate
+import level.block.BlockType
+import level.block.ChestBlockType
+import level.block.CrafterBlockType
+import level.block.MachineBlockType
 import resource.ResourceType
 
 private var nextID = 0
 
 open class ItemType(init: ItemType.() -> Unit) : ResourceType {
 
-    var name = "Error"
+    override var name = "Error"
     override var texture: Texture = Image.Misc.ERROR
-    var placedBlockID = BlockTemplate.ERROR.id
+    var placedBlockID = BlockType.ERROR.id
     var maxStack = 10
 
 
-    val placedBlock: BlockTemplate<*>
-        get() = BlockTemplate.ALL.first { it.id == placedBlockID }
+    val placedBlock: BlockType<*>
+        get() = BlockType.ALL.first { it.id == placedBlockID }
 
     val id = nextID++
 
@@ -51,13 +51,13 @@ open class ItemType(init: ItemType.() -> Unit) : ResourceType {
         val MINER = ItemType {
             name = "Miner"
             texture = SyncAnimation.MINER.images[0]
-            placedBlockID = MachineBlockTemplate.MINER.id
+            placedBlockID = MachineBlockType.MINER.id
         }
 
         val CRAFTER = ItemType {
             name = "Crafter"
             texture = Image.Block.CRAFTER
-            placedBlockID = CrafterBlockTemplate.ITEM_CRAFTER.id
+            placedBlockID = CrafterBlockType.ITEM_CRAFTER.id
         }
 
         val IRON_ORE = ItemType {
@@ -69,21 +69,21 @@ open class ItemType(init: ItemType.() -> Unit) : ResourceType {
         val TUBE = ItemType {
             name = "Item Transport Tube"
             texture = Image.Item.TUBE_ITEM
-            placedBlockID = BlockTemplate.TUBE.id
+            placedBlockID = BlockType.TUBE.id
             maxStack = 50
         }
 
         val CHEST_SMALL = ItemType {
             name = "Small Chest"
             texture = Image.Block.CHEST_SMALL
-            placedBlockID = ChestBlockTemplate.CHEST_SMALL.id
+            placedBlockID = ChestBlockType.CHEST_SMALL.id
             maxStack = 20
         }
 
         val CHEST_LARGE = ItemType {
             name = "Large Chest"
-            texture = Image.Block.CHEST_SMALL
-            placedBlockID = ChestBlockTemplate.CHEST_LARGE.id
+            texture = Image.Block.CHEST_LARGE
+            placedBlockID = ChestBlockType.CHEST_LARGE.id
             maxStack = 20
         }
 

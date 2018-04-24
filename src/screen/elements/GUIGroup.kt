@@ -24,10 +24,16 @@ open class GUIGroup(parent: RootGUIElement,
         updateDimensions()
     }
 
+    override fun onChildDimensionChange(child: GUIElement) {
+        updateDimensions()
+    }
+
     fun updateDimensions() {
         val r = Rectangle()
-        children.forEach { r.add(Rectangle(it.xAlignment(), it.yAlignment(), it.widthPixels, it.heightPixels)) }
-        widthAlignment = { r.width }
-        heightAlignment = { r.height }
+        children.forEach { r.add(Rectangle(it.xAlignment(), it.yAlignment(), it.widthAlignment(), it.heightAlignment())) }
+        val width = r.width
+        val height = r.height
+        widthAlignment = { width }
+        heightAlignment = { height }
     }
 }

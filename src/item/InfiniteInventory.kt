@@ -12,12 +12,10 @@ class InfiniteInventory(rule: (ResourceType) -> Boolean = { true }) : ResourceCo
         private set
 
     override fun add(resource: ResourceType, quantity: Int, from: ResourceNode<*>?, checkIfAble: Boolean): Boolean {
-        if(!isValid(resource))
-            return false
-        resource as ItemType
         if (checkIfAble)
-            if (!spaceFor(resource, quantity) || !rule(resource))
+            if (!canAdd(resource, quantity))
                 return false
+        resource as ItemType
         var amountLeftToAdd = quantity
         for (it in items) {
             if (it.type == resource) {
@@ -25,6 +23,7 @@ class InfiniteInventory(rule: (ResourceType) -> Boolean = { true }) : ResourceCo
                 it.quantity = Math.min(resource.maxStack, amountLeftToAdd + it.quantity)
                 amountLeftToAdd -= it.quantity - pQ
                 if (amountLeftToAdd <= 0) {
+                    listeners.forEach { it.onContainerChange(this, resource, quantity) }
                     return true
                 }
             }
@@ -34,6 +33,7 @@ class InfiniteInventory(rule: (ResourceType) -> Boolean = { true }) : ResourceCo
             items.add(Item(resource, q))
             amountLeftToAdd -= q
         }
+        listeners.forEach { it.onContainerChange(this, resource, quantity) }
         return true
     }
 
@@ -41,7 +41,7 @@ class InfiniteInventory(rule: (ResourceType) -> Boolean = { true }) : ResourceCo
 
     override fun remove(resource: ResourceType, quantity: Int, to: ResourceNode<*>?, checkIfAble: Boolean): Boolean {
         if (checkIfAble)
-            if (!contains(resource, quantity))
+            if (!canRemove(resource, quantity))
                 return false
         var amountLeftToRemove = quantity
         val i = items.iterator()
@@ -51,6 +51,7 @@ class InfiniteInventory(rule: (ResourceType) -> Boolean = { true }) : ResourceCo
                 item.quantity = Math.max(0, item.quantity - amountLeftToRemove)
                 amountLeftToRemove -= (pQ - item.quantity)
                 if (amountLeftToRemove <= 0) {
+                    listeners.forEach { it.onContainerChange(this, resource, -quantity) }
                     return true
                 }
             }
@@ -62,10 +63,11 @@ class InfiniteInventory(rule: (ResourceType) -> Boolean = { true }) : ResourceCo
 
     override fun clear() {
         items.clear()
+        listeners.forEach { it.onContainerClear(this) }
     }
 
     override fun copy(): ResourceContainer<ItemType> {
-        return InfiniteInventory(rule).apply { Collections.copy(this.items, this@InfiniteInventory.items) }
+        return InfiniteInventory(typeRule).apply { Collections.copy(this.items, this@InfiniteInventory.items) }
     }
 
     override fun getQuantity(resource: ResourceType): Int {

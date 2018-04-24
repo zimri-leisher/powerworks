@@ -9,14 +9,6 @@ import java.net.URLClassLoader
 import java.util.*
 import java.util.jar.JarFile
 
-private val _mod = object : Mod {
-    override fun initialize() {
-    }
-
-    override fun shutdown() {
-    }
-}
-
 data class ModInfo(val mod: Mod, val clazz: Class<*>, val name: String, val desc: String, val vers: String)
 
 object ModManager {
@@ -35,7 +27,7 @@ object ModManager {
             val jar = JarFile(file)
             val jarLoader = URLClassLoader(arrayOf(URL("jar:file:${Game.MOD_FOLDER_PATH}/${file.name}!/")))
             val serviceLoader = ServiceLoader.load(Mod::class.java)
-            serviceLoader.forEach {println("found a mod class in ${jar.name}")}
+            serviceLoader.forEach { println("found a mod class in ${jar.name}") }
             jar.stream().filter { it.name.endsWith(".class") && it.name != "module-info.class" }.forEach { clasS ->
                 val clazz = pluginLoader.loadClass(clasS.name.replace("/", ".").removeSuffix(".class"))
                 if (clazz.interfaces.any { it == Mod::class.java }) {
@@ -57,7 +49,13 @@ object ModManager {
         }
         modInfos.forEach {
             setCurrentModContext(it.mod)
-            it.mod.initialize()
+            try {
+                it.mod.initialize()
+            } catch (e: Exception) {
+                println("ERROR: Exception loading mod ${it.name}:")
+                e.printStackTrace(System.out)
+            }
+
         }
         setCurrentModContext(null)
     }
@@ -70,7 +68,13 @@ object ModManager {
         println("Shutting down mods")
         modInfos.forEach {
             setCurrentModContext(it.mod)
-            it.mod.shutdown()
+            try {
+                it.mod.shutdown()
+            } catch (e: Exception) {
+                println("ERROR: Exception shutting down mod ${it.name}:")
+                e.printStackTrace(System.out)
+            }
+
         }
         setCurrentModContext(null)
     }

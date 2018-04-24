@@ -103,9 +103,9 @@ object IngameGUI : GUIWindow("In game gui",
         return c
     }
 
-    private fun newView(): ViewWindow {
+    private fun newView(): LevelViewWindow {
         if (viewCount < MAX_VIEWS) {
-            return ViewWindow("View ${++viewCount} window",
+            return LevelViewWindow("View ${++viewCount} window",
                     0, 0,
                     Game.WIDTH, Game.HEIGHT,
                     cameras[viewCount - 1],

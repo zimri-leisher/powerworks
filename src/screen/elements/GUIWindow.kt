@@ -1,5 +1,6 @@
 package screen.elements
 
+import misc.WeakMutableList
 import screen.Mouse
 import screen.ScreenManager
 import screen.WindowGroup
@@ -62,18 +63,12 @@ open class GUIWindow(val name: String, xAlignment: () -> Int, yAlignment: () -> 
             }
         }
 
-    private val _openChildren = mutableListOf<RootGUIElement>()
-
     /**
      * Ordered constantly based on layer
      */
-    val openChildren = object : MutableList<RootGUIElement> by _openChildren {
-        override fun add(el: RootGUIElement): Boolean {
-            val b = _openChildren.add(el)
-            _openChildren.sortBy { it.layer }
-            return b
-        }
-    }
+    val openChildren = WeakMutableList<RootGUIElement>().apply { onAdd = {
+        this.sortBy { it.layer }
+    } }
 
     /** The child for which all children get added to */
     var rootChild = RootGUIElement(this, { this.widthPixels }, { this.heightPixels })
@@ -105,7 +100,7 @@ open class GUIWindow(val name: String, xAlignment: () -> Int, yAlignment: () -> 
                 field = value
                 rootChild.children.forEach {
                     it.xPixel = value + it.xAlignment()
-                    it.onParentPositionChange(old, xPixel)
+                    it.onParentPositionChange(old, yPixel)
                 }
             }
         }

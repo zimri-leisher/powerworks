@@ -5,7 +5,7 @@ import graphics.RenderParams
 import graphics.Renderer
 import main.Game
 
-class GhostBlock(type: BlockTemplate<*>, xTile: Int, yTile: Int, rotation: Int) : Block(type, xTile, yTile, rotation, requiresUpdate = false) {
+class GhostBlock(type: BlockType<*>, xTile: Int, yTile: Int, rotation: Int) : Block(type, xTile, yTile, rotation, requiresUpdate = false) {
     var placeable = getCollision(xPixel, yPixel) == null
 
     override fun render() {

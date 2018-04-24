@@ -11,9 +11,9 @@ class GUIText(parent: RootGUIElement,
               var color: Int = 0xffffff,
               open: Boolean = false,
               layer: Int = parent.layer + 1) :
-        GUIElement(parent, name, xAlignment, yAlignment, {0}, {0}, open, layer) {
+        GUIElement(parent, name, xAlignment, yAlignment, { 0 }, { 0 }, open, layer) {
 
-    constructor(parent: RootGUIElement, name: String, xPixel: Int, yPixel: Int, text: Any?, size: Int = Font.DEFAULT_SIZE, color: Int = 0xffffff, open: Boolean = false, layer: Int = parent.layer + 1) : this(parent, name, {xPixel}, {yPixel}, text, size, color, open, layer)
+    constructor(parent: RootGUIElement, name: String, xPixel: Int, yPixel: Int, text: Any?, size: Int = Font.DEFAULT_SIZE, color: Int = 0xffffff, open: Boolean = false, layer: Int = parent.layer + 1) : this(parent, name, { xPixel }, { yPixel }, text, size, color, open, layer)
 
     var size = size
         set(value) {
@@ -33,6 +33,7 @@ class GUIText(parent: RootGUIElement,
     init {
         updateText()
     }
+
 
     fun updateText() {
         val r = Font.getStringBounds(text.toString(), size)

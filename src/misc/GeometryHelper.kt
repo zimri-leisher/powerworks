@@ -32,11 +32,13 @@ object GeometryHelper {
     }
 
     fun getDir(x: Int, y: Int): Int {
-        if(x == -1)
+        if ((x == 0 && y == 0) || (x != 0 && y != 0))
+            return -1
+        if (x <= -1)
             return 3
-        if(x == 1)
+        if (x >= 1)
             return 1
-        if(y == -1)
+        if (y <= -1)
             return 0
         return 2
     }

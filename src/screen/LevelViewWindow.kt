@@ -10,14 +10,14 @@ import screen.elements.*
  * Has a GUILevelView, a GUIOutline around it, some miscellaneous controls for movement, resizing, etc.
  * By default, the IngameGUI has 4 of these. Control.TOGGLE_VIEW_CONTROLS goes through that to toggle the controls mentioned above, meaning by default these are not toggleable
  */
-class ViewWindow(name: String,
-                 xPixel: Int, yPixel: Int,
-                 widthPixels: Int, heightPixels: Int,
-                 var camera: LevelObject,
-                 zoomLevel: Int = 10,
-                 open: Boolean = false,
-                 layer: Int = 0,
-                 windowGroup: WindowGroup) :
+class LevelViewWindow(name: String,
+                      xPixel: Int, yPixel: Int,
+                      widthPixels: Int, heightPixels: Int,
+                      var camera: LevelObject,
+                      zoomLevel: Int = 10,
+                      open: Boolean = false,
+                      layer: Int = 0,
+                      windowGroup: WindowGroup) :
         GUIWindow(name, xPixel, yPixel, widthPixels, heightPixels, open, layer, windowGroup),
         ControlPressHandler {
 

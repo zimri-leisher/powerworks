@@ -54,26 +54,33 @@ class ResourceNodeGroup(val name: String, nodes: List<ResourceNode<*>> = listOf(
 
     fun filter(predicate: (ResourceNode<*>) -> Boolean) = nodes.filter(predicate)
 
-    fun <R : ResourceType> getPossibleOutputter(resourceType: R, quantity: Int = 1, checkIfContains: Boolean = true): ResourceNode<R>? {
+    fun <R : ResourceType> getPossibleOutputter(resourceType: R, quantity: Int = 1, checkIfContains: Boolean = true, onlyTo: (ResourceNode<*>) -> Boolean = { true }): ResourceNode<R>? {
         val r = nodes.firstOrNull {
+            onlyTo(it) &&
             if (checkIfContains) {
-                it.canOutputFromContainer(resourceType, quantity) && it.isValid(resourceType)
+                it.isValid(resourceType) && it.canOutputFromContainer(resourceType, quantity)
             } else
                 it.isValid(resourceType) && it.allowOut
         } as ResourceNode<R>?
         return r
     }
 
-    fun <R : ResourceType> getPossibleInputter(resourceType: R, quantity: Int = 1, checkIfSpaceFor: Boolean = true) =
+    fun <R : ResourceType> getPossibleInputter(resourceType: R, quantity: Int = 1, checkIfSpaceFor: Boolean = true, onlyTo: (ResourceNode<*>) -> Boolean = { true }) =
             nodes.firstOrNull {
+                onlyTo(it) &&
                 if (checkIfSpaceFor)
-                    it.canInputToContainer(resourceType, quantity) && it.isValid(resourceType)
+                    it.isValid(resourceType) && it.canInputToContainer(resourceType, quantity)
                 else
                     it.isValid(resourceType) && it.allowIn
             } as ResourceNode<R>?
 
-    fun output(resourceType: ResourceType, quantity: Int, checkIfContains: Boolean = true): Boolean {
-        return getPossibleOutputter(resourceType, quantity, checkIfContains)?.output(resourceType, quantity, false) == true
+    /**
+     * Tries to output the resource with the specified quantity
+     * @param checkIfContains whether or not to check if there is a container attached to a node in the group that contains enough resources
+     * @param onlyTo a predicate determining which nodes it will output through
+     */
+    fun output(resourceType: ResourceType, quantity: Int, checkIfContains: Boolean = true, onlyTo: (ResourceNode<*>) -> Boolean = { true }): Boolean {
+        return getPossibleOutputter(resourceType, quantity, checkIfContains, onlyTo)?.output(resourceType, quantity, false) == true
     }
 
     /**

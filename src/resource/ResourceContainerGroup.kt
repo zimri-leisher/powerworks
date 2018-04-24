@@ -28,7 +28,7 @@ class ResourceContainerGroup(val containers: List<ResourceContainer<*>>) {
     }
 
     /**
-     * Removes all resources in the list from containers in this group, if possible
+     * Removes all resources in the list (only once per type) from containers in this group, if possible
      * @return false if any resource/quantity pair was unable to be removed from any container in this group
      */
     fun remove(list: ResourceList, to: ResourceNode<*>? = null, checkIfAble: Boolean = true): Boolean {
