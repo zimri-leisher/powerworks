@@ -13,9 +13,9 @@ import resource.ResourceNodeGroup
 import screen.Mouse
 import java.io.DataOutputStream
 
-abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, var rotation: Int = 0, hitbox: Hitbox = type.hitbox, requiresUpdate: Boolean = type.requiresUpdate) : LevelObject(xTile shl 4, yTile shl 4, hitbox, requiresUpdate) {
+abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotation: Int = 0, hitbox: Hitbox = type.hitbox, requiresUpdate: Boolean = type.requiresUpdate) : LevelObject(type, xTile shl 4, yTile shl 4, rotation, hitbox, requiresUpdate) {
 
-    open val type = type
+    override val type = type
 
     val textures: BlockTextures
 
@@ -24,8 +24,8 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, var rot
 
     init {
         val newTextures = mutableListOf<BlockTexture>()
-        for(texture in type.textures) {
-            if(texture.texture is LocalAnimation) {
+        for (texture in type.textures) {
+            if (texture.texture is LocalAnimation) {
                 newTextures.add(BlockTexture(LocalAnimation(texture.texture.animation, texture.texture.playing, texture.texture.speed), texture.xPixelOffset, texture.yPixelOffset))
             } else {
                 newTextures.add(texture)
@@ -41,13 +41,13 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, var rot
         nodes.forEach { Level.add(it) }
         // loop through each block touching this one, accounting for width and height
         val adjacent = mutableSetOf<Block>()
-        for(w in 0 until type.widthTiles) {
-            for(h in 0 until type.heightTiles) {
+        for (w in 0 until type.widthTiles) {
+            for (h in 0 until type.heightTiles) {
                 for (y in -1..1) {
                     for (x in -1..1) {
                         if (Math.abs(x) != Math.abs(y)) {
                             val b = Level.Blocks.get(xTile + x + w, yTile + y + h)
-                            if(b != null && b != this)
+                            if (b != null && b != this)
                                 adjacent.add(b)
                         }
                     }
@@ -64,13 +64,13 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, var rot
         nodes.forEach { Level.remove(it) }
         // loop through each block touching this one, accounting for width and height
         val adjacent = mutableSetOf<Block>()
-        for(w in 0 until type.widthTiles) {
-            for(h in 0 until type.heightTiles) {
+        for (w in 0 until type.widthTiles) {
+            for (h in 0 until type.heightTiles) {
                 for (y in -1..1) {
                     for (x in -1..1) {
                         if (Math.abs(x) != Math.abs(y)) {
                             val b = Level.Blocks.get(xTile + x + w, yTile + y + h)
-                            if(b != null && b != this)
+                            if (b != null && b != this)
                                 adjacent.add(b)
                         }
                     }
@@ -125,8 +125,7 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, var rot
 
     override fun save(out: DataOutputStream) {
         super.save(out)
-        out.writeInt(rotation)
-        out.writeInt(type.id)
+
     }
 
     override fun toString(): String {

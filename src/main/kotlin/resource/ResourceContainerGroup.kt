@@ -1,5 +1,8 @@
 package resource
 
+import java.io.DataInputStream
+import java.io.DataOutputStream
+
 class ResourceContainerGroup(val containers: List<ResourceContainer<*>>) {
     /**
      * Same as the add method except gets called for each individual resource-quantity pairs
@@ -66,4 +69,11 @@ class ResourceContainerGroup(val containers: List<ResourceContainer<*>>) {
     fun forEach(f: (ResourceContainer<*>) -> Unit) = containers.forEach(f)
 
     operator fun iterator() = containers.iterator()
+
+    fun save(out: DataOutputStream) {
+
+    }
+
+    companion object {
+    }
 }

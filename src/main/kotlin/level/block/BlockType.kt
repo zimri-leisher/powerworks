@@ -9,11 +9,10 @@ import graphics.Texture
 import item.Inventory
 import item.ItemType
 import level.Hitbox
+import level.LevelObjectType
 import level.tube.TubeBlock
 import resource.ResourceNode
 import resource.ResourceType
-
-private var nextID = 0
 
 data class BlockTexture(val texture: Texture, val xPixelOffset: Int = 0, val yPixelOffset: Int = 0)
 
@@ -22,7 +21,7 @@ class BlockTextures(private vararg val textures: BlockTexture) {
     operator fun iterator() = textures.iterator()
 }
 
-open class BlockType<T : Block>(init: BlockType<T>.() -> Unit = {}) {
+open class BlockType<T : Block>(init: BlockType<T>.() -> Unit = {}) : LevelObjectType<T>() {
 
     var textures = BlockTextures(BlockTexture(Image.Misc.ERROR))
     var name = "Error"
@@ -31,16 +30,9 @@ open class BlockType<T : Block>(init: BlockType<T>.() -> Unit = {}) {
     var requiresUpdate = false
     var hitbox = Hitbox.TILE
     var nodesTemplate = BlockNodesTemplate.NONE
-    val id = nextID++
-
-    /**
-     * 1: x tile
-     * 2: y tile
-     * 3: rotation
-     */
-    var instantiate: (Int, Int, Int) -> T = { xTile, yTile, rotation -> DefaultBlock(this as BlockType<DefaultBlock>, xTile, yTile, rotation) as T }
 
     init {
+        instantiate = { xTile, yTile, rotation -> DefaultBlock(this as BlockType<DefaultBlock>, xTile, yTile, rotation) as T }
         init()
         ALL.add(this)
     }

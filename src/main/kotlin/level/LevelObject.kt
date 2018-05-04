@@ -4,7 +4,7 @@ import graphics.Renderer
 import main.Game
 import java.io.DataOutputStream
 
-abstract class LevelObject protected constructor(open val xPixel: Int, open val yPixel: Int, val hitbox: Hitbox, requiresUpdate: Boolean = true) {
+abstract class LevelObject protected constructor(open val type: LevelObjectType<out LevelObject>, open val xPixel: Int, open val yPixel: Int, var rotation: Int = 0, val hitbox: Hitbox, requiresUpdate: Boolean = true) {
 
     open val xTile = xPixel shr 4
     open val yTile = yPixel shr 4
@@ -81,7 +81,9 @@ abstract class LevelObject protected constructor(open val xPixel: Int, open val 
     }
 
     open fun save(out: DataOutputStream) {
+        out.writeInt(type.id)
         out.writeInt(xPixel)
         out.writeInt(yPixel)
+        out.writeInt(rotation)
     }
 }

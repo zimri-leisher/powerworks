@@ -1,8 +1,8 @@
 package io
 
 import main.Game
-import misc.ConcurrentlyModifiableMutableMap
-import misc.WeakMutableList
+import data.ConcurrentlyModifiableMutableMap
+import data.WeakMutableList
 import screen.Mouse
 import screen.ScreenManager
 import screen.elements.GUILevelView

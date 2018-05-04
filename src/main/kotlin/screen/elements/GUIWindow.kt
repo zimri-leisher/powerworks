@@ -1,6 +1,6 @@
 package screen.elements
 
-import misc.WeakMutableList
+import data.WeakMutableList
 import screen.Mouse
 import screen.ScreenManager
 import screen.WindowGroup

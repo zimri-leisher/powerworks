@@ -1,4 +1,4 @@
-package misc
+package data
 
 class ConcurrentlyModifiableMutableMap<T, K> {
 

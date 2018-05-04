@@ -9,8 +9,8 @@ import main.Game
 import screen.HUD
 import screen.Mouse
 
-class DroppedItem(xPixel: Int, yPixel: Int, val type: ItemType, quantity: Int = 1) :
-        MovingObject(xPixel, yPixel, Hitbox.DROPPED_ITEM), ControlPressHandler {
+class DroppedItem(xPixel: Int, yPixel: Int, val itemType: ItemType, quantity: Int = 1) :
+        MovingObject(LevelObjectType.DROPPED_ITEM, xPixel, yPixel, 0, Hitbox.DROPPED_ITEM), ControlPressHandler {
 
     var quantity = quantity
         set(value) {
@@ -32,14 +32,14 @@ class DroppedItem(xPixel: Int, yPixel: Int, val type: ItemType, quantity: Int = 
     override fun handleControlPress(p: ControlPress) {
         if (p.control == Control.INTERACT && p.pressType == PressType.RELEASED) {
             Level.remove(this)
-            Game.mainInv.add(Item(type, quantity))
-            Mouse.heldItemType = type
-            HUD.Hotbar.items.add(type)
+            Game.mainInv.add(Item(itemType, quantity))
+            Mouse.heldItemType = itemType
+            HUD.Hotbar.items.add(itemType)
         }
     }
 
     override fun render() {
-        Renderer.renderTextureKeepAspect(type.texture, xPixel, yPixel, Hitbox.DROPPED_ITEM.width, Hitbox.DROPPED_ITEM.height)
+        Renderer.renderTextureKeepAspect(itemType.texture, xPixel, yPixel, Hitbox.DROPPED_ITEM.width, Hitbox.DROPPED_ITEM.height)
         Renderer.renderText(quantity, xPixel, yPixel)
         super.render()
     }
@@ -48,7 +48,7 @@ class DroppedItem(xPixel: Int, yPixel: Int, val type: ItemType, quantity: Int = 
         init {
             Mouse.addLevelTooltipTemplate({
                 if (it is DroppedItem)
-                    return@addLevelTooltipTemplate "${it.type.name} * ${it.quantity}"
+                    return@addLevelTooltipTemplate "${it.itemType.name} * ${it.quantity}"
                 return@addLevelTooltipTemplate null
             })
         }

@@ -7,7 +7,7 @@ import level.Level
 import main.Game
 import misc.GeometryHelper
 import misc.PixelCoord
-import misc.WeakMutableList
+import data.WeakMutableList
 import resource.*
 import java.io.DataOutputStream
 
@@ -358,7 +358,7 @@ class TubeBlockGroup {
             }
         }
 
-        override fun remove(resource: ResourceType, quantity: Int, to: ResourceNode<*>?, checkIfContains: Boolean): Boolean {
+        override fun remove(resource: ResourceType, quantity: Int, to: ResourceNode<*>?, checkIfAble: Boolean): Boolean {
             return true
         }
 

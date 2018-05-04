@@ -1,5 +1,7 @@
 package resource
 
+import java.io.DataOutputStream
+
 abstract class ResourceContainer<R : ResourceType>(val resourceTypeID: Int, var typeRule: (ResourceType) -> Boolean = { true }) {
 
     // TODO worried about forgetting checkIfAble and thus skipping add/remove rule checks, how2fix??

@@ -1,12 +1,13 @@
 package level.moving
 
 import level.*
+import screen.Mouse.xPixel
 import java.io.DataOutputStream
 
 const val DEFAULT_MAX_SPEED = 20
 const val DEFAULT_DRAG = 4
 
-abstract class MovingObject(xPixel: Int, yPixel: Int, hitbox: Hitbox) : LevelObject(xPixel, yPixel, hitbox, true) {
+abstract class MovingObject(type: LevelObjectType<out MovingObject>, xPixel: Int, yPixel: Int, rotation: Int = 0, hitbox: Hitbox) : LevelObject(type, xPixel, yPixel, rotation, hitbox, true) {
 
     /* Only allow setting of pixel values because otherwise it would cause infinite loop (unless I added a lot of boilerplate private values) */
     final override var xPixel = xPixel
@@ -53,7 +54,7 @@ abstract class MovingObject(xPixel: Int, yPixel: Int, hitbox: Hitbox) : LevelObj
             else
                 field = value
         }
-    var dir = 0
+
     /**
      * The chunk that this object's coordinates are in
      */
@@ -92,13 +93,13 @@ abstract class MovingObject(xPixel: Int, yPixel: Int, hitbox: Hitbox) : LevelObj
 
     open fun move() {
         if (xVel > 0)
-            dir = 1
+            rotation = 1
         if (xVel < 0)
-            dir = 3
+            rotation = 3
         if (yVel > 0)
-            dir = 2
+            rotation = 2
         if (yVel < 0)
-            dir = 0
+            rotation = 0
         val pXPixel = xPixel
         val pYPixel = yPixel
         val nXPixel = xPixel + xVel
@@ -140,8 +141,8 @@ abstract class MovingObject(xPixel: Int, yPixel: Int, hitbox: Hitbox) : LevelObj
     }
 
     override fun save(out: DataOutputStream) {
+        super.save(out)
         out.writeInt(xVel)
         out.writeInt(yVel)
-        out.writeInt(dir)
     }
 }

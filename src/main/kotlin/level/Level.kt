@@ -605,15 +605,15 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
             } else if (l is MovingObject) {
                 if (l is DroppedItem) {
                     // get nearest dropped item of the same type that is not a full stack
-                    val d = DroppedItems.getInRadius(l.xPixel, l.yPixel, DROPPED_ITEM_PICK_UP_RANGE, { it.type == l.type && it.quantity < it.type.maxStack }).maxBy { it.quantity }
+                    val d = DroppedItems.getInRadius(l.xPixel, l.yPixel, DROPPED_ITEM_PICK_UP_RANGE, { it.itemType == l.itemType && it.quantity < it.itemType.maxStack }).maxBy { it.quantity }
                     if (d != null) {
-                        if (d.quantity + l.quantity <= l.type.maxStack) {
+                        if (d.quantity + l.quantity <= l.itemType.maxStack) {
                             d.quantity += l.quantity
                             // dont set in level because it was never technically called into existence
                             return true
                         } else {
-                            l.quantity -= (l.type.maxStack - d.quantity)
-                            d.quantity = l.type.maxStack
+                            l.quantity -= (l.itemType.maxStack - d.quantity)
+                            d.quantity = l.itemType.maxStack
                         }
                     }
                     if (l.getCollision(l.xPixel, l.yPixel) == null) {

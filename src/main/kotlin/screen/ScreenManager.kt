@@ -1,9 +1,7 @@
 package screen
 
 import io.*
-import main.Game
-import main.State
-import misc.ConcurrentlyModifiableMutableList
+import data.ConcurrentlyModifiableMutableList
 import misc.GeometryHelper
 import screen.elements.GUIWindow
 import screen.elements.RootGUIElement

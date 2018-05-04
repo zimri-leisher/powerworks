@@ -230,12 +230,12 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
                     if (i.isNotEmpty()) {
                         val g = i.first()
                         if (!Game.mainInv.full) {
-                            Game.mainInv.add(g.type, g.quantity)
+                            Game.mainInv.add(g.itemType, g.quantity)
                             Level.remove(g)
                             if (heldItemType == null) {
-                                heldItemType = g.type
+                                heldItemType = g.itemType
                             }
-                            HUD.Hotbar.items.add(g.type)
+                            HUD.Hotbar.items.add(g.itemType)
                         }
                     }
                 }

@@ -1,4 +1,4 @@
-package misc
+package data
 
 import java.lang.ref.WeakReference
 import java.util.stream.Stream
