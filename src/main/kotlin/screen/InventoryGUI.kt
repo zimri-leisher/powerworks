@@ -3,9 +3,7 @@ package screen
 import graphics.Image
 import graphics.Utils
 import item.Inventory
-import screen.elements.GUIItemSlot
-import screen.elements.GUITexturePane
-import screen.elements.GUIWindow
+import screen.elements.*
 
 /**
  * A GUIWindow that you can instantiate for any inventory
@@ -25,7 +23,7 @@ class InventoryGUI(name: String,
 
 
     private val itemSlots: Array<GUIItemSlot>
-    private val background = GUITexturePane(this.rootChild, name + " background", 0, 0, texture = Image(Utils.genRectangle(widthPixels, heightPixels)))
+    private val background = GUIDefaultTextureRectangle(this.rootChild, name + " background", 0, 0)
 
     init {
         generateCloseButton(background.layer + 1)
@@ -36,6 +34,7 @@ class InventoryGUI(name: String,
                 arr[x + y * inv.width] = GUIItemSlot(background, name + " item slot ${x + y * inv.width}", ITEM_SLOT_PADDING + x * (GUIItemSlot.WIDTH + ITEM_SLOT_PADDING), ITEM_SLOT_PADDING + 5 + y * (GUIItemSlot.HEIGHT + ITEM_SLOT_PADDING), x + y * inv.width, inv)
             }
         }
+        GUIText(background, "Inventory GUI name text", 0, 0, displayName)
         itemSlots = arr as Array<GUIItemSlot>
         // You want to be able to move and edit inventories at the same time
         partOfLevel = true

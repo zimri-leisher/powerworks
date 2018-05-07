@@ -19,7 +19,7 @@ class GUIVerticalScrollBar(parent: RootGUIElement,
                            heightPixels: Int,
                            open: Boolean = false,
                            layer: Int = parent.layer + 1) :
-        GUIElement(parent, name, xPixel, yPixel, DEFAULT_WIDTH, heightPixels, open, layer) {
+        GUIElement(parent, name, xPixel, yPixel, WIDTH, heightPixels, open, layer) {
 
     val s = parent as VerticalScrollable
     val currentTextures = arrayOf<Texture>(Image.GUI.SCROLL_BAR_UNHIGHLIGHT_TOP, Image.GUI.SCROLL_BAR_UNHIGHLIGHT_MIDDLE, Image.GUI.SCROLL_BAR_UNHIGHLIGHT_BOTTOM)
@@ -107,6 +107,6 @@ class GUIVerticalScrollBar(parent: RootGUIElement,
     }
 
     companion object {
-        const val DEFAULT_WIDTH = 6
+        const val WIDTH = 6
     }
 }

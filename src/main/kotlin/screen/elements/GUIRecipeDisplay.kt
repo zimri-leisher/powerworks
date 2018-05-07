@@ -19,7 +19,7 @@ class GUIRecipeDisplay(parent: RootGUIElement, name: String, xAlignment: () -> I
                 produceList.currentResources = value.produce
                 produceList.width = value.produce.size
                 mouseOverAreaOpenGroup.children.remove(background)
-                background = genBackground(mouseOverArea, mouseOverAreaOpenGroup, icon)
+                background.updateAlignment()
             } else if (field != value) {
                 value!! // must not be null because null == null
                 icon.texture = value.icon.texture
@@ -28,7 +28,7 @@ class GUIRecipeDisplay(parent: RootGUIElement, name: String, xAlignment: () -> I
                 produceList.currentResources = value.produce
                 produceList.width = value.produce.size
                 mouseOverAreaOpenGroup.children.remove(background)
-                background = genBackground(mouseOverArea, mouseOverAreaOpenGroup, icon)
+                background.updateAlignment()
             }
             field = value
         }
@@ -38,7 +38,7 @@ class GUIRecipeDisplay(parent: RootGUIElement, name: String, xAlignment: () -> I
     private lateinit var produceList: GUIResourceListDisplay
     private lateinit var mouseOverAreaOpenGroup: GUIGroup
     private lateinit var mouseOverArea: GUIMouseOverArea
-    private lateinit var background: GUITexturePane
+    private lateinit var background: GUIDefaultTextureRectangle
 
     init {
         val fakeRecipe = recipe ?: Recipe.ERROR
@@ -57,20 +57,11 @@ class GUIRecipeDisplay(parent: RootGUIElement, name: String, xAlignment: () -> I
                         val produceText = GUIText(this, "produce text", consumeText.xAlignment(), consumeList.yAlignment() + consumeList.heightPixels + 1, "Produce:", layer = this.layer + 2)
                         produceList = GUIResourceListDisplay(this, "produce list icons", fakeRecipe.produce, { consumeText.xAlignment() }, { produceText.yAlignment() + produceText.heightPixels + 1 }, fakeRecipe.produce.size, 1)
                     })
-                    background = genBackground(mouseOver, mouseOverAreaOpenGroup, this@apply)
-                    /*
-                    GUITexturePane(this, this.name + " background", this@apply.widthPixels + 1, -1,
-                    Image(Utils.genRectangle(
-                            Numbers.max(consumeText.widthPixels, produceText.widthPixels, consumeList.widthPixels, produceList.widthPixels) + 3,
-                            consumeList.heightPixels + produceList.heightPixels + produceText.heightPixels + consumeText.heightPixels + 6)))
-                            */
+                    background = GUIDefaultTextureRectangle(mouseOver, this@GUIRecipeDisplay.name + " background", { this@apply.widthPixels + 1 }, { -1 }, { mouseOverAreaOpenGroup.widthPixels }, { mouseOverAreaOpenGroup.heightPixels })
                 }).apply { transparentToInteraction = true }
             }
         }
     }
-
-    private fun genBackground(parent: GUIMouseOverArea, actionGroup: GUIGroup, icon: GUITexturePane) = GUITexturePane(parent, this.name + " background", icon.widthPixels + 1, -1,
-            Image(Utils.genRectangle(actionGroup.widthPixels, actionGroup.heightPixels)))
 
     override fun onOpen() {
         if (recipe != null)

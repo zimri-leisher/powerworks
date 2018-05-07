@@ -25,7 +25,7 @@ object MovementToolsGUI : GUIWindow("Player movement tools", { Game.WIDTH - 80 }
     init {
         InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.TOGGLE_MOVEMENT_TOOLS)
         InputManager.registerControlPressHandler(this, ControlPressHandlerType.LEVEL_ANY, Control.INTERACT)
-        GUITexturePane(this.rootChild, name + " background", 0, 0, Image(Utils.genRectangle(widthPixels, heightPixels))).run {
+        GUIDefaultTextureRectangle(this.rootChild, name + " background", 0, 0).run {
             val teleporterBounds = Font.getStringBounds("Teleporter", GUIButton.TEXT_SIZE)
             GUIButton(this, this@MovementToolsGUI.name + " teleporter button", 2, 2, "Teleporter", teleporterBounds.width + 2, teleporterBounds.height + 2, {
                 teleporter = !teleporter

@@ -1,8 +1,5 @@
 package screen.elements
 
-import graphics.Image
-import graphics.Utils
-
 class GUIMouseOverTextPane(parent: RootGUIElement, name: String,
                            xAlignment: () -> Int, yAlignment: () -> Int,
                            widthAlignment: () -> Int, heightAlignment: () -> Int,
@@ -12,7 +9,7 @@ class GUIMouseOverTextPane(parent: RootGUIElement, name: String,
         GUIElement(parent, name, xAlignment, yAlignment, widthAlignment, heightAlignment, open, layer) {
 
     private lateinit var guiText: GUIText
-    private lateinit var background: GUITexturePane
+    private lateinit var background: GUIDefaultTextureRectangle
     private val mouseOverArea: GUIMouseOverArea
     var text: String = text
         set(value) {
@@ -20,7 +17,7 @@ class GUIMouseOverTextPane(parent: RootGUIElement, name: String,
                 field = value
                 guiText.text = value
                 children.remove(background)
-                background = genBackground()
+                background.updateAlignment()
             }
         }
 
@@ -28,11 +25,7 @@ class GUIMouseOverTextPane(parent: RootGUIElement, name: String,
         transparentToInteraction = true
         mouseOverArea = GUIMouseOverArea(this, name + " mouse over area", widthAlignment = widthAlignment, heightAlignment = heightAlignment, initializerList = {
             this@GUIMouseOverTextPane.guiText = GUIText(this, name + " text", 0, 0, text, layer = this.layer + 2)
-            this@GUIMouseOverTextPane.background = GUITexturePane(this, name + " background", 0, 0, Image(Utils.genRectangle(guiText.widthPixels, guiText.heightPixels)))
+            this@GUIMouseOverTextPane.background = GUIDefaultTextureRectangle(this, name + " background", { 0 }, { 0 }, { guiText.widthPixels }, { guiText.heightPixels })
         })
-    }
-
-    fun genBackground(): GUITexturePane {
-        return GUITexturePane(mouseOverArea, name + " background", 0, 0, Image(Utils.genRectangle(guiText.widthPixels, guiText.heightPixels)))
     }
 }

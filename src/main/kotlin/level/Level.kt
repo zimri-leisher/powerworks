@@ -1,6 +1,9 @@
 package level
 
 import audio.AudioManager
+import data.DirectoryChangeWatcher
+import data.FileManager
+import data.GameDirectory
 import graphics.Image
 import graphics.RenderParams
 import graphics.Renderer
@@ -20,26 +23,29 @@ import resource.ResourceNode
 import resource.ResourceType
 import screen.CameraMovementListener
 import screen.DebugOverlay
+import screen.LevelSelectorGUI
 import screen.Mouse
 import screen.Mouse.DROPPED_ITEM_PICK_UP_RANGE
 import screen.elements.GUILevelView
 import java.io.*
+import java.nio.charset.Charset
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.LocalDateTime
 import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
+import kotlin.streams.toList
 
 const val CHUNK_SIZE_TILES = 8
 val CHUNK_TILE_EXP = (Math.log(CHUNK_SIZE_TILES.toDouble()) / Math.log(2.0)).toInt()
 val CHUNK_PIXEL_EXP = CHUNK_TILE_EXP + 4
 val CHUNK_SIZE_PIXELS = CHUNK_SIZE_TILES shl 4
 
-abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles: Int) : CameraMovementListener, MouseMovementListener, ControlPressHandler {
+abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMovementListener, ControlPressHandler {
 
-    val levelFile: File
-    val infoFile: File
-
+    val widthTiles = levelInfo.settings.widthTiles
+    val heightTiles = levelInfo.settings.heightTiles
     val heightPixels = heightTiles shl 4
     val widthPixels = widthTiles shl 4
     val heightChunks = heightTiles shr CHUNK_TILE_EXP
@@ -85,31 +91,36 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
     var mouseLevelXPixel = 0
     var mouseLevelYPixel = 0
 
+    private fun DataOutputStream.writeAndNewline(s: Any?) {
+        writeChars(s.toString())
+        writeChars("\n")
+    }
+
     init {
-        val p = Paths.get(Game.ENCLOSING_FOLDER_PATH, "data/save/$levelName/")
+        val p = FileManager.getPath(GameDirectory.SAVES).resolve(levelInfo.name)
         if (Files.notExists(p)) {
             Files.createDirectory(p)
             seed = (Math.random() * 4096).toLong()
             rand = Random(seed)
             InputManager.mouseMovementListeners.add(this)
             println("Creating level")
-            levelFile = Files.createFile(Paths.get(p.toAbsolutePath().toString(), "$levelName.level")).toFile()
-            val levelOut = DataOutputStream(BufferedOutputStream(FileOutputStream(levelFile, true)))
+            levelInfo.levelFile = Files.createFile(p.toAbsolutePath().resolve(levelInfo.name + ".level")).toFile()
+            val levelOut = DataOutputStream(BufferedOutputStream(FileOutputStream(levelInfo.levelFile, true)))
             levelOut.writeLong(seed)
             levelOut.close()
-            infoFile = Files.createFile(Paths.get(p.toAbsolutePath().toString(), "$levelName.info")).toFile()
-            val infoOut = DataOutputStream(BufferedOutputStream(FileOutputStream(infoFile, true)))
-            infoOut.writeChars(levelName)
-            infoOut.writeChars(LocalDateTime.now().toString())
+            levelInfo.infoFile = Files.createFile(p.toAbsolutePath().resolve(levelInfo.name + ".info")).toFile()
+            val infoOut = DataOutputStream(BufferedOutputStream(FileOutputStream(levelInfo.infoFile, true)))
+            infoOut.writeAndNewline(levelInfo.name)
+            infoOut.writeAndNewline(LocalDateTime.now().toString())
+            infoOut.writeAndNewline(levelInfo.settings.widthTiles)
+            infoOut.writeAndNewline(levelInfo.settings.heightTiles)
             infoOut.close()
         } else {
             InputManager.mouseMovementListeners.add(this)
             println("Loading level")
-            levelFile = Paths.get(p.toAbsolutePath().toString(), "$levelName.level").toFile()
-            val g = DataInputStream(BufferedInputStream(FileInputStream(levelFile)))
+            val g = DataInputStream(BufferedInputStream(FileInputStream(levelInfo.levelFile)))
             seed = g.readLong()
             rand = Random(seed)
-            infoFile = levelFile
             g.close()
         }
         for (t in OreTileType.ALL) {
@@ -570,7 +581,40 @@ abstract class Level(val levelName: String, val widthTiles: Int, val heightTiles
         }
     }
 
-    companion object {
+    companion object : DirectoryChangeWatcher {
+
+        val levelInfos = mutableListOf<LevelInfo>()
+
+        fun exists(levelName: String) = levelInfos.any { it.name == levelName }
+
+        /**
+         * @return either a new level if none existed previously, or loads and returns the previous one
+         */
+        fun get(info: LevelInfo): Level {
+            return SimplexLevel(info)
+        }
+
+        override fun onDirectoryChange(dir: Path) {
+            if (dir == FileManager.getPath(GameDirectory.SAVES)) {
+                indexLevels()
+            }
+        }
+
+        fun indexLevels() {
+            val allFiles = Files.walk(FileManager.getPath(GameDirectory.SAVES)).filter { Files.isRegularFile(it) }.map { it.toFile() }.toList()
+            val levelFileInfoFilePairs = mutableMapOf<File, File>()
+            for (file in allFiles) {
+                if (file.name.endsWith(".level"))
+                    if (file !in levelFileInfoFilePairs) {
+                        levelFileInfoFilePairs.put(file, allFiles.first { it.name.removeSuffix(".info") == file.name.removeSuffix(".level") })
+                    }
+            }
+            for ((level, info) in levelFileInfoFilePairs) {
+                val text = info.readLines(Charset.forName("UTF-16"))
+                LevelSelectorGUI.levelInfos.add(LevelInfo.parse(text, level, info))
+            }
+        }
+
         fun getCollision(l: LevelObject, xPixel: Int = l.xPixel, yPixel: Int = l.yPixel, predicate: ((LevelObject) -> Boolean)? = null): LevelObject? {
             val m = MovingObjects.getCollision(l, xPixel, yPixel, predicate)
             if (m != null)

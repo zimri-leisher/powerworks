@@ -1,6 +1,7 @@
 package main
 
 import audio.AudioManager
+import data.FileManager
 import graphics.Font
 import graphics.LocalAnimation
 import graphics.Renderer
@@ -16,11 +17,7 @@ import screen.*
 import java.awt.*
 import java.awt.event.ComponentAdapter
 import java.awt.event.ComponentEvent
-import java.io.File
-import java.nio.file.Files
-import java.nio.file.Paths
 import java.security.Policy
-import java.util.*
 import javax.imageio.ImageIO
 import javax.swing.JFrame
 import io.OutputManager as out
@@ -28,7 +25,6 @@ import io.OutputManager as out
 const val TRACE_GRAPHICS = false
 
 fun main(args: Array<String>) {
-    println(args.joinToString())
     initializeProperties()
     Game
 }
@@ -42,11 +38,6 @@ fun initializeProperties() {
 }
 
 object Game : Canvas(), Runnable, ControlPressHandler {
-
-    val JAR_PATH = Game::class.java.protectionDomain.codeSource.location.toURI().path.drop(1)
-    val ENCLOSING_FOLDER_PATH = JAR_PATH.substring(0 until JAR_PATH.lastIndexOf("/"))
-    val MOD_FOLDER_PATH = ENCLOSING_FOLDER_PATH + "/mods"
-    val TMP_DIR = System.getProperty("java.io.tmpdir")
 
     /* Dimensions */
     var WIDTH = 300
@@ -103,7 +94,7 @@ object Game : Canvas(), Runnable, ControlPressHandler {
                 resized = true
             }
         })
-        createFoldersAndDefaults()
+        FileManager
         addKeyListener(InputManager)
         addMouseWheelListener(InputManager)
         addMouseMotionListener(InputManager)
@@ -181,6 +172,7 @@ object Game : Canvas(), Runnable, ControlPressHandler {
             resized = false
         }
         //spark()
+        FileManager.update()
         InputManager.update()
         Mouse.update()
         SyncAnimation.update()
@@ -236,47 +228,10 @@ object Game : Canvas(), Runnable, ControlPressHandler {
         cursor = clearCursor
     }
 
-    fun createFoldersAndDefaults() {
-        val controls = Paths.get(ENCLOSING_FOLDER_PATH, "data/settings/controls/")
-        if (Files.notExists(controls))
-            Files.createDirectories(controls)
-        val defaultMap = Paths.get(ENCLOSING_FOLDER_PATH, "data/settings/controls/default.txt")
-        if (Files.notExists(defaultMap)) {
-            Files.createFile(defaultMap)
-        }
-        val f = defaultMap.toFile()
-        f.writeText(ResourceManager.getResource("/settings/controls/default.txt").readText())
-        val save = Paths.get(ENCLOSING_FOLDER_PATH, "data/save/")
-        if (Files.notExists(save))
-            Files.createDirectory(save)
-        if(Files.notExists(Paths.get(MOD_FOLDER_PATH)))
-            Files.createDirectories(Paths.get(MOD_FOLDER_PATH))
-    }
-
-    fun takeScreenshot() {
-        val directory = Paths.get(ENCLOSING_FOLDER_PATH, "/screenshots/")
-        if (Files.notExists(directory))
-            Files.createDirectory(directory)
-        val ss = graphicsConfiguration.createCompatibleImage(Game.WIDTH * Game.SCALE, Game.HEIGHT * Game.SCALE)
-        Renderer.g2d = ss.createGraphics()
-        ScreenManager.render()
-        Renderer.g2d.dispose()
-        val calInstance = Calendar.getInstance()
-        val fileName = "${ENCLOSING_FOLDER_PATH}/screenshots/${calInstance.get(Calendar.MONTH) + 1}-${calInstance.get(Calendar.DATE)}-${calInstance.get(Calendar.YEAR)}"
-        var i = 0
-        var file = File(fileName + " #$i.png")
-        while (file.exists()) {
-            i++
-            file = File(fileName + " #$i.png")
-        }
-        ImageIO.write(ss, "png", file)
-        println("Taken screenshot")
-    }
-
     override fun handleControlPress(p: ControlPress) {
         if (p.pressType == PressType.PRESSED)
             when (p.control) {
-                Control.TAKE_SCREENSHOT -> takeScreenshot()
+                Control.TAKE_SCREENSHOT -> FileManager.takeScreenshot()
                 Control.TOGGLE_RENDER_HITBOXES -> RENDER_HITBOXES = !RENDER_HITBOXES
                 Control.TOGGLE_CHUNK_INFO -> CHUNK_BOUNDARIES = !CHUNK_BOUNDARIES
                 Control.TOGGLE_RESOURCE_NODES_INFO -> RESOURCE_NODES_INFO = !RESOURCE_NODES_INFO

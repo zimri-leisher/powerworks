@@ -14,7 +14,7 @@ class CraftingBlockGUI(val craftingBlock: CrafterBlock) :
     lateinit var progressBar: GUIProgressBar
 
     init {
-        GUITexturePane(this.rootChild, "Crafting block at ${craftingBlock.xTile}, ${craftingBlock.yTile}'s window background", 0, 0, Image(Utils.genRectangle(WIDTH, HEIGHT))).apply {
+        GUIDefaultTextureRectangle(this.rootChild, "Crafting block at ${craftingBlock.xTile}, ${craftingBlock.yTile}'s window background", 0, 0).apply {
             GUIText(this, "Recipe text", 3, 3, "Recipe:")
             val recipeButton = GUIRecipeButton(this, "Recipe choice button", { 3 }, { 9 }, craftingBlock.recipe, { craftingBlock.recipe = it })
             val storageGroups = AutoFormatGUIGroup(this, "Crafting block container view group", 1, recipeButton.yAlignment() + recipeButton.heightPixels + 3, initializerList = {

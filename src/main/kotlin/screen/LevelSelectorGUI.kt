@@ -1,28 +1,42 @@
 package screen
 
 import graphics.Image
-import graphics.Utils
+import io.PressType
+import level.Level.Companion.indexLevels
+import level.LevelGeneratorSettings
 import level.LevelInfo
+import level.SimplexLevel
 import main.Game
 import screen.elements.*
+import main.State
 import java.io.File
+import java.nio.charset.Charset
 import java.nio.file.Files
 import java.nio.file.Paths
-import java.util.*
+import java.time.LocalDateTime
+import kotlin.streams.toList
 
 object LevelSelectorGUI : GUIWindow("Level selector window", { 0 }, { 0 }, { Game.WIDTH }, { Game.HEIGHT }, windowGroup = ScreenManager.Groups.BACKGROUND) {
 
-    lateinit var infoGroup: AutoFormatGUIGroup
-
     val levelInfos = mutableListOf<LevelInfo>()
 
-    class GUILevelInfoDisplay(val levelName: String) : GUIElement(infoGroup, "level info for level $levelName", 0, 0, WIDTH, HEIGHT) {
+    lateinit var infoList: GUIElementList
+
+    class GUILevelInfoDisplay(val levelInfo: LevelInfo, parent: RootGUIElement) : GUIElement(parent, "level info for level ${levelInfo.name}", 0, 0, WIDTH, HEIGHT) {
 
         init {
-            GUITexturePane(this, name + " background", 0, 0, Image(Utils.genRectangle(widthPixels, heightPixels))).run {
-                GUIText(this, this@GUILevelInfoDisplay.name + " level name text", 6, 4, levelName)
-
+            GUIDefaultTextureRectangle(this, name + " background", 0, 0).run {
+                transparentToInteraction = true
+                GUIText(this, this@GUILevelInfoDisplay.name + " level name text", 6, 4, levelInfo.name).run {
+                    transparentToInteraction = true
+                }
             }
+        }
+
+        override fun onMouseActionOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+            Game.currentLevel = SimplexLevel(levelInfo)
+            LevelSelectorGUI.open = false
+            State.setState(State.INGAME)
         }
 
         companion object {
@@ -35,30 +49,24 @@ object LevelSelectorGUI : GUIWindow("Level selector window", { 0 }, { 0 }, { Gam
         adjustDimensions = true
         indexLevels()
         GUITexturePane(this.rootChild, "background texture", { 0 }, { 0 }, Image.GUI.MAIN_MENU_BACKGROUND_FILLER, { widthPixels }, { heightPixels }).run {
-            GUIButton(this, "main menu return button", 4, 4, "Return to main menu", onRelease = {
-                this@LevelSelectorGUI.open = false
-                MainMenuGUI.open = true
+            val group = AutoFormatGUIGroup(this, "level button auto format group", 4, 4, accountForChildHeight = true, yPixelSeparation = 2, initializerList = {
+                GUIButton(this, "main menu return button", 0, 0, "Return to main menu", onRelease = {
+                    this@LevelSelectorGUI.open = false
+                    MainMenuGUI.open = true
+                })
+                GUIButton(this, "level create button", 0, 0, "Create save", onRelease = {
+                    val info = LevelInfo("testinglevel", LocalDateTime.now().toString(), LevelGeneratorSettings(256, 256), File(""), File(""))
+                    indexLevels()
+                    GUILevelInfoDisplay(info, infoList.elements)
+                })
             })
-            infoGroup
-        }
-    }
-
-    fun indexLevels() {
-        val directory = Paths.get(Game.ENCLOSING_FOLDER_PATH, "/data/save")
-        if (Files.notExists(directory))
-            Files.createDirectory(directory)
-        val calInstance = Calendar.getInstance()
-        val fileName = "${Game.ENCLOSING_FOLDER_PATH}/screenshots/${calInstance.get(Calendar.MONTH) + 1}-${calInstance.get(Calendar.DATE)}-${calInstance.get(Calendar.YEAR)}"
-        val allFiles = Files.walk(directory).filter { Files.isRegularFile(it) }.map { it.toFile() }.toArray() as Array<File>
-        val levelFileInfoFilePairs = mutableMapOf<File, File>()
-        for (file in allFiles) {
-            if (file.name.endsWith(".level"))
-                if (file !in levelFileInfoFilePairs) {
-                    levelFileInfoFilePairs.put(file, allFiles.first { it.name.removeSuffix(".info") == file.name.removeSuffix(".level") })
-                }
-        }
-        for((level, info) in levelFileInfoFilePairs) {
-            levelInfos.add(LevelInfo.parse(info.readLines(), level, info))
+            GUIDefaultTextureRectangle(this, "level info list background", { 8 + group.widthPixels }, { 4 }, { GUILevelInfoDisplay.WIDTH + GUIVerticalScrollBar.WIDTH + 4 }, { heightPixels - 8 }).run {
+                infoList = GUIElementList(this, "level info list", { 2 }, { 2 }, { widthPixels - 4 }, { heightPixels - 4 }, {
+                    for (info in levelInfos) {
+                        GUILevelInfoDisplay(info, this)
+                    }
+                })
+            }
         }
     }
 }

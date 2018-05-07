@@ -1,5 +1,7 @@
 package io
 
+import data.FileManager
+import data.GameDirectory
 import main.Game
 import java.nio.file.Paths
 import io.OutputManager as out
@@ -12,15 +14,14 @@ enum class ControlMap(path: String) {
     private val binds = mutableListOf<ControlBind>()
 
     init {
-        val text = Paths.get(Game.ENCLOSING_FOLDER_PATH, "data/settings/controls/$path.txt").toFile().readText()
-        val lines = text.split(delimiters = "\n")
+        val lines = FileManager.getPath(GameDirectory.CONTROLS).resolve("$path.txt").toFile().readLines()
         var mode = 0
         for (a in lines) {
             val s = a.replace("\n", "").replace("\r", "")
             if (s.startsWith("//"))
                 continue
             if (s.contains(char = ':')) {
-                val split = s.split(delimiters = ':').map { it.replace(":", "") }
+                val split = s.split(':').map { it.replace(":", "") }
                 val only = split[split.lastIndex - 1] == "ONLY"
                 val code = split[0]
                 val otherCodes = split.dropLast(if (only) 2 else 1).drop(1).filterNot { it.startsWith('!') }.toSet()

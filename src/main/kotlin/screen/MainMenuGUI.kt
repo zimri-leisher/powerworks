@@ -35,7 +35,7 @@ object MainMenuGUI : GUIWindow("Main menu", { 0 }, { 0 }, { Game.WIDTH }, { Game
 
                             GUIButton(this, "Main menu play button", 0, 0, "Play", onRelease = {
                                 this@MainMenuGUI.open = false
-                                State.setState(State.INGAME)
+                                LevelSelectorGUI.open = true
                             }, layer = this.layer + 2)
 
                             GUIButton(this, "Main menu test button", 0, 0, "Test", onRelease =  {

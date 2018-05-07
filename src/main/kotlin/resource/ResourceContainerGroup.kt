@@ -69,11 +69,4 @@ class ResourceContainerGroup(val containers: List<ResourceContainer<*>>) {
     fun forEach(f: (ResourceContainer<*>) -> Unit) = containers.forEach(f)
 
     operator fun iterator() = containers.iterator()
-
-    fun save(out: DataOutputStream) {
-
-    }
-
-    companion object {
-    }
 }

@@ -2,6 +2,7 @@ module powerworks {
     requires transitive java.desktop;
     requires kotlin.stdlib;
     requires kotlinx.coroutines.core;
+    requires kotlin.stdlib.jdk8;
     uses mod.Mod;
     exports audio;
     exports crafting;

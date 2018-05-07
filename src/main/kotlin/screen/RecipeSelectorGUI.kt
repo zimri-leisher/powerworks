@@ -18,7 +18,7 @@ object RecipeSelectorGUI : GUIWindow("Recipe selector", 20, 20, 100, 120, window
 
     init {
         partOfLevel = true
-        val background = GUITexturePane(this.rootChild, "Background", 0, 0, Image(Utils.genRectangle(widthPixels, heightPixels)))
+        val background = GUIDefaultTextureRectangle(this.rootChild, "Background", 0, 0)
         GUIText(background, "Name text", 0, 0, "Select a recipe:")
         for ((i, recipe) in Recipe.ALL.withIndex()) {
             val display = GUIRecipeDisplay(background, "Recipe $i display", {(i % RECIPIES_PER_ROW) * GUIRecipeDisplay.WIDTH + 1}, {(i / RECIPIES_PER_ROW) * GUIRecipeDisplay.HEIGHT + 6}, recipe)

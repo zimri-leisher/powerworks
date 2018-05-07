@@ -9,7 +9,7 @@ import misc.Numbers.genRandom
 import java.util.*
 
 
-class SimplexLevel(name: String, width: Int, height: Int) : Level(name, width, height) {
+class SimplexLevel(info: LevelInfo) : Level(info) {
 
     override fun genTiles(xChunk: Int, yChunk: Int): Array<Tile> {
         val rand = Random(genRandom(xChunk.toLong(), yChunk.toLong()))

@@ -20,7 +20,6 @@ internal object TestGUI : GUIWindow("Testing GUI", 0, 0, Game.WIDTH, Game.HEIGHT
                         GUITexturePane(this, "Test GUI texture pane", 0, 0, Image.Misc.ERROR)
                 )
             })
-            GUIElementList(this, "Test GUI element list", 3 + GUIButton.WIDTH, 1, Game.WIDTH - (3 + GUIButton.WIDTH), Game.HEIGHT - 1)
         }
     }
 }

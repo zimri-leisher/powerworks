@@ -49,11 +49,11 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
         transparentToInteraction = true
     }
 
-    private var background = GUITexturePane(group, "Mouse info group background", 0, 0, Image(Utils.genRectangle(4, 4)), layer = group.layer + 2).apply {
+    private var text = GUIText(group, "Mouse info group text", 2, 2, "", layer = group.layer + 3).apply {
         open = false
     }
 
-    private var text = GUIText(group, "Mouse info group text", 2, 2, "", layer = group.layer + 3).apply {
+    private var background = GUIDefaultTextureRectangle(group, "Mouse info group background", { 0 }, { 0 }, { text.widthPixels + 4 }, { text.heightPixels + 4 }, layer = group.layer + 2).apply {
         open = false
     }
 
@@ -123,7 +123,7 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
         if (s != null) {
             text.text = s
             text.open = true
-            background.texture = Image(Utils.genRectangle(text.widthPixels + 4, text.heightPixels + 4))
+            background.updateAlignment()
             background.open = true
         } else {
             text.open = false

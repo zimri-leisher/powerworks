@@ -80,6 +80,9 @@ abstract class LevelObject protected constructor(open val type: LevelObjectType<
         return Level.getCollision(this, xPixel, yPixel, predicate)
     }
 
+    /**
+     * Should write all
+     */
     open fun save(out: DataOutputStream) {
         out.writeInt(type.id)
         out.writeInt(xPixel)
