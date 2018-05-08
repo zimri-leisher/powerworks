@@ -8,18 +8,18 @@ import misc.GeometryHelper
 import screen.Mouse
 
 interface VerticalScrollable {
-    var viewHeightPixels: Int
-    var maxHeightPixels: Int
+    val viewHeightPixels: Int
+    val maxHeightPixels: Int
     fun onScroll()
 }
 
 class GUIVerticalScrollBar(parent: RootGUIElement,
                            name: String,
-                           xPixel: Int, yPixel: Int,
-                           heightPixels: Int,
+                           xAlignment: () -> Int, yAlignment: () -> Int,
+                           heightAlignment: () -> Int,
                            open: Boolean = false,
                            layer: Int = parent.layer + 1) :
-        GUIElement(parent, name, xPixel, yPixel, WIDTH, heightPixels, open, layer) {
+        GUIElement(parent, name, xAlignment, yAlignment, { WIDTH }, heightAlignment, open, layer) {
 
     val s = parent as VerticalScrollable
     val currentTextures = arrayOf<Texture>(Image.GUI.SCROLL_BAR_UNHIGHLIGHT_TOP, Image.GUI.SCROLL_BAR_UNHIGHLIGHT_MIDDLE, Image.GUI.SCROLL_BAR_UNHIGHLIGHT_BOTTOM)
@@ -35,7 +35,7 @@ class GUIVerticalScrollBar(parent: RootGUIElement,
         }
     var dragging = false
     var mYPixelPrev = 0
-    var maxPos = heightPixels - 2 - currentScrollBarHeight
+    val maxPos: Int
         get() = heightPixels - 2 - currentScrollBarHeight
 
     init {
@@ -44,6 +44,7 @@ class GUIVerticalScrollBar(parent: RootGUIElement,
 
     fun updateScrollBarHeight() {
         val s = parent as VerticalScrollable
+        currentPos = currentPos
         currentScrollBarHeight = Math.min((s.viewHeightPixels.toDouble() / (if (s.maxHeightPixels == 0) 1 else s.maxHeightPixels).toDouble() * heightPixels.toDouble()).toInt(), heightPixels - 2)
     }
 
@@ -70,7 +71,17 @@ class GUIVerticalScrollBar(parent: RootGUIElement,
         }
     }
 
+    override fun onMouseScroll(dir: Int) {
+        currentPos += dir * GUIElementList.SCROLL_SENSITIVITY
+    }
+
     override fun onParentChange(oldParent: RootGUIElement) {
+        if(parent !is VerticalScrollable)
+            throw Exception("Parent must be VerticalScrollable")
+        updateScrollBarHeight()
+    }
+
+    override fun onDimensionChange(oldWidth: Int, oldHeight: Int) {
         updateScrollBarHeight()
     }
 

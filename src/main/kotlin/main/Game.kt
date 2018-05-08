@@ -2,6 +2,7 @@ package main
 
 import audio.AudioManager
 import data.FileManager
+import data.FileSystem
 import graphics.Font
 import graphics.LocalAnimation
 import graphics.Renderer
@@ -172,7 +173,7 @@ object Game : Canvas(), Runnable, ControlPressHandler {
             resized = false
         }
         //spark()
-        FileManager.update()
+        FileSystem.update()
         InputManager.update()
         Mouse.update()
         SyncAnimation.update()

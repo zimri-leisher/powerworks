@@ -138,14 +138,23 @@ open class GUIWindow(val name: String, xAlignment: () -> Int, yAlignment: () -> 
     var partOfLevel = false
 
     /* Util */
+    /**
+     * @param pos 0 - top left, 1 - top right, 2 - bottom right, 3 - bottom left
+     */
     fun generateCloseButton(layer: Int = this.layer + 1, pos: Int = 1): GUICloseButton {
         return GUICloseButton(getGroup(pos), name + " close button", { 0 }, { 0 }, open, layer, this)
     }
 
+    /**
+     * @param pos 0 - top left, 1 - top right, 2 - bottom right, 3 - bottom left
+     */
     fun generateDragGrip(layer: Int = this.layer + 1, pos: Int = 1): GUIDragGrip {
         return GUIDragGrip(getGroup(pos), name + " drag grip", { 0 }, { 0 }, open, layer, this)
     }
 
+    /**
+     * @param pos 0 - top left, 1 - top right, 2 - bottom right, 3 - bottom left
+     */
     fun generateDimensionDragGrip(layer: Int = this.layer + 1, pos: Int = 1): GUIDimensionDragGrip {
         return GUIDimensionDragGrip(getGroup(pos), name + " dimension drag grip", { 0 }, { 0 }, open, layer, this)
     }

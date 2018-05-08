@@ -3,7 +3,7 @@ package level
 import audio.AudioManager
 import data.DirectoryChangeWatcher
 import data.FileManager
-import data.GameDirectory
+import data.GameDirectoryIdentifier
 import graphics.Image
 import graphics.RenderParams
 import graphics.Renderer
@@ -31,7 +31,6 @@ import java.io.*
 import java.nio.charset.Charset
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.Paths
 import java.time.LocalDateTime
 import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
@@ -97,7 +96,7 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
     }
 
     init {
-        val p = FileManager.getPath(GameDirectory.SAVES).resolve(levelInfo.name)
+        val p = FileManager.fileSystem.getPath(GameDirectoryIdentifier.SAVES).resolve(levelInfo.name)
         if (Files.notExists(p)) {
             Files.createDirectory(p)
             seed = (Math.random() * 4096).toLong()
@@ -595,13 +594,13 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
         }
 
         override fun onDirectoryChange(dir: Path) {
-            if (dir == FileManager.getPath(GameDirectory.SAVES)) {
+            if (dir == FileManager.fileSystem.getPath(GameDirectoryIdentifier.SAVES)) {
                 indexLevels()
             }
         }
 
         fun indexLevels() {
-            val allFiles = Files.walk(FileManager.getPath(GameDirectory.SAVES)).filter { Files.isRegularFile(it) }.map { it.toFile() }.toList()
+            val allFiles = Files.walk(FileManager.fileSystem.getPath(GameDirectoryIdentifier.SAVES)).filter { Files.isRegularFile(it) }.map { it.toFile() }.toList()
             val levelFileInfoFilePairs = mutableMapOf<File, File>()
             for (file in allFiles) {
                 if (file.name.endsWith(".level"))
@@ -611,7 +610,7 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
             }
             for ((level, info) in levelFileInfoFilePairs) {
                 val text = info.readLines(Charset.forName("UTF-16"))
-                LevelSelectorGUI.levelInfos.add(LevelInfo.parse(text, level, info))
+                levelInfos.add(LevelInfo.parse(text, level, info))
             }
         }
 

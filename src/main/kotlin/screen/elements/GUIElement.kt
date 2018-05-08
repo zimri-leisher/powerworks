@@ -36,16 +36,18 @@ open class RootGUIElement(val parentWindow: GUIWindow,
     private val _children = mutableListOf<GUIElement>()
     val children = object : MutableList<GUIElement> by _children {
         override fun add(element: GUIElement): Boolean {
+            if(_children.any { it.id == element.id })
+                return false
             val result = _children.add(element)
             if (result) {
                 if (element.parent != this@RootGUIElement) {
                     if (element.matchParentLayer)
                         element.layer = element.parent.layer + 1
-                    println("setting ${element.id}'s parent to ${this@RootGUIElement.id}")
                     element.parent = this@RootGUIElement
                 }
                 if (element.open)
                     parentWindow.openChildren.add(element)
+                element.autoRender = autoRender
                 this@RootGUIElement.onAddChild(element)
             }
             return result
@@ -53,8 +55,8 @@ open class RootGUIElement(val parentWindow: GUIWindow,
 
         override fun remove(element: GUIElement): Boolean {
             val result = _children.remove(element)
-            if(result) {
-                if(element.open)
+            if (result) {
+                if (element.open)
                     parentWindow.openChildren.remove(element)
                 this@RootGUIElement.onRemoveChild(element)
             }
@@ -63,9 +65,9 @@ open class RootGUIElement(val parentWindow: GUIWindow,
 
         override fun clear() {
             val i = _children.iterator()
-            for(child in i) {
+            for (child in i) {
                 i.remove()
-                if(child.open)
+                if (child.open)
                     parentWindow.openChildren.remove(child)
                 this@RootGUIElement.onRemoveChild(child)
             }
@@ -80,7 +82,7 @@ open class RootGUIElement(val parentWindow: GUIWindow,
                 field = false
                 mouseOn = false
                 parentWindow.openChildren.remove(this)
-                if(ScreenManager.selectedElement == this) {
+                if (ScreenManager.selectedElement == this) {
                     ScreenManager.selectedElement = ScreenManager.getHighestElement(Mouse.xPixel, Mouse.yPixel)
                 }
                 onClose()
@@ -154,7 +156,7 @@ open class RootGUIElement(val parentWindow: GUIWindow,
         get() = parentWindow.name
 
     init {
-        if(open)
+        if (open)
             mouseOn = ScreenManager.isMouseOn(this)
     }
 
@@ -192,10 +194,17 @@ open class RootGUIElement(val parentWindow: GUIWindow,
     var transparentToInteraction = false
     /** Modify dimensions automatically when the parent's dimensions change */
     var matchParentLayer = true
-    /** Have the ScreenManager's render() method call this classes render method. Only useful as false if this is is
-     * being rendered by some other container, for instance, GUIGroup
+    /**
+     * Have the ScreenManager's render() method call this classes render method. Only useful as false if this is is
+     * being rendered by some other container, for instance, GUIElementList
      */
     var autoRender = true
+        set(value) {
+            if(field != value) {
+                field = value
+                children.forEach { it.autoRender = value }
+            }
+        }
 
     /** Opens if closed, closes if opened */
     fun toggle() {
@@ -353,7 +362,7 @@ abstract class GUIElement(parent: RootGUIElement,
     override var widthPixels: Int
         get() = super.widthPixels
         set(value) {
-            if(super.widthPixels != value) {
+            if (super.widthPixels != value) {
                 super.widthPixels = value
                 parent.onChildDimensionChange(this)
             }
@@ -362,7 +371,7 @@ abstract class GUIElement(parent: RootGUIElement,
     override var heightPixels: Int
         get() = super.heightPixels
         set(value) {
-            if(super.heightPixels != value) {
+            if (super.heightPixels != value) {
                 super.heightPixels = value
                 parent.onChildDimensionChange(this)
             }

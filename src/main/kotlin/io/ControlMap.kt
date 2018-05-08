@@ -1,9 +1,7 @@
 package io
 
 import data.FileManager
-import data.GameDirectory
-import main.Game
-import java.nio.file.Paths
+import data.GameDirectoryIdentifier
 import io.OutputManager as out
 
 private data class ControlBind(val code: String, val otherCodes: Set<String>, val notOtherCodes: Set<String>, val control: Control, val only: Boolean)
@@ -14,7 +12,7 @@ enum class ControlMap(path: String) {
     private val binds = mutableListOf<ControlBind>()
 
     init {
-        val lines = FileManager.getPath(GameDirectory.CONTROLS).resolve("$path.txt").toFile().readLines()
+        val lines = FileManager.fileSystem.getPath(GameDirectoryIdentifier.CONTROLS).resolve("$path.txt").toFile().readLines()
         var mode = 0
         for (a in lines) {
             val s = a.replace("\n", "").replace("\r", "")

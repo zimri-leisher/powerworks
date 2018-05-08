@@ -10,7 +10,7 @@ open class GUIGroup(parent: RootGUIElement,
                     layer: Int = parent.layer + 1) :
         GUIElement(parent, name, xAlignment, yAlignment, { 0 }, { 0 }, open, layer) {
 
-    var print = false
+    var print = true
 
     init {
         initializerList()

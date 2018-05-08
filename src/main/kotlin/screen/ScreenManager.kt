@@ -2,9 +2,12 @@ package screen
 
 import io.*
 import data.ConcurrentlyModifiableMutableList
+import graphics.Renderer
+import main.Game
 import misc.GeometryHelper
 import screen.elements.GUIWindow
 import screen.elements.RootGUIElement
+import java.awt.Rectangle
 
 object ScreenManager : ControlPressHandler {
 
@@ -56,7 +59,10 @@ object ScreenManager : ControlPressHandler {
     fun render() {
         _backwardsWindowGroups.forEach {
             it.windows.forEach {
-                it.openChildren.forEach { it.render() }
+                it.openChildren.forEach {
+                    if (it.autoRender)
+                        it.render()
+                }
             }
         }
     }
@@ -111,6 +117,7 @@ object ScreenManager : ControlPressHandler {
             it.yPixel = it.yAlignment()
             it.onScreenSizeChange(oldWidth, oldHeight)
         }
+        Renderer.defaultClip = Rectangle(Game.WIDTH * Game.SCALE, Game.HEIGHT * Game.SCALE)
     }
 
     fun updateSelected() {

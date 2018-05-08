@@ -48,9 +48,5 @@ class AutoFormatGUIGroup(parent: RootGUIElement,
         nextYPixel += (if (accountForChildHeight) child.heightPixels else 0) + yPixelSeparation
         nextXPixel += (if (accountForChildWidth) child.widthPixels else 0) + xPixelSeparation
         super.onAddChild(child)
-        if (print) {
-            Exception().printStackTrace(System.out)
-            println("$child: ${child.widthPixels}, ${child.heightPixels}")
-        }
     }
 }

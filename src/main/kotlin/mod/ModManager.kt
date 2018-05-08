@@ -1,8 +1,7 @@
 package mod
 
 import data.FileManager
-import data.GameDirectory
-import main.Game
+import data.GameDirectoryIdentifier
 import main.ResourceManager
 import java.io.File
 import java.io.FileNotFoundException
@@ -21,13 +20,13 @@ object ModManager {
 
     fun initialize() {
         println("Initializing mods")
-        val files = File(FileManager.getPath(GameDirectory.MODS).toString()).listFiles { _, name -> name.endsWith(".jar") }
-        val urls = files.map { URL("jar:file:${FileManager.getPath(GameDirectory.MODS)}/${it.name}!/") }
+        val files = File(FileManager.fileSystem.getPath(GameDirectoryIdentifier.MODS).toString()).listFiles { _, name -> name.endsWith(".jar") }
+        val urls = files.map { URL("jar:file:${FileManager.fileSystem.getPath(GameDirectoryIdentifier.MODS)}/${it.name}!/") }
         val pluginLoader = URLClassLoader(urls.toTypedArray())
 
         files.forEach { file ->
             val jar = JarFile(file)
-            val jarLoader = URLClassLoader(arrayOf(URL("jar:file:${FileManager.getPath(GameDirectory.MODS)}/${file.name}!/")))
+            val jarLoader = URLClassLoader(arrayOf(URL("jar:file:${FileManager.fileSystem.getPath(GameDirectoryIdentifier.MODS)}/${file.name}!/")))
             val serviceLoader = ServiceLoader.load(Mod::class.java)
             serviceLoader.forEach { println("found a mod class in ${jar.name}") }
             jar.stream().filter { it.name.endsWith(".class") && it.name != "module-info.class" }.forEach { clasS ->

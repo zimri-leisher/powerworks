@@ -1,3 +1,3 @@
 package level
 
-data class LevelGeneratorSettings(val widthTiles: Int, val heightTiles: Int)
+data class LevelGeneratorSettings(val widthTiles: Int = 256, val heightTiles: Int = 256)

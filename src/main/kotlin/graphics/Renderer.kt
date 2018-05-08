@@ -6,7 +6,7 @@ import java.awt.geom.AffineTransform
 
 object Renderer {
 
-    private var defaultClip = Rectangle(0, 0, Game.WIDTH * Game.SCALE, Game.HEIGHT * Game.SCALE)
+    var defaultClip = Rectangle(Game.WIDTH * Game.SCALE, Game.HEIGHT * Game.SCALE)
 
     /**
      * The x pixel that is added to render calls
