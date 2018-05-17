@@ -1,5 +1,7 @@
 package misc
 
+import graphics.TaggedText
+import graphics.TextTagType
 import item.Inventory
 import item.ItemType
 import kotlinx.coroutines.experimental.Deferred
@@ -12,7 +14,11 @@ import kotlin.system.measureNanoTime
 import kotlin.system.measureTimeMillis
 
 fun main(args: Array<String>) {
-    asyncTest()
+    textTagTest()
+}
+
+fun textTagTest() {
+    println(TaggedText.parse("testing layer 1<color=red>testing layer 2<size=20>testing layer 3</size></color> final test"))
 }
 
 fun asyncTest() {

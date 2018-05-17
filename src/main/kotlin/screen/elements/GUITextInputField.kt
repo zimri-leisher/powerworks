@@ -1,6 +1,6 @@
 package screen.elements
 
-import graphics.Font
+import graphics.TextManager
 import graphics.Renderer
 import io.InputManager
 import io.PressType
@@ -11,8 +11,10 @@ class GUITextInputField(parent: RootGUIElement, name: String,
                         xAlignment: () -> Int, yAlignment: () -> Int,
                         widthAlignment: () -> Int, heightAlignment: () -> Int,
                         var prompt: String = "",
+                        defaultValue: String = "",
                         val inputRule: (Char) -> Boolean = { true },
                         val onPressEnter: GUITextInputField.(String) -> Unit = {},
+                        val onEnterChar: GUITextInputField.(String) -> Unit = {},
                         var limitTextLength: Boolean = true,
                         open: Boolean = false,
                         layer: Int = parent.layer + 1) :
@@ -33,7 +35,7 @@ class GUITextInputField(parent: RootGUIElement, name: String,
                     InputManager.textHandler = null
             }
         }
-    var text = StringBuilder()
+    var text = StringBuilder(defaultValue)
     var highlightStart = -1
     var highlightEnd = -1
 
@@ -53,7 +55,7 @@ class GUITextInputField(parent: RootGUIElement, name: String,
     private fun getIndexOfTextAt(xPixel: Int): Int {
         val relXPixel = xPixel - this.xPixel
         var index = 0
-        while (index * Font.getFont().charWidth <= relXPixel) {
+        while (index * TextManager.getFont().charWidth <= relXPixel) {
             index++
         }
         return Math.min(index, text.length)
@@ -61,8 +63,9 @@ class GUITextInputField(parent: RootGUIElement, name: String,
 
     override fun handleChar(c: Char) {
         if (inputRule(c)) {
-            if((limitTextLength && widthPixels / Font.getFont().charWidth > cursorIndex) || !limitTextLength) {
+            if((limitTextLength && widthPixels / TextManager.getFont().charWidth > cursorIndex) || !limitTextLength) {
                 text.insert(cursorIndex, c)
+                onEnterChar(text.toString())
                 cursorIndex++
             }
         }
@@ -100,11 +103,12 @@ class GUITextInputField(parent: RootGUIElement, name: String,
         Renderer.renderFilledRectangle(xPixel, yPixel, widthPixels, heightPixels, BOX_COLOR)
         Renderer.setClip(xPixel, yPixel, widthPixels, heightPixels)
         if (text.isNotEmpty()) {
-            Renderer.renderText(text, xPixel, yPixel, color = 0x1D1D1D)
+            // TODO add color
+            Renderer.renderText(text, xPixel, yPixel)
             if (showCursor)
-                Renderer.renderFilledRectangle(xPixel + Font.getFont().charWidth * cursorIndex, yPixel + 1, 1, Font.getFont().charHeight - 2, color = 0x1D1D1D)
+                Renderer.renderFilledRectangle(xPixel + TextManager.getFont().charWidth * cursorIndex, yPixel + 1, 1, TextManager.getFont().charHeight - 2, color = 0x1D1D1D)
         } else {
-            Renderer.renderText(prompt, xPixel, yPixel, color = 0xC8C6BB)
+            Renderer.renderText(prompt, xPixel, yPixel)
         }
         Renderer.resetClip()
     }

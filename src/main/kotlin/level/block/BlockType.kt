@@ -9,30 +9,24 @@ import graphics.Texture
 import item.Inventory
 import item.ItemType
 import level.Hitbox
+import level.LevelObjectTexture
+import level.LevelObjectTextures
 import level.LevelObjectType
 import level.tube.TubeBlock
 import resource.ResourceNode
 import resource.ResourceType
 
-data class BlockTexture(val texture: Texture, val xPixelOffset: Int = 0, val yPixelOffset: Int = 0)
-
-class BlockTextures(private vararg val textures: BlockTexture) {
-    operator fun get(i: Int) = textures[Math.min(i, textures.lastIndex)]
-    operator fun iterator() = textures.iterator()
-}
-
 open class BlockType<T : Block>(init: BlockType<T>.() -> Unit = {}) : LevelObjectType<T>() {
 
-    var textures = BlockTextures(BlockTexture(Image.Misc.ERROR))
+    var textures = LevelObjectTextures(LevelObjectTexture(Image.Misc.ERROR))
     var name = "Error"
     var widthTiles = 1
     var heightTiles = 1
-    var requiresUpdate = false
-    var hitbox = Hitbox.TILE
     var nodesTemplate = BlockNodesTemplate.NONE
 
     init {
         instantiate = { xTile, yTile, rotation -> DefaultBlock(this as BlockType<DefaultBlock>, xTile, yTile, rotation) as T }
+        hitbox = Hitbox.TILE
         init()
         ALL.add(this)
     }
@@ -44,7 +38,7 @@ open class BlockType<T : Block>(init: BlockType<T>.() -> Unit = {}) : LevelObjec
         val ERROR = BlockType<DefaultBlock>()
         val TUBE = BlockType<TubeBlock> {
             name = "Tube"
-            textures = BlockTextures(BlockTexture(Image.Block.TUBE_2_WAY_VERTICAL))
+            textures = LevelObjectTextures(LevelObjectTexture(Image.Block.TUBE_2_WAY_VERTICAL))
             instantiate = { xTile, yTile, rotation -> TubeBlock(xTile, yTile) }
         }
     }
@@ -68,7 +62,7 @@ open class MachineBlockType<T : MachineBlock>(init: MachineBlockType<T>.() -> Un
         val MINER = MachineBlockType<MinerBlock> {
             name = "Miner"
             instantiate = { xTile, yTile, rotation -> MinerBlock(xTile, yTile, rotation) }
-            textures = BlockTextures(BlockTexture(LocalAnimation(SyncAnimation.MINER, true), yPixelOffset = 32))
+            textures = LevelObjectTextures(LevelObjectTexture(LocalAnimation(SyncAnimation.MINER, true), yPixelOffset = 32))
             widthTiles = 2
             heightTiles = 2
             requiresUpdate = true
@@ -78,6 +72,13 @@ open class MachineBlockType<T : MachineBlock>(init: MachineBlockType<T>.() -> Un
                         ResourceNode<ItemType>(0, 0, 0, false, true, ResourceType.ITEM)
                 )
             }
+        }
+
+        val ROBOT_FACTORY = MachineBlockType<RobotFactoryBlock> {
+            name = "Robot Factory"
+            instantiate = { xTile, yTile, rotation -> RobotFactoryBlock(xTile, yTile, rotation) }
+            widthTiles = 3
+            heightTiles = 3
         }
     }
 }
@@ -97,7 +98,7 @@ class CrafterBlockType(init: CrafterBlockType.() -> Unit) : MachineBlockType<Cra
             name = "Crafter"
             hitbox = Hitbox.TILE2X2
             instantiate = { xTile, yTile, rotation -> CrafterBlock(this, xTile, yTile, rotation) }
-            textures = BlockTextures(BlockTexture(Image.Block.CRAFTER, yPixelOffset = 25))
+            textures = LevelObjectTextures(LevelObjectTexture(Image.Block.CRAFTER, yPixelOffset = 25))
             requiresUpdate = true
             nodesTemplate = BlockNodesTemplate(widthTiles, heightTiles) {
                 val internalInventory = Inventory(internalStorageSize, 1)
@@ -132,14 +133,14 @@ class ChestBlockType(init: ChestBlockType.() -> Unit) : BlockType<ChestBlock>() 
         val CHEST_SMALL = ChestBlockType {
             name = "Small chest"
             invName = "Small chest"
-            textures = BlockTextures(BlockTexture(Image.Block.CHEST_SMALL, yPixelOffset = 16))
+            textures = LevelObjectTextures(LevelObjectTexture(Image.Block.CHEST_SMALL, yPixelOffset = 16))
             invWidth = 8
             invHeight = 3
         }
         val CHEST_LARGE = ChestBlockType {
             name = "Large chest"
             invName = "Large chest"
-            textures = BlockTextures(BlockTexture(Image.Block.CHEST_LARGE, yPixelOffset = 16))
+            textures = LevelObjectTextures(LevelObjectTexture(Image.Block.CHEST_LARGE, yPixelOffset = 16))
             invWidth = 8
             invHeight = 6
         }

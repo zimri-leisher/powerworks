@@ -8,7 +8,7 @@ class GUIButton(parent: RootGUIElement,
                 name: String,
                 xAlignment: () -> Int, yAlignment: () -> Int,
                 text: String,
-                widthAlignment: () -> Int = { if (Font.getStringBounds(text).width > WIDTH - 4) Font.getStringBounds(text).width + 4 else WIDTH }, heightAlignment: () -> Int = { HEIGHT },
+                widthAlignment: () -> Int = { if (TextManager.getStringBounds(text).width > WIDTH - 4) TextManager.getStringBounds(text).width + 4 else WIDTH }, heightAlignment: () -> Int = { HEIGHT },
                 private var onPress: () -> (Unit) = {}, private var onRelease: () -> (Unit) = {}, open: Boolean = false,
                 layer: Int = parent.layer + 1) :
         GUIElement(parent, name, xAlignment, yAlignment, widthAlignment, heightAlignment, open, layer) {
@@ -17,7 +17,7 @@ class GUIButton(parent: RootGUIElement,
                 name: String,
                 xPixel: Int, yPixel: Int,
                 text: String,
-                widthPixels: Int = if (Font.getStringBounds(text).width > WIDTH - 4) Font.getStringBounds(text).width + 4 else WIDTH, heightPixels: Int = HEIGHT,
+                widthPixels: Int = if (TextManager.getStringBounds(text).width > WIDTH - 4) TextManager.getStringBounds(text).width + 4 else WIDTH, heightPixels: Int = HEIGHT,
                 onPress: () -> Unit = {}, onRelease: () -> Unit = {}, open: Boolean = false,
                 layer: Int = parent.layer + 1) :
             this(parent, name, {xPixel}, {yPixel}, text, {widthPixels}, {heightPixels}, onPress, onRelease, open, layer)
@@ -29,7 +29,7 @@ class GUIButton(parent: RootGUIElement,
             Image(Utils.modify(Utils.genRectangle(widthPixels, heightPixels), ImageParams(rotation = 2))))
     // 0: unhighlighted, 1: highlighted, 2: clicked
     var currentTexture: Texture = textures[0]
-    var text = GUIText(this, name + " text", 0, 0, text, TEXT_SIZE, open = open).apply { transparentToInteraction = true }
+    var text = GUIText(this, name + " text", 0, 0, text, open = open).apply { transparentToInteraction = true }
 
     init {
         this.text.transparentToInteraction = true
@@ -81,6 +81,6 @@ class GUIButton(parent: RootGUIElement,
     companion object {
         val WIDTH = 64
         val HEIGHT = 16
-        val TEXT_SIZE = Font.DEFAULT_SIZE
+        val TEXT_SIZE = TextManager.DEFAULT_SIZE
     }
 }

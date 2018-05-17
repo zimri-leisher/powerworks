@@ -28,6 +28,7 @@ object RecipeSelectorGUI : GUIWindow("Recipe selector", 20, 20, 100, 120, window
                 }
             }, layer = display.layer + 2)
         }
+        generateCloseButton(background.layer + 1)
         generateDragGrip(background.layer + 1)
     }
 

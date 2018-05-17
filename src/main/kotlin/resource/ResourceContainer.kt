@@ -24,7 +24,7 @@ abstract class ResourceContainer<R : ResourceType>(val resourceTypeID: Int, var 
 
     /**
      * Adds the specified resource with the specified quantity to this node, and notifies listeners of this event
-     * @param checkIfAble whether or not to check with spaceFor, isValid and additionRule. Set to false if you already know there is space, the resource is valid and it matches the addition rule
+     * @param checkIfAble whether or not to check with spaceFor, isRightType and additionRule. Set to false if you already know there is space, the resource is valid and it matches the addition rule
      * @param from the node that is adding to this, null if none
      * @return true on successful addition
      */
@@ -33,13 +33,13 @@ abstract class ResourceContainer<R : ResourceType>(val resourceTypeID: Int, var 
     /**
      * If this is able to accept the specified resource in the specified quantity
      *
-     * *NOTE - this assumes resource is of the correct type so as to avoid checking the type twice when calling add. Should be used in conjuction with isValid if you don't know its validity already
+     * *NOTE - this assumes resource is of the correct type so as to avoid checking the type twice when calling add. Should be used in conjuction with isRightType if you don't know its validity already
      */
     abstract fun spaceFor(resource: ResourceType, quantity: Int = 1): Boolean
 
     /**
      * Removes the specified resource with the specified quantity from this node, and notifies listeners of this event
-     * @param checkIfAble whether or not to check with contains, isValid and removalRule. Set to false if you already know there are sufficient amounts, the resource is valid and it matches the removal rule
+     * @param checkIfAble whether or not to check with contains, isRightType and removalRule. Set to false if you already know there are sufficient amounts, the resource is valid and it matches the removal rule
      * @param to the node that is removing from this, null if none
      * @return true on successful removal
      */
@@ -48,7 +48,7 @@ abstract class ResourceContainer<R : ResourceType>(val resourceTypeID: Int, var 
     /**
      * If this has the specified resource in the specified quantity
      *
-     * *NOTE* - this assumes resource is of the correct type so as to avoid checking the type twice when calling remove. Should be used in conjuction with isValid if you don't know its validity already
+     * *NOTE* - this assumes resource is of the correct type so as to avoid checking the type twice when calling remove. Should be used in conjuction with isRightType if you don't know its validity already
      */
     abstract fun contains(resource: ResourceType, quantity: Int = 1): Boolean
 

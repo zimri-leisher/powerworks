@@ -1,13 +1,17 @@
 package level.living
 
 import level.Hitbox
+import level.LevelObjectTextures
 import level.LevelObjectType
 import level.moving.MovingObject
 
-class LivingType<T : LivingObject>(initializer: () -> Unit) : LevelObjectType<T>() {
+open class LivingType<T : LivingObject>(initializer: () -> Unit) : LevelObjectType<T>() {
     var maxHealth = 100
-    var hitbox = Hitbox.TILE
+    var textures = LevelObjectTextures()
 
+    init {
+        initializer()
+    }
 }
 
 abstract class LivingObject(type: LivingType<out LivingObject>, xPixel: Int, yPixel: Int, rotation: Int = 0) : MovingObject(type, xPixel, yPixel, rotation, type.hitbox) {

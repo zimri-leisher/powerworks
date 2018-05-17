@@ -30,7 +30,7 @@ object FileManager {
         ScreenManager.render()
         Renderer.g2d.dispose()
         val calInstance = Calendar.getInstance()
-        val fileName = "${fileSystem.getPath(GameDirectoryIdentifier.SCREENSHOTS)}/${calInstance.get(Calendar.MONTH) + 1}-${calInstance.get(Calendar.DATE)}-${calInstance.get(Calendar.YEAR)}"
+        val fileName = "${fileSystem.getPath(GameDirectoryIdentifier.SCREENSHOTS)}/${calInstance.get(Calendar.DATE) + 1}-${calInstance.get(Calendar.MONTH)}-${calInstance.get(Calendar.YEAR)}"
         var i = 0
         var file = File(fileName + " #$i.png")
         while (file.exists()) {

@@ -17,13 +17,13 @@ object DebugOverlay : GUIWindow("Debug overlay", 0, 0, 0, 0, windowGroup = Scree
         transparentToInteraction = true
         InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.DEBUG)
         group = AutoFormatGUIGroup(rootChild, "Debug overlay text auto format group", 0, 0, initializerList = {
-            GUIText(this, "Debug overlay name text", 0, 0, "Debug information:", color = 0x45f442)
+            GUIText(this, "Debug overlay name text", 0, 0, "Debug information:")
         }, yPixelSeparation = 4, accountForChildHeight = true)
     }
 
     /**
      * If this has not already been set before, it will create a new section for it. Otherwise, it updates the previous section
-     * @param the name of the info
+     * @param key the name of the info
      * @param value the value to be displayed
      */
     fun setInfo(key: String, value: String) {

@@ -3,7 +3,7 @@ package main
 import audio.AudioManager
 import data.FileManager
 import data.FileSystem
-import graphics.Font
+import graphics.TextManager
 import graphics.LocalAnimation
 import graphics.Renderer
 import graphics.SyncAnimation
@@ -102,7 +102,7 @@ object Game : Canvas(), Runnable, ControlPressHandler {
         addMouseListener(InputManager)
         AudioManager.load()
         cursor = clearCursor
-        Font
+        TextManager
         InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.TAKE_SCREENSHOT, Control.TOGGLE_RESOURCE_NODES_INFO, Control.TOGGLE_RENDER_HITBOXES, Control.TOGGLE_SCREEN_DEBUG_INFO, Control.TOGGLE_CHUNK_INFO, Control.TOGGLE_INVENTORY, Control.TOGGLE_DEBUG_TUBE_GROUP_INFO)
         // the main menu GUI is by default open, but it won't get initialized till we call it somewhere
         MainMenuGUI

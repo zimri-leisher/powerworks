@@ -11,12 +11,12 @@ import java.io.IOException
 
 data class FontInfo(val font: Font, val charWidth: Int, val charHeight: Int)
 
-object Font {
+object TextManager {
 
     private val defaultFontRenderContext = FontRenderContext(null, false, false)
     private val fonts = mutableMapOf<Int, FontInfo>()
     private lateinit var defaultFont: Font
-    const val DEFAULT_SIZE = 20;
+    const val DEFAULT_SIZE = 20
     private const val TESTING_STRING = "1234567890qwertyuiopasdfghjklzxcvbnm`=[]\\;',./QWERTYUIOPASDFGHJLZXCVBNM{}|:\"<>?"
 
     init {
@@ -60,11 +60,11 @@ object Font {
     /**
      * @return the width and height of the given string at the given size, including newlines and assuming monospacing
      */
-    fun getStringBounds(s: String, size: Int = DEFAULT_SIZE): Rectangle {
+    fun getStringBounds(s: String): Rectangle {
         if(s.isEmpty())
             return Rectangle(0, 0)
         val lines = s.split("\n")
-        val f = getFont(size)
+        val f = getFont()
         return Rectangle(lines.maxBy { it.length }!!.length * f.charWidth, lines.size * f.charHeight)
     }
 }

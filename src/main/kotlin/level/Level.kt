@@ -90,6 +90,7 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
     var mouseLevelXPixel = 0
     var mouseLevelYPixel = 0
 
+    // TODO redo this with LevelOutputStream and such
     private fun DataOutputStream.writeAndNewline(s: Any?) {
         writeChars(s.toString())
         writeChars("\n")
@@ -224,17 +225,6 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
         DebugOverlay.setInfo("${view.name} tile render count", count.toString())
     }
 
-    private fun renderNodeDebug(n: ResourceNode<*>) {
-        val xSign = GeometryHelper.getXSign(n.dir)
-        val ySign = GeometryHelper.getYSign(n.dir)
-        if (n.allowOut) {
-            Renderer.renderTexture(Image.Misc.THIN_ARROW, (n.xTile shl 4) + 4 + 8 * xSign, (n.yTile shl 4) + 4 + 8 * ySign, RenderParams(rotation = 90f * n.dir))
-        }
-        if (n.allowIn) {
-            Renderer.renderTexture(Image.Misc.THIN_ARROW, (n.xTile shl 4) + 4 + 8 * xSign, (n.yTile shl 4) + 4 + 8 * ySign, RenderParams(rotation = 90f * GeometryHelper.getOppositeAngle(n.dir)))
-        }
-    }
-
     fun update() {
         var count = 0
         TubeBlockGroup.update()
@@ -250,6 +240,18 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
         updateGhostBlock()
         updateSelectedLevelObject()
         DebugOverlay.setInfo("Loaded chunks", count.toString())
+    }
+
+    // Most of these functions below are messy but they are only used here and only for simplifying boilerplate
+    private fun renderNodeDebug(n: ResourceNode<*>) {
+        val xSign = GeometryHelper.getXSign(n.dir)
+        val ySign = GeometryHelper.getYSign(n.dir)
+        if (n.allowOut) {
+            Renderer.renderTexture(Image.Misc.THIN_ARROW, (n.xTile shl 4) + 4 + 8 * xSign, (n.yTile shl 4) + 4 + 8 * ySign, RenderParams(rotation = 90f * n.dir))
+        }
+        if (n.allowIn) {
+            Renderer.renderTexture(Image.Misc.THIN_ARROW, (n.xTile shl 4) + 4 + 8 * xSign, (n.yTile shl 4) + 4 + 8 * ySign, RenderParams(rotation = 90f * GeometryHelper.getOppositeAngle(n.dir)))
+        }
     }
 
     private fun updateChunksBeingRendered() {
@@ -293,6 +295,8 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
     }
 
     // Will I know what I did at 3:16 AM later? Hopefully. Right now this seems reasonable
+
+    // older Zim says it's good enough and does the job. Because not used anywhere else, no real problems keeping this
 
     override fun onMouseMove(pXPixel: Int, pYPixel: Int) {
         updateViewBeingInteractedWith()
@@ -551,7 +555,6 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
         }
 
         fun removeAll(xTile: Int, yTile: Int, predicate: (ResourceNode<*>) -> Boolean = { true }) {
-            val c = Chunks.getFromTile(xTile, yTile)
             getAll(xTile, yTile, predicate).forEach { remove(it) }
         }
     }
@@ -584,6 +587,11 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
 
         val levelInfos = mutableListOf<LevelInfo>()
 
+        init {
+            FileManager.fileSystem.registerDirectoryChangeWatcher(this, FileManager.fileSystem.getPath(GameDirectoryIdentifier.SAVES))
+            indexLevels()
+        }
+
         fun exists(levelName: String) = levelInfos.any { it.name == levelName }
 
         /**
@@ -595,6 +603,7 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
 
         override fun onDirectoryChange(dir: Path) {
             if (dir == FileManager.fileSystem.getPath(GameDirectoryIdentifier.SAVES)) {
+                println("directory changed")
                 indexLevels()
             }
         }

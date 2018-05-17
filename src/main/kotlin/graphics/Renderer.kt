@@ -1,7 +1,10 @@
 package graphics
 
 import main.Game
+import screen.Mouse.xPixel
+import screen.Mouse.yPixel
 import java.awt.*
+import java.awt.SystemColor.text
 import java.awt.geom.AffineTransform
 
 object Renderer {
@@ -222,17 +225,21 @@ object Renderer {
 
     /**
      * Renders the toString() of the given object at the x and y pixel with the given size and color, accounting for newlines
+     * @param ignoreTags whether or not to pay attention to tags
      */
-    fun renderText(text: Any?, xPixel: Int, yPixel: Int, size: Int = Font.DEFAULT_SIZE, color: Int = 0xffffff) {
-        val f = Font.getFont(size)
-        g2d.font = f.font
-        g2d.color = Color(color)
-        val s = text.toString()
-        if (s.contains("\n")) {
-            s.split("\n").forEachIndexed { index, string ->
-                g2d.drawString(string, (xPixel + xPixelOffset) * Game.SCALE, (yPixel + yPixelOffset + f.charHeight * index) * Game.SCALE)
-            }
-        } else
-            g2d.drawString(s, (xPixel + xPixelOffset) * Game.SCALE, (yPixel + yPixelOffset + f.charHeight) * Game.SCALE)
+    fun renderText(text: Any?, xPixel: Int, yPixel: Int, ignoreTags: Boolean = true) {
+        if(ignoreTags) {
+            val f = TextManager.getFont()
+            g2d.font = f.font
+            g2d.color = Color(0xFFFFFF)
+            val s = text.toString()
+            if (s.contains("\n")) {
+                s.split("\n").forEachIndexed { index, string ->
+                    g2d.drawString(string, (xPixel + xPixelOffset) * Game.SCALE, (yPixel + yPixelOffset + f.charHeight * index) * Game.SCALE)
+                }
+            } else
+                g2d.drawString(s, (xPixel + xPixelOffset) * Game.SCALE, (yPixel + yPixelOffset + f.charHeight) * Game.SCALE)
+        } else {
+        }
     }
 }

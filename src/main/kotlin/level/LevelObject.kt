@@ -4,12 +4,31 @@ import graphics.Renderer
 import main.Game
 import java.io.DataOutputStream
 
-abstract class LevelObject protected constructor(open val type: LevelObjectType<out LevelObject>, open val xPixel: Int, open val yPixel: Int, var rotation: Int = 0, val hitbox: Hitbox, requiresUpdate: Boolean = true) {
+abstract class LevelObject protected constructor(
+        open val type: LevelObjectType<out LevelObject>,
+        open val xPixel: Int, open val yPixel: Int,
+        rotation: Int = 0,
+        /**
+         * Should be the default (unrotated) instance of the hitbox.
+         */
+        hitbox: Hitbox = type.hitbox,
+        requiresUpdate: Boolean = type.requiresUpdate) {
 
     open val xTile = xPixel shr 4
     open val yTile = yPixel shr 4
-    open val xChunk = xTile shr 3
-    open val yChunk = yTile shr 3
+    open val xChunk = xTile shr CHUNK_TILE_EXP
+    open val yChunk = yTile shr CHUNK_TILE_EXP
+
+    var hitbox = Hitbox.rotate(hitbox, rotation)
+        private set
+
+    var rotation = rotation
+        set(value) {
+            if(field != value) {
+                field = value
+                hitbox = Hitbox.rotate(type.hitbox, value)
+            }
+        }
 
     /**
      * If this has been added to the level
@@ -34,6 +53,10 @@ abstract class LevelObject protected constructor(open val type: LevelObjectType<
                 c.updatesRequired!!.add(this)
             }
         }
+
+    init {
+
+    }
 
     open fun render() {
         if (Game.RENDER_HITBOXES)

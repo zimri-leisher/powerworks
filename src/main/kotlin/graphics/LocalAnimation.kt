@@ -2,6 +2,10 @@ package graphics
 
 import java.awt.image.BufferedImage
 
+/**
+ * An animation that is not necessarily in sync with all other instances of itself. This is handy for machines, which, depending on when they
+ * are turned on and when they are placed, may not always be running at the same place
+ */
 class LocalAnimation(val animation: SyncAnimation, var playing: Boolean = false, var speed: Float = 1f): Texture {
     override var currentImage: BufferedImage = animation.images[0].currentImage
     override val widthPixels: Int

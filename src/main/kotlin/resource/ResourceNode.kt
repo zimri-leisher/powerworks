@@ -11,7 +11,7 @@ class ResourceNode<R : ResourceType>(val xTile: Int, val yTile: Int, val dir: In
     /**
      * @return whether the resource is of the right type. Does not check container or attached node for anything
      */
-    fun isValid(resource: ResourceType) = resource.typeID == resourceTypeID
+    fun isRightType(resource: ResourceType) = resource.typeID == resourceTypeID
 
     /**
      * @return whether the container contains adequate amounts of it. If there is no container, it will return false
@@ -44,7 +44,7 @@ class ResourceNode<R : ResourceType>(val xTile: Int, val yTile: Int, val dir: In
      * @return true if the resources were moved
      */
     fun input(resource: ResourceType, quantity: Int, checkIfAble: Boolean = true): Boolean {
-        if (!isValid(resource))
+        if (!isRightType(resource))
             return false
         if (checkIfAble) {
             if (!canInputToContainer(resource, quantity)) {
@@ -59,7 +59,7 @@ class ResourceNode<R : ResourceType>(val xTile: Int, val yTile: Int, val dir: In
      * @return true if the resources were moved
      */
     fun output(resource: ResourceType, quantity: Int, checkIfAble: Boolean = true): Boolean {
-        if (!isValid(resource)) {
+        if (!isRightType(resource)) {
             return false
         }
         if (checkIfAble)

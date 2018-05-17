@@ -12,6 +12,10 @@ interface DirectoryChangeWatcher {
 
 /**
  * Creates a file system at the given base path
+ *
+ * Useful for maintaining specific file structures determined at runtime.
+ * @see FileManager
+ *
  * @param closure executes inside of the directory at the base path, allowing you to immediately specify directories
  */
 class FileSystem(basePath: Path, baseIdentifier: DirectoryIdentifier? = null, closure: Directory.() -> Unit = {}) {
@@ -51,6 +55,21 @@ class FileSystem(basePath: Path, baseIdentifier: DirectoryIdentifier? = null, cl
     }
 
     /**
+     * Creates a directory inside of the base directory of this FileSystem
+     * @param directoryPath the relative path (the path from the base directory to the new directory). Multiple length paths, like 'foo/bar/test', are allowed. If the directoryIdentifier parameter is not null, only the last folder will be given the identifier. Closure will only be called on the last folder
+     * @param directoryIdentifier the DirectoryIdentifier of this directory. If null, it has none. If not null, you can get the path to this directory by calling FileSystem.getPath with the relevant DirectoryIdentifier
+     * @param create whether or not to immediately create the directories as they are declared. If false, you can use FileSystem.createAllDirectories or ensureDirectoryExists to do this later
+     * @param closure a lambda allowing multiple directories to be chained together. For example,
+     *                directory("test") {
+     *                  directory("foo")
+     *                }
+     *                creates a directory named test with another inside of it named foo
+     */
+    fun directory(directoryPath: Path, directoryIdentifier: DirectoryIdentifier? = null, create: Boolean = true, closure: Directory.() -> Unit = {}) {
+        baseDir.directory(directoryPath, directoryIdentifier, create, closure)
+    }
+
+    /**
      * If the given identifier exists, does nothing, otherwise, it creates the relevant directories
      */
     fun ensureDirectoryExists(id: DirectoryIdentifier) {
@@ -64,6 +83,7 @@ class FileSystem(basePath: Path, baseIdentifier: DirectoryIdentifier? = null, cl
             return Paths.get(JAR_PATH)
         if(dir == GameDirectoryIdentifier.TEMP)
             return Paths.get(TEMP_DIR)
+
         fun search(d: Directory): Path? {
             if (d.name == dir)
                 return d.fullPath
@@ -101,7 +121,7 @@ class FileSystem(basePath: Path, baseIdentifier: DirectoryIdentifier? = null, cl
 
         val JAR_PATH = Game::class.java.protectionDomain.codeSource.location.toURI().path.drop(1)
         val ENCLOSING_DIR = JAR_PATH.substring(0 until JAR_PATH.lastIndexOf("/"))
-        val TEMP_DIR = System.getProperty("java.io.tmpdir")
+        val TEMP_DIR = System.getProperty("java.io.tmpdir")!!
 
         fun update() {
             ALL.forEach { it.update() }
@@ -111,9 +131,14 @@ class FileSystem(basePath: Path, baseIdentifier: DirectoryIdentifier? = null, cl
 
 /**
  * Just a quality of life identifier for directories. Used with getPath method of FileSystem to return the path of a directory based just on this
+ *
+ * @see GameDirectoryIdentifier
  */
 interface DirectoryIdentifier
 
+/**
+ * Represents a directory in the FileSystem.
+ */
 class Directory(val fullPath: Path, val name: DirectoryIdentifier? = null) {
 
     val children = mutableListOf<Directory>()

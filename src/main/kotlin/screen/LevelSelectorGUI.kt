@@ -1,6 +1,6 @@
 package screen
 
-import graphics.Font
+import graphics.TextManager
 import graphics.Image
 import level.Level
 import level.LevelGeneratorSettings
@@ -9,6 +9,7 @@ import level.SimplexLevel
 import main.Game
 import screen.elements.*
 import main.State
+import java.awt.FontMetrics
 import java.io.File
 import java.time.LocalDateTime
 
@@ -23,7 +24,9 @@ object LevelSelectorGUI : GUIWindow("Level selector window", { 0 }, { 0 }, { Gam
                 Game.currentLevel = SimplexLevel(levelInfo)
                 LevelSelectorGUI.open = false
                 State.setState(State.INGAME)
-            }, open = open)
+            }, open = open).run {
+                GUIText(this, name + " info text", 1, this.text.yAlignment() + TextManager.getFont().charHeight + 1, levelInfo.dateCreated).transparentToInteraction = true
+            }
         }
 
         companion object {
@@ -34,15 +37,14 @@ object LevelSelectorGUI : GUIWindow("Level selector window", { 0 }, { 0 }, { Gam
 
     init {
         adjustDimensions = true
-        Level.indexLevels()
         GUITexturePane(this.rootChild, "background texture", { 0 }, { 0 }, Image.GUI.MAIN_MENU_BACKGROUND_FILLER, { widthPixels }, { heightPixels }).run {
-            val group = AutoFormatGUIGroup(this, "level menu buttons auto format group", 4, 4, accountForChildHeight = true, yPixelSeparation = 2, initializerList = {
+            AutoFormatGUIGroup(this, "level menu buttons auto format group", 4, 4, accountForChildHeight = true, yPixelSeparation = 2, initializerList = {
                 GUIButton(this, "main menu return button", 0, 0, "Return to main menu", onRelease = {
                     this@LevelSelectorGUI.open = false
                     MainMenuGUI.open = true
                 })
             })
-            GUIText(this, "Level selector choice prompt text", { (this@LevelSelectorGUI.widthPixels - Font.getStringBounds("Select level").width) / 2 }, {4}, "Select level")
+            GUIText(this, "Level selector choice prompt text", { (this@LevelSelectorGUI.widthPixels - TextManager.getStringBounds("Select level").width) / 2 }, {4}, "Select level")
             val e = GUIDefaultTextureRectangle(this, "level info list background", { (this@LevelSelectorGUI.widthPixels - GUILevelInfoDisplay.WIDTH - GUIVerticalScrollBar.WIDTH) / 2 }, { 12 }, { GUILevelInfoDisplay.WIDTH + GUIVerticalScrollBar.WIDTH + 4 }, { heightPixels - 16 }).apply {
                 infoList = GUIElementList(this, "level info list", { 2 }, { 2 }, { widthPixels - 4 }, { heightPixels - 4 }, {
                     for (info in Level.levelInfos) {

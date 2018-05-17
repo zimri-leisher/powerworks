@@ -3,39 +3,52 @@ package level.block
 import graphics.LocalAnimation
 import graphics.Renderer
 import io.*
-import level.CHUNK_TILE_EXP
-import level.Hitbox
-import level.Level
-import level.LevelObject
+import level.*
 import main.Game
 import resource.ResourceContainerGroup
 import resource.ResourceNodeGroup
 import screen.Mouse
 import java.io.DataOutputStream
 
-abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotation: Int = 0, hitbox: Hitbox = type.hitbox, requiresUpdate: Boolean = type.requiresUpdate) : LevelObject(type, xTile shl 4, yTile shl 4, rotation, hitbox, requiresUpdate) {
+abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotation: Int = 0) : LevelObject(type, xTile shl 4, yTile shl 4, rotation, type.hitbox, type.requiresUpdate) {
 
     override val type = type
 
-    val textures: BlockTextures
+    /**
+     * The reason this exists and the render method doesn't use the textures defined in the BlockType is because this allows for us to instantiate LocalAnimations
+     * @see LocalAnimation
+     */
+    val textures: LevelObjectTextures
 
+    /**
+     * The specific local nodes as specified by BlockType.nodesTemplate
+     *
+     * For example, for a block of type MachineBlockType.MINER, this would consist of 1 node at (0, 0) relative, pointing up by default. It automatically takes rotation
+     * into account, so, for example, if that same block were placed with a rotation of 1 (rotated 90 degrees clockwise), the node would be at (1, 0) relative, pointing right.
+     */
     val nodes = ResourceNodeGroup("Block at $xTile, $yTile, type: $type's node group", type.nodesTemplate.instantiate(xTile, yTile, rotation))
+    /**
+     * The specific local containers as specified by BlockType.nodesTemplate
+     *
+     * For example, for a block of type ChestBlockType.SMALL_CHEST, this would consist of a single 8x3 inventory
+     */
     val containers = ResourceContainerGroup(nodes.getAttachedContainers())
 
     init {
-        val newTextures = mutableListOf<BlockTexture>()
+        // start local animations
+        val newTextures = mutableListOf<LevelObjectTexture>()
         for (texture in type.textures) {
             if (texture.texture is LocalAnimation) {
-                newTextures.add(BlockTexture(LocalAnimation(texture.texture.animation, texture.texture.playing, texture.texture.speed), texture.xPixelOffset, texture.yPixelOffset))
+                newTextures.add(LevelObjectTexture(LocalAnimation(texture.texture.animation, texture.texture.playing, texture.texture.speed), texture.xPixelOffset, texture.yPixelOffset))
             } else {
                 newTextures.add(texture)
             }
         }
-        textures = BlockTextures(*newTextures.toTypedArray())
+        textures = LevelObjectTextures(*newTextures.toTypedArray())
     }
 
     /**
-     * Don't forget to call super.onAddToLevel() so that the onAdjacentBlockAdd methods of adjacent blocks are called
+     * Don't forget to call super.onAddToLevel() in subclasses overriding this so that the onAdjacentBlockAdd methods of adjacent blocks are called
      */
     override fun onAddToLevel() {
         nodes.forEach { Level.add(it) }
@@ -58,7 +71,7 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotatio
     }
 
     /**
-     * Don't forget to call super.onRemoveFromLevel() so that the onAdjacentBlockRemove methods of adjacent blocks are called
+     * Don't forget to call super.onRemoveFromLevel() in subclasses overriding this so that the onAdjacentBlockRemove methods of adjacent blocks are called
      */
     override fun onRemoveFromLevel() {
         nodes.forEach { Level.remove(it) }

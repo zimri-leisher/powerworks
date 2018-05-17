@@ -9,35 +9,31 @@ import resource.ResourceList
 import resource.ResourceType
 import screen.CraftingBlockGUI
 
-class CrafterBlock(override val type: CrafterBlockType, xTile: Int, yTile: Int, rotation: Int, recipe: Recipe? = null) : MachineBlock(type, xTile, yTile, rotation), ResourceContainerChangeListener, ControlPressHandler, Crafter {
+class CrafterBlock(override val type: CrafterBlockType, xTile: Int, yTile: Int, rotation: Int) : MachineBlock(type, xTile, yTile, rotation), ResourceContainerChangeListener, ControlPressHandler, Crafter {
 
     override val crafterType: Int
         get() = type.craftingType
 
     val crafterGUI = CraftingBlockGUI(this)
-    var recipe = recipe
-        set(value) {
-            field = value
-            if (value != null) {
-                // enable inputting of resources
-                containers.forEach { it.typeRule = { true } }
-                containers.forEach { container -> container.additionRule = { resource, quantity -> resource in value.consume && container.getQuantity(resource) + quantity <= value.consume.getQuantity(resource) } }
-            } else {
-                // disable inputting
-                containers.forEach { it.typeRule = { false } }
-            }
-        }
+    var recipe: Recipe? = null
 
-    val currentResources = ResourceList()
+    private var currentResources = ResourceList()
 
     init {
-        containers.forEach { it.listeners.add(this); it.typeRule = { false } }
+        containers.forEach { container ->
+            container.listeners.add(this)
+            // only allow input if there is a recipe
+            container.typeRule = { this.recipe != null }
+            // only allow addition if there are less ingredients than required
+            container.additionRule = { resource, quantity -> this.recipe != null && resource in this.recipe!!.consume && container.getQuantity(resource) + quantity <= this.recipe!!.consume.getQuantity(resource) }
+        }
         InputManager.registerControlPressHandler(this, ControlPressHandlerType.LEVEL_THIS, Control.INTERACT)
     }
 
     override fun onContainerClear(container: ResourceContainer<*>) {
+        // basically, refresh the current resource list
         currentResources.clear()
-        containers.forEach { currentResources.addAll(it.toList()) }
+        currentResources = containers.toList()
     }
 
     override fun onContainerChange(container: ResourceContainer<*>, resource: ResourceType, quantity: Int) {
