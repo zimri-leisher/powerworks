@@ -54,15 +54,14 @@ object HUD {
                     Mouse.heldItemType = items[value]
                 }
             }
-        internal class HotbarInventory : ResourceContainer<ItemType>(ResourceType.ITEM) {
+
+        internal class HotbarInventory : ResourceContainer<ItemType>(ResourceCategory.ITEM) {
 
             val items = arrayOfNulls<ItemType>(HOTBAR_SIZE)
 
             override fun add(resource: ResourceType, quantity: Int, from: ResourceNode<*>?, checkIfAble: Boolean): Boolean {
-                if (!isValid(resource))
-                    return false
                 if (checkIfAble)
-                    if (!spaceFor(resource, quantity))
+                    if (!canAdd(resource, quantity))
                         return false
                 resource as ItemType
                 for (i in items.indices) {
@@ -74,13 +73,11 @@ object HUD {
                 throw Exception("Please use checkIfAble when calling this and not knowing if it has adequate space left")
             }
 
-            override fun spaceFor(resource: ResourceType, quantity: Int) = items.all { it != resource }
+            override fun spaceFor(resource: ItemType, quantity: Int) = items.all { it != resource }
 
             override fun remove(resource: ResourceType, quantity: Int, to: ResourceNode<*>?, checkIfAble: Boolean): Boolean {
-                if (!isValid(resource))
-                    return false
                 if (checkIfAble)
-                    if (!contains(resource, quantity))
+                    if (!canRemove(resource, quantity))
                         return false
                 for (i in items.indices) {
                     if (items[i] != null) {
@@ -93,10 +90,10 @@ object HUD {
                 throw Exception("Please use checkIfAble when calling this and not knowing if it contains adequate resources")
             }
 
-            override fun contains(resource: ResourceType, quantity: Int) = items.any { it == resource }
+            override fun contains(resource: ItemType, quantity: Int) = items.any { it == resource }
 
             override fun clear() {
-                for(i in items.indices) {
+                for (i in items.indices) {
                     items[i] = null
                 }
             }
@@ -104,8 +101,9 @@ object HUD {
             override fun copy(): ResourceContainer<ItemType> = HotbarInventory()
 
             override fun getQuantity(resource: ResourceType): Int {
-                if(contains(resource))
-                    return 1
+                if (isRightType(resource))
+                    if (contains(resource as ItemType))
+                        return 1
                 return 0
             }
 
@@ -113,8 +111,8 @@ object HUD {
 
             override fun toList(): ResourceList {
                 val map = mutableMapOf<ResourceType, Int>()
-                for(i in items) {
-                    if(i != null) {
+                for (i in items) {
+                    if (i != null) {
                         map.put(i, 1)
                     }
                 }
@@ -157,8 +155,8 @@ object HUD {
         }
 
         override fun onContainerChange(container: ResourceContainer<*>, resource: ResourceType, quantity: Int) {
-            if(container == Game.mainInv) {
-                if(selected != -1 && items[selected] != null && Game.mainInv.getQuantity(items[selected]!!) > 0)
+            if (container == Game.mainInv) {
+                if (selected != -1 && items[selected] != null && Game.mainInv.getQuantity(items[selected]!!) > 0)
                     Mouse.heldItemType = items[selected]
             }
         }

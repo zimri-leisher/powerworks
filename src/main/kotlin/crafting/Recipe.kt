@@ -32,9 +32,5 @@ class Recipe(
         val ALL = mutableListOf<Recipe>()
 
         val ERROR = Recipe(ResourceList(ItemType.ERROR to 1), ResourceList(ItemType.CHEST_SMALL to 2), ItemType.ERROR)
-
-        val TEST = Recipe(ResourceList(ItemType.IRON_ORE to 1), ResourceList(ItemType.CHEST_SMALL to 1), ItemType.CHEST_SMALL)
-
-        val TEST_2 = Recipe(ResourceList(ItemType.CHEST_SMALL to 1, ItemType.COPPER_ORE to 1), ResourceList(ItemType.CHEST_LARGE to 1), ItemType.CHEST_LARGE)
     }
 }

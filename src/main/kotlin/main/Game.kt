@@ -15,6 +15,7 @@ import level.block.BlockType
 import mod.ModManager
 import mod.ModPermissionsPolicy
 import screen.*
+import screen.elements.GUICloseButton
 import java.awt.*
 import java.awt.event.ComponentAdapter
 import java.awt.event.ComponentEvent
@@ -64,13 +65,15 @@ object Game : Canvas(), Runnable, ControlPressHandler {
 
     /* Settings */
     var THREAD_WAITING = true
-    var RENDER_HITBOXES = false
-    var CHUNK_BOUNDARIES = false
+
+    /**
+     * The current debug code that is used for displaying miscellaneous information.
+     * @see DebugCode
+     */
+    var currentDebugCode = DebugCode.NONE
+
     var LEVEL_PAUSED = false
     var PAUSE_LEVEL_IN_ESCAPE_MENU = false
-    var DEBUG_TUBE_INFO = false
-    var DEBUG_SCREEN_INFO = false
-    var RESOURCE_NODES_INFO = false
     val INVENTORY_WIDTH = 8
     val INVENTOR_HEIGHT = 6
 
@@ -103,10 +106,9 @@ object Game : Canvas(), Runnable, ControlPressHandler {
         AudioManager.load()
         cursor = clearCursor
         TextManager
-        InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.TAKE_SCREENSHOT, Control.TOGGLE_RESOURCE_NODES_INFO, Control.TOGGLE_RENDER_HITBOXES, Control.TOGGLE_SCREEN_DEBUG_INFO, Control.TOGGLE_CHUNK_INFO, Control.TOGGLE_INVENTORY, Control.TOGGLE_DEBUG_TUBE_GROUP_INFO)
+        InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.PIPE_INFO, Control.ESCAPE, Control.TURN_OFF_DEBUG_INFO, Control.TAKE_SCREENSHOT, Control.POSITION_INFO, Control.RESOURCE_NODES_INFO, Control.RENDER_HITBOXES, Control.SCREEN_INFO, Control.CHUNK_INFO, Control.TOGGLE_INVENTORY, Control.TUBE_INFO)
         // the main menu GUI is by default open, but it won't get initialized till we call it somewhere
         MainMenuGUI
-        DebugOverlay
         // just making sure these are loaded before mods load
         ItemType
         BlockType
@@ -143,8 +145,6 @@ object Game : Canvas(), Runnable, ControlPressHandler {
             lastRenderTime = now
             val thisSecond = (lastUpdateTime / 1000000000).toInt()
             if (thisSecond > lastSecondTime) {
-                DebugOverlay.setInfo("FPS", frameCount.toString())
-                DebugOverlay.setInfo("UPS", updateCount.toString())
                 lastSecondTime = thisSecond
                 secondsCount++
                 frameCount = 0
@@ -232,21 +232,24 @@ object Game : Canvas(), Runnable, ControlPressHandler {
     override fun handleControlPress(p: ControlPress) {
         if (p.pressType == PressType.PRESSED)
             when (p.control) {
+                Control.TURN_OFF_DEBUG_INFO -> currentDebugCode = DebugCode.NONE
                 Control.TAKE_SCREENSHOT -> FileManager.takeScreenshot()
-                Control.TOGGLE_RENDER_HITBOXES -> RENDER_HITBOXES = !RENDER_HITBOXES
-                Control.TOGGLE_CHUNK_INFO -> CHUNK_BOUNDARIES = !CHUNK_BOUNDARIES
-                Control.TOGGLE_RESOURCE_NODES_INFO -> RESOURCE_NODES_INFO = !RESOURCE_NODES_INFO
+                Control.RENDER_HITBOXES -> currentDebugCode = DebugCode.RENDER_HITBOXES
+                Control.CHUNK_INFO -> currentDebugCode = DebugCode.CHUNK_INFO
+                Control.RESOURCE_NODES_INFO -> currentDebugCode = DebugCode.RESOURCE_NODES_INFO
+                Control.PIPE_INFO -> currentDebugCode = DebugCode.PIPE_INFO
+                Control.TUBE_INFO -> currentDebugCode = DebugCode.TUBE_INFO
+                Control.SCREEN_INFO -> currentDebugCode = DebugCode.SCREEN_INFO
+                Control.POSITION_INFO -> currentDebugCode = DebugCode.POSITION_INFO
+                Control.ESCAPE -> {
+                    ScreenManager.openWindows.firstOrNull { window -> window.windowGroup != ScreenManager.Groups.BACKGROUND && window.windowGroup != ScreenManager.Groups.VIEW &&
+                        window.anyChild { it is GUICloseButton && it.open == true && it.actOn == window } }?.open = false
+                }
                 Control.TOGGLE_INVENTORY -> {
                     if (State.CURRENT_STATE != State.INGAME)
                         return
-                    if (!ScreenManager.Groups.INVENTORY.windows.any { it.open }) {
-                        IngameGUI.mainInvGUI.open = true
-                    } else {
-                        ScreenManager.Groups.INVENTORY.getTop { it.open }?.toggle()
-                    }
+                    IngameGUI.mainInvGUI.toggle()
                 }
-                Control.TOGGLE_DEBUG_TUBE_GROUP_INFO -> DEBUG_TUBE_INFO = !DEBUG_TUBE_INFO
-                Control.TOGGLE_SCREEN_DEBUG_INFO -> DEBUG_SCREEN_INFO = !DEBUG_SCREEN_INFO
             }
     }
 

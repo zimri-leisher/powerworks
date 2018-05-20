@@ -22,7 +22,7 @@ class State(val activate: (State) -> (Unit), val deactivate: (State) -> (Unit)) 
             // the mouse listens to changes so that if there are no more items of the selected type in the main inventory, then it will switch the type to null
             Game.mainInv.listeners.add(Mouse)
             for(i in ItemType.ALL) {
-                Game.mainInv.add(i, 10)
+                Game.mainInv.add(i, i.maxStack)
             }
             AudioManager.ears = IngameGUI.cameras[0]
             IngameGUI.open = true

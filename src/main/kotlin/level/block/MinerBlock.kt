@@ -3,7 +3,7 @@ package level.block
 import level.Level
 import level.tile.OreTile
 
-class MinerBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(MachineBlockType.MINER, xTile, yTile, rotation, true) {
+class MinerBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(MachineBlockType.MINER, xTile, yTile, rotation) {
 
     override fun onFinishWork() {
         for (x in 0 until type.widthTiles) {

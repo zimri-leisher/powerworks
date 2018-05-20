@@ -39,7 +39,7 @@ class DroppedItem(xPixel: Int, yPixel: Int, val itemType: ItemType, quantity: In
     }
 
     override fun render() {
-        Renderer.renderTextureKeepAspect(itemType.texture, xPixel, yPixel, Hitbox.DROPPED_ITEM.width, Hitbox.DROPPED_ITEM.height)
+        Renderer.renderTextureKeepAspect(itemType.icon, xPixel, yPixel, Hitbox.DROPPED_ITEM.width, Hitbox.DROPPED_ITEM.height)
         Renderer.renderText(quantity, xPixel, yPixel)
         super.render()
     }

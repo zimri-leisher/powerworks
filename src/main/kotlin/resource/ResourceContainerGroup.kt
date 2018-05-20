@@ -4,6 +4,10 @@ import java.io.DataInputStream
 import java.io.DataOutputStream
 
 class ResourceContainerGroup(val containers: List<ResourceContainer<*>>) {
+
+    val size
+        get() = containers.size
+
     /**
      * Same as the add method except gets called for each individual resource-quantity pairs
      * @return true if all were successfully added. Even if one was unable to be added, it will still try to add all the rest
@@ -11,7 +15,7 @@ class ResourceContainerGroup(val containers: List<ResourceContainer<*>>) {
     fun add(list: ResourceList, from: ResourceNode<*>? = null, checkIfAble: Boolean = true): Boolean {
         var ret = true
         for ((r, q) in list) {
-            if(!add(r, q, from, checkIfAble)) ret = false
+            if (!add(r, q, from, checkIfAble)) ret = false
         }
         return ret
     }
@@ -36,8 +40,8 @@ class ResourceContainerGroup(val containers: List<ResourceContainer<*>>) {
      */
     fun remove(list: ResourceList, to: ResourceNode<*>? = null, checkIfAble: Boolean = true): Boolean {
         var ret = true
-        for((r, q) in list) {
-            if(!remove(r, q, to, checkIfAble))
+        for ((r, q) in list) {
+            if (!remove(r, q, to, checkIfAble))
                 ret = false
         }
         return ret
@@ -50,8 +54,8 @@ class ResourceContainerGroup(val containers: List<ResourceContainer<*>>) {
      * @return true if a container had this amount and type removed from it
      */
     fun remove(resource: ResourceType, quantity: Int, to: ResourceNode<*>? = null, checkIfAble: Boolean = true): Boolean {
-        for(container in containers) {
-            if(container.remove(resource, quantity, to, checkIfAble))
+        for (container in containers) {
+            if (container.remove(resource, quantity, to, checkIfAble))
                 return true
         }
         return false

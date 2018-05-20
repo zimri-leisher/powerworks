@@ -25,7 +25,7 @@ object LevelSelectorGUI : GUIWindow("Level selector window", { 0 }, { 0 }, { Gam
                 LevelSelectorGUI.open = false
                 State.setState(State.INGAME)
             }, open = open).run {
-                GUIText(this, name + " info text", 1, this.text.yAlignment() + TextManager.getFont().charHeight + 1, levelInfo.dateCreated).transparentToInteraction = true
+                GUIText(this, name + " info text", 1, this.text.yAlignment() + TextManager.getFont().charHeight + 1, levelInfo.dateCreated, open).transparentToInteraction = true
             }
         }
 

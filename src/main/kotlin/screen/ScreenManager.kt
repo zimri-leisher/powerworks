@@ -49,11 +49,10 @@ object ScreenManager : ControlPressHandler {
         val PLAYER_UTIL = WindowGroup(3, "Player utilities")
         val HOTBAR = WindowGroup(4, "Hotbar")
         val MOUSE = WindowGroup(9999, "Mouse")
-        val DEBUG_OVERLAY = WindowGroup(10000, "Debug overlay")
     }
 
     init {
-        InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.INTERACT, Control.SHIFT_INTERACT, Control.ALT_INTERACT, Control.CONTROL_INTERACT, Control.SCROLL_UP, Control.SCROLL_DOWN, Control.DEBUG, Control.SECONDARY_INTERACT)
+        InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.INTERACT, Control.SHIFT_INTERACT, Control.ALT_INTERACT, Control.CONTROL_INTERACT, Control.SCROLL_UP, Control.SCROLL_DOWN, Control.SECONDARY_INTERACT)
     }
 
     fun render() {
@@ -183,9 +182,6 @@ object ScreenManager : ControlPressHandler {
             }
             if (t == PressType.RELEASED)
                 updateSelected()
-        }
-        if (c == Control.DEBUG && t == PressType.PRESSED) {
-            //printDebug()
         }
     }
 

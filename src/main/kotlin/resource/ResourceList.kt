@@ -1,5 +1,12 @@
 package resource
 
+/**
+ * A list of ResourceType - quantity pairs, where quantity is non zero.
+ *
+ * Used in recipes and for easy moving of large quantities of resources between nodes, containers, etc.
+ *
+ * Also has some convenience methods for consumption and addition of resources
+ */
 class ResourceList(private val resources: MutableMap<ResourceType, Int> = mutableMapOf()) {
 
     constructor(vararg pairs: Pair<ResourceType, Int>) : this(pairs.toMap().toMutableMap())

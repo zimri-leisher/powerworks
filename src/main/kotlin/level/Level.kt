@@ -16,14 +16,14 @@ import level.moving.MovingObject
 import level.tile.OreTileType
 import level.tile.Tile
 import level.tube.TubeBlockGroup
+import main.DebugCode
 import main.Game
 import misc.GeometryHelper
 import misc.Numbers
+import resource.ResourceCategory
 import resource.ResourceNode
 import resource.ResourceType
 import screen.CameraMovementListener
-import screen.DebugOverlay
-import screen.LevelSelectorGUI
 import screen.Mouse
 import screen.Mouse.DROPPED_ITEM_PICK_UP_RANGE
 import screen.elements.GUILevelView
@@ -205,7 +205,7 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
         }
          */
         val chunksInTileRectangle = Chunks.getFromTileRectangle(minX, minY, maxX - minX - 1, maxY - minY - 1)
-        if (Game.CHUNK_BOUNDARIES) {
+        if (Game.currentDebugCode == DebugCode.CHUNK_INFO) {
             for (c in chunksInTileRectangle) {
                 Renderer.renderEmptyRectangle(c.xTile shl 4, c.yTile shl 4, CHUNK_SIZE_PIXELS, CHUNK_SIZE_PIXELS)
                 Renderer.renderText("x: ${c.xChunk}, y: ${c.yChunk}", (c.xTile shl 4), (c.yTile shl 4))
@@ -213,7 +213,7 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
                 Renderer.renderText("moving objects: ${c.moving!!.size} (${c.movingOnBoundary!!.size} on boundary)", (c.xTile shl 4), (c.yTile shl 4) + 8)
             }
         }
-        if (Game.DEBUG_TUBE_INFO || Game.RESOURCE_NODES_INFO) {
+        if (Game.currentDebugCode == DebugCode.TUBE_INFO || Game.currentDebugCode == DebugCode.RESOURCE_NODES_INFO) {
             for (c in chunksInTileRectangle) {
                 for (nList in c.resourceNodes!!) {
                     for (n in nList) {
@@ -222,7 +222,6 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
                 }
             }
         }
-        DebugOverlay.setInfo("${view.name} tile render count", count.toString())
     }
 
     fun update() {
@@ -239,7 +238,6 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
         }
         updateGhostBlock()
         updateSelectedLevelObject()
-        DebugOverlay.setInfo("Loaded chunks", count.toString())
     }
 
     // Most of these functions below are messy but they are only used here and only for simplifying boilerplate
@@ -508,7 +506,7 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
 
     object ResourceNodes {
         fun <R : ResourceType> updateAttachments(o: ResourceNode<R>) {
-            val attached = get<R>(o.xTile + GeometryHelper.getXSign(o.dir), o.yTile + GeometryHelper.getYSign(o.dir), o.resourceTypeID).filter { it.dir == GeometryHelper.getOppositeAngle(o.dir) }
+            val attached = get<R>(o.xTile + GeometryHelper.getXSign(o.dir), o.yTile + GeometryHelper.getYSign(o.dir), o.resourceCategory).filter { it.dir == GeometryHelper.getOppositeAngle(o.dir) }
             if (o.allowOut && o.allowIn) {
                 o.attachedNode = attached.firstOrNull { it.allowIn && it.allowOut }
             } else if (o.allowOut) {
@@ -526,16 +524,16 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
             return ret
         }
 
-        fun <R : ResourceType> get(xTile: Int, yTile: Int, resourceTypeID: Int): List<ResourceNode<R>> {
-            return get(xTile, yTile).filter { it.resourceTypeID == resourceTypeID } as List<ResourceNode<R>>
+        fun <R : ResourceType> get(xTile: Int, yTile: Int, resourceCategory: ResourceCategory): List<ResourceNode<R>> {
+            return get(xTile, yTile).filter { it.resourceCategory == resourceCategory } as List<ResourceNode<R>>
         }
 
-        fun <R : ResourceType> getOutputs(xTile: Int, yTile: Int, resourceTypeID: Int): List<ResourceNode<R>> {
-            return get<R>(xTile, yTile, resourceTypeID).filter { it.allowOut }
+        fun <R : ResourceType> getOutputs(xTile: Int, yTile: Int, resourceCategory: ResourceCategory): List<ResourceNode<R>> {
+            return get<R>(xTile, yTile, resourceCategory).filter { it.allowOut }
         }
 
-        fun <R : ResourceType> getInputs(xTile: Int, yTile: Int, resourceTypeID: Int): List<ResourceNode<R>> {
-            return get<R>(xTile, yTile, resourceTypeID).filter { it.allowIn }
+        fun <R : ResourceType> getInputs(xTile: Int, yTile: Int, resourceCategory: ResourceCategory): List<ResourceNode<R>> {
+            return get<R>(xTile, yTile, resourceCategory).filter { it.allowIn }
         }
 
         fun getAll(xTile: Int, yTile: Int, predicate: (ResourceNode<*>) -> Boolean = { true }): MutableList<ResourceNode<*>> {
@@ -546,10 +544,10 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
             return l
         }
 
-        fun <R : ResourceType> getAll(xTile: Int, yTile: Int, resourceTypeID: Int, predicate: (ResourceNode<*>) -> Boolean = { true }): MutableList<ResourceNode<R>> {
+        fun <R : ResourceType> getAll(xTile: Int, yTile: Int, resourceCategory: ResourceCategory, predicate: (ResourceNode<*>) -> Boolean = { true }): MutableList<ResourceNode<R>> {
             val l = mutableListOf<ResourceNode<R>>()
             with(Chunks.getFromTile(xTile, yTile)) {
-                resourceNodes!!.forEach { l.addAll(it.filter { predicate(it) && it.resourceTypeID == resourceTypeID && it.xTile == xTile && it.yTile == yTile } as List<ResourceNode<R>>) }
+                resourceNodes!!.forEach { l.addAll(it.filter { predicate(it) && it.resourceCategory == resourceCategory && it.xTile == xTile && it.yTile == yTile } as List<ResourceNode<R>>) }
             }
             return l
         }
@@ -693,12 +691,11 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
         }
 
         fun remove(l: LevelObject): Boolean {
-            val c = Chunks.get(l.xChunk, l.yChunk)
             if (l.inLevel) {
                 if (l is Block) {
                     for (x in 0 until l.type.widthTiles) {
                         for (y in 0 until l.type.heightTiles) {
-                            c.removeBlock(l, l.xTile + x, l.yTile + y, (x == 0 && y == 0)) // TODO fix removing miner
+                            Chunks.getFromTile(l.xTile + x, l.yTile + y).removeBlock(l, l.xTile + x, l.yTile + y, (x == 0 && y == 0))
                         }
                     }
                     l.inLevel = false

@@ -169,7 +169,9 @@ open class GUIWindow(val name: String, xAlignment: () -> Int, yAlignment: () -> 
         return topRightGroup
     }
 
-    /* Gets the specified element by name. If checkChildren is true (default), it checks recursively */
+    /**
+     *  Gets the specified element by name. If checkChildren is true (default), it checks recursively
+     */
     fun getChild(name: String, checkChildren: Boolean = true): RootGUIElement? {
         var r = if (rootChild.name == name) rootChild else null
         if (checkChildren) {
@@ -181,7 +183,9 @@ open class GUIWindow(val name: String, xAlignment: () -> Int, yAlignment: () -> 
         return r
     }
 
-    /* Gets the specified element by id (unique for each element). If checkChildren is true (default), it checks recursively */
+    /**
+     *  Gets the specified element by id (unique for each element). If checkChildren is true (default), it checks recursively
+     */
     fun getChild(id: Int, checkChildren: Boolean = true): RootGUIElement? {
         var r = if (rootChild.id == id) rootChild else null
         if (checkChildren) {
@@ -191,6 +195,20 @@ open class GUIWindow(val name: String, xAlignment: () -> Int, yAlignment: () -> 
             }
         }
         return r
+    }
+
+    fun anyChild(predicate: (RootGUIElement) -> Boolean): Boolean {
+        fun recursivelyFind(predicate: (RootGUIElement) -> Boolean, e: RootGUIElement): Boolean {
+            if(predicate(e))
+                return true
+            e.children.forEach {
+                if(recursivelyFind(predicate, it))
+                    return true
+            }
+            return false
+        }
+
+        return recursivelyFind(predicate, rootChild)
     }
 
     fun toggle() {

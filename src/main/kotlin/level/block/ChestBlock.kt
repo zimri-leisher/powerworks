@@ -4,12 +4,13 @@ import io.*
 import item.Inventory
 import item.ItemType
 import main.Game
+import resource.ResourceCategory
 import resource.ResourceType
 import screen.InventoryGUI
 
 class ChestBlock(override val type: ChestBlockType, xTile: Int, yTile: Int, rotation: Int) : Block(type, xTile, yTile, rotation), ControlPressHandler {
 
-    val inv = nodes.getAttachedContainers<ItemType>(ResourceType.ITEM).first() as Inventory
+    val inv = nodes.getAttachedContainers<ItemType>(ResourceCategory.ITEM).first() as Inventory
     val invGUI = InventoryGUI("Chest at ${this.xTile}, ${this.yTile}'s inventory gui", type.invName, inv, Game.WIDTH / 2, Game.HEIGHT / 2)
 
     init {

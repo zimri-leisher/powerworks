@@ -1,8 +1,6 @@
 package resource
 
-import java.io.DataOutputStream
-
-abstract class ResourceContainer<R : ResourceType>(val resourceTypeID: Int, var typeRule: (ResourceType) -> Boolean = { true }) {
+abstract class ResourceContainer<R : ResourceType>(val resourceCategory: ResourceCategory, var typeRule: (ResourceType) -> Boolean = { true }) {
 
     // TODO worried about forgetting checkIfAble and thus skipping add/remove rule checks, how2fix??
 
@@ -24,7 +22,9 @@ abstract class ResourceContainer<R : ResourceType>(val resourceTypeID: Int, var 
 
     /**
      * Adds the specified resource with the specified quantity to this node, and notifies listeners of this event
-     * @param checkIfAble whether or not to check with spaceFor, isRightType and additionRule. Set to false if you already know there is space, the resource is valid and it matches the addition rule
+     * @param checkIfAble whether or not to check with spaceFor, isRightType and additionRule. Set to false if you already know there is space,
+     * the resource is valid and it matches the addition rule. This function is unsafe when this parameter is false, meaning there are no guarantees as to how it will work
+     * given unexpected parameters. Use it only when certain and only for performance
      * @param from the node that is adding to this, null if none
      * @return true on successful addition
      */
@@ -32,14 +32,14 @@ abstract class ResourceContainer<R : ResourceType>(val resourceTypeID: Int, var 
 
     /**
      * If this is able to accept the specified resource in the specified quantity
-     *
-     * *NOTE - this assumes resource is of the correct type so as to avoid checking the type twice when calling add. Should be used in conjuction with isRightType if you don't know its validity already
      */
-    abstract fun spaceFor(resource: ResourceType, quantity: Int = 1): Boolean
+    abstract fun spaceFor(resource: R, quantity: Int = 1): Boolean
 
     /**
      * Removes the specified resource with the specified quantity from this node, and notifies listeners of this event
-     * @param checkIfAble whether or not to check with contains, isRightType and removalRule. Set to false if you already know there are sufficient amounts, the resource is valid and it matches the removal rule
+     * @param checkIfAble whether or not to check with contains, isRightType and removalRule. Set to false if you already know there are sufficient amounts,
+     * the resource is valid and it matches the removal rule. This function is unsafe when this parameter is false, meaning there are no guarantees as to how it will work
+     * given unexpected parameters
      * @param to the node that is removing from this, null if none
      * @return true on successful removal
      */
@@ -47,24 +47,24 @@ abstract class ResourceContainer<R : ResourceType>(val resourceTypeID: Int, var 
 
     /**
      * If this has the specified resource in the specified quantity
-     *
-     * *NOTE* - this assumes resource is of the correct type so as to avoid checking the type twice when calling remove. Should be used in conjuction with isRightType if you don't know its validity already
      */
-    abstract fun contains(resource: ResourceType, quantity: Int = 1): Boolean
+    abstract fun contains(resource: R, quantity: Int = 1): Boolean
 
     /**
      * Removes all resources from this node, and notifies listeners of this event
      */
     abstract fun clear()
 
-    fun canAdd(resource: ResourceType, quantity: Int = 1) = isValid(resource) && additionRule(resource, quantity) && spaceFor(resource, quantity)
+    fun canAdd(resource: ResourceType, quantity: Int = 1) = isRightType(resource) && additionRule(resource, quantity) && spaceFor(resource as R, quantity)
 
-    fun canRemove(resource: ResourceType, quantity: Int = 1) = isValid(resource) && removalRule(resource, quantity) && contains(resource, quantity)
+    fun canRemove(resource: ResourceType, quantity: Int = 1) = isRightType(resource) && removalRule(resource, quantity) && contains(resource as R, quantity)
 
-    fun isValid(resource: ResourceType) = resource.typeID == resourceTypeID && typeRule(resource)
+    fun isRightType(resource: ResourceType) = resource.category == resourceCategory && typeRule(resource)
 
     /**
      * Creates an identical copy of this container, including internal stored resources
+     *
+     * *NOTE* - does not copy listeners for changes
      */
     abstract fun copy(): ResourceContainer<R>
 

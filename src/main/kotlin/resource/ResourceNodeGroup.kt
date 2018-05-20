@@ -14,9 +14,9 @@ class ResourceNodeGroup(val name: String, nodes: List<ResourceNode<*>> = listOf(
     constructor(name: String, vararg nodes: ResourceNode<*>) : this(name, mutableListOf(*nodes))
 
     /**
-     * @return a list of all unique attached containers in this node group with the given resourceTypeID
+     * @return a list of all unique attached containers in this node group with the given resourceCategory
      */
-    fun <R : ResourceType> getAttachedContainers(resourceTypeID: Int) = nodes.filter { it.resourceTypeID == resourceTypeID }.mapNotNull { it.attachedContainer }.distinct() as List<ResourceContainer<R>>
+    fun <R : ResourceType> getAttachedContainers(resourceCategory: ResourceCategory) = nodes.filter { it.resourceCategory == resourceCategory }.mapNotNull { it.attachedContainer }.distinct() as List<ResourceContainer<R>>
 
     /**
      * @return a list of all unique attached containers in this node group

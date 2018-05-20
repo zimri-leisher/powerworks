@@ -4,6 +4,9 @@ import graphics.Image
 import graphics.Renderer
 import io.PressType
 
+/**
+ * If a window has this as a child, it will be able to be closed by Control.ESCAPE as well as clicking this
+ */
 class GUICloseButton(parent: RootGUIElement,
                      name: String,
                      xAlignment: () -> Int, yAlignment: () -> Int,

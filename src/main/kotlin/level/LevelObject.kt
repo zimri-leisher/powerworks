@@ -1,6 +1,7 @@
 package level
 
 import graphics.Renderer
+import main.DebugCode
 import main.Game
 import java.io.DataOutputStream
 
@@ -59,7 +60,7 @@ abstract class LevelObject protected constructor(
     }
 
     open fun render() {
-        if (Game.RENDER_HITBOXES)
+        if (Game.currentDebugCode == DebugCode.RENDER_HITBOXES)
             renderHitbox()
     }
 

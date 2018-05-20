@@ -11,5 +11,6 @@ interface Crafter {
     companion object {
         val PLAYER = 1
         val ITEM_CRAFTER = 2
+        val ROBOT_CRAFTER = 3
     }
 }

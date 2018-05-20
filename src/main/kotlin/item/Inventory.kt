@@ -1,11 +1,8 @@
 package item
 
-import resource.ResourceContainer
-import resource.ResourceList
-import resource.ResourceNode
-import resource.ResourceType
+import resource.*
 
-class Inventory(val width: Int, val height: Int, rule: (ResourceType) -> Boolean = { true }, private val items: Array<Item?> = arrayOfNulls(width * height)) : ResourceContainer<ItemType>(ResourceType.ITEM, rule) {
+class Inventory(val width: Int, val height: Int, rule: (ResourceType) -> Boolean = { true }, private val items: Array<Item?> = arrayOfNulls(width * height)) : ResourceContainer<ItemType>(ResourceCategory.ITEM, rule) {
 
     var itemCount = 0
         private set
@@ -75,8 +72,7 @@ class Inventory(val width: Int, val height: Int, rule: (ResourceType) -> Boolean
         return add(i.type, i.quantity, checkIfAble = true)
     }
 
-    override fun spaceFor(resource: ResourceType, quantity: Int): Boolean {
-        resource as ItemType
+    override fun spaceFor(resource: ItemType, quantity: Int): Boolean {
         var capacity = 0
         for (i in items.indices) {
             val item = items[i]
@@ -119,8 +115,7 @@ class Inventory(val width: Int, val height: Int, rule: (ResourceType) -> Boolean
         return remove(i.type, i.quantity)
     }
 
-    override fun contains(resource: ResourceType, quantity: Int): Boolean {
-        resource as ItemType
+    override fun contains(resource: ItemType, quantity: Int): Boolean {
         var contains = 0
         for (i in items.indices) {
             if (items[i] != null) {

@@ -6,7 +6,6 @@ import level.MovementListener
 import level.moving.MovingObject
 import main.Game
 import screen.CameraMovementListener
-import screen.DebugOverlay
 import java.awt.Rectangle
 import java.awt.Transparency
 import java.awt.image.VolatileImage
@@ -65,8 +64,6 @@ class GUILevelView(parent: RootGUIElement,
     var viewRectangle: Rectangle
 
     init {
-        DebugOverlay.setInfo(name + " zoom level", zoomLevel.toString())
-        DebugOverlay.setInfo(name + " dimensions", "width: $viewWidthPixels, height: $viewHeightPixels")
         // Only one level loaded at a time so no need for parents
         if (camera is MovingObject) {
             camera.moveListeners.add(this)
@@ -158,7 +155,6 @@ class GUILevelView(parent: RootGUIElement,
             if (zoomLevel - 1 >= MAX_ZOOM)
                 zoomLevel--
         }
-        DebugOverlay.setInfo(name + " zoom level", zoomLevel.toString())
     }
 
     companion object {

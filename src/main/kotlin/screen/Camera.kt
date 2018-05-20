@@ -1,6 +1,7 @@
 package screen
 
 import level.Hitbox
+import level.LevelObject
 import level.LevelObjectType
 import level.moving.MovingObject
 

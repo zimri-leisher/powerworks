@@ -174,7 +174,7 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotatio
                 } else if (block == null) {
                     if (p.control == Control.INTERACT && Game.currentLevel.ghostBlock != null) {
                         val gBlock = Game.currentLevel.ghostBlock!!
-                        Level.add(gBlock.type.instantiate(gBlock.xTile, gBlock.yTile, gBlock.rotation))
+                        Level.add(gBlock.type.instantiate(gBlock.xPixel, gBlock.yPixel, gBlock.rotation))
                         val h = Mouse.heldItemType!!
                         Game.mainInv.remove(h, 1)
                     }

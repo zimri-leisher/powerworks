@@ -68,11 +68,11 @@ class Chunk(val parent: Level, val xChunk: Int, val yChunk: Int) {
     }
 
     fun addResourceNode(r: ResourceNode<*>) {
-        resourceNodes!![r.resourceTypeID].add(r)
+        resourceNodes!![r.resourceCategory.ordinal].add(r)
     }
 
     fun removeResourceNode(r: ResourceNode<*>) {
-        resourceNodes!![r.resourceTypeID].remove(r)
+        resourceNodes!![r.resourceCategory.ordinal].remove(r)
     }
 
     fun update() {
@@ -91,6 +91,10 @@ class Chunk(val parent: Level, val xChunk: Int, val yChunk: Int) {
         this.movingOnBoundary = mutableListOf()
         this.droppedItems = mutableListOf()
         this.resourceNodes = arrayOf(
+                mutableListOf(),
+                mutableListOf(),
+                mutableListOf(),
+                mutableListOf(),
                 mutableListOf()
         )
         loaded = true
@@ -115,5 +119,11 @@ class Chunk(val parent: Level, val xChunk: Int, val yChunk: Int) {
 
     override fun equals(other: Any?): Boolean {
         return other is Chunk && other.xChunk == xChunk && other.yChunk == this.yChunk
+    }
+
+    override fun hashCode(): Int {
+        var result = xChunk
+        result = 31 * result + yChunk
+        return result
     }
 }

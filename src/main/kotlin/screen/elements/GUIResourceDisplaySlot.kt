@@ -12,7 +12,7 @@ class GUIResourceDisplaySlot(parent: RootGUIElement, name: String, xPixel: Int, 
         val pair = list[index]
         Renderer.renderTexture(Image.GUI.RESOURCE_DISPLAY_SLOT, xPixel, yPixel)
         if (pair != null) {
-            Renderer.renderTextureKeepAspect(pair.first.texture, xPixel, yPixel, WIDTH, HEIGHT)
+            Renderer.renderTextureKeepAspect(pair.first.icon, xPixel, yPixel, WIDTH, HEIGHT)
             Renderer.renderText(pair.second, xPixel, yPixel)
         }
     }

@@ -1,6 +1,7 @@
 package screen
 
 import graphics.Image
+import graphics.TextManager
 import graphics.Utils
 import level.block.CrafterBlock
 import screen.elements.*
@@ -9,7 +10,11 @@ import screen.elements.*
  * The GUI opened when a CrafterBlock gets clicked on
  */
 class CraftingBlockGUI(val craftingBlock: CrafterBlock) :
-        GUIWindow("Window of crafting block at ${craftingBlock.xTile}, ${craftingBlock.yTile}", 50, 30, WIDTH, HEIGHT, windowGroup = ScreenManager.Groups.INVENTORY) {
+        GUIWindow("Window of crafting block at ${craftingBlock.xTile}, ${craftingBlock.yTile}",
+                50, 30,
+                WIDTH,
+                TextManager.getFont().charHeight + GUIRecipeButton.HEIGHT + (craftingBlock.containers.size * GUIResourceDisplaySlot.HEIGHT + 14 + GUIProgressBar.HEIGHT),
+                windowGroup = ScreenManager.Groups.INVENTORY) {
 
     lateinit var progressBar: GUIProgressBar
 
@@ -35,6 +40,5 @@ class CraftingBlockGUI(val craftingBlock: CrafterBlock) :
 
     companion object {
         const val WIDTH = 80
-        const val HEIGHT = 100
     }
 }

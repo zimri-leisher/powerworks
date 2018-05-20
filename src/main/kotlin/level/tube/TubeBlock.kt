@@ -6,18 +6,21 @@ import item.ItemType
 import level.Level
 import level.block.Block
 import level.block.BlockType
+import main.DebugCode
 import main.Game
 import misc.GeometryHelper
 import misc.GeometryHelper.getOppositeAngle
 import misc.GeometryHelper.getXSign
 import misc.GeometryHelper.getYSign
 import misc.GeometryHelper.isOppositeAngle
+import resource.ResourceCategory
 import resource.ResourceNode
 import resource.ResourceType
 
 class TubeBlock(xTile: Int, yTile: Int) : Block(BlockType.TUBE, xTile, yTile) {
 
     var state = TubeState.NONE
+        private set
 
     val tubeConnections = arrayOfNulls<TubeBlock>(4)
     val nodeConnections = arrayOf<
@@ -49,7 +52,8 @@ class TubeBlock(xTile: Int, yTile: Int) : Block(BlockType.TUBE, xTile, yTile) {
             if (dir != -1) {
                 updateNodeConnections(dir)
             } else {
-                for(i in 0..3)
+                // because it might be a multi block, meaning the x and y tile of it wouldn't be adjacent to this even if it is touching
+                for (i in 0..3)
                     updateNodeConnections(i)
             }
             updateState()
@@ -65,7 +69,7 @@ class TubeBlock(xTile: Int, yTile: Int) : Block(BlockType.TUBE, xTile, yTile) {
     }
 
 
-    fun updateGroup() {
+    private fun updateGroup() {
         for (i in 0..3) {
             val t = tubeConnections[i]
             if (t != null) {
@@ -75,10 +79,13 @@ class TubeBlock(xTile: Int, yTile: Int) : Block(BlockType.TUBE, xTile, yTile) {
     }
 
     private fun mergeGroups(t: TubeBlock) {
-        if (t.group.size > group.size)
-            t.group.combine(group)
-        else
-            group.combine(t.group)
+        if (t.group.size > group.size) {
+            t.group.merge(group)
+            group = t.group
+        } else {
+            group.merge(t.group)
+            t.group = group
+        }
     }
 
     fun updateConnections() {
@@ -111,7 +118,7 @@ class TubeBlock(xTile: Int, yTile: Int) : Block(BlockType.TUBE, xTile, yTile) {
         // If there is a node connection, and tubes can't have nodes connecting to other tubes, then no need to check
         if (tubeConnections[dir] == null) {
             // Get all nodes that could possibly disconnect to a node if placed here
-            val nodes = Level.ResourceNodes.getAll<ItemType>(xTile + getXSign(dir), yTile + getYSign(dir), ResourceType.ITEM, { isOppositeAngle(it.dir, dir) })
+            val nodes = Level.ResourceNodes.getAll<ItemType>(xTile + getXSign(dir), yTile + getYSign(dir), ResourceCategory.ITEM, { isOppositeAngle(it.dir, dir) })
             nodeConnections[dir] = nodes
             if (nodes.isNotEmpty()) {
                 group.createCorrespondingNodes(nodes)
@@ -128,11 +135,11 @@ class TubeBlock(xTile: Int, yTile: Int) : Block(BlockType.TUBE, xTile, yTile) {
         state = TubeState.getState(dirs)
     }
 
-    fun hasConnection(dir: Int): Boolean {
+    private fun hasConnection(dir: Int): Boolean {
         return tubeConnections[dir] != null || nodeConnections[dir].isNotEmpty()
     }
 
-    fun getTubeAt(dir: Int): TubeBlock? {
+    private fun getTubeAt(dir: Int): TubeBlock? {
         val b = Level.Blocks.get(xTile + getXSign(dir), yTile + getYSign(dir))
         if (b != null && b is TubeBlock) {
             return b
@@ -150,7 +157,7 @@ class TubeBlock(xTile: Int, yTile: Int) : Block(BlockType.TUBE, xTile, yTile) {
             Renderer.renderTexture(Image.Block.TUBE_DOWN_CLOSE, xPixel, yPixel + 8)
         if (closedEnds[3])
             Renderer.renderTexture(Image.Block.TUBE_LEFT_CLOSE, xPixel - Image.Block.TUBE_LEFT_CLOSE.widthPixels, yPixel)
-        if (Game.RENDER_HITBOXES)
+        if (Game.currentDebugCode == DebugCode.RENDER_HITBOXES)
             renderHitbox()
     }
 }

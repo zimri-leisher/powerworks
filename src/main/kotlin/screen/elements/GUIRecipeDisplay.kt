@@ -2,7 +2,6 @@ package screen.elements
 
 import crafting.Recipe
 import graphics.Image
-import graphics.Utils
 
 class GUIRecipeDisplay(parent: RootGUIElement, name: String, xAlignment: () -> Int, yAlignment: () -> Int, recipe: Recipe? = null, open: Boolean = false, layer: Int = parent.layer + 1) :
         GUIElement(parent, name, xAlignment, yAlignment, { WIDTH }, { HEIGHT }, open, layer) {
@@ -13,7 +12,7 @@ class GUIRecipeDisplay(parent: RootGUIElement, name: String, xAlignment: () -> I
                 icon.open = false
             } else if (field == null && value != null) {
                 icon.open = true
-                icon.texture = value.icon.texture
+                icon.texture = value.icon.icon
                 consumeList.currentResources = value.consume
                 consumeList.width = value.consume.size
                 produceList.currentResources = value.produce
@@ -22,7 +21,7 @@ class GUIRecipeDisplay(parent: RootGUIElement, name: String, xAlignment: () -> I
                 background.updateAlignment()
             } else if (field != value) {
                 value!! // must not be null because null == null
-                icon.texture = value.icon.texture
+                icon.texture = value.icon.icon
                 consumeList.currentResources = value.consume
                 consumeList.width = value.consume.size
                 produceList.currentResources = value.produce
@@ -44,7 +43,7 @@ class GUIRecipeDisplay(parent: RootGUIElement, name: String, xAlignment: () -> I
         val fakeRecipe = recipe ?: Recipe.ERROR
         GUITexturePane(this, name + " background", 0, 0, Image.GUI.RECIPE_BUTTON_BACKGROUND).run {
             transparentToInteraction = true
-            icon = GUITexturePane(this, name + " icon", 0, 0, fakeRecipe.icon.texture, 16, 16, keepAspect = true).apply {
+            icon = GUITexturePane(this, name + " icon", 0, 0, fakeRecipe.icon.icon, 16, 16, keepAspect = true).apply {
                 updateDimensionAlignmentOnTextureChange = false
                 transparentToInteraction = true
                 matchParentOpening = false

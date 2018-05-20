@@ -8,7 +8,7 @@ class GUIRecipeButton(parent: RootGUIElement,
                       name: String,
                       xAlignment: () -> Int, yAlignment: () -> Int,
                       recipe: Recipe?, val onRecipeChange: (Recipe?) -> Unit = {}) : GUIElement(
-        parent, name, xAlignment, yAlignment, { GUIRecipeDisplay.WIDTH }, { GUIRecipeDisplay.HEIGHT }) {
+        parent, name, xAlignment, yAlignment, { WIDTH }, { HEIGHT }) {
 
     var recipe = recipe
         set(value) {
@@ -43,5 +43,10 @@ class GUIRecipeButton(parent: RootGUIElement,
             RecipeSelectorGUI.windowGroup.bringToTop(RecipeSelectorGUI)
             waitingForRecipeSelection = true
         }
+    }
+
+    companion object {
+        val WIDTH = GUIRecipeDisplay.WIDTH
+        val HEIGHT = GUIRecipeDisplay.HEIGHT
     }
 }

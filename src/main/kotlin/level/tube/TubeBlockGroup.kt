@@ -8,6 +8,7 @@ import main.Game
 import misc.GeometryHelper
 import misc.PixelCoord
 import data.WeakMutableList
+import main.DebugCode
 import resource.*
 import java.io.DataOutputStream
 
@@ -35,6 +36,9 @@ class TubeBlockGroup {
     val id = nextId++
     private val nodes = ResourceNodeGroup("Tube block group $id")
 
+    val size
+        get() = tubes.size
+
     init {
         ALL.add(this)
     }
@@ -42,10 +46,9 @@ class TubeBlockGroup {
     /**
      * Combines the two and sets all the appropriate values for their tubes, inputs and outputs
      */
-    fun combine(other: TubeBlockGroup) {
+    fun merge(other: TubeBlockGroup) {
         // so that they don't bother making or removing connections, because it would just remove a connection and add it again
         other.tubes.forEach {
-            it.group = this@TubeBlockGroup
             if (it !in tubes)
                 tubes.add(it)
         }
@@ -86,12 +89,17 @@ class TubeBlockGroup {
     /**
      * Removes all nodes that were given to the network because of this
      */
-    fun removeCorrespondingNodes(t: TubeBlock) {
+    private fun removeCorrespondingNodes(t: TubeBlock) {
         val r = nodes.filter { it.xTile != t.xTile && it.yTile != t.yTile }
         nodes.removeAll(r)
         r.forEach { Level.remove(it) }
     }
 
+    /**
+     * If the tube is an intersection and it was not already in the network, it will create the intersection, attach it, add it to the network and return it.
+     * Otherwise it will return the old one that corresponded to the tube
+     * @return the intersection, null if the tube was not an intersection
+     */
     fun convertToIntersection(tube: TubeBlock): IntersectionTube? {
         if (isIntersection(tube)) {
             return getIntersection(tube)
@@ -99,6 +107,10 @@ class TubeBlockGroup {
         return null
     }
 
+    /**
+     * @param isTemporary if true, this intersection is only an intersection because of routing purposes (used when you are inserting
+     * an item at an arbitrary point in the network)
+     */
     private fun getIntersection(tube: TubeBlock, isTemporary: Boolean = false): IntersectionTube {
         val i = intersections.firstOrNull { it.tubeBlock == tube }
         if (i != null) {
@@ -137,11 +149,11 @@ class TubeBlockGroup {
     }
 
     class RoutingNode(val parent: RoutingNode? = null, val goal: IntersectionTube, val intersection: IntersectionTube, val directionFromParent: Int, val g: Int, val h: Int) {
-
         val xTile: Int
             get() = intersection.tubeBlock.xTile
         val yTile: Int
             get() = intersection.tubeBlock.yTile
+
         val f = h + g
 
         fun getChildren(): List<RoutingNode> {
@@ -166,14 +178,12 @@ class TubeBlockGroup {
         override fun toString(): String {
             return "$xTile, $yTile, dir from parent: $directionFromParent"
         }
+
     }
 
     data class Step(val coord: PixelCoord, val nextDir: Int)
 
-    private fun route(input: ResourceNode<*>, output: ResourceNode<*>): ItemPath? {
-
-        return route(input.xTile, input.yTile, output)
-    }
+    private fun route(input: ResourceNode<*>, output: ResourceNode<*>) = route(input.xTile, input.yTile, output)
 
     private fun route(startXTile: Int, startYTile: Int, output: ResourceNode<*>): ItemPath? {
         if (startXTile == output.xTile && startYTile == output.yTile) {
@@ -234,9 +244,6 @@ class TubeBlockGroup {
         return null
     }
 
-    val size
-        get() = tubes.size
-
     fun update() {
         storage.update()
     }
@@ -272,13 +279,14 @@ class TubeBlockGroup {
     // When an output node tries to input into this, do nothing if there is nowhere to put it
     // Each stack inputted is stored as separate, even if they could be combined. If there is more than 1 stack inputted at a time,
     // split it up and send it with a delay
-    class TubeBlockGroupInternalStorage(val parent: TubeBlockGroup) : ResourceContainer<ItemType>(ResourceType.ITEM) {
+    class TubeBlockGroupInternalStorage(val parent: TubeBlockGroup) : ResourceContainer<ItemType>(ResourceCategory.ITEM) {
 
         private val itemsBeingMoved = mutableListOf<ItemPackage>()
 
         override fun add(resource: ResourceType, quantity: Int, from: ResourceNode<*>?, checkIfAble: Boolean): Boolean {
-            if (!isValid(resource))
-                return false
+            if (checkIfAble)
+                if (!canAdd(resource, quantity))
+                    return false
             from as ResourceNode<ItemType>?
             resource as ItemType
             if (from != null) {
@@ -341,9 +349,9 @@ class TubeBlockGroup {
 
         fun render() {
             for (item in itemsBeingMoved) {
-                Renderer.renderTextureKeepAspect(item.item.type.texture, item.xPixel + 4, item.yPixel + 4, 8, 8)
+                Renderer.renderTextureKeepAspect(item.item.type.icon, item.xPixel + 4, item.yPixel + 4, 8, 8)
                 Renderer.renderText(item.item.quantity, item.xPixel + 4, item.yPixel + 4)
-                if (Game.DEBUG_TUBE_INFO)
+                if (Game.currentDebugCode == DebugCode.TUBE_INFO)
                     renderPath(item)
             }
         }
@@ -362,12 +370,17 @@ class TubeBlockGroup {
             return true
         }
 
-        override fun spaceFor(resource: ResourceType, quantity: Int): Boolean {
+        override fun spaceFor(resource: ItemType, quantity: Int): Boolean {
             return parent.nodes.canOutput(resource, quantity)
         }
 
-        override fun contains(resource: ResourceType, quantity: Int): Boolean {
-            return true
+        override fun contains(resource: ItemType, quantity: Int): Boolean {
+            var q = 0
+            for (i in itemsBeingMoved) {
+                if (i.item.type == resource)
+                    q += i.item.quantity
+            }
+            return q >= quantity
         }
 
         override fun clear() {

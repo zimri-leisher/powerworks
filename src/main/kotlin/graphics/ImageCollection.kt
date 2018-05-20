@@ -17,6 +17,8 @@ class ImageCollection(path: String, numberOfImages: Int) {
         val PLAYER = ImageCollection("/textures/player/player.png", 4)
         val TUBE_CORNER = ImageCollection("/textures/block/tube/corner.png", 4)
         val TUBE_3_WAY = ImageCollection("/textures/block/tube/3_way.png", 4)
+        val PIPE_CORNER = ImageCollection("/textures/block/pipe/corner.png", 4)
+        val PIPE_3_WAY = ImageCollection("/textures/block/pipe/3_way.png", 4)
         val MINER = ImageCollection("/textures/block/miner/miner.png", 2)
     }
 

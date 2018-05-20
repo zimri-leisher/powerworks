@@ -3,14 +3,15 @@ package screen
 import graphics.Image
 import graphics.Renderer
 import graphics.Texture
-import graphics.Utils
 import io.*
 import item.ItemType
 import level.CHUNK_PIXEL_EXP
 import level.DroppedItem
 import level.Level
 import level.LevelObject
+import level.pipe.PipeBlock
 import level.tube.TubeBlock
+import main.DebugCode
 import main.Game
 import main.State
 import resource.ResourceContainer
@@ -136,66 +137,65 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
         if (heldItemType != null) {
             val i = heldItemType!!
             val q = Game.mainInv.getQuantity(i)
-            var w = GUIItemSlot.WIDTH
-            var h = GUIItemSlot.HEIGHT
-            val t = i.texture
-            if (t.widthPixels > t.heightPixels) {
-                if (t.widthPixels > GUIItemSlot.WIDTH) {
-                    w = GUIItemSlot.WIDTH
-                    val ratio = GUIItemSlot.WIDTH.toDouble() / t.widthPixels
-                    h = (t.heightPixels * ratio).toInt()
-                }
-            }
-            if (t.heightPixels > t.widthPixels) {
-                if (t.heightPixels > GUIItemSlot.HEIGHT) {
-                    h = GUIItemSlot.HEIGHT
-                    val ratio = GUIItemSlot.HEIGHT.toDouble() / t.heightPixels
-                    w = (t.widthPixels * ratio).toInt()
-                }
-            }
-            Renderer.renderTexture(t, xPixel + (GUIItemSlot.WIDTH - w) / 2, yPixel + (GUIItemSlot.HEIGHT - h) / 2, w, h)
+            val t = i.icon
+            Renderer.renderTextureKeepAspect(t, xPixel, yPixel, GUIItemSlot.WIDTH, GUIItemSlot.HEIGHT)
             Renderer.renderText(q, xPixel, yPixel)
         }
-        if (Game.DEBUG_TUBE_INFO) {
-            val t = Game.currentLevel.selectedLevelObject
-            if (t is TubeBlock) {
-                val tubeString = "Tube:\n" +
-                        "  Tile: ${t.xTile}, ${t.yTile}\n" +
-                        "  Group: ${t.group.id}\n"
-                val intersection = t.group.intersections.firstOrNull { it.tubeBlock == t }
-                val intersectionString =
-                        if (t.group.isIntersection(t) == true && intersection != null)
-                            "Intersection connections:\n" +
-                                    "  Up: ${intersection.connectedTo[0]?.dist}\n" +
-                                    "  Right: ${intersection.connectedTo[1]?.dist}\n" +
-                                    "  Down: ${intersection.connectedTo[2]?.dist}\n" +
-                                    "  Left: ${intersection.connectedTo[3]?.dist}\n"
-                        else if (t.group.isIntersection(t) && intersection == null)
-                            "Should be intersection but hasn't been added"
-                        else "Not intersection\n"
-                Renderer.renderText(tubeString + intersectionString, xPixel, yPixel)
+        when(Game.currentDebugCode) {
+            DebugCode.TUBE_INFO -> {
+                val t = Game.currentLevel.selectedLevelObject
+                if (t is TubeBlock) {
+                    val tubeString = "Tube:\n" +
+                            "  Tile: ${t.xTile}, ${t.yTile}\n" +
+                            "  Group: ${t.group.id}\n"
+                    val intersection = t.group.intersections.firstOrNull { it.tubeBlock == t }
+                    val intersectionString =
+                            if (t.group.isIntersection(t) == true && intersection != null)
+                                "Intersection connections:\n" +
+                                        "  Up: ${intersection.connectedTo[0]?.dist}\n" +
+                                        "  Right: ${intersection.connectedTo[1]?.dist}\n" +
+                                        "  Down: ${intersection.connectedTo[2]?.dist}\n" +
+                                        "  Left: ${intersection.connectedTo[3]?.dist}\n"
+                            else if (t.group.isIntersection(t) && intersection == null)
+                                "Should be intersection but hasn't been added"
+                            else "Not intersection\n"
+                    Renderer.renderText(tubeString + intersectionString, xPixel, yPixel)
+                }
             }
-        } else if (Game.RESOURCE_NODES_INFO) {
-            val nodes = Level.ResourceNodes.get(Game.currentLevel.mouseLevelXPixel shr 4, Game.currentLevel.mouseLevelYPixel shr 4)
-            val s = StringBuilder()
-            for (n in nodes) {
-                s.append("    in: ${n.allowIn}, out: ${n.allowOut}, dir: ${n.dir}\n")
+            DebugCode.PIPE_INFO -> {
+                val t = Game.currentLevel.selectedLevelObject
+                if (t is PipeBlock) {
+                    val pipeString = "Tube:\n" +
+                            "  Tile: ${t.xTile}, ${t.yTile}\n" +
+                            "  Group: ${t.group.id}\n" +
+                            "     Size: ${t.group.size}"
+                    Renderer.renderText(pipeString, xPixel, yPixel)
+                }
             }
-            Renderer.renderText("Resource nodes at ${Game.currentLevel.mouseLevelXPixel shr 4}, ${Game.currentLevel.mouseLevelYPixel shr 4}:\n$s", xPixel, yPixel)
-        } else if (Game.DEBUG_SCREEN_INFO) {
-            Renderer.renderText("Element on mouse:\n" +
-                    "  ${ScreenManager.getHighestElement(xPixel, yPixel, predicate = { !it.transparentToInteraction })}\n" +
-                    "Window on mouse:\n" +
-                    "  ${ScreenManager.getHighestWindow(xPixel, yPixel, { !it.transparentToInteraction })}", xPixel, yPixel)
-        } else if (DebugOverlay.open) {
-            Renderer.renderText("Screen:\n" +
-                    "  Pixel: $xPixel, $yPixel\n" +
-                    "  Tile: ${xPixel shr 4}, ${yPixel shr 4}\n" +
-                    "  Chunk: ${xPixel shr CHUNK_PIXEL_EXP}, ${yPixel shr CHUNK_PIXEL_EXP}\n" +
-                    if (State.CURRENT_STATE == State.INGAME) "Level:\n" +
-                            "  Pixel: ${Game.currentLevel.mouseLevelXPixel}, ${Game.currentLevel.mouseLevelYPixel}\n" +
-                            "  Tile: ${Game.currentLevel.mouseLevelXPixel shr 4}, ${Game.currentLevel.mouseLevelYPixel shr 4}\n" +
-                            "  Chunk: ${Game.currentLevel.mouseLevelXPixel shr CHUNK_PIXEL_EXP}, ${Game.currentLevel.mouseLevelYPixel shr CHUNK_PIXEL_EXP}" else "", xPixel, yPixel)
+            DebugCode.RESOURCE_NODES_INFO -> {
+                val nodes = Level.ResourceNodes.get(Game.currentLevel.mouseLevelXPixel shr 4, Game.currentLevel.mouseLevelYPixel shr 4)
+                val s = StringBuilder()
+                for (n in nodes) {
+                    s.append("    in: ${n.allowIn}, out: ${n.allowOut}, dir: ${n.dir}\n")
+                }
+                Renderer.renderText("Resource nodes at ${Game.currentLevel.mouseLevelXPixel shr 4}, ${Game.currentLevel.mouseLevelYPixel shr 4}:\n$s", xPixel, yPixel)
+            }
+            DebugCode.SCREEN_INFO -> {
+                Renderer.renderText("Element on mouse:\n" +
+                        "  ${ScreenManager.getHighestElement(xPixel, yPixel, predicate = { !it.transparentToInteraction })}\n" +
+                        "Window on mouse:\n" +
+                        "  ${ScreenManager.getHighestWindow(xPixel, yPixel, { !it.transparentToInteraction })}", xPixel, yPixel)
+            }
+            DebugCode.POSITION_INFO -> {
+                Renderer.renderText("Screen:\n" +
+                        "  Pixel: $xPixel, $yPixel\n" +
+                        "  Tile: ${xPixel shr 4}, ${yPixel shr 4}\n" +
+                        "  Chunk: ${xPixel shr CHUNK_PIXEL_EXP}, ${yPixel shr CHUNK_PIXEL_EXP}\n" +
+                        if (State.CURRENT_STATE == State.INGAME) "Level:\n" +
+                                "  Pixel: ${Game.currentLevel.mouseLevelXPixel}, ${Game.currentLevel.mouseLevelYPixel}\n" +
+                                "  Tile: ${Game.currentLevel.mouseLevelXPixel shr 4}, ${Game.currentLevel.mouseLevelYPixel shr 4}\n" +
+                                "  Chunk: ${Game.currentLevel.mouseLevelXPixel shr CHUNK_PIXEL_EXP}, ${Game.currentLevel.mouseLevelYPixel shr CHUNK_PIXEL_EXP}" else "", xPixel, yPixel)
+            }
         }
     }
 
@@ -203,7 +203,7 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
      * Tries to place the held item on the level
      * @param q how many to drop
      */
-    fun dropHeldItem(q: Int = 1) {
+    private fun dropHeldItem(q: Int = 1) {
         if (heldItemType != null) {
             val type = heldItemType!!
             if (Level.add(DroppedItem(Game.currentLevel.mouseLevelXPixel, Game.currentLevel.mouseLevelYPixel, type, q)))
@@ -214,7 +214,7 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
     override fun onContainerClear(container: ResourceContainer<*>) {
     }
 
-    override fun onContainerChange(container: ResourceContainer<*>, resourceType: ResourceType, quantity: Int) {
+    override fun onContainerChange(container: ResourceContainer<*>, resource: ResourceType, quantity: Int) {
         if (container == Game.mainInv && heldItemType != null) {
             if (Game.mainInv.getQuantity(heldItemType!!) == 0)
                 heldItemType = null

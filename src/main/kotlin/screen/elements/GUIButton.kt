@@ -43,10 +43,7 @@ class GUIButton(parent: RootGUIElement,
     }
 
     override fun onMouseLeave() {
-        if (down) {
-            down = false
-            onRelease.invoke()
-        }
+        down = false
         currentTexture = textures[0]
     }
 

@@ -1,12 +1,9 @@
 package item
 
-import resource.ResourceContainer
-import resource.ResourceList
-import resource.ResourceNode
-import resource.ResourceType
+import resource.*
 import java.util.*
 
-class InfiniteInventory(rule: (ResourceType) -> Boolean = { true }) : ResourceContainer<ItemType>(ResourceType.ITEM, rule) {
+class InfiniteInventory(rule: (ResourceType) -> Boolean = { true }) : ResourceContainer<ItemType>(ResourceCategory.ITEM, rule) {
 
     var items = mutableListOf<Item>()
         private set
@@ -37,7 +34,7 @@ class InfiniteInventory(rule: (ResourceType) -> Boolean = { true }) : ResourceCo
         return true
     }
 
-    override fun spaceFor(resource: ResourceType, quantity: Int) = true
+    override fun spaceFor(resource: ItemType, quantity: Int) = true
 
     override fun remove(resource: ResourceType, quantity: Int, to: ResourceNode<*>?, checkIfAble: Boolean): Boolean {
         if (checkIfAble)
@@ -59,7 +56,7 @@ class InfiniteInventory(rule: (ResourceType) -> Boolean = { true }) : ResourceCo
         throw Exception("Inventory does not contain enough resources, use the checkIfAble argument while calling this")
     }
 
-    override fun contains(resource: ResourceType, quantity: Int) = items.any { it.type == resource && it.quantity >= quantity }
+    override fun contains(resource: ItemType, quantity: Int) = items.any { it.type == resource && it.quantity >= quantity }
 
     override fun clear() {
         items.clear()
