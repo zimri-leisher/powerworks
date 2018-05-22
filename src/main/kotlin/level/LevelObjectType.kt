@@ -1,12 +1,10 @@
 package level
 
-import item.ItemType
-import level.block.Block
 import screen.Camera
 
 private var nextId = 0
 
-open class LevelObjectType<T : LevelObject>(init: LevelObjectType<T>.() -> Unit = {}) {
+open class LevelObjectType<T : LevelObject>(initializer: LevelObjectType<T>.() -> Unit = {}) {
     val id = nextId++
     /**
      * 1: x pixel
@@ -18,7 +16,7 @@ open class LevelObjectType<T : LevelObject>(init: LevelObjectType<T>.() -> Unit 
     var requiresUpdate = false
 
     init {
-        init()
+        initializer()
     }
 
     companion object {

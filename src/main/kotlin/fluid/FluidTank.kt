@@ -8,25 +8,34 @@ class FluidTank(val maxAmount: Int, typeRule: (ResourceType) -> Boolean = { true
     var currentAmount = 0
         set(value) {
             field = value
-            if(value == 0)
+            if (value == 0)
                 currentFluidType = null
         }
+    override val totalQuantity: Int
+        get() = currentAmount
 
     override fun add(resource: ResourceType, quantity: Int, from: ResourceNode<*>?, checkIfAble: Boolean): Boolean {
         if (checkIfAble)
             if (!canAdd(resource, quantity))
                 return false
+        resource as FluidType
+        if (currentFluidType == null)
+            currentFluidType = resource
         currentAmount += quantity
+        listeners.forEach { it.onContainerChange(this, resource, quantity) }
         return true
     }
 
-    override fun spaceFor(resource: FluidType, quantity: Int) = resource == currentFluidType && currentAmount + quantity <= maxAmount
+    override fun spaceFor(resource: FluidType, quantity: Int) = currentFluidType == null || (resource == currentFluidType && currentAmount + quantity <= maxAmount)
 
     override fun remove(resource: ResourceType, quantity: Int, to: ResourceNode<*>?, checkIfAble: Boolean): Boolean {
         if (checkIfAble)
             if (!canRemove(resource, quantity))
                 return false
         currentAmount -= quantity
+        if (currentAmount == 0)
+            currentFluidType = null
+        listeners.forEach { it.onContainerChange(this, resource, -quantity) }
         return true
     }
 
@@ -35,6 +44,7 @@ class FluidTank(val maxAmount: Int, typeRule: (ResourceType) -> Boolean = { true
     override fun clear() {
         currentFluidType = null
         currentAmount = 0
+        listeners.forEach { it.onContainerClear(this) }
     }
 
     override fun copy(): ResourceContainer<FluidType> {

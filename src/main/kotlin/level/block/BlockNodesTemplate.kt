@@ -31,7 +31,7 @@ class BlockNodesTemplate(val widthTiles: Int, val heightTiles: Int,
         val containers = instantiateContainers()
         for (node in nodes) {
             val coord = rotate(node.xTile, node.yTile, widthTiles, heightTiles, dir)
-            val newContainer = containers.filter { it.key === node.attachedContainer }.entries.firstOrNull()?.value
+            val newContainer = containers.filter { it.key === node.attachedContainer }.entries.first().value
             // we know that the container is the same type as the node because they were originally together
             ret.add(node.copy(coord.xTile + xTile, coord.yTile + yTile, GeometryHelper.addAngles(node.dir, dir), attachedContainer = newContainer))
         }

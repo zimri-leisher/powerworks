@@ -4,81 +4,162 @@ import level.Hitbox
 import level.Level
 import misc.GeometryHelper
 
-class ResourceNode<R : ResourceType>(val xTile: Int, val yTile: Int, val dir: Int, var allowIn: Boolean = false, var allowOut: Boolean = false, val resourceCategory: ResourceCategory, var attachedContainer: ResourceContainer<R>? = null) {
+/**
+ * A node that allows for movement of resources between places on the level. While it exists in the level, it is not rendered
+ * by default and is not a subclass of LevelObject.
+ *
+ * An example of a place where they appear is the MinerBlock, which uses one with allowOut = true to produce the ore it mines
+ * from the ground and either put it into the connected inventory or place it on the ground.
+ */
+class ResourceNode<R : ResourceType>(
+        val xTile: Int, val yTile: Int,
+        val dir: Int,
+        val resourceCategory: ResourceCategory,
+        var allowIn: Boolean = false, var allowOut: Boolean = false,
+        var attachedContainer: ResourceContainer<R>) {
+
+    /**
+     * If this node is in the level, meaning it is able to interact with other nodes in the level
+     */
     var inLevel = false
+    /**
+     * An adjacent node facing towards this node which can receive input (if this can output) and can output (if this can receive inputs)
+     * This is where resources will get sent to when outputting
+     */
     var attachedNode: ResourceNode<R>? = null
 
     /**
-     * @return whether the resource is of the right type. Does not check container or attached node for anything
+     * @return if the resource is the right type and this node allows output and the attached container is able to remove the resources.
+     * Additionally, if there is an attached node, it must be able to input the resources
+     */
+    fun canOutput(resource: ResourceType, quantity: Int): Boolean {
+        if (!isRightType(resource))
+            return false
+        resource as R
+        if (!allowOut)
+            return false
+        if (!attachedContainer.canRemove(resource, quantity))
+            return false
+        if (attachedNode != null) {
+            if (!attachedNode!!.canInput(resource, quantity))
+                return false
+        }
+        return true
+    }
+
+    /**
+     * @return if the resource is the right type and this node allows input and the attached container can add the resources
+     */
+    fun canInput(resource: ResourceType, quantity: Int): Boolean {
+        if (!isRightType(resource))
+            return false
+        resource as R
+        if (!allowIn)
+            return false
+        if (!attachedContainer.canAdd(resource, quantity))
+            return false
+        return true
+    }
+
+    /**
+     * If this node could output the resources assuming its attached container has enough.
+     * To summarize, the difference between this and canOutput is this doesn't check if the attached container can remove the resources
+     *
+     * @return if the resource is the right type and this node allows output and the attached node can input the resources
+     */
+    fun couldOuput(resource: ResourceType, quantity: Int): Boolean {
+        if (!isRightType(resource))
+            return false
+        resource as R
+        if (!allowOut)
+            return false
+        if (attachedNode != null) {
+            if (!attachedNode!!.canInput(resource, quantity))
+                return false
+        }
+        return true
+    }
+
+    /**
+     * If this node could input the resources assuming its attached container has space.
+     * To summzrize, the difference between this and canInput is this doesn't check if the attached container can add the resources
+     *
+     * @return if the resource is the right type and this node allows input
+     */
+    fun couldInput(resource: ResourceType, quantity: Int): Boolean {
+        if (!isRightType(resource))
+            return false
+        resource as R
+        if (!allowIn)
+            return false
+        return true
+    }
+
+    /**
+     * Outputs the resources either directly to the level or into a connected node
+     * @param resource the resource type to be outputted. Will only output ones that match the resource category
+     * @param quantity the amount of resources to be outputted
+     * @param checkIfAble whether or not to check if the node is able to output. This should be false only
+     * to avoid redundant checks to the attached container or node (i.e., for performance). Setting it to false without being
+     * sure about the ability of the attached node to input and the attached container to remove has an undefined behavior
+     * and will probably result in duplications or crashes.
+     * @param mustContainEnough this specifies whether or not the check for ability to output should check if the attached container
+     * contains enough resources. Does nothing if checkIfAble is false
+     */
+    fun output(resource: ResourceType, quantity: Int, checkIfAble: Boolean = true, mustContainEnough: Boolean = true): Boolean {
+        if (checkIfAble) {
+            if (mustContainEnough) {
+                if (!canOutput(resource, quantity))
+                    return false
+            } else {
+                if(!couldOuput(resource, quantity))
+                    return false
+            }
+        }
+        attachedContainer.remove(resource, quantity, this, false)
+        if (attachedNode != null) {
+            // we already checked if we were able to, everything here is under the assumption it is successful
+            attachedNode!!.input(resource, quantity, false)
+        } else {
+            // TODO make this better some time
+            val xSign = GeometryHelper.getXSign(dir)
+            val ySign = GeometryHelper.getYSign(dir)
+            Level.add(((xTile shl 4) + 7) + (8 + Hitbox.DROPPED_ITEM.width) * xSign, ((yTile shl 4) + 7) + (8 + Hitbox.DROPPED_ITEM.height) * ySign, resource, quantity) == quantity
+        }
+        return true
+    }
+
+    /**
+     * Inputs the resources into the attached container
+     * @param resource the resource type to be inputted. Will only input ones that match the resource category
+     * @param quantity the amount of resources to be inputted
+     * @param checkIfAble whether or not to check if the node is able to input. This should be false only
+     * to avoid redundant checks to the attached container (i.e., for performance). Setting it to false without being
+     * sure about the ability of the attached container to add has an undefined behavior and will probably result in duplications or crashes.
+     * @param mustHaveSpace this specifies whether or not the check for ability to input should check if the attached container
+     * has enough space. Does nothing if checkIfAble is false
+     */
+    fun input(resource: ResourceType, quantity: Int, checkIfAble: Boolean = true, mustHaveSpace: Boolean = true): Boolean {
+        if (checkIfAble) {
+            if (mustHaveSpace) {
+                if (!canInput(resource, quantity))
+                    return false
+            } else {
+                if(!couldInput(resource, quantity))
+                    return false
+            }
+        }
+        attachedContainer.add(resource, quantity, this, false)
+        return true
+    }
+
+    /**
+     * @return if the resource parameter is of the right resource category
      */
     fun isRightType(resource: ResourceType) = resource.category == resourceCategory
 
-    /**
-     * @return whether the container contains adequate amounts of it. If there is no container, it will return false
-     */
-    fun canOutputFromContainer(resource: ResourceType, quantity: Int): Boolean {
-        if (!isRightType(resource))
-            return false
-        resource as R
-        if (!allowOut) return false
-        // space in place where it will output to
-        if (attachedNode != null && !attachedNode!!.canInputToContainer(resource, quantity))
-            return false
-        // enough in place where it's taking from, and the resource is valid
-        if (attachedContainer != null && attachedContainer!!.canRemove(resource, quantity))
-            return true
-        return false
-    }
-
-    /**
-     * @return whether space is available in the container. If there is no container, it will return false
-     */
-    fun canInputToContainer(resource: ResourceType, quantity: Int): Boolean {
-        if (!isRightType(resource))
-            return false
-        resource as R
-        if (!allowIn) return false
-        if (attachedContainer != null && attachedContainer!!.canAdd(resource, quantity))
-            return true
-        return false
-    }
-
-    /**
-     * @param checkIfAble whether or not to check if space is available and the resource is valid. This function is unsafe
-     * when this parameter is false, meaning there are no guarantees as to how it will work given unexpected parameters. Use it
-     * only when certain and only for performance
-     * @return true if the resources were moved
-     */
-    fun input(resource: ResourceType, quantity: Int, checkIfAble: Boolean = true): Boolean {
-        if (checkIfAble)
-            if (!canInputToContainer(resource, quantity))
-                return false
-        return attachedContainer!!.add(resource, quantity, this)
-    }
-
-    /**
-     * @param checkIfAble whether or not to check if the container has enough and the resource is valid. This function is unsafe
-     * when this parameter is false, meaning there are no guarantees as to how it will work given unexpected parameters. Use it
-     * only when certain and only for performance
-     * @return true if the resources were moved
-     */
-    fun output(resource: ResourceType, quantity: Int, checkIfAble: Boolean = true): Boolean {
-        if (checkIfAble)
-            if (!canOutputFromContainer(resource, quantity))
-                return false
-        attachedContainer?.remove(resource, quantity, this)
-        if (attachedNode != null) {
-            val r = attachedNode!!.input(resource, quantity)
-            return r
-        } else {
-            val xSign = GeometryHelper.getXSign(dir)
-            val ySign = GeometryHelper.getYSign(dir)
-            return Level.add(((xTile shl 4) + 7) + (8 + Hitbox.DROPPED_ITEM.width) * xSign, ((yTile shl 4) + 7) + (8 + Hitbox.DROPPED_ITEM.height) * ySign, resource, quantity) == quantity
-        }
-    }
-
-    fun copy(xTile: Int = this.xTile, yTile: Int = this.yTile, dir: Int = this.dir, allowIn: Boolean = this.allowIn, allowOut: Boolean = this.allowOut, attachedContainer: ResourceContainer<*>? = this.attachedContainer) =
-            ResourceNode(xTile, yTile, dir, allowIn, allowOut, resourceCategory, attachedContainer)
+    fun copy(xTile: Int = this.xTile, yTile: Int = this.yTile, dir: Int = this.dir, allowIn: Boolean = this.allowIn, allowOut: Boolean = this.allowOut, attachedContainer: ResourceContainer<*> = this.attachedContainer) =
+            ResourceNode(xTile, yTile, dir, resourceCategory, allowIn, allowOut, attachedContainer)
 
     override fun toString() = "Resource node at $xTile, $yTile, out: $allowOut, in: $allowIn, dir: $dir"
 
@@ -102,7 +183,7 @@ class ResourceNode<R : ResourceType>(val xTile: Int, val yTile: Int, val dir: In
         result = 31 * result + yTile
         result = 31 * result + dir
         result = 31 * result + resourceCategory.hashCode()
-        result = 31 * result + (attachedContainer?.hashCode() ?: 0)
+        result = 31 * result + attachedContainer.hashCode()
         result = 31 * result + inLevel.hashCode()
         result = 31 * result + allowOut.hashCode()
         result = 31 * result + allowIn.hashCode()
@@ -110,8 +191,8 @@ class ResourceNode<R : ResourceType>(val xTile: Int, val yTile: Int, val dir: In
     }
 
     companion object {
-        fun <R : ResourceType> createCorresponding(n: ResourceNode<R>, attachedContainer: ResourceContainer<R>? = null) =
-                ResourceNode(n.xTile + GeometryHelper.getXSign(n.dir), n.yTile + GeometryHelper.getYSign(n.dir), GeometryHelper.getOppositeAngle(n.dir), n.allowOut, n.allowIn, n.resourceCategory, attachedContainer)
+        fun <R : ResourceType> createCorresponding(n: ResourceNode<R>, attachedContainer: ResourceContainer<R>) =
+                ResourceNode(n.xTile + GeometryHelper.getXSign(n.dir), n.yTile + GeometryHelper.getYSign(n.dir), GeometryHelper.getOppositeAngle(n.dir), n.resourceCategory, n.allowOut, n.allowIn, attachedContainer)
     }
-}
 
+}

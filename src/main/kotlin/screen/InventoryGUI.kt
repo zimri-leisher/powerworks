@@ -26,6 +26,7 @@ class InventoryGUI(name: String,
     private val background = GUIDefaultTextureRectangle(this.rootChild, name + " background", 0, 0)
 
     init {
+        openAtMouse = true
         generateCloseButton(background.layer + 1)
         generateDragGrip(background.layer + 1)
         val arr = arrayOfNulls<GUIItemSlot>(inv.width * inv.height)
@@ -38,13 +39,6 @@ class InventoryGUI(name: String,
         itemSlots = arr as Array<GUIItemSlot>
         // You want to be able to move and edit inventories at the same time
         partOfLevel = true
-    }
-
-    override fun onOpen() {
-        val x = Mouse.xPixel
-        val y = Mouse.yPixel
-        xAlignment = { x }
-        yAlignment = { y }
     }
 
     companion object {

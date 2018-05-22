@@ -1,6 +1,7 @@
 package level
 
 import graphics.Renderer
+import level.block.GhostBlock
 import main.DebugCode
 import main.Game
 import java.io.DataOutputStream
@@ -25,7 +26,7 @@ abstract class LevelObject protected constructor(
 
     var rotation = rotation
         set(value) {
-            if(field != value) {
+            if (field != value) {
                 field = value
                 hitbox = Hitbox.rotate(type.hitbox, value)
             }
@@ -49,9 +50,9 @@ abstract class LevelObject protected constructor(
         set(value) {
             val c = Level.Chunks.get(xChunk, yChunk)
             if (field && !value) {
-                c.updatesRequired!!.remove(this)
+                c.removeUpdateRequired(this)
             } else if (!field && value) {
-                c.updatesRequired!!.add(this)
+                c.addUpdateRequired(this)
             }
         }
 

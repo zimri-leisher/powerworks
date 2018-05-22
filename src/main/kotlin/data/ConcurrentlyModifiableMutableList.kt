@@ -1,6 +1,6 @@
 package data
 
-open class ConcurrentlyModifiableMutableList<T> {
+class ConcurrentlyModifiableMutableList<T> {
 
     var beingTraversed = false
 
@@ -10,19 +10,21 @@ open class ConcurrentlyModifiableMutableList<T> {
 
     val toRemove = mutableListOf<T>()
 
-    open fun add(l: T) {
+    fun add(l: T) {
         if (beingTraversed)
             toAdd.add(l)
         else
             elements.add(l)
     }
 
-    open fun remove(l: T) {
-        if (beingTraversed)
+    fun remove(l: T) {
+        if (beingTraversed) {
             toRemove.add(l)
-        else
+        } else
             elements.remove(l)
     }
+
+    fun contains(l: T) = !toRemove.contains(l) && (elements.contains(l) || toAdd.contains(l))
 
     val size
         get() = elements.size + toAdd.size - toRemove.size

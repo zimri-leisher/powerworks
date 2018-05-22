@@ -61,12 +61,10 @@ class TubeBlockGroup {
     }
 
     fun addTube(t: TubeBlock) {
-        createCorrespondingNodes(t)
         tubes.add(t)
     }
 
     fun removeTube(t: TubeBlock) {
-        removeCorrespondingNodes(t)
         tubes.remove(t)
     }
 
@@ -75,15 +73,12 @@ class TubeBlockGroup {
      */
     fun createCorrespondingNodes(nodes: List<ResourceNode<ItemType>>) {
         val new = nodes.map { ResourceNode.createCorresponding(it, storage) }
-        new.forEach { Level.add(it) }
-        this.nodes.addAll(new)
-    }
-
-    /**
-     * Creates transfer nodes corresponding to the tube's nodes
-     */
-    fun createCorrespondingNodes(tubeBlock: TubeBlock) {
-        tubeBlock.nodeConnections.forEach { createCorrespondingNodes(it) }
+        for(newNode in new) {
+            if(newNode !in this.nodes) {
+                this.nodes.add(newNode)
+                Level.add(newNode)
+            }
+        }
     }
 
     /**
@@ -281,6 +276,9 @@ class TubeBlockGroup {
     // split it up and send it with a delay
     class TubeBlockGroupInternalStorage(val parent: TubeBlockGroup) : ResourceContainer<ItemType>(ResourceCategory.ITEM) {
 
+        override val totalQuantity: Int
+            get() = itemsBeingMoved.sumBy { it.item.quantity }
+
         private val itemsBeingMoved = mutableListOf<ItemPackage>()
 
         override fun add(resource: ResourceType, quantity: Int, from: ResourceNode<*>?, checkIfAble: Boolean): Boolean {
@@ -290,7 +288,7 @@ class TubeBlockGroup {
             from as ResourceNode<ItemType>?
             resource as ItemType
             if (from != null) {
-                val output = parent.nodes.getPossibleOutputter(resource, quantity, onlyTo = { it != from })
+                val output = parent.nodes.getOutputter(resource, quantity, { it != from }, false)
                 if (output != null) {
                     val t = parent.route(from, output)
                     if (t != null) {
@@ -306,8 +304,9 @@ class TubeBlockGroup {
         fun update() {
             val iterator = itemsBeingMoved.iterator()
             for (item in iterator) {
-                if (!item.goal.canOutputFromContainer(item.item.type, item.item.quantity)) {
-                    if (item.start.canOutputFromContainer(item.item.type, item.item.quantity)) {
+                // already know it contains the resources so no need to use canOutput
+                if (!item.goal.couldOuput(item.item.type, item.item.quantity)) {
+                    if (item.start.canInput(item.item.type, item.item.quantity)) {
                         val path = parent.route((item.xPixel shr 4) - GeometryHelper.getXSign(item.dir), (item.yPixel shr 4) - GeometryHelper.getYSign(item.dir), item.start)
                         if (path != null) {
                             item.path = path
@@ -319,7 +318,7 @@ class TubeBlockGroup {
                             item.currentIndex = 0
                         }
                     } else {
-                        val output = parent.nodes.getPossibleOutputter(item.item.type, item.item.quantity)
+                        val output = parent.nodes.getOutputter(item.item.type, item.item.quantity)
                         println("can output to: $output")
                         if (output != null) {
                             val path = parent.route(item.xPixel shr 4, item.yPixel shr 4, output)
@@ -371,7 +370,7 @@ class TubeBlockGroup {
         }
 
         override fun spaceFor(resource: ItemType, quantity: Int): Boolean {
-            return parent.nodes.canOutput(resource, quantity)
+            return parent.nodes.canOutput(resource, quantity, mustContainEnough = false)
         }
 
         override fun contains(resource: ItemType, quantity: Int): Boolean {

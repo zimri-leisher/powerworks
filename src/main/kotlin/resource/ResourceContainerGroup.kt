@@ -3,7 +3,7 @@ package resource
 import java.io.DataInputStream
 import java.io.DataOutputStream
 
-class ResourceContainerGroup(val containers: List<ResourceContainer<*>>) {
+class ResourceContainerGroup(private val containers: List<ResourceContainer<*>>) {
 
     val size
         get() = containers.size
@@ -70,7 +70,21 @@ class ResourceContainerGroup(val containers: List<ResourceContainer<*>>) {
         return list
     }
 
+    fun contains(resource: ResourceType, quantity: Int) = getQuantity(resource) >= quantity
+
+    fun getQuantity(resource: ResourceType): Int {
+        var q = 0
+        for(container in containers) {
+            q += container.getQuantity(resource)
+        }
+        return q
+    }
+
+    fun first(p: (ResourceContainer<*>) -> Boolean) = containers.first(p)
+
     fun forEach(f: (ResourceContainer<*>) -> Unit) = containers.forEach(f)
 
     operator fun iterator() = containers.iterator()
+
+    override fun toString() = "Resource container group: ${containers.joinToString()}"
 }

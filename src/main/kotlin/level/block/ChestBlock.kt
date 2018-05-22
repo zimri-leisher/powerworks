@@ -10,7 +10,7 @@ import screen.InventoryGUI
 
 class ChestBlock(override val type: ChestBlockType, xTile: Int, yTile: Int, rotation: Int) : Block(type, xTile, yTile, rotation), ControlPressHandler {
 
-    val inv = nodes.getAttachedContainers<ItemType>(ResourceCategory.ITEM).first() as Inventory
+    val inv = containers.first { it is Inventory } as Inventory
     val invGUI = InventoryGUI("Chest at ${this.xTile}, ${this.yTile}'s inventory gui", type.invName, inv, Game.WIDTH / 2, Game.HEIGHT / 2)
 
     init {

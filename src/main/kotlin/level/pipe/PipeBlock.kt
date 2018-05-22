@@ -32,14 +32,11 @@ class PipeBlock(xTile: Int, yTile: Int) : Block(BlockType.PIPE, xTile, yTile) {
 
     var group = PipeBlockGroup()
 
-    init {
-        group.addPipe(this)
-    }
-
     override fun onAddToLevel() {
         updateConnections()
         updateState()
         updateGroup()
+        group.addPipe(this)
         super.onAddToLevel()
     }
 

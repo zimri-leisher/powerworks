@@ -4,6 +4,8 @@ import level.block.Block
 import level.moving.MovingObject
 import level.tile.Tile
 import data.ConcurrentlyModifiableMutableList
+import level.block.GhostBlock
+import level.block.MinerBlock
 import resource.ResourceNode
 
 /**
@@ -35,13 +37,13 @@ class Chunk(val parent: Level, val xChunk: Int, val yChunk: Int) {
     fun setBlock(block: Block, xTile: Int = block.xTile, yTile: Int = block.yTile, mainBlock: Boolean) {
         blocks!![(xTile - this.xTile) + (yTile - this.yTile) * CHUNK_SIZE_TILES] = block
         if (mainBlock && block.requiresUpdate)
-            updatesRequired!!.add(block)
+            addUpdateRequired(block)
     }
 
     fun removeBlock(block: Block, xTile: Int = block.xTile, yTile: Int = block.yTile, mainBlock: Boolean) {
         blocks!![(xTile - this.xTile) + (yTile - this.yTile) * CHUNK_SIZE_TILES] = null
         if (mainBlock && block.requiresUpdate)
-            updatesRequired!!.remove(block)
+            removeUpdateRequired(block)
     }
 
     fun addDroppedItem(d: DroppedItem) {
@@ -57,14 +59,15 @@ class Chunk(val parent: Level, val xChunk: Int, val yChunk: Int) {
     fun addMoving(m: MovingObject) {
         moving!!.add(m)
         moving!!.sortedBy { it.yPixel }
-        if (m.requiresUpdate)
-            updatesRequired!!.add(m)
+        if (m.requiresUpdate) {
+            addUpdateRequired(m)
+        }
     }
 
     fun removeMoving(m: MovingObject) {
         moving!!.remove(m)
         if (m.requiresUpdate)
-            updatesRequired!!.remove(m)
+            removeUpdateRequired(m)
     }
 
     fun addResourceNode(r: ResourceNode<*>) {
@@ -73,6 +76,14 @@ class Chunk(val parent: Level, val xChunk: Int, val yChunk: Int) {
 
     fun removeResourceNode(r: ResourceNode<*>) {
         resourceNodes!![r.resourceCategory.ordinal].remove(r)
+    }
+
+    fun addUpdateRequired(levelObject: LevelObject) {
+        updatesRequired!!.add(levelObject)
+    }
+
+    fun removeUpdateRequired(levelObject: LevelObject) {
+        updatesRequired!!.remove(levelObject)
     }
 
     fun update() {

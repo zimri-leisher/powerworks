@@ -1,7 +1,11 @@
 package screen.elements
 
 import data.WeakMutableList
+import main.Game
+import screen.IngameGUI.onClose
+import screen.IngameGUI.onDimensionChange
 import screen.Mouse
+import screen.RecipeSelectorGUI.onOpen
 import screen.ScreenManager
 import screen.WindowGroup
 
@@ -51,12 +55,26 @@ open class GUIWindow(val name: String, xAlignment: () -> Int, yAlignment: () -> 
                 field = value
                 ScreenManager.openWindows.add(this)
                 rootChild.open = true
+                if (openAtMouse) {
+                    var x = Mouse.xPixel
+                    if (x + widthPixels > Game.WIDTH)
+                        x = Game.WIDTH - widthPixels
+                    else if (x < 0)
+                        x = 0
+                    var y = Mouse.yPixel
+                    if (y + heightPixels > Game.HEIGHT)
+                        y = Game.HEIGHT - heightPixels
+                    else if (y < 0)
+                        y = 0
+                    xAlignment = { x }
+                    yAlignment = { y }
+                }
                 onOpen()
             } else if (!value && field) {
                 field = value
                 ScreenManager.openWindows.remove(this)
                 rootChild.open = false
-                if(ScreenManager.selectedWindow == this) {
+                if (ScreenManager.selectedWindow == this) {
                     ScreenManager.selectedWindow = ScreenManager.getHighestWindow(Mouse.xPixel, Mouse.yPixel)
                 }
                 onClose()
@@ -66,9 +84,11 @@ open class GUIWindow(val name: String, xAlignment: () -> Int, yAlignment: () -> 
     /**
      * Ordered constantly based on layer
      */
-    val openChildren = WeakMutableList<RootGUIElement>().apply { onAdd = {
-        this.sortBy { it.layer }
-    } }
+    val openChildren = WeakMutableList<RootGUIElement>().apply {
+        onAdd = {
+            this.sortBy { it.layer }
+        }
+    }
 
     /** The child for which all children get added to */
     var rootChild = RootGUIElement(this, { this.widthPixels }, { this.heightPixels })
@@ -136,6 +156,8 @@ open class GUIWindow(val name: String, xAlignment: () -> Int, yAlignment: () -> 
     var transparentToInteraction = false
     /** If this should not interfere with sending controls to the level when selected */
     var partOfLevel = false
+    /** If this should, when opened, move as near to the mouse as possible (but not beyond the screen) */
+    var openAtMouse = false
 
     /* Util */
     /**
@@ -199,10 +221,10 @@ open class GUIWindow(val name: String, xAlignment: () -> Int, yAlignment: () -> 
 
     fun anyChild(predicate: (RootGUIElement) -> Boolean): Boolean {
         fun recursivelyFind(predicate: (RootGUIElement) -> Boolean, e: RootGUIElement): Boolean {
-            if(predicate(e))
+            if (predicate(e))
                 return true
             e.children.forEach {
-                if(recursivelyFind(predicate, it))
+                if (recursivelyFind(predicate, it))
                     return true
             }
             return false

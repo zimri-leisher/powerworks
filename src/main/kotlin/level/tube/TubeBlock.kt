@@ -32,14 +32,11 @@ class TubeBlock(xTile: Int, yTile: Int) : Block(BlockType.TUBE, xTile, yTile) {
 
     var group = TubeBlockGroup()
 
-    init {
-        group.addTube(this)
-    }
-
     override fun onAddToLevel() {
         updateConnections()
         updateState()
         updateGroup()
+        group.addTube(this)
         group.convertToIntersection(this)
         super.onAddToLevel()
     }
@@ -63,8 +60,11 @@ class TubeBlock(xTile: Int, yTile: Int) : Block(BlockType.TUBE, xTile, yTile) {
     }
 
     override fun onAdjacentBlockRemove(b: Block) {
-        updateGroup()
+        // TODO
+        updateConnections()
         updateState()
+        updateGroup()
+        // this needs to remove the intersection if it is no longer one
         group.convertToIntersection(this)
     }
 

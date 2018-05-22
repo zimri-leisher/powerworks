@@ -8,10 +8,15 @@ import graphics.LocalAnimation
 import graphics.Renderer
 import graphics.SyncAnimation
 import io.*
+import item.IngotItemType
 import item.Inventory
 import item.ItemType
+import item.OreItemType
 import level.Level
 import level.block.BlockType
+import level.block.ChestBlockType
+import level.block.CrafterBlockType
+import level.block.MachineBlockType
 import mod.ModManager
 import mod.ModPermissionsPolicy
 import screen.*
@@ -111,7 +116,12 @@ object Game : Canvas(), Runnable, ControlPressHandler {
         MainMenuGUI
         // just making sure these are loaded before mods load
         ItemType
+        IngotItemType
+        OreItemType
         BlockType
+        MachineBlockType
+        CrafterBlockType
+        ChestBlockType
         State.setState(State.MAIN_MENU)
         Policy.setPolicy(ModPermissionsPolicy())
         System.setSecurityManager(SecurityManager())

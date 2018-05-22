@@ -17,6 +17,7 @@ object RecipeSelectorGUI : GUIWindow("Recipe selector", 20, 20, 100, 120, window
     private var selected: Recipe? = null
 
     init {
+        openAtMouse = true
         partOfLevel = true
         val background = GUIDefaultTextureRectangle(this.rootChild, "Background", 0, 0)
         GUIText(background, "Name text", 0, 0, "Select a recipe:")
@@ -30,13 +31,6 @@ object RecipeSelectorGUI : GUIWindow("Recipe selector", 20, 20, 100, 120, window
         }
         generateCloseButton(background.layer + 1)
         generateDragGrip(background.layer + 1)
-    }
-
-    override fun onOpen() {
-        val x = Mouse.xPixel
-        val y = Mouse.yPixel
-        xAlignment = { x }
-        yAlignment = { y }
     }
 
     /**

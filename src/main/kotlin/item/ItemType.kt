@@ -3,16 +3,14 @@ package item
 import graphics.Image
 import graphics.SyncAnimation
 import graphics.Texture
-import level.block.BlockType
-import level.block.ChestBlockType
-import level.block.CrafterBlockType
-import level.block.MachineBlockType
 import resource.ResourceCategory
 import resource.ResourceType
+import fluid.MoltenOreFluidType
+import level.block.*
 
 private var nextID = 0
 
-open class ItemType(init: ItemType.() -> Unit = {}) : ResourceType {
+open class ItemType(initializer: ItemType.() -> Unit = {}) : ResourceType {
 
     val id = nextID++
     override var name = "Error"
@@ -28,7 +26,7 @@ open class ItemType(init: ItemType.() -> Unit = {}) : ResourceType {
         get() = BlockType.ALL.first { it.id == placedBlockID }
 
     init {
-        init()
+        initializer()
         ALL.add(this)
     }
 
@@ -59,12 +57,6 @@ open class ItemType(init: ItemType.() -> Unit = {}) : ResourceType {
             placedBlockID = CrafterBlockType.ITEM_CRAFTER.id
         }
 
-        val IRON_ORE = ItemType {
-            name = "Iron Ore"
-            icon = Image.Item.IRON_ORE_ITEM
-            maxStack = 100
-        }
-
         val TUBE = ItemType {
             name = "Item Transport Tube"
             icon = Image.Item.TUBE
@@ -75,28 +67,26 @@ open class ItemType(init: ItemType.() -> Unit = {}) : ResourceType {
         val CHEST_SMALL = ItemType {
             name = "Small Chest"
             icon = Image.Block.CHEST_SMALL
-            placedBlockID = ChestBlockType.CHEST_SMALL.id
+            placedBlockID = ChestBlockType.SMALL.id
             maxStack = 20
         }
 
         val CHEST_LARGE = ItemType {
             name = "Large Chest"
             icon = Image.Block.CHEST_LARGE
-            placedBlockID = ChestBlockType.CHEST_LARGE.id
+            placedBlockID = ChestBlockType.LARGE.id
             maxStack = 20
         }
 
         val FURNACE = ItemType {
             name = "Furnace"
-            icon = Image.Misc.ERROR
             placedBlockID = MachineBlockType.FURNACE.id
             maxStack = 10
         }
 
-        val COPPER_ORE = ItemType {
-            name = "Copper Ore"
-            icon = Image.Item.COPPER_ORE_ITEM
-            maxStack = 100
+        val SMALL_FLUID_TANK = ItemType {
+            name = "Small Tank"
+            placedBlockID = FluidTankBlockType.SMALL.id
         }
 
         val PIPE = ItemType {
@@ -104,6 +94,32 @@ open class ItemType(init: ItemType.() -> Unit = {}) : ResourceType {
             icon = Image.Item.PIPE
             placedBlockID = BlockType.PIPE.id
             maxStack = 50
+        }
+    }
+}
+
+class OreItemType(initializer: OreItemType.() -> Unit) : ItemType() {
+
+    var moltenForm = MoltenOreFluidType.MOLTEN_IRON
+
+    init {
+        maxStack = 100
+        initializer()
+    }
+
+    companion object {
+        val COPPER_ORE = OreItemType {
+            name = "Copper Ore"
+            moltenForm = MoltenOreFluidType.MOLTEN_COPPER
+            icon = Image.Item.COPPER_ORE_ITEM
+            maxStack = 100
+        }
+
+        val IRON_ORE = OreItemType {
+            name = "Iron Ore"
+            moltenForm = MoltenOreFluidType.MOLTEN_IRON
+            icon = Image.Item.IRON_ORE_ITEM
+            maxStack = 100
         }
     }
 }

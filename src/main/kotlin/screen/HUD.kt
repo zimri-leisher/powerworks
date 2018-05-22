@@ -57,6 +57,9 @@ object HUD {
 
         internal class HotbarInventory : ResourceContainer<ItemType>(ResourceCategory.ITEM) {
 
+            override val totalQuantity: Int
+                get() = items.sumBy { if(it != null) 1 else 0 }
+
             val items = arrayOfNulls<ItemType>(HOTBAR_SIZE)
 
             override fun add(resource: ResourceType, quantity: Int, from: ResourceNode<*>?, checkIfAble: Boolean): Boolean {

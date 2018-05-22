@@ -19,6 +19,8 @@ class CraftingBlockGUI(val craftingBlock: CrafterBlock) :
     lateinit var progressBar: GUIProgressBar
 
     init {
+        openAtMouse = true
+        partOfLevel = true
         GUIDefaultTextureRectangle(this.rootChild, "Crafting block at ${craftingBlock.xTile}, ${craftingBlock.yTile}'s window background", 0, 0).apply {
             GUIText(this, "Recipe text", 3, 3, "Recipe:")
             val recipeButton = GUIRecipeButton(this, "Recipe choice button", { 3 }, { 9 }, craftingBlock.recipe, { craftingBlock.recipe = it })
@@ -31,7 +33,6 @@ class CraftingBlockGUI(val craftingBlock: CrafterBlock) :
             generateDragGrip(this.layer + 2)
             generateCloseButton(this.layer + 2)
         }
-
     }
 
     override fun update() {

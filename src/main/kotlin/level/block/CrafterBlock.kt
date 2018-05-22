@@ -52,8 +52,9 @@ class CrafterBlock(override val type: CrafterBlockType, xTile: Int, yTile: Int, 
     fun canCraft() = recipe?.consume?.enoughIn(currentResources) == true
 
     override fun onFinishWork() {
-        if (containers.remove(recipe!!.consume))
-            nodes.output(recipe!!.produce, false)
+        if (containers.remove(recipe!!.consume)) {
+            nodes.output(recipe!!.produce, mustContainEnough = false)
+        }
     }
 
     override fun handleControlPress(p: ControlPress) {

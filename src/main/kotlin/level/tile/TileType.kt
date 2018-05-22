@@ -3,6 +3,7 @@ package level.tile
 import graphics.ImageCollection
 import graphics.Texture
 import item.ItemType
+import item.OreItemType
 
 private var nextID = 0
 
@@ -24,7 +25,7 @@ open class OreTileType(textures: ImageCollection, name: String,
         val GRASS_IRON_ORE = OreTileType(ImageCollection.GRASS_IRON_ORE_TILE, "Grass and iron ore",
                 9000,
                 3000,
-                ItemType.IRON_ORE,
+                OreItemType.IRON_ORE,
                 TileType.GRASS,
                 5,
                 .1)
@@ -32,7 +33,7 @@ open class OreTileType(textures: ImageCollection, name: String,
         val GRASS_COPPER_ORE = OreTileType(ImageCollection.GRASS_COPPER_ORE_TILE, "Grass and copper ore",
                 5000,
                 3000,
-                ItemType.COPPER_ORE,
+                OreItemType.COPPER_ORE,
                 TileType.GRASS,
                 3,
                 .07)

@@ -20,6 +20,8 @@ abstract class ResourceContainer<R : ResourceType>(val resourceCategory: Resourc
      */
     val listeners = mutableListOf<ResourceContainerChangeListener>()
 
+    abstract val totalQuantity: Int
+
     /**
      * Adds the specified resource with the specified quantity to this node, and notifies listeners of this event
      * @param checkIfAble whether or not to check with spaceFor, isRightType and additionRule. Set to false if you already know there is space,

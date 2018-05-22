@@ -10,7 +10,7 @@ import resource.ResourceNodeGroup
 import screen.Mouse
 import java.io.DataOutputStream
 
-abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotation: Int = 0) : LevelObject(type, xTile shl 4, yTile shl 4, rotation, type.hitbox, type.requiresUpdate) {
+abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotation: Int = 0) : LevelObject(type, xTile shl 4, yTile shl 4, rotation) {
 
     override val type = type
 
@@ -100,14 +100,14 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotatio
     }
 
     /**
-     * When an adjacent block is removed
+     * When an adjacent block is removed from the level
      */
     open fun onAdjacentBlockRemove(b: Block) {
 
     }
 
     /**
-     * When an adjacent block is added
+     * When an adjacent block is added to the level
      */
     open fun onAdjacentBlockAdd(b: Block) {
 
@@ -132,7 +132,7 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotatio
                 }
             }
         }
-        // Checks for moving objects. Don't worry about blocks, because no block has a hitbox of over a tile
+        // Checks for moving objects. Don't worry about blocks
         return Level.MovingObjects.getCollision(this, xPixel, yPixel, predicate)
     }
 
@@ -146,7 +146,7 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotatio
     }
 
     override fun equals(other: Any?): Boolean {
-        return other is Block && other.xTile == xTile && other.yTile == yTile && other.type == type
+        return other != null && other.javaClass == this.javaClass && other is Block && other.inLevel == inLevel && other.xTile == xTile && other.yTile == yTile && other.type == type
     }
 
     override fun hashCode(): Int {
@@ -174,9 +174,10 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotatio
                 } else if (block == null) {
                     if (p.control == Control.INTERACT && Game.currentLevel.ghostBlock != null) {
                         val gBlock = Game.currentLevel.ghostBlock!!
-                        Level.add(gBlock.type.instantiate(gBlock.xPixel, gBlock.yPixel, gBlock.rotation))
-                        val h = Mouse.heldItemType!!
-                        Game.mainInv.remove(h, 1)
+                        if(Level.add(gBlock.type.instantiate(gBlock.xPixel, gBlock.yPixel, gBlock.rotation))) {
+                            val h = Mouse.heldItemType!!
+                            Game.mainInv.remove(h, 1)
+                        }
                     }
                 }
             }

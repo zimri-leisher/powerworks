@@ -1,11 +1,9 @@
 package item
 
+import main.Game
 import resource.*
 
 class Inventory(val width: Int, val height: Int, rule: (ResourceType) -> Boolean = { true }, private val items: Array<Item?> = arrayOfNulls(width * height)) : ResourceContainer<ItemType>(ResourceCategory.ITEM, rule) {
-
-    var itemCount = 0
-        private set
 
     val full: Boolean
         get() {
@@ -15,13 +13,14 @@ class Inventory(val width: Int, val height: Int, rule: (ResourceType) -> Boolean
             return false
         }
 
+    override var totalQuantity = 0
+
     override fun add(resource: ResourceType, quantity: Int, from: ResourceNode<*>?, checkIfAble: Boolean): Boolean {
         if (checkIfAble)
             if (!canAdd(resource, quantity))
                 return false
         resource as ItemType
         var amountLeftToAdd = quantity
-        itemCount += quantity
         // fill out unmaxed stacks
         for (item in items) {
             if (item != null && item.type == resource && item.quantity < resource.maxStack) {
@@ -30,6 +29,7 @@ class Inventory(val width: Int, val height: Int, rule: (ResourceType) -> Boolean
                     item.quantity = resource.maxStack
                 } else {
                     item.quantity += amountLeftToAdd
+                    totalQuantity += quantity
                     listeners.forEach { it.onContainerChange(this, resource, quantity) }
                     return true
                 }
@@ -43,6 +43,7 @@ class Inventory(val width: Int, val height: Int, rule: (ResourceType) -> Boolean
                 amountLeftToAdd -= q
             }
             if (amountLeftToAdd <= 0) {
+                totalQuantity += quantity
                 listeners.forEach { it.onContainerChange(this, resource, quantity) }
                 return true
             }
@@ -92,7 +93,6 @@ class Inventory(val width: Int, val height: Int, rule: (ResourceType) -> Boolean
             if (!canRemove(resource, quantity))
                 return false
         var amountLeftToRemove = quantity
-        itemCount -= quantity
         for (i in items.indices.reversed()) {
             val item = items[i]
             if (item != null && item.type == resource) {
@@ -103,6 +103,7 @@ class Inventory(val width: Int, val height: Int, rule: (ResourceType) -> Boolean
                 }
                 amountLeftToRemove -= prevQ - item.quantity
                 if (amountLeftToRemove <= 0) {
+                    totalQuantity -= quantity
                     listeners.forEach { it.onContainerChange(this, resource, -quantity) }
                     return true
                 }
@@ -200,8 +201,11 @@ class Inventory(val width: Int, val height: Int, rule: (ResourceType) -> Boolean
     }
 
     operator fun set(i: Int, v: Item?) {
+        if(items[i] != null)
+            totalQuantity -= items[i]!!.quantity
         items[i] = v
+        totalQuantity += v?.quantity ?: 0
     }
 
-    override fun toString() = "Inventory width: $width, height: $height, $itemCount"
+    override fun toString() = "Inventory width: $width, height: $height, $totalQuantity items"
 }

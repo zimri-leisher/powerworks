@@ -5,6 +5,9 @@ import java.util.*
 
 class InfiniteInventory(rule: (ResourceType) -> Boolean = { true }) : ResourceContainer<ItemType>(ResourceCategory.ITEM, rule) {
 
+    override val totalQuantity: Int
+        get() = items.sumBy { it.quantity }
+
     var items = mutableListOf<Item>()
         private set
 

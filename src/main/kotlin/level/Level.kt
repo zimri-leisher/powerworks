@@ -12,7 +12,9 @@ import item.ItemType
 import level.block.Block
 import level.block.BlockType
 import level.block.GhostBlock
+import level.block.MinerBlock
 import level.moving.MovingObject
+import level.pipe.PipeBlockGroup
 import level.tile.OreTileType
 import level.tile.Tile
 import level.tube.TubeBlockGroup
@@ -225,15 +227,14 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
     }
 
     fun update() {
-        var count = 0
         TubeBlockGroup.update()
+        PipeBlockGroup.update()
         updateChunksBeingRendered()
         for (c in loadedChunks) {
             if (c.updatesRequired!!.size == 0 && !c.beingRendered && c.resourceNodes!!.all { it.isEmpty() }) {
                 c.unload()
             } else {
                 c.update()
-                count++
             }
         }
         updateGhostBlock()
