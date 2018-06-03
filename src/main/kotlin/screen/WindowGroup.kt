@@ -1,20 +1,14 @@
 package screen
 
+import data.WeakMutableList
 import screen.elements.GUIWindow
 
 class WindowGroup(var layer: Int, val name: String) {
 
-    private val _windows = mutableListOf<GUIWindow>()
-
-    val windows = object : MutableList<GUIWindow> by _windows {
-        override fun add(element: GUIWindow): Boolean {
-            val result = _windows.add(element)
-            sortBy { it.layer }
-            return result
-        }
-    }
+    val windows = WeakMutableList<GUIWindow>()
 
     init {
+        windows.onAdd = { sortBy { it.layer } }
         ScreenManager.windowGroups.add(this)
     }
 

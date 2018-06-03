@@ -287,7 +287,8 @@ class Image private constructor() : Texture {
     object Block {
         val CHEST_SMALL = Image("/textures/block/chest_small.png")
         val CHEST_LARGE = Image("/textures/block/chest_large.png")
-        val CRAFTER = Image("/textures/block/crafter_2.png")
+        val CRAFTER = Image("/textures/block/crafter.png")
+        val FURNACE = Image("/textures/block/furnace.png")
         val TUBE_4_WAY = Image("/textures/block/tube/4_way.png")
         val TUBE_2_WAY_VERTICAL = Image("/textures/block/tube/2_way_vertical.png")
         val TUBE_2_WAY_HORIZONTAL = Image("/textures/block/tube/2_way_horizontal.png")
@@ -295,6 +296,7 @@ class Image private constructor() : Texture {
         val TUBE_RIGHT_CLOSE = Image("/textures/block/tube/right_close.png")
         val TUBE_DOWN_CLOSE = Image("/textures/block/tube/down_close.png")
         val TUBE_LEFT_CLOSE = Image("/textures/block/tube/left_close.png")
+        val TUBE_UP_CONNECT = Image("/textures/block/tube/up_connect.png")
         val PIPE_4_WAY = Image("/textures/block/pipe/4_way.png")
         val PIPE_2_WAY_VERTICAL = Image("/textures/block/pipe/2_way_vertical.png")
         val PIPE_2_WAY_HORIZONTAL = Image("/textures/block/pipe/2_way_horizontal.png")
@@ -357,7 +359,13 @@ class Image private constructor() : Texture {
         val MOLTEN_IRON = Image("/textures/fluid/molten_iron.png")
     }
 
+    object Particle {
+        val BLOCK_PLACE = Image("/textures/particle/block_place.png")
+    }
+
     object Item {
+        val CIRCUIT = Image("/textures/item/circuit.png")
+        val CABLE = Image("/textures/item/cable.png")
         val TUBE = Image("/textures/item/tube.png")
         val PIPE = Image("/textures/item/pipe.png")
         val COPPER_ORE_ITEM = Image("/textures/item/copper_ore_raw.png")

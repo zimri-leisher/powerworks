@@ -3,6 +3,7 @@ package level.block
 import audio.Sound
 import crafting.Crafter
 import fluid.FluidTank
+import fluid.MoltenOreFluidType
 import graphics.Image
 import graphics.LocalAnimation
 import graphics.SyncAnimation
@@ -107,16 +108,34 @@ open class MachineBlockType<T : MachineBlock>(initializer: MachineBlockType<T>.(
             name = "Furnace"
             instantiate = { xPixel, yPixel, rotation -> FurnaceBlock(this, xPixel shr 4, yPixel shr 4, rotation) }
             widthTiles = 2
-            heightTiles = 2
-            hitbox = Hitbox.TILE2X2
+            requiresUpdate = true
+            textures = LevelObjectTextures(LevelObjectTexture(Image.Block.FURNACE, yPixelOffset = 18))
+            loop = true
+            hitbox = Hitbox.TILE2X1
             nodesTemplate = BlockNodesTemplate(widthTiles, heightTiles) {
                 val internalInventory = Inventory(1, 1)
-                val internalTank = FluidTank(5)
+                val internalTank = FluidTank(1)
                 internalInventory.typeRule = { it is OreItemType }
-                internalInventory.additionRule = { _, _ -> internalInventory.totalQuantity == 0 }
                 listOf(
                         ResourceNode(0, 0, 0, ResourceCategory.ITEM, true, false, internalInventory),
-                        ResourceNode(1, 1, 2, ResourceCategory.FLUID, false, true, internalTank)
+                        ResourceNode(1, 0, 2, ResourceCategory.FLUID, false, true, internalTank).apply { outputToLevel = false }
+                )
+            }
+        }
+
+        val SOLIDIFIER = MachineBlockType<SolidifierBlock> {
+            name = "Molten Ore Solidifer"
+            instantiate = { xPixel, yPixel, rotation -> SolidifierBlock(xPixel shr 4, yPixel shr 4, rotation) }
+            widthTiles = 2
+            heightTiles = 2
+            loop = true
+            hitbox = Hitbox.TILE2X2
+            nodesTemplate = BlockNodesTemplate(widthTiles, heightTiles) {
+                val tank = FluidTank(10, { it is MoltenOreFluidType })
+                val out = Inventory(1, 1)
+                listOf(
+                        ResourceNode(0, 0, 0, ResourceCategory.FLUID, true, false, tank),
+                        ResourceNode(1, 1, 2, ResourceCategory.ITEM, false, true, out)
                 )
             }
         }

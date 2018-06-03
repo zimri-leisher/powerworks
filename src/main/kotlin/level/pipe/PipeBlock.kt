@@ -35,7 +35,6 @@ class PipeBlock(xTile: Int, yTile: Int) : Block(BlockType.PIPE, xTile, yTile) {
     override fun onAddToLevel() {
         updateConnections()
         updateState()
-        updateGroup()
         group.addPipe(this)
         super.onAddToLevel()
     }
@@ -57,21 +56,12 @@ class PipeBlock(xTile: Int, yTile: Int) : Block(BlockType.PIPE, xTile, yTile) {
     }
 
     override fun onAdjacentBlockRemove(b: Block) {
-        updateGroup()
         updateState()
     }
 
-
-    private fun updateGroup() {
-        for (i in 0..3) {
-            val t = pipeConnections[i]
-            if (t != null) {
-                mergeGroups(t)
-            }
-        }
-    }
-
     private fun mergeGroups(t: PipeBlock) {
+        if(t.group == group)
+            return
         if (t.group.size > group.size) {
             t.group.merge(group)
             group = t.group
@@ -140,15 +130,15 @@ class PipeBlock(xTile: Int, yTile: Int) : Block(BlockType.PIPE, xTile, yTile) {
     }
 
     override fun render() {
-        Renderer.renderTexture(state.texture, xPixel, yPixel)
+        Renderer.renderTexture(state.texture, xPixel, yPixel - 2)
         if (closedEnds[0])
-            Renderer.renderTexture(Image.Block.PIPE_UP_CLOSE, xPixel + 4, yPixel - Image.Block.PIPE_UP_CLOSE.heightPixels)
+            Renderer.renderTexture(Image.Block.PIPE_UP_CLOSE, xPixel + 4, yPixel - Image.Block.PIPE_UP_CLOSE.heightPixels - 2)
         if (closedEnds[1])
-            Renderer.renderTexture(Image.Block.PIPE_RIGHT_CLOSE, xPixel + 16, yPixel + 4)
+            Renderer.renderTexture(Image.Block.PIPE_RIGHT_CLOSE, xPixel + 16, yPixel + 2)
         if (closedEnds[2])
-            Renderer.renderTexture(Image.Block.PIPE_DOWN_CLOSE, xPixel + 4, yPixel + 12)
+            Renderer.renderTexture(Image.Block.PIPE_DOWN_CLOSE, xPixel + 4, yPixel + 10)
         if (closedEnds[3])
-            Renderer.renderTexture(Image.Block.PIPE_LEFT_CLOSE, xPixel - Image.Block.PIPE_LEFT_CLOSE.widthPixels, yPixel + 4)
+            Renderer.renderTexture(Image.Block.PIPE_LEFT_CLOSE, xPixel - Image.Block.PIPE_LEFT_CLOSE.widthPixels, yPixel + 2)
         if (Game.currentDebugCode == DebugCode.RENDER_HITBOXES)
             renderHitbox()
     }

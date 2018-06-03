@@ -2,7 +2,7 @@ package fluid
 
 import resource.*
 
-class FluidTank(val maxAmount: Int, typeRule: (ResourceType) -> Boolean = { true }) : ResourceContainer<FluidType>(ResourceCategory.FLUID, typeRule) {
+class FluidTank(val maxAmount: Int, typeRule: ResourceContainer<FluidType>.(ResourceType) -> Boolean = { true }) : ResourceContainer<FluidType>(ResourceCategory.FLUID, typeRule) {
 
     var currentFluidType: FluidType? = null
     var currentAmount = 0

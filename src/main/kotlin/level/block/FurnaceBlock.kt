@@ -2,6 +2,7 @@ package level.block
 
 import fluid.FluidTank
 import fluid.FluidType
+import io.*
 import item.IngotItemType
 import item.Inventory
 import item.ItemType
@@ -9,15 +10,18 @@ import item.OreItemType
 import resource.ResourceContainer
 import resource.ResourceContainerChangeListener
 import resource.ResourceType
+import screen.FurnaceBlockGUI
 
-class FurnaceBlock(type: MachineBlockType<FurnaceBlock>, xTile: Int, yTile: Int, rotation: Int = 0) : MachineBlock(type, xTile, yTile, rotation), ResourceContainerChangeListener {
+class FurnaceBlock(type: MachineBlockType<FurnaceBlock>, xTile: Int, yTile: Int, rotation: Int = 0) : MachineBlock(type, xTile, yTile, rotation), ResourceContainerChangeListener, ControlPressHandler {
 
     // the internal inventory, not the internal tank
     val queue = containers.first { it is Inventory }
-    val tank = containers.first { it is FluidTank }
+    val tank = containers.first { it is FluidTank } as FluidTank
     var currentlySmelting: OreItemType? = null
+    private val gui = FurnaceBlockGUI(this)
 
     init {
+        InputManager.registerControlPressHandler(this, ControlPressHandlerType.LEVEL_THIS, Control.INTERACT)
         containers.forEach { it.listeners.add(this) }
     }
 
@@ -38,22 +42,36 @@ class FurnaceBlock(type: MachineBlockType<FurnaceBlock>, xTile: Int, yTile: Int,
         }
     }
 
+    override fun update() {
+        if(tank.totalQuantity > 0) {
+            nodes.output(tank.currentFluidType!!, 1)
+        }
+        on = queue.totalQuantity > 0 && tank.totalQuantity < tank.maxAmount
+        super.update()
+    }
+
     override fun onFinishWork() {
-        if(tank.canAdd(currentlySmelting!!.moltenForm, 1)) {
-            if(queue.remove(currentlySmelting!!, 1)) {
+        if (tank.canAdd(currentlySmelting!!.moltenForm, 1)) {
+            if (queue.remove(currentlySmelting!!, 1)) {
                 tank.add(currentlySmelting!!.moltenForm, 1, checkIfAble = false)
                 nodes.output(currentlySmelting!!.moltenForm, 1)
             }
         }
-        // if there is no more of this resource to be smelted, move on to the next one
-        if (queue.getQuantity(currentlySmelting!!) == 0) {
-            if (queue.totalQuantity != 0) {
-                // keep on smelting
+        if (queue.totalQuantity > 0) {
+            // start smelting another item
+            if (queue.getQuantity(currentlySmelting!!) == 0) {
                 currentlySmelting = queue.toList()[0]!!.first as OreItemType
-                on = true
-            } else {
-                currentlySmelting = null
             }
+            // do nothing, old item still has quantity
+        } else {
+            on = false
+            currentlySmelting = null
+        }
+    }
+
+    override fun handleControlPress(p: ControlPress) {
+        if (p.control == Control.INTERACT && p.pressType == PressType.PRESSED) {
+            gui.toggle()
         }
     }
 }

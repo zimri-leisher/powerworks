@@ -13,6 +13,10 @@ object GeometryHelper {
         return false
     }
 
+    fun isAdjacentOrIntersecting(x1: Int, y1: Int, x2: Int, y2: Int): Boolean {
+        return Math.abs(x1 - x2) <= 1 && Math.abs(y1 - y2) <= 1
+    }
+
     fun isOppositeAngle(a1: Int, a2: Int): Boolean {
         return Math.max(a1, a2) - 2 == Math.min(a1, a2)
     }

@@ -102,6 +102,10 @@ class ResourceNodeGroup(val name: String, nodes: List<ResourceNode<*>> = listOf(
 
     fun canOutput(resourceType: ResourceType, quantity: Int, onlyTo: (ResourceNode<*>) -> Boolean = { true }, mustContainEnough: Boolean = true) = getOutputter(resourceType, quantity, onlyTo, mustContainEnough) != null
 
+    fun canOutput(list: ResourceList, onlyTo: (ResourceNode<*>) -> Boolean = { true }, mustContainEnough: Boolean = true): Boolean {
+        return list.all { (r, q) -> canOutput(r, q, onlyTo, mustContainEnough) }
+    }
+
     fun add(n: ResourceNode<*>) {
         nodes.add(n)
     }

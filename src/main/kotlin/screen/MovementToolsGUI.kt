@@ -22,6 +22,7 @@ object MovementToolsGUI : GUIWindow("Player movement tools", { Game.WIDTH - 80 }
         }
 
     init {
+        partOfLevel = true
         InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.TOGGLE_MOVEMENT_TOOLS)
         InputManager.registerControlPressHandler(this, ControlPressHandlerType.LEVEL_ANY, Control.INTERACT)
         GUIDefaultTextureRectangle(this.rootChild, name + " background", 0, 0).run {

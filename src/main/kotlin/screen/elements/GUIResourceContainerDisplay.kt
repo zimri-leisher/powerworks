@@ -9,7 +9,7 @@ class GUIResourceContainerDisplay(parent: RootGUIElement, name: String, val cont
                                   open: Boolean = false, layer: Int = parent.layer + 1) :
         GUIElement(parent, name, xAlignment, yAlignment, { width * 16 + 4 }, { height * 16 + 4 }, open, layer), ResourceContainerChangeListener {
 
-    val listDisplay = GUIResourceListDisplay(this, name + " list display", container.toList(), xAlignment, yAlignment, width, height)
+    val listDisplay = GUIResourceListDisplay(this, name + " list display", container.toList(), { 0 }, { 0 }, width, height)
 
     init {
         container.listeners.add(this)
@@ -22,7 +22,7 @@ class GUIResourceContainerDisplay(parent: RootGUIElement, name: String, val cont
     override fun onContainerChange(container: ResourceContainer<*>, resource: ResourceType, quantity: Int) {
         if (quantity < 0) {
             listDisplay.currentResources.remove(resource, -quantity)
-        } else if(quantity > 0) {
+        } else if (quantity > 0) {
             listDisplay.currentResources.add(resource, quantity)
         }
     }

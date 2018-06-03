@@ -26,6 +26,8 @@ class ResourceList(private val resources: MutableMap<ResourceType, Int> = mutabl
 
     fun any(f: (Map.Entry<ResourceType, Int>) -> Boolean) = resources.any(f)
 
+    fun all(f: (Map.Entry<ResourceType, Int>) -> Boolean) = resources.all(f)
+
     fun addAll(other: ResourceList) {
         for((r, q) in other.resources) {
             add(r, q)

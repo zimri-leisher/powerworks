@@ -1,6 +1,7 @@
 package level
 
 import audio.AudioManager
+import data.ConcurrentlyModifiableMutableList
 import data.DirectoryChangeWatcher
 import data.FileManager
 import data.GameDirectoryIdentifier
@@ -12,8 +13,8 @@ import item.ItemType
 import level.block.Block
 import level.block.BlockType
 import level.block.GhostBlock
-import level.block.MinerBlock
 import level.moving.MovingObject
+import level.particle.Particle
 import level.pipe.PipeBlockGroup
 import level.tile.OreTileType
 import level.tile.Tile
@@ -55,6 +56,7 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
     val seed: Long
     val rand: Random
 
+    val particles = ConcurrentlyModifiableMutableList<Particle>()
     val chunks: Array<Chunk>
     val loadedChunks = CopyOnWriteArrayList<Chunk>()
 
@@ -161,6 +163,9 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
                 count++
             }
         }
+        particles.forEach {
+            it.render()
+        }
         for (y in minY until maxY) {
             val yChunk = y shr CHUNK_TILE_EXP
             // Render the line of blocks
@@ -237,6 +242,7 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
                 c.update()
             }
         }
+        particles.forEach { it.update() }
         updateGhostBlock()
         updateSelectedLevelObject()
     }
@@ -268,7 +274,9 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
      */
     private fun updateGhostBlock() {
         val currentItem = Mouse.heldItemType
-        if (currentItem == null || (Game.mainInv.getQuantity(currentItem) == 0)) {
+        if (currentItem == null || currentItem.placedBlock == BlockType.ERROR || (Game.mainInv.getQuantity(currentItem) == 0)) {
+            if (ghostBlock != null)
+                Level.remove(ghostBlock!!)
             ghostBlock = null
         } else if (currentItem.placedBlock != BlockType.ERROR) {
             val placedType = currentItem.placedBlock
@@ -691,6 +699,41 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
             return false
         }
 
+        /**
+         * Tries to 'materialize' this resource where specified. Note: most resources have no physical representation
+         * other than some purely decorative particles
+         * @return the quantity of the resource that was able to be materialized
+         */
+        fun add(xPixel: Int, yPixel: Int, r: ResourceType, quantity: Int): Int {
+            if (r is ItemType) {
+                if (!add(DroppedItem(xPixel, yPixel, r, quantity)))
+                    return 0
+                return quantity
+            }
+            return 0
+        }
+
+        fun add(resourceNode: ResourceNode<*>) {
+            if (resourceNode.inLevel)
+                return
+            val c = Chunks.getFromTile(resourceNode.xTile, resourceNode.yTile)
+            val previousNode = c.resourceNodes!![resourceNode.resourceCategory.ordinal].firstOrNull {
+                it.xTile == resourceNode.xTile && it.yTile == resourceNode.yTile && it.dir == resourceNode.dir && it.attachedContainer == resourceNode.attachedContainer
+            }
+            if (previousNode != null) {
+                remove(previousNode)
+            }
+            c.addResourceNode(resourceNode)
+            resourceNode.inLevel = true
+            ResourceNodes.updateAttachments(resourceNode)
+            for (x in -1..1) {
+                for (y in -1..1) {
+                    if (Math.abs(x) != Math.abs(y))
+                        ResourceNodes.get(resourceNode.xTile + x, resourceNode.yTile + y).forEach { ResourceNodes.updateAttachments(it) }
+                }
+            }
+        }
+
         fun remove(l: LevelObject): Boolean {
             if (l.inLevel) {
                 if (l is Block) {
@@ -716,32 +759,17 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
         }
 
         /**
-         * Tries to 'materialize' this resource where specified. Note: most resources have no physical representation
-         * other than some purely decorative particles
-         * @return the quantity of the resource that was able to be materialized
+         * Adds a particle to the level. Particles are temporary and purely decorative, they do not get saved
          */
-        fun add(xPixel: Int, yPixel: Int, r: ResourceType, quantity: Int): Int {
-            if (r is ItemType) {
-                if (!add(DroppedItem(xPixel, yPixel, r, quantity)))
-                    return 0
-                return quantity
-            }
-            return 0
+        fun add(particle: Particle) {
+            Game.currentLevel.particles.add(particle)
         }
 
-        fun add(resourceNode: ResourceNode<*>) {
-            if (resourceNode.inLevel)
-                return
-            val c = Chunks.getFromTile(resourceNode.xTile, resourceNode.yTile)
-            c.addResourceNode(resourceNode)
-            resourceNode.inLevel = true
-            ResourceNodes.updateAttachments(resourceNode)
-            for (x in -1..1) {
-                for (y in -1..1) {
-                    if (Math.abs(x) != Math.abs(y))
-                        ResourceNodes.get(resourceNode.xTile + x, resourceNode.yTile + y).forEach { ResourceNodes.updateAttachments(it) }
-                }
-            }
+        /**
+         * Removes a particle from the level
+         */
+        fun remove(particle: Particle) {
+            Game.currentLevel.particles.remove(particle)
         }
 
         fun remove(resourceNode: ResourceNode<*>) {

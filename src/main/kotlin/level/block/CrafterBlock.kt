@@ -23,9 +23,9 @@ class CrafterBlock(override val type: CrafterBlockType, xTile: Int, yTile: Int, 
         containers.forEach { container ->
             container.listeners.add(this)
             // only allow input if there is a recipe
-            container.typeRule = { this.recipe != null }
+            container.typeRule = { recipe != null }
             // only allow addition if there are less ingredients than required
-            container.additionRule = { resource, quantity -> this.recipe != null && resource in this.recipe!!.consume && container.getQuantity(resource) + quantity <= this.recipe!!.consume.getQuantity(resource) }
+            container.additionRule = { resource, quantity -> recipe != null && resource in recipe!!.consume && container.getQuantity(resource) + quantity <= recipe!!.consume.getQuantity(resource) }
         }
         InputManager.registerControlPressHandler(this, ControlPressHandlerType.LEVEL_THIS, Control.INTERACT)
     }
@@ -52,8 +52,11 @@ class CrafterBlock(override val type: CrafterBlockType, xTile: Int, yTile: Int, 
     fun canCraft() = recipe?.consume?.enoughIn(currentResources) == true
 
     override fun onFinishWork() {
-        if (containers.remove(recipe!!.consume)) {
-            nodes.output(recipe!!.produce, mustContainEnough = false)
+        if (nodes.canOutput(recipe!!.produce)) {
+            if (containers.remove(recipe!!.consume))
+                nodes.output(recipe!!.produce, mustContainEnough = false)
+        } else {
+            currentWork = type.maxWork
         }
     }
 

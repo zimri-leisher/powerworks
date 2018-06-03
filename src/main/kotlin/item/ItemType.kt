@@ -80,6 +80,7 @@ open class ItemType(initializer: ItemType.() -> Unit = {}) : ResourceType {
 
         val FURNACE = ItemType {
             name = "Furnace"
+            icon = Image.Block.FURNACE
             placedBlockID = MachineBlockType.FURNACE.id
             maxStack = 10
         }
@@ -94,6 +95,23 @@ open class ItemType(initializer: ItemType.() -> Unit = {}) : ResourceType {
             icon = Image.Item.PIPE
             placedBlockID = BlockType.PIPE.id
             maxStack = 50
+        }
+
+        val SOLIDIFIER = ItemType {
+            name = "Molten Ore Solidifier"
+            placedBlockID = MachineBlockType.SOLIDIFIER.id
+        }
+
+        val CIRCUIT = ItemType {
+            name = "Circuit"
+            maxStack = 100
+            icon = Image.Item.CIRCUIT
+        }
+
+        val CABLE = ItemType {
+            name = "Cable"
+            maxStack = 100
+            icon = Image.Item.CABLE
         }
     }
 }

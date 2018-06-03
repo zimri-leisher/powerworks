@@ -4,6 +4,7 @@ import graphics.LocalAnimation
 import graphics.Renderer
 import io.*
 import level.*
+import level.particle.ParticleEffect
 import main.Game
 import resource.ResourceContainerGroup
 import resource.ResourceNodeGroup
@@ -51,6 +52,7 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotatio
      * Don't forget to call super.onAddToLevel() in subclasses overriding this so that the onAdjacentBlockAdd methods of adjacent blocks are called
      */
     override fun onAddToLevel() {
+        ParticleEffect.BLOCK_PLACE.instantiate(this)
         nodes.forEach { Level.add(it) }
         // loop through each block touching this one, accounting for width and height
         val adjacent = mutableSetOf<Block>()

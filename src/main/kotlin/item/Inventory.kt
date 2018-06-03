@@ -3,7 +3,7 @@ package item
 import main.Game
 import resource.*
 
-class Inventory(val width: Int, val height: Int, rule: (ResourceType) -> Boolean = { true }, private val items: Array<Item?> = arrayOfNulls(width * height)) : ResourceContainer<ItemType>(ResourceCategory.ITEM, rule) {
+class Inventory(val width: Int, val height: Int, rule: ResourceContainer<ItemType>.(ResourceType) -> Boolean = { true }, private val items: Array<Item?> = arrayOfNulls(width * height)) : ResourceContainer<ItemType>(ResourceCategory.ITEM, rule) {
 
     val full: Boolean
         get() {
@@ -48,7 +48,7 @@ class Inventory(val width: Int, val height: Int, rule: (ResourceType) -> Boolean
                 return true
             }
         }
-        throw Exception("Inventory unable to accept more, use the checkIfAble argument when calling this")
+        return true
     }
 
     override fun getQuantity(resource: ResourceType): Int {
@@ -109,7 +109,8 @@ class Inventory(val width: Int, val height: Int, rule: (ResourceType) -> Boolean
                 }
             }
         }
-        throw Exception("Inventory does not contain enough resources, use the checkIfAble argument when calling this")
+        // not going to throw an exception here. Once past the checkIfAble, we assume that we are going to succeed blindly
+        return true
     }
 
     fun remove(i: Item): Boolean {

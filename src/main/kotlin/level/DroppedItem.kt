@@ -44,6 +44,8 @@ class DroppedItem(xPixel: Int, yPixel: Int, val itemType: ItemType, quantity: In
         super.render()
     }
 
+    override fun toString() = "Dropped item at $xPixel, $yPixel, type: $type, quantity: $quantity"
+
     companion object {
         init {
             Mouse.addLevelTooltipTemplate({

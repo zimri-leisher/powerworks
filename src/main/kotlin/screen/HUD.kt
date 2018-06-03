@@ -73,7 +73,7 @@ object HUD {
                         return true
                     }
                 }
-                throw Exception("Please use checkIfAble when calling this and not knowing if it has adequate space left")
+                return true
             }
 
             override fun spaceFor(resource: ItemType, quantity: Int) = items.all { it != resource }

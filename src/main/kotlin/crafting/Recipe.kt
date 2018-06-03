@@ -1,5 +1,6 @@
 package crafting
 
+import item.IngotItemType
 import item.ItemType
 import resource.ResourceList
 import resource.ResourceType
@@ -31,6 +32,14 @@ class Recipe(
     companion object {
         val ALL = mutableListOf<Recipe>()
 
-        val ERROR = Recipe(ResourceList(ItemType.ERROR to 1), ResourceList(ItemType.CHEST_SMALL to 2), ItemType.ERROR)
+        val ERROR = Recipe(ResourceList(ItemType.ERROR to 1), ResourceList(ItemType.ERROR to 1), ItemType.ERROR)
+
+        val CHEST_SMALL = Recipe(ResourceList(IngotItemType.IRON_INGOT to 2), ResourceList(ItemType.CHEST_SMALL to 1), ItemType.CHEST_SMALL)
+
+        val CABLE = Recipe(ResourceList(IngotItemType.COPPER_INGOT to 1), ResourceList(ItemType.CABLE to 8), ItemType.CABLE, category = RecipeCategory.MACHINE_PARTS)
+
+        val CIRCUIT = Recipe(ResourceList(IngotItemType.COPPER_INGOT to 1), ResourceList(ItemType.CIRCUIT to 4), ItemType.CIRCUIT, category = RecipeCategory.MACHINE_PARTS)
+
+        val CRAFTER = Recipe(ResourceList(IngotItemType.IRON_INGOT to 4, ItemType.CIRCUIT to 8, ItemType.CABLE to 8), ResourceList(ItemType.CRAFTER to 1), ItemType.CRAFTER, category = RecipeCategory.MACHINE)
     }
 }

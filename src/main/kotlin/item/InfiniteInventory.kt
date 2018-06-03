@@ -3,7 +3,7 @@ package item
 import resource.*
 import java.util.*
 
-class InfiniteInventory(rule: (ResourceType) -> Boolean = { true }) : ResourceContainer<ItemType>(ResourceCategory.ITEM, rule) {
+class InfiniteInventory(rule: ResourceContainer<ItemType>.(ResourceType) -> Boolean = { true }) : ResourceContainer<ItemType>(ResourceCategory.ITEM, rule) {
 
     override val totalQuantity: Int
         get() = items.sumBy { it.quantity }

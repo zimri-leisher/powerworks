@@ -12,22 +12,6 @@ import main.DebugCode
 import resource.*
 import java.io.DataOutputStream
 
-data class IntersectionTube(val tubeBlock: TubeBlock, var connectedTo: Array<TubeAndDist?>) {
-    override fun equals(other: Any?): Boolean {
-        return other is IntersectionTube && other.tubeBlock == tubeBlock
-    }
-
-    override fun hashCode(): Int {
-        return tubeBlock.hashCode()
-    }
-
-    override fun toString(): String {
-        return "Intersection at ${tubeBlock.xTile}, ${tubeBlock.yTile}"
-    }
-}
-
-data class TubeAndDist(val intersection: IntersectionTube, val dist: Int)
-
 class TubeBlockGroup {
 
     private val tubes = mutableListOf<TubeBlock>()
@@ -49,8 +33,10 @@ class TubeBlockGroup {
     fun merge(other: TubeBlockGroup) {
         // so that they don't bother making or removing connections, because it would just remove a connection and add it again
         other.tubes.forEach {
-            if (it !in tubes)
+            if (it !in tubes) {
                 tubes.add(it)
+                it.group = this
+            }
         }
         other.nodes.forEach {
             it as ResourceNode<ItemType>
@@ -73,8 +59,8 @@ class TubeBlockGroup {
      */
     fun createCorrespondingNodes(nodes: List<ResourceNode<ItemType>>) {
         val new = nodes.map { ResourceNode.createCorresponding(it, storage) }
-        for(newNode in new) {
-            if(newNode !in this.nodes) {
+        for (newNode in new) {
+            if (newNode !in this.nodes) {
                 this.nodes.add(newNode)
                 Level.add(newNode)
             }
@@ -188,8 +174,12 @@ class TubeBlockGroup {
             return ItemPath(instructions.toTypedArray())
         }
         // temporary means that this node is only an intersection for routing purposes
-        val inp = getIntersection(tubes.first { it.xTile == startXTile && it.yTile == startYTile }, true)
-        val out = getIntersection(tubes.first { it.xTile == output.xTile && it.yTile == output.yTile }, true)
+        // the reason we are doing isAdjacentorIntersecting here is because this must also accunt for items that are inside of the blocks
+        // they are about to enter
+        val inputTube = tubes.first { it.xTile == startXTile && it.yTile == startYTile }
+        val outputTube = tubes.first { it.xTile == output.xTile && it.yTile == output.yTile }
+        val inp = getIntersection(inputTube, true)
+        val out = getIntersection(outputTube, true)
         val startNode = RoutingNode(null, out, inp, -1, 0, 0)
 
         val possibleNextNodes = mutableListOf<RoutingNode>()
@@ -251,6 +241,8 @@ class TubeBlockGroup {
 
     }
 
+    override fun toString() = "Tube block group $id"
+
     companion object {
 
         const val DEFAULT_TICKS_PER_STACK = 30
@@ -268,6 +260,8 @@ class TubeBlockGroup {
             ALL.forEach { it.render() }
         }
     }
+
+    private fun getNearestTube(item: ItemPackage) = tubes.firstOrNull { it.xTile == item.xPixel shr 4 && it.yTile == item.yPixel shr 4 } ?: tubes.first { GeometryHelper.isAdjacentOrIntersecting((item.xPixel shr 4) - GeometryHelper.getXSign(item.dir), (item.yPixel shr 4) - GeometryHelper.getYSign(item.dir), it.xTile, it.yTile) }
 
     private data class ItemPackage(var item: Item, var start: ResourceNode<ItemType>, var goal: ResourceNode<ItemType>, var currentIndex: Int, var path: ItemPath, var xPixel: Int, var yPixel: Int, var dir: Int = 0)
 
@@ -304,10 +298,14 @@ class TubeBlockGroup {
         fun update() {
             val iterator = itemsBeingMoved.iterator()
             for (item in iterator) {
+                if(!item.goal.couldOuput(item.item.type, item.item.quantity)) {
+
+                }
                 // already know it contains the resources so no need to use canOutput
                 if (!item.goal.couldOuput(item.item.type, item.item.quantity)) {
                     if (item.start.canInput(item.item.type, item.item.quantity)) {
-                        val path = parent.route((item.xPixel shr 4) - GeometryHelper.getXSign(item.dir), (item.yPixel shr 4) - GeometryHelper.getYSign(item.dir), item.start)
+                        val nearestTubeToItem = parent.getNearestTube(item)
+                        val path = parent.route(nearestTubeToItem.xTile, nearestTubeToItem.yTile, item.start)
                         if (path != null) {
                             item.path = path
                             val dir = GeometryHelper.getDir((item.xPixel shr 4) - (item.path[0].coord.xPixel shr 4), (item.yPixel shr 4) - (item.path[0].coord.yPixel shr 4))
@@ -319,12 +317,11 @@ class TubeBlockGroup {
                         }
                     } else {
                         val output = parent.nodes.getOutputter(item.item.type, item.item.quantity)
-                        println("can output to: $output")
                         if (output != null) {
-                            val path = parent.route(item.xPixel shr 4, item.yPixel shr 4, output)
+                            val nearestTubeToItem = parent.getNearestTube(item)
+                            val path = parent.route(nearestTubeToItem.xTile, nearestTubeToItem.yTile, output)
                             if (path != null) {
                                 item.path = path
-                                println(path)
                                 item.dir = item.path[0].nextDir
                                 item.start = item.goal
                                 item.goal = output
@@ -407,6 +404,22 @@ class TubeBlockGroup {
             const val ITEM_TRANSPORT_SPEED = 1
         }
     }
+
+    data class IntersectionTube(val tubeBlock: TubeBlock, var connectedTo: Array<TubeAndDist?>) {
+        override fun equals(other: Any?): Boolean {
+            return other is IntersectionTube && other.tubeBlock == tubeBlock
+        }
+
+        override fun hashCode(): Int {
+            return tubeBlock.hashCode()
+        }
+
+        override fun toString(): String {
+            return "Intersection at ${tubeBlock.xTile}, ${tubeBlock.yTile}"
+        }
+    }
+
+    data class TubeAndDist(val intersection: IntersectionTube, val dist: Int)
 
     private class ItemPath(private val steps: Array<Step>) {
 

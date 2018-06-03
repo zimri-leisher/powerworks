@@ -9,7 +9,10 @@ import misc.GeometryHelper
  * by default and is not a subclass of LevelObject.
  *
  * An example of a place where they appear is the MinerBlock, which uses one with allowOut = true to produce the ore it mines
- * from the ground and either put it into the connected inventory or place it on the ground.
+ * from the ground and either put it into the connected inventory or place it on the ground. This raises the question of how it gets into
+ * a tube network, as tubes don't have inventories. Tube blocks work by being grouped, with each group having a separate
+ * inventory. Then, when a tube detects a node has been placed next to it, it creates a node of its own that connects with
+ * the adjacent node.
  */
 class ResourceNode<R : ResourceType>(
         val xTile: Int, val yTile: Int,
@@ -29,6 +32,12 @@ class ResourceNode<R : ResourceType>(
     var attachedNode: ResourceNode<R>? = null
 
     /**
+     * Whether or not this node should be allowed to output resources directly to the level, using the Level.add(ResourceType, Quantity) method.
+     * If false, calls to can/couldOutput will return false if there is no attached node, regardless of whether there is space in the level
+     */
+    var outputToLevel = true
+
+    /**
      * @return if the resource is the right type and this node allows output and the attached container is able to remove the resources.
      * Additionally, if there is an attached node, it must be able to input the resources
      */
@@ -43,7 +52,8 @@ class ResourceNode<R : ResourceType>(
         if (attachedNode != null) {
             if (!attachedNode!!.canInput(resource, quantity))
                 return false
-        }
+        } else if (attachedNode == null && !outputToLevel)
+            return false
         return true
     }
 
@@ -76,7 +86,8 @@ class ResourceNode<R : ResourceType>(
         if (attachedNode != null) {
             if (!attachedNode!!.canInput(resource, quantity))
                 return false
-        }
+        } else if (attachedNode == null && !outputToLevel)
+            return false
         return true
     }
 
@@ -112,7 +123,7 @@ class ResourceNode<R : ResourceType>(
                 if (!canOutput(resource, quantity))
                     return false
             } else {
-                if(!couldOuput(resource, quantity))
+                if (!couldOuput(resource, quantity))
                     return false
             }
         }
@@ -120,7 +131,7 @@ class ResourceNode<R : ResourceType>(
         if (attachedNode != null) {
             // we already checked if we were able to, everything here is under the assumption it is successful
             attachedNode!!.input(resource, quantity, false)
-        } else {
+        } else if (outputToLevel) {
             // TODO make this better some time
             val xSign = GeometryHelper.getXSign(dir)
             val ySign = GeometryHelper.getYSign(dir)
@@ -145,7 +156,7 @@ class ResourceNode<R : ResourceType>(
                 if (!canInput(resource, quantity))
                     return false
             } else {
-                if(!couldInput(resource, quantity))
+                if (!couldInput(resource, quantity))
                     return false
             }
         }
@@ -158,8 +169,8 @@ class ResourceNode<R : ResourceType>(
      */
     fun isRightType(resource: ResourceType) = resource.category == resourceCategory
 
-    fun copy(xTile: Int = this.xTile, yTile: Int = this.yTile, dir: Int = this.dir, allowIn: Boolean = this.allowIn, allowOut: Boolean = this.allowOut, attachedContainer: ResourceContainer<*> = this.attachedContainer) =
-            ResourceNode(xTile, yTile, dir, resourceCategory, allowIn, allowOut, attachedContainer)
+    fun copy(xTile: Int = this.xTile, yTile: Int = this.yTile, dir: Int = this.dir, allowIn: Boolean = this.allowIn, allowOut: Boolean = this.allowOut, attachedContainer: ResourceContainer<*> = this.attachedContainer, outputToLevel: Boolean = this.outputToLevel) =
+            ResourceNode(xTile, yTile, dir, resourceCategory, allowIn, allowOut, attachedContainer).apply { this.outputToLevel = outputToLevel }
 
     override fun toString() = "Resource node at $xTile, $yTile, out: $allowOut, in: $allowIn, dir: $dir"
 

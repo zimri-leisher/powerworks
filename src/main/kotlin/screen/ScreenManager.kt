@@ -2,6 +2,8 @@ package screen
 
 import io.*
 import data.ConcurrentlyModifiableMutableList
+import data.ConcurrentlyModifiableWeakMutableList
+import data.WeakMutableList
 import graphics.Renderer
 import main.Game
 import misc.GeometryHelper
@@ -29,8 +31,8 @@ object ScreenManager : ControlPressHandler {
     }
 
     private val _backwardsWindowGroups = mutableListOf<WindowGroup>()
-    val windows = ConcurrentlyModifiableMutableList<GUIWindow>()
-    internal val openWindows = mutableListOf<GUIWindow>()
+    val windows = ConcurrentlyModifiableWeakMutableList<GUIWindow>()
+    internal val openWindows = WeakMutableList<GUIWindow>()
 
     /**
      * The last GUIElement interacted with. Keep in mind this doesn't look at elements with the transparentToInteraction flag set to true

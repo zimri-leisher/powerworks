@@ -1,6 +1,6 @@
 package resource
 
-abstract class ResourceContainer<R : ResourceType>(val resourceCategory: ResourceCategory, var typeRule: (ResourceType) -> Boolean = { true }) {
+abstract class ResourceContainer<R : ResourceType>(val resourceCategory: ResourceCategory, var typeRule: ResourceContainer<R>.(ResourceType) -> Boolean = { true }) {
 
     // TODO worried about forgetting checkIfAble and thus skipping add/remove rule checks, how2fix??
 
@@ -8,12 +8,12 @@ abstract class ResourceContainer<R : ResourceType>(val resourceCategory: Resourc
      * Should be checked in the addition method of all resource containers. If false, and the checkIfAble arg of the add method is true, no addition operation will be done
      * This is not checked in the spaceFor method
      */
-    var additionRule: (ResourceType, Int) -> Boolean = { _, _ -> true }
+    var additionRule: ResourceContainer<R>.(ResourceType, Int) -> Boolean = { _, _ -> true }
     /**
      * Should be checked in the removal method of all resource containers. If false, and the checkIfAble arg of the remove method is true, no removal operation will be done
      * This is not checked in the contains method
      */
-    var removalRule: (ResourceType, Int) -> Boolean = { _, _ -> true }
+    var removalRule: ResourceContainer<R>.(ResourceType, Int) -> Boolean = { _, _ -> true }
 
     /**
      * Mutator methods should send appropriate calls to these

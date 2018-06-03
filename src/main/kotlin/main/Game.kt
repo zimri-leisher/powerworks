@@ -58,6 +58,7 @@ object Game : Canvas(), Runnable, ControlPressHandler {
     const val MAX_UPDATES_BEFORE_RENDER = 5
     var FRAMES_PER_SECOND = 60f
     var NS_PER_FRAME: Float = 1000000000 / FRAMES_PER_SECOND
+
     /* Base statistics */
     var framesCount = 0
     var updatesCount = 0
@@ -252,7 +253,7 @@ object Game : Canvas(), Runnable, ControlPressHandler {
                 Control.SCREEN_INFO -> currentDebugCode = DebugCode.SCREEN_INFO
                 Control.POSITION_INFO -> currentDebugCode = DebugCode.POSITION_INFO
                 Control.ESCAPE -> {
-                    ScreenManager.openWindows.firstOrNull { window -> window.windowGroup != ScreenManager.Groups.BACKGROUND && window.windowGroup != ScreenManager.Groups.VIEW &&
+                    ScreenManager.openWindows.sortedBy { it.layer }.firstOrNull { window -> window.windowGroup != ScreenManager.Groups.BACKGROUND && window.windowGroup != ScreenManager.Groups.VIEW &&
                         window.anyChild { it is GUICloseButton && it.open == true && it.actOn == window } }?.open = false
                 }
                 Control.TOGGLE_INVENTORY -> {

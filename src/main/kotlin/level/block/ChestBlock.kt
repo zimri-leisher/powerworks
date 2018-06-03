@@ -23,6 +23,8 @@ class ChestBlock(override val type: ChestBlockType, xTile: Int, yTile: Int, rota
         super.onAddToLevel()
     }
 
+    var typeRuleB = true
+
     override fun handleControlPress(p: ControlPress) {
         if (p.pressType == PressType.PRESSED) {
             if (p.control == Control.INTERACT) {
@@ -31,7 +33,9 @@ class ChestBlock(override val type: ChestBlockType, xTile: Int, yTile: Int, rota
                 val item = inv[0]!!
                 nodes.output(item.type, item.quantity, onlyTo = { it.attachedNode != null })
             } else if (p.control == Control.SHIFT_SECONDARY_INTERACT) {
-                inv.typeRule = { false }
+                typeRuleB = !typeRuleB
+                val b = typeRuleB
+                inv.typeRule = { !b }
             }
         }
     }

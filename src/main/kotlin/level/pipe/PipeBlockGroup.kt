@@ -37,14 +37,18 @@ class PipeBlockGroup {
 
     fun merge(other: PipeBlockGroup) {
         other.pipes.forEach {
-            if (it !in pipes)
+            if (it !in pipes) {
                 pipes.add(it)
+                it.group = this
+            }
         }
         other.nodes.forEach {
             it as ResourceNode<FluidType>
-            it.attachedContainer = storage
-            if (it !in nodes)
+            if (it !in nodes) {
+                it.attachedContainer = storage
                 nodes.add(it)
+            }
+
         }
     }
 
@@ -79,7 +83,7 @@ class PipeBlockGroup {
             get() = parent.size * STORAGE_PER_PIPE
 
         fun update() {
-            if(currentFluidType != null) {
+            if (currentFluidType != null) {
                 val output = parent.nodes.getOutputter(currentFluidType!!, currentAmount)
                 output?.output(currentFluidType!!, currentAmount)
             }
@@ -92,7 +96,7 @@ class PipeBlockGroup {
             // doing this so nobody can really fuck this over and put in a different resourcecategory because of checkable
             // this isn't bad code i promise, it's for performance and it's easy to have not happen!
             resource as FluidType
-            if(currentFluidType == null)
+            if (currentFluidType == null)
                 currentFluidType = resource
             currentAmount += quantity
             return true
@@ -106,7 +110,7 @@ class PipeBlockGroup {
                     return false
             resource as FluidType
             currentAmount -= quantity
-            if(currentAmount == 0)
+            if (currentAmount == 0)
                 currentFluidType = null
             return true
         }
