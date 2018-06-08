@@ -1,10 +1,11 @@
 package graphics
 
+import graphics.text.TaggedText
+import graphics.text.TextManager
+import graphics.text.TextRenderContext
+import graphics.text.TextRenderParams
 import main.Game
-import screen.Mouse.xPixel
-import screen.Mouse.yPixel
 import java.awt.*
-import java.awt.SystemColor.text
 import java.awt.geom.AffineTransform
 
 object Renderer {
@@ -20,7 +21,7 @@ object Renderer {
      */
     var yPixelOffset = 0
 
-    private val defaultParams = RenderParams()
+    private val defaultParams = TextureRenderParams()
 
     /**
      * Overarching render parameters
@@ -60,7 +61,7 @@ object Renderer {
         }
     }
 
-    fun renderEmptyRectangle(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int, color: Int = 0xFFFFFF, params: RenderParams = defaultParams, borderThickness: Int = 1) {
+    fun renderEmptyRectangle(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int, color: Int = 0xFFFFFF, params: TextureRenderParams = defaultParams, borderThickness: Int = 1) {
         val absoluteXPixel = (xPixel + params.xPixelOffset + xPixelOffset) * Game.SCALE
         val absoluteYPixel = (yPixel + params.yPixelOffset + yPixelOffset) * Game.SCALE
         val scaledScale = Game.SCALE * params.scale
@@ -73,7 +74,7 @@ object Renderer {
             oldComposite = g2d.composite
             g2d.composite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, params.alpha)
         }
-        if(params.rotation != 0f) {
+        if (params.rotation != 0f) {
             oldTransform = g2d.transform
             g2d.rotate(Math.toRadians(params.rotation.toDouble()), (absoluteXPixel + widthPixels / 2).toDouble(), (yPixel + heightPixels / 2).toDouble())
         }
@@ -82,7 +83,7 @@ object Renderer {
         if (params.alpha != 1.0f) {
             g2d.composite = oldComposite
         }
-        if(params.rotation != 0f) {
+        if (params.rotation != 0f) {
             g2d.transform = oldTransform
         }
     }
@@ -97,7 +98,7 @@ object Renderer {
     /**
      * Renders a texture at the x and y pixel with the given parameters
      */
-    fun renderTexture(t: Texture, xPixel: Int, yPixel: Int, params: RenderParams) {
+    fun renderTexture(t: Texture, xPixel: Int, yPixel: Int, params: TextureRenderParams) {
         val absoluteXPixel = (xPixel + params.xPixelOffset + xPixelOffset) * Game.SCALE
         val absoluteYPixel = (yPixel + params.yPixelOffset + yPixelOffset) * Game.SCALE
         val scaledScale = Game.SCALE * params.scale
@@ -150,7 +151,7 @@ object Renderer {
      * Renders a texture at the x and y pixel, keeping the texture at its original aspect ratio but also fitting it inside
      * of the width and height pixels. The result of that has the render params applied to it
      */
-    fun renderTextureKeepAspect(t: Texture, xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int, params: RenderParams) {
+    fun renderTextureKeepAspect(t: Texture, xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int, params: TextureRenderParams) {
         var w = widthPixels
         var h = heightPixels
         if (t.widthPixels > t.heightPixels) {
@@ -180,7 +181,7 @@ object Renderer {
     /**
      * Renders a texture at the x and y pixel with the given params, stretching it to fit the width and height pixels
      */
-    fun renderTexture(t: Texture, xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int, params: RenderParams) {
+    fun renderTexture(t: Texture, xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int, params: TextureRenderParams) {
         val absoluteXPixel = (xPixel + params.xPixelOffset + xPixelOffset) * Game.SCALE
         val absoluteYPixel = (yPixel + params.yPixelOffset + yPixelOffset) * Game.SCALE
         val scaledScale = Game.SCALE * params.scale
@@ -224,22 +225,52 @@ object Renderer {
     }
 
     /**
-     * Renders the toString() of the given object at the x and y pixel with the given size and color, accounting for newlines
-     * @param ignoreTags whether or not to pay attention to tags
+     * Renders the toString() of the given object at the x and y pixel, accounting for newlines
      */
-    fun renderText(text: Any?, xPixel: Int, yPixel: Int, ignoreTags: Boolean = true) {
-        if(ignoreTags) {
-            val f = TextManager.getFont()
-            g2d.font = f.font
-            g2d.color = Color(0xFFFFFF)
-            val s = text.toString()
-            if (s.contains("\n")) {
-                s.split("\n").forEachIndexed { index, string ->
-                    g2d.drawString(string, (xPixel + xPixelOffset) * Game.SCALE, (yPixel + yPixelOffset + f.charHeight * index) * Game.SCALE)
-                }
-            } else
-                g2d.drawString(s, (xPixel + xPixelOffset) * Game.SCALE, (yPixel + yPixelOffset + f.charHeight) * Game.SCALE)
-        } else {
+    fun renderText(text: Any?, xPixel: Int, yPixel: Int) {
+        val f = TextManager.getFont()
+        g2d.font = f.font
+        g2d.color = Color(0xFFFFFF)
+        val s = text.toString()
+        if (s.contains("\n")) {
+            s.split("\n").forEachIndexed { index, string ->
+                g2d.drawString(string, (xPixel + xPixelOffset) * Game.SCALE, (yPixel + yPixelOffset + f.charHeight * index) * Game.SCALE)
+            }
+        } else
+            g2d.drawString(s, (xPixel + xPixelOffset) * Game.SCALE, (yPixel + yPixelOffset + f.charHeight) * Game.SCALE)
+    }
+
+    /**
+     * Renders the toString() of the given object at the x and y pixel, accounting for newlines
+     * @param params the rendering parameters to use for the text. Intended to be used by text tags
+     */
+    fun renderText(text: Any?, xPixel: Int, yPixel: Int, params: TextRenderParams) {
+        val f = TextManager.getFont(params.size, params.style)
+        g2d.font = f.font
+        g2d.color = Color(params.color)
+        val s = text.toString()
+        if (s.contains("\n")) {
+            s.split("\n").forEachIndexed { index, string ->
+                g2d.drawString(string, (xPixel + xPixelOffset) * Game.SCALE, (yPixel + yPixelOffset + f.charHeight * index) * Game.SCALE)
+            }
+        } else
+            g2d.drawString(s, (xPixel + xPixelOffset) * Game.SCALE, (yPixel + yPixelOffset + f.charHeight) * Game.SCALE)
+    }
+
+    /**
+     * Renders a tagged text object.
+     */
+    fun renderTaggedText(taggedText: TaggedText, xPixel: Int, yPixel: Int) {
+        val context = TextRenderContext(xPixel, yPixel, TextRenderParams())
+        var lastTagIndex = 0
+        for((thisTagIndex, tag) in taggedText.tags) {
+            val substring = taggedText.text.substring(lastTagIndex, thisTagIndex)
+            Renderer.renderText(substring, context.currentXPixel, context.currentYPixel, context.currentRenderParams)
+            val bounds = TextManager.getStringBounds(substring)
+            context.currentXPixel += bounds.width
+            tag.type.execute(context, tag.argument)
+            lastTagIndex = thisTagIndex
         }
+        Renderer.renderText(taggedText.text.substring(lastTagIndex), context.currentXPixel, context.currentYPixel, context.currentRenderParams)
     }
 }

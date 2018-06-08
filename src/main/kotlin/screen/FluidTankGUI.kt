@@ -1,11 +1,6 @@
 package screen
 
 import fluid.FluidTank
-import graphics.Renderer
-import graphics.TextManager
-import resource.ResourceContainer
-import resource.ResourceContainerChangeListener
-import resource.ResourceType
 import screen.elements.*
 
 class FluidTankGUI(val tank: FluidTank) : GUIWindow("Fluid tank GUI of $tank", 0, 0, WIDTH, HEIGHT, windowGroup = ScreenManager.Groups.INVENTORY) {

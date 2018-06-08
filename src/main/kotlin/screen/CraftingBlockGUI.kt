@@ -1,8 +1,6 @@
 package screen
 
-import graphics.Image
-import graphics.TextManager
-import graphics.Utils
+import graphics.text.TextManager
 import level.block.CrafterBlock
 import screen.elements.*
 

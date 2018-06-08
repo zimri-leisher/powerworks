@@ -1,17 +1,19 @@
 package screen.elements
 
-import graphics.TextManager
+import graphics.text.TextManager
 import graphics.Renderer
+import graphics.text.TextRenderParams
 
 class GUIText(parent: RootGUIElement,
               name: String,
               xAlignment: () -> Int, yAlignment: () -> Int,
               text: Any?,
+              val renderParams: TextRenderParams = TextRenderParams(),
               open: Boolean = false,
               layer: Int = parent.layer + 1) :
         GUIElement(parent, name, xAlignment, yAlignment, { 0 }, { 0 }, open, layer) {
 
-    constructor(parent: RootGUIElement, name: String, xPixel: Int, yPixel: Int, text: Any?, open: Boolean = false, layer: Int = parent.layer + 1) : this(parent, name, { xPixel }, { yPixel }, text, open, layer)
+    constructor(parent: RootGUIElement, name: String, xPixel: Int, yPixel: Int, text: Any?, renderParams: TextRenderParams = TextRenderParams(), open: Boolean = false, layer: Int = parent.layer + 1) : this(parent, name, { xPixel }, { yPixel }, text, renderParams, open, layer)
 
     var text = text
         set(value) {
@@ -33,6 +35,6 @@ class GUIText(parent: RootGUIElement,
     }
 
     override fun render() {
-        Renderer.renderText(text, xPixel, yPixel)
+        Renderer.renderText(text, xPixel, yPixel, renderParams)
     }
 }

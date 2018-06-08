@@ -7,6 +7,13 @@ import main.Game
 import data.ConcurrentlyModifiableMutableList
 import java.util.*
 
+private fun Sound.play(vol: Double = 1.0, pan: Double = 0.0, speed: Double = 1.0, loops: Int = 0): Int {
+    val s = a.play(vol, pan, speed, loops)
+    if (s != -1)
+        a.setRecycleWhenDone(s, true)
+    return s
+}
+
 object AudioManager : MovementListener{
 
     override fun onMove(m: MovingObject, pXPixel: Int, pYPixel: Int) {
@@ -68,13 +75,13 @@ object AudioManager : MovementListener{
         levelSounds.forEach { it.close() }
     }
 
-    class SoundSource constructor(xPixel: Int, yPixel: Int, var instance: Int, var s: Sound?, var loop: Boolean) {
+    class SoundSource(xPixel: Int, yPixel: Int, var instance: Int, var s: Sound, var loop: Boolean) {
         var playing = true
             set(value) {
                 if (!value && field) {
-                    s!!.stop(instance)
+                    s.stop(instance)
                 } else if (value && !field) {
-                    s!!.start(instance)
+                    s.start(instance)
                 }
                 field = value
             }
@@ -93,10 +100,10 @@ object AudioManager : MovementListener{
             get() = instance != -1
 
         fun close() {
-            s!!.close(instance)
+            s.a.stop(instance)
+            s.a.releaseInstance(instance)
             levelSounds.remove(this)
             forceUpdate.remove(this)
-            s = null
         }
 
         private fun forceUpdate() {
@@ -118,7 +125,7 @@ object AudioManager : MovementListener{
     /**
      * Starts a sound at a specific point in the level
      * @param loop continuously play this
-     * @return a SoundSource with the relevant methods and information
+     * @return a SoundSource with relevant methods and information
      */
     fun play(s: Sound, xPixel: Int, yPixel: Int, loop: Boolean): SoundSource? {
         if (!SOUND_ENABLED)
@@ -155,8 +162,8 @@ object AudioManager : MovementListener{
             levelSounds.forEach { it.playing = true }
         }
         forceUpdate.forEach {
-            it.s!!.setVolume(getVolume(it.xPixel, it.yPixel), it.instance)
-            it.s!!.setPan(getPan(it.xPixel), it.instance)
+            it.s.setVolume(getVolume(it.xPixel, it.yPixel), it.instance)
+            it.s.setPan(getPan(it.xPixel), it.instance)
             forceUpdate.remove(it)
         }
     }

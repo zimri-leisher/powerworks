@@ -96,7 +96,7 @@ public class OpenSimplexNoise implements Noise{
         double attn1 = 2 - dx1 * dx1 - dy1 * dy1;
         if (attn1 > 0) {
             attn1 *= attn1;
-            value += attn1 * attn1 * extrapolate(xsb + 1, ysb + 0, dx1, dy1);
+            value += attn1 * attn1 * extrapolate(xsb + 1, ysb, dx1, dy1);
         }
 
         //Contribution (0,1)
@@ -105,7 +105,7 @@ public class OpenSimplexNoise implements Noise{
         double attn2 = 2 - dx2 * dx2 - dy2 * dy2;
         if (attn2 > 0) {
             attn2 *= attn2;
-            value += attn2 * attn2 * extrapolate(xsb + 0, ysb + 1, dx2, dy2);
+            value += attn2 * attn2 * extrapolate(xsb, ysb + 1, dx2, dy2);
         }
 
         if (inSum <= 1) { //We're inside the triangle (2-Simplex) at (0,0)
@@ -133,11 +133,11 @@ public class OpenSimplexNoise implements Noise{
             if (zins < xins || zins < yins) { //(0,0) is one of the closest two triangular vertices
                 if (xins > yins) {
                     xsv_ext = xsb + 2;
-                    ysv_ext = ysb + 0;
+                    ysv_ext = ysb;
                     dx_ext = dx0 - 2 - 2 * SQUISH_CONSTANT_2D;
                     dy_ext = dy0 + 0 - 2 * SQUISH_CONSTANT_2D;
                 } else {
-                    xsv_ext = xsb + 0;
+                    xsv_ext = xsb;
                     ysv_ext = ysb + 2;
                     dx_ext = dx0 + 0 - 2 * SQUISH_CONSTANT_2D;
                     dy_ext = dy0 - 2 - 2 * SQUISH_CONSTANT_2D;

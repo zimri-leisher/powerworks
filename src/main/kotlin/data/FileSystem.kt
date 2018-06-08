@@ -219,7 +219,7 @@ class Directory(val fullPath: Path, val name: DirectoryIdentifier? = null) {
      * @param newName the name of the file, including the file type
      */
     fun copyOfFile(originalLocation: String, newName: String = Paths.get(originalLocation).last().toString()) {
-        copyOfFile(ResourceManager.getResource(originalLocation), newName)
+        copyOfFile(ResourceManager.getRawResource(originalLocation), newName)
     }
 
 }

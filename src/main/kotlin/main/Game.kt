@@ -3,7 +3,6 @@ package main
 import audio.AudioManager
 import data.FileManager
 import data.FileSystem
-import graphics.TextManager
 import graphics.LocalAnimation
 import graphics.Renderer
 import graphics.SyncAnimation
@@ -28,6 +27,8 @@ import java.security.Policy
 import javax.imageio.ImageIO
 import javax.swing.JFrame
 import io.OutputManager as out
+import graphics.text.TextManager
+import misc.testTags
 
 const val TRACE_GRAPHICS = false
 
@@ -67,7 +68,7 @@ object Game : Canvas(), Runnable, ControlPressHandler {
     private var running = false
 
     private var defaultCursor = Cursor.getDefaultCursor()
-    private var clearCursor = Toolkit.getDefaultToolkit().createCustomCursor(ImageIO.read(ResourceManager.getResource("/textures/cursor/cursor_default.png")), Point(0, 0), "Blank cursor")
+    private var clearCursor = Toolkit.getDefaultToolkit().createCustomCursor(ImageIO.read(ResourceManager.getRawResource("/textures/cursor/cursor_default.png")), Point(0, 0), "Blank cursor")
 
     /* Settings */
     var THREAD_WAITING = true
@@ -98,12 +99,13 @@ object Game : Canvas(), Runnable, ControlPressHandler {
         frame.defaultCloseOperation = JFrame.EXIT_ON_CLOSE
         frame.setLocationRelativeTo(null)
         requestFocusInWindow()
-        frame.iconImage = ImageIO.read(ResourceManager.getResource("/textures/misc/logo.png"))
+        frame.iconImage = ImageIO.read(ResourceManager.getRawResource("/textures/misc/logo.png"))
         frame.addComponentListener(object : ComponentAdapter() {
             override fun componentResized(e: ComponentEvent?) {
                 resized = true
             }
         })
+        TextManager
         FileManager
         addKeyListener(InputManager)
         addMouseWheelListener(InputManager)
@@ -111,7 +113,7 @@ object Game : Canvas(), Runnable, ControlPressHandler {
         addMouseListener(InputManager)
         AudioManager.load()
         cursor = clearCursor
-        TextManager
+
         InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.PIPE_INFO, Control.ESCAPE, Control.TURN_OFF_DEBUG_INFO, Control.TAKE_SCREENSHOT, Control.POSITION_INFO, Control.RESOURCE_NODES_INFO, Control.RENDER_HITBOXES, Control.SCREEN_INFO, Control.CHUNK_INFO, Control.TOGGLE_INVENTORY, Control.TUBE_INFO)
         // the main menu GUI is by default open, but it won't get initialized till we call it somewhere
         MainMenuGUI
@@ -128,6 +130,7 @@ object Game : Canvas(), Runnable, ControlPressHandler {
         System.setSecurityManager(SecurityManager())
         ModManager.initialize()
         frame.isVisible = true
+        testTags()
         start()
     }
 

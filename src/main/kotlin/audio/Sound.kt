@@ -10,20 +10,7 @@ enum class Sound(path: String, maxConcurrent: Int) {
     /**
      * API related instance
      */
-    var a: AudioCue = AudioCue.makeStereoCue(ResourceManager.getResource(path), maxConcurrent)
-
-    /**
-     * Note - use AudioManager.play(Sound) instead
-     *
-     * Plays the sound with the specified volume, at the specified speed, loops + 1 number of times
-     * @return the sound id. Keep track of this if you want to modify it later
-     */
-    fun play(vol: Double = 1.0, pan: Double = 0.0, speed: Double = 1.0, loops: Int = 0): Int {
-        val s = a.play(vol, pan, speed, loops)
-        if (s != -1)
-            a.setRecycleWhenDone(s, true)
-        return s
-    }
+    var a: AudioCue = AudioCue.makeStereoCue(ResourceManager.getRawResource(path), maxConcurrent)
 
     fun setVolume(vol: Double, instance: Int) {
         a.setVolume(instance, vol)
@@ -35,11 +22,6 @@ enum class Sound(path: String, maxConcurrent: Int) {
 
     fun setLoop(loops: Int, instance: Int) {
         a.setLooping(instance, loops)
-    }
-
-    fun close(instance: Int) {
-        a.stop(instance)
-        a.releaseInstance(instance)
     }
 
     fun stop(instance: Int) {

@@ -1,6 +1,6 @@
 package screen
 
-import graphics.TextManager
+import graphics.text.TextManager
 import graphics.Image
 import io.*
 import level.moving.MovingObject

@@ -2,6 +2,7 @@ package screen.elements
 
 import graphics.*
 import graphics.Renderer.params
+import graphics.text.TextManager
 import io.PressType
 
 class GUIButton(parent: RootGUIElement,
@@ -23,11 +24,13 @@ class GUIButton(parent: RootGUIElement,
             this(parent, name, {xPixel}, {yPixel}, text, {widthPixels}, {heightPixels}, onPress, onRelease, open, layer)
 
     var down = false
+
+    // 0: unhighlighted, 1: highlighted, 2: clicked
     private val textures = arrayOf<Texture>(
             Image(Utils.genRectangle(widthPixels, heightPixels)),
             Image(Utils.modify(Utils.genRectangle(widthPixels, heightPixels), ImageParams(brightnessMultiplier = 1.2))),
             Image(Utils.modify(Utils.genRectangle(widthPixels, heightPixels), ImageParams(rotation = 2))))
-    // 0: unhighlighted, 1: highlighted, 2: clicked
+
     var currentTexture: Texture = textures[0]
     var text = GUIText(this, name + " text", 0, 0, text, open = open).apply { transparentToInteraction = true }
 
@@ -78,6 +81,5 @@ class GUIButton(parent: RootGUIElement,
     companion object {
         val WIDTH = 64
         val HEIGHT = 16
-        val TEXT_SIZE = TextManager.DEFAULT_SIZE
     }
 }

@@ -6,7 +6,7 @@ import data.DirectoryChangeWatcher
 import data.FileManager
 import data.GameDirectoryIdentifier
 import graphics.Image
-import graphics.RenderParams
+import graphics.TextureRenderParams
 import graphics.Renderer
 import io.*
 import item.ItemType
@@ -30,6 +30,7 @@ import screen.CameraMovementListener
 import screen.Mouse
 import screen.Mouse.DROPPED_ITEM_PICK_UP_RANGE
 import screen.elements.GUILevelView
+import java.awt.Color
 import java.io.*
 import java.nio.charset.Charset
 import java.nio.file.Files
@@ -195,9 +196,9 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
             val s = selectedLevelObject!!
             if (r.contains(s.xPixel, s.yPixel)) {
                 if (s is Block)
-                    Renderer.renderEmptyRectangle(s.xPixel, s.yPixel, s.type.widthTiles shl 4, s.type.heightTiles shl 4, 0x1A6AF4, RenderParams(alpha = .45f))
+                    Renderer.renderEmptyRectangle(s.xPixel, s.yPixel, s.type.widthTiles shl 4, s.type.heightTiles shl 4, 0x1A6AF4, TextureRenderParams(alpha = .45f))
                 else if (s is MovingObject)
-                    Renderer.renderEmptyRectangle(s.xPixel, s.yPixel, s.hitbox.width, s.hitbox.height, 0x1A6AF4, RenderParams(alpha = .45f))
+                    Renderer.renderEmptyRectangle(s.xPixel, s.yPixel, s.hitbox.width, s.hitbox.height, 0x1A6AF4, TextureRenderParams(alpha = .45f))
             }
         }
         TubeBlockGroup.render()
@@ -252,10 +253,10 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
         val xSign = GeometryHelper.getXSign(n.dir)
         val ySign = GeometryHelper.getYSign(n.dir)
         if (n.allowOut) {
-            Renderer.renderTexture(Image.Misc.THIN_ARROW, (n.xTile shl 4) + 4 + 8 * xSign, (n.yTile shl 4) + 4 + 8 * ySign, RenderParams(rotation = 90f * n.dir))
+            Renderer.renderTexture(Image.Misc.THIN_ARROW, (n.xTile shl 4) + 4 + 8 * xSign, (n.yTile shl 4) + 4 + 8 * ySign, TextureRenderParams(rotation = 90f * n.dir))
         }
         if (n.allowIn) {
-            Renderer.renderTexture(Image.Misc.THIN_ARROW, (n.xTile shl 4) + 4 + 8 * xSign, (n.yTile shl 4) + 4 + 8 * ySign, RenderParams(rotation = 90f * GeometryHelper.getOppositeAngle(n.dir)))
+            Renderer.renderTexture(Image.Misc.THIN_ARROW, (n.xTile shl 4) + 4 + 8 * xSign, (n.yTile shl 4) + 4 + 8 * ySign, TextureRenderParams(rotation = 90f * GeometryHelper.getOppositeAngle(n.dir)))
         }
     }
 

@@ -1,6 +1,6 @@
 package screen
 
-import graphics.TextManager
+import graphics.text.TextManager
 import graphics.Image
 import level.Level
 import level.LevelGeneratorSettings
@@ -9,7 +9,6 @@ import level.SimplexLevel
 import main.Game
 import screen.elements.*
 import main.State
-import java.awt.FontMetrics
 import java.io.File
 import java.time.LocalDateTime
 
@@ -25,7 +24,7 @@ object LevelSelectorGUI : GUIWindow("Level selector window", { 0 }, { 0 }, { Gam
                 LevelSelectorGUI.open = false
                 State.setState(State.INGAME)
             }, open = open).run {
-                GUIText(this, name + " info text", 1, this.text.yAlignment() + TextManager.getFont().charHeight + 1, levelInfo.dateCreated, open).transparentToInteraction = true
+                GUIText(this, name + " info text", 1, this.text.yAlignment() + TextManager.getFont().charHeight + 1, levelInfo.dateCreated, open = open).transparentToInteraction = true
             }
         }
 

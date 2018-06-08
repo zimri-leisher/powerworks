@@ -1,6 +1,6 @@
 package screen.elements
 
-import graphics.TextManager
+import graphics.text.TextManager
 import graphics.Renderer
 import io.InputManager
 import io.PressType

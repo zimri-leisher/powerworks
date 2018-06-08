@@ -92,8 +92,6 @@ enum class TubeState(val texture: Texture, val connections: Array<Boolean>, val 
 
     companion object {
 
-        val ALL_STATES = mutableListOf<TubeState>()
-
         fun getState(dirs: Array<Boolean>): TubeState {
             return values().first { it.connections.contentEquals(dirs) }
         }

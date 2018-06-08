@@ -1,6 +1,6 @@
 package level.tile
 
-import graphics.RenderParams
+import graphics.TextureRenderParams
 import graphics.Renderer
 import level.CHUNK_TILE_EXP
 
@@ -18,7 +18,7 @@ open class Tile(type: TileType = TileType.GRASS, val xTile: Int, val yTile: Int)
     val rotation = (Math.random() * 4).toInt()
 
     fun render() {
-        Renderer.renderTexture(texture, xPixel, yPixel, RenderParams(rotation = rotation * 90f))
+        Renderer.renderTexture(texture, xPixel, yPixel, TextureRenderParams(rotation = rotation * 90f))
     }
 
     override fun toString(): String {

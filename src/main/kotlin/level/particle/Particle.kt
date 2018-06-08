@@ -1,9 +1,8 @@
 package level.particle
 
-import graphics.RenderParams
+import graphics.TextureRenderParams
 import graphics.Renderer
 import level.Level
-import main.Game
 import misc.GeometryHelper
 
 class Particle(val type: ParticleType, var xPixel: Int, var yPixel: Int, var rotation: Int = 0) {
@@ -17,7 +16,7 @@ class Particle(val type: ParticleType, var xPixel: Int, var yPixel: Int, var rot
 
     fun render() {
         if (rotation != 0)
-            Renderer.renderTexture(type.texture, xPixel, yPixel, RenderParams(rotation = 90f * rotation))
+            Renderer.renderTexture(type.texture, xPixel, yPixel, TextureRenderParams(rotation = 90f * rotation))
         else
             Renderer.renderTexture(type.texture, xPixel, yPixel)
     }

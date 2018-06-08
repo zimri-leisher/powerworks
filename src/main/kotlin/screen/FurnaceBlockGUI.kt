@@ -17,7 +17,7 @@ class FurnaceBlockGUI(val block: FurnaceBlock) : GUIWindow("Furnace block gui fo
             val queue = GUIResourceContainerDisplay(this, this@FurnaceBlockGUI.name + " smelting queue display", block.queue, { 1 }, { text.heightPixels + 2 }, 1, 1)
             progressBar = GUIProgressBar(this, this@FurnaceBlockGUI.name + " smelting progress bar", { 2 }, { queue.yAlignment() + queue.heightPixels }, {this@FurnaceBlockGUI.widthPixels - 4}, maxProgress = block.type.maxWork)
             val text2 = GUIText(this, this@FurnaceBlockGUI.name + " tank text", 1, progressBar.yAlignment() + progressBar.heightPixels, "Furnace tank:")
-            GUIFluidTankMeter(this, this@FurnaceBlockGUI.name + " tank meter", 2, text2.yAlignment() + text2.heightPixels + 1, WIDTH - 4, HEIGHT - (text2.yAlignment() + text2.heightPixels + 9), block.tank)
+            GUIFluidTankMeter(this, this@FurnaceBlockGUI.name + " tank meter", 2, text2.yAlignment() + text2.heightPixels + 1, WIDTH - 4, HEIGHT - (text2.yAlignment() + text2.heightPixels + 5), block.tank)
         }
     }
 
