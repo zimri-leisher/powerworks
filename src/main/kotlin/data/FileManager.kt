@@ -12,15 +12,19 @@ import java.nio.file.WatchEvent
 
 object FileManager {
 
-    val fileSystem = FileSystem(Paths.get(FileSystem.ENCLOSING_DIR), GameDirectoryIdentifier.ENCLOSING) {
-        directory("mods", GameDirectoryIdentifier.MODS)
-        directory("data") {
-            directory("settings/controls", GameDirectoryIdentifier.CONTROLS) {
-                copyOfFile("/settings/controls/default.txt")
+    val fileSystem: FileSystem
+
+    init {
+        fileSystem = FileSystem(Paths.get(Game.JAR_PATH.substring(0 until Game.JAR_PATH.lastIndexOf("/"))), GameDirectoryIdentifier.ENCLOSING) {
+            directory("mods", GameDirectoryIdentifier.MODS)
+            directory("data") {
+                directory("settings/controls", GameDirectoryIdentifier.CONTROLS) {
+                    copyOfFile("/settings/controls/default.txt")
+                }
+                directory("saves", GameDirectoryIdentifier.SAVES)
             }
-            directory("saves", GameDirectoryIdentifier.SAVES)
+            directory("screenshots", GameDirectoryIdentifier.SCREENSHOTS, false)
         }
-        directory("screenshots", GameDirectoryIdentifier.SCREENSHOTS, false)
     }
 
     fun takeScreenshot() {

@@ -13,7 +13,7 @@ class GUIResourceListDisplay(parent: RootGUIElement, name: String, currentResour
                 children.clear()
                 field = value
                 createSlots()
-                updateAlignment()
+                alignments.updateDimension()
             }
         }
     var height = height
@@ -23,7 +23,7 @@ class GUIResourceListDisplay(parent: RootGUIElement, name: String, currentResour
                 children.clear()
                 field = value
                 createSlots()
-                updateAlignment()
+                alignments.updateDimension()
             }
         }
     var currentResources = currentResources
@@ -34,8 +34,8 @@ class GUIResourceListDisplay(parent: RootGUIElement, name: String, currentResour
     private val slots = mutableListOf<GUIResourceDisplaySlot>()
 
     init {
-        widthAlignment = { this.width * 16 + 4 }
-        heightAlignment = { this.height * 16 + 4 }
+        alignments.width = { this.width * 16 + 4 }
+        alignments.height = { this.height * 16 + 4 }
         createSlots()
     }
 

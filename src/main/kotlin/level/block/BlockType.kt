@@ -7,9 +7,7 @@ import fluid.MoltenOreFluidType
 import graphics.Image
 import graphics.LocalAnimation
 import graphics.SyncAnimation
-import io.InputManager.queue
 import item.Inventory
-import item.ItemType
 import item.OreItemType
 import level.Hitbox
 import level.LevelObjectTexture
@@ -129,6 +127,7 @@ open class MachineBlockType<T : MachineBlock>(initializer: MachineBlockType<T>.(
             widthTiles = 2
             heightTiles = 2
             loop = true
+            textures = LevelObjectTextures(LevelObjectTexture(SyncAnimation.SOLIDIFIER, yPixelOffset = 21))
             hitbox = Hitbox.TILE2X2
             nodesTemplate = BlockNodesTemplate(widthTiles, heightTiles) {
                 val tank = FluidTank(10, { it is MoltenOreFluidType })

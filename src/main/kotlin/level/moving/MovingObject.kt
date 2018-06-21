@@ -1,7 +1,7 @@
 package level.moving
 
 import level.*
-import screen.Mouse.xPixel
+import misc.Numbers
 import java.io.DataOutputStream
 
 const val DEFAULT_MAX_SPEED = 20
@@ -43,14 +43,14 @@ abstract class MovingObject(type: LevelObjectType<out MovingObject>, xPixel: Int
     var xVel = 0
         set(value) {
             if (value > DEFAULT_MAX_SPEED || value < -DEFAULT_MAX_SPEED)
-                field = DEFAULT_MAX_SPEED * (value / Math.abs(value))
+                field = DEFAULT_MAX_SPEED * Numbers.sign(value)
             else
                 field = value
         }
     var yVel = 0
         set(value) {
             if (value > DEFAULT_MAX_SPEED || value < -DEFAULT_MAX_SPEED)
-                field = DEFAULT_MAX_SPEED * (value / Math.abs(value))
+                field = DEFAULT_MAX_SPEED * Numbers.sign(value)
             else
                 field = value
         }

@@ -40,13 +40,13 @@ class AutoFormatGUIGroup(parent: RootGUIElement,
     }
 
     override fun onAddChild(child: GUIElement) {
-        val y = nextYPixel
         val x = nextXPixel
-        child.yAlignment = { y }
-        child.xAlignment = { x }
+        val y = nextYPixel
+        child.alignments.x = { x }
+        child.alignments.y = { y }
         child.layer = layer + 1
-        nextYPixel += (if (accountForChildHeight) child.heightPixels else 0) + yPixelSeparation
         nextXPixel += (if (accountForChildWidth) child.widthPixels else 0) + xPixelSeparation
+        nextYPixel += (if (accountForChildHeight) child.heightPixels else 0) + yPixelSeparation
         super.onAddChild(child)
     }
 }

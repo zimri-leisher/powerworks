@@ -2,7 +2,12 @@ package screen.elements
 
 import graphics.Renderer
 
-class GUIElementList(parent: RootGUIElement, name: String, xAlignment: () -> Int, yAlignment: () -> Int, widthAlignment: () -> Int, heightAlignment: () -> Int, initializerList: GUIElementList.() -> Unit = {}, open: Boolean = false, layer: Int = parent.layer + 1) : GUIElement(parent, name, xAlignment, yAlignment, widthAlignment, heightAlignment, open, layer), VerticalScrollable {
+class GUIElementList(parent: RootGUIElement, name: String,
+                     xAlignment: () -> Int, yAlignment: () -> Int,
+                     widthAlignment: () -> Int, heightAlignment: () -> Int,
+                     initializerList: GUIElementList.() -> Unit = {},
+                     open: Boolean = false, layer: Int = parent.layer + 1) :
+        GUIElement(parent, name, xAlignment, yAlignment, widthAlignment, heightAlignment, open, layer), VerticalScrollable {
 
     private val elements = AutoFormatGUIGroup(this, name + " auto format group", 0, 0, accountForChildHeight = true, yPixelSeparation = 2)
 
@@ -15,7 +20,7 @@ class GUIElementList(parent: RootGUIElement, name: String, xAlignment: () -> Int
 
     init {
         elements.autoRender = false
-        elements.yAlignment = { (Math.min(0, heightPixels - elements.heightPixels) * (scrollBar.currentPos.toDouble() / scrollBar.maxPos)).toInt() }
+        elements.alignments.y = { (Math.min(0, heightPixels - elements.heightPixels) * (scrollBar.currentPos.toDouble() / scrollBar.maxPos)).toInt() }
         initializerList()
     }
 
@@ -43,7 +48,7 @@ class GUIElementList(parent: RootGUIElement, name: String, xAlignment: () -> Int
     }
 
     override fun onScroll() {
-        elements.updateAlignment()
+        elements.alignments.updatePosition()
     }
 
     companion object {

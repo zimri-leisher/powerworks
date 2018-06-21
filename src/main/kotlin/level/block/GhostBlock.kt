@@ -17,7 +17,7 @@ class GhostBlock(type: BlockType<*>, xTile: Int, yTile: Int, rotation: Int) : Bl
         val texture = type.textures[rotation]
         Renderer.renderTexture(texture.texture, xPixel - texture.xPixelOffset, yPixel - texture.yPixelOffset, TextureRenderParams(alpha = 0.4f))
         Renderer.renderEmptyRectangle(xPixel, yPixel, type.widthTiles shl 4, type.heightTiles shl 4, if (placeable) 0x04C900 else 0xC90004, TextureRenderParams(alpha = 0.45f))
-        Renderer.renderTextureKeepAspect(Image.Misc.ARROW, xPixel, yPixel, type.widthTiles shl 4, type.heightTiles shl 4, TextureRenderParams(rotation = 90f * rotation))
+        Renderer.renderTextureKeepAspect(Image.Misc.ARROW, xPixel, yPixel, type.widthTiles shl 4, type.heightTiles shl 4, TextureRenderParams(rotation = 90f * rotation, alpha = 0.3f))
         if (Game.currentDebugCode == DebugCode.RENDER_HITBOXES)
             renderHitbox()
     }

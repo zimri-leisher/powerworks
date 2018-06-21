@@ -12,17 +12,17 @@ class CraftingBlockGUI(val craftingBlock: CrafterBlock) :
                 50, 30,
                 WIDTH,
                 TextManager.getFont().charHeight + GUIRecipeButton.HEIGHT + (craftingBlock.containers.size * GUIResourceDisplaySlot.HEIGHT + 14 + GUIProgressBar.HEIGHT),
-                windowGroup = ScreenManager.Groups.INVENTORY) {
+                ScreenManager.Groups.INVENTORY) {
 
     lateinit var progressBar: GUIProgressBar
 
     init {
         openAtMouse = true
         partOfLevel = true
-        GUIDefaultTextureRectangle(this.rootChild, "Crafting block at ${craftingBlock.xTile}, ${craftingBlock.yTile}'s window background", 0, 0).apply {
+        GUIDefaultTextureRectangle(this, "Crafting block at ${craftingBlock.xTile}, ${craftingBlock.yTile}'s window background", 0, 0).apply {
             GUIText(this, "Recipe text", 3, 3, "Recipe:")
             val recipeButton = GUIRecipeButton(this, "Recipe choice button", { 3 }, { 9 }, craftingBlock.recipe, { craftingBlock.recipe = it })
-            val storageGroups = AutoFormatGUIGroup(this, "Crafting block container view group", 1, recipeButton.yAlignment() + recipeButton.heightPixels + 3, initializerList = {
+            val storageGroups = AutoFormatGUIGroup(this, "Crafting block container view group", 1, recipeButton.alignments.y() + recipeButton.heightPixels + 3, initializerList = {
                 for (container in craftingBlock.containers) {
                     GUIResourceContainerDisplay(this, this@CraftingBlockGUI.name + " resource list display", container, { 0 }, { 0 }, craftingBlock.type.internalStorageSize, 1)
                 }
@@ -41,3 +41,27 @@ class CraftingBlockGUI(val craftingBlock: CrafterBlock) :
         const val WIDTH = 80
     }
 }
+
+/*
+interface Colored {
+    val color: String
+}
+
+interface Named {
+    val name: String
+}
+
+interface Aged {
+    val age: Int
+}
+
+fun <T> addName(thing: T, name: String): Named = object : T by thing, Named {
+    override val name = name
+}
+
+fun <T> printThing(thing: T) where T : Named, T : Colored, T : Aged {
+    println(thing.name)
+    println(thing.color)
+    println(thing.age)
+}
+        */

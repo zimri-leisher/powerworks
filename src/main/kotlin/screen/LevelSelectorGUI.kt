@@ -12,7 +12,7 @@ import main.State
 import java.io.File
 import java.time.LocalDateTime
 
-object LevelSelectorGUI : GUIWindow("Level selector window", { 0 }, { 0 }, { Game.WIDTH }, { Game.HEIGHT }, windowGroup = ScreenManager.Groups.BACKGROUND) {
+object LevelSelectorGUI : GUIWindow("Level selector window", { 0 }, { 0 }, { Game.WIDTH }, { Game.HEIGHT }, ScreenManager.Groups.BACKGROUND) {
 
     lateinit var infoList: GUIElementList
 
@@ -24,7 +24,7 @@ object LevelSelectorGUI : GUIWindow("Level selector window", { 0 }, { 0 }, { Gam
                 LevelSelectorGUI.open = false
                 State.setState(State.INGAME)
             }, open = open).run {
-                GUIText(this, name + " info text", 1, this.text.yAlignment() + TextManager.getFont().charHeight + 1, levelInfo.dateCreated, open = open).transparentToInteraction = true
+                GUIText(this, name + " info text", 1, this.text.alignments.y() + TextManager.getFont().charHeight + 1, levelInfo.dateCreated, open = open).transparentToInteraction = true
             }
         }
 
@@ -35,8 +35,7 @@ object LevelSelectorGUI : GUIWindow("Level selector window", { 0 }, { 0 }, { Gam
     }
 
     init {
-        adjustDimensions = true
-        GUITexturePane(this.rootChild, "background texture", { 0 }, { 0 }, Image.GUI.MAIN_MENU_BACKGROUND_FILLER, { widthPixels }, { heightPixels }).run {
+        GUITexturePane(this, "background texture", { 0 }, { 0 }, Image.GUI.MAIN_MENU_BACKGROUND_FILLER, { widthPixels }, { heightPixels }).run {
             AutoFormatGUIGroup(this, "level menu buttons auto format group", 4, 4, accountForChildHeight = true, yPixelSeparation = 2, initializerList = {
                 GUIButton(this, "main menu return button", 0, 0, "Return to main menu", onRelease = {
                     this@LevelSelectorGUI.open = false
@@ -51,7 +50,7 @@ object LevelSelectorGUI : GUIWindow("Level selector window", { 0 }, { 0 }, { Gam
                     }
                 })
             }
-            AutoFormatGUIGroup(this, "level modification buttons auto format group", {e.xAlignment() + e.widthAlignment() + 4}, {e.yAlignment()}, initializerList = {
+            AutoFormatGUIGroup(this, "level modification buttons auto format group", {e.alignments.x() + e.alignments.width() + 4}, {e.alignments.y()}, initializerList = {
                 GUIButton(this, "level create button", 0, 0, "Create level", onRelease = {
                     var i = 0
                     while (Level.exists("testinglevel$i"))

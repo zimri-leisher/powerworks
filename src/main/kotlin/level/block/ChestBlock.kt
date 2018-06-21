@@ -13,11 +13,6 @@ class ChestBlock(override val type: ChestBlockType, xTile: Int, yTile: Int, rota
     val inv = containers.first { it is Inventory } as Inventory
     val invGUI = InventoryGUI("Chest at ${this.xTile}, ${this.yTile}'s inventory gui", type.invName, inv, Game.WIDTH / 2, Game.HEIGHT / 2)
 
-    init {
-        invGUI.xPixel = (Game.WIDTH - invGUI.widthPixels) / 2
-        invGUI.yPixel = (Game.HEIGHT - invGUI.heightPixels) / 2
-    }
-
     override fun onAddToLevel() {
         InputManager.registerControlPressHandler(this, ControlPressHandlerType.LEVEL_THIS, Control.INTERACT, Control.SHIFT_INTERACT, Control.SHIFT_SECONDARY_INTERACT)
         super.onAddToLevel()

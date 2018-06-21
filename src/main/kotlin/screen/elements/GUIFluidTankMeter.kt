@@ -23,7 +23,6 @@ class GUIFluidTankMeter(parent: RootGUIElement, name: String, xPixel: Int, yPixe
         if (tank.currentFluidType != null) {
             Renderer.renderFilledRectangle(xPixel + 1, infoText.yPixel + infoText.heightPixels + 2, ((widthPixels - 4) * (tank.currentAmount.toDouble() / tank.maxAmount)).toInt(), heightPixels - infoText.heightPixels - 3, tank.currentFluidType!!.color)
         }
-        Renderer.renderTaggedText(TextManager.parseTags("<image=block/chest_small>testing text testing<color=red><bold>this color is rederoni"), xPixel, yPixel + 30)
     }
 
     override fun onContainerChange(container: ResourceContainer<*>, resource: ResourceType, quantity: Int) {

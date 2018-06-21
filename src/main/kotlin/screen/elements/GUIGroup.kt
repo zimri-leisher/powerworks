@@ -30,10 +30,10 @@ open class GUIGroup(parent: RootGUIElement,
 
     fun updateDimensions() {
         val r = Rectangle()
-        children.forEach { r.add(Rectangle(it.xAlignment(), it.yAlignment(), it.widthAlignment(), it.heightAlignment())) }
+        children.forEach { r.add(Rectangle(it.alignments.x(), it.alignments.y(), it.alignments.width(), it.alignments.height())) }
         val width = r.width
         val height = r.height
-        widthAlignment = { width }
-        heightAlignment = { height }
+        alignments.width = { width }
+        alignments.height = { height }
     }
 }

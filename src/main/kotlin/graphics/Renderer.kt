@@ -227,12 +227,12 @@ object Renderer {
     /**
      * Renders the toString() of the given object at the x and y pixel, accounting for newlines
      */
-    fun renderText(text: Any?, xPixel: Int, yPixel: Int) {
+    fun renderText(text: Any?, xPixel: Int, yPixel: Int, ignoreLines: Boolean = false) {
         val f = TextManager.getFont()
         g2d.font = f.font
         g2d.color = Color(0xFFFFFF)
         val s = text.toString()
-        if (s.contains("\n")) {
+        if (!ignoreLines && s.contains("\n")) {
             s.split("\n").forEachIndexed { index, string ->
                 g2d.drawString(string, (xPixel + xPixelOffset) * Game.SCALE, (yPixel + yPixelOffset + f.charHeight * index) * Game.SCALE)
             }
@@ -244,12 +244,12 @@ object Renderer {
      * Renders the toString() of the given object at the x and y pixel, accounting for newlines
      * @param params the rendering parameters to use for the text. Intended to be used by text tags
      */
-    fun renderText(text: Any?, xPixel: Int, yPixel: Int, params: TextRenderParams) {
+    fun renderText(text: Any?, xPixel: Int, yPixel: Int, params: TextRenderParams, ignoreLines: Boolean = false) {
         val f = TextManager.getFont(params.size, params.style)
         g2d.font = f.font
         g2d.color = Color(params.color)
         val s = text.toString()
-        if (s.contains("\n")) {
+        if (!ignoreLines && s.contains("\n")) {
             s.split("\n").forEachIndexed { index, string ->
                 g2d.drawString(string, (xPixel + xPixelOffset) * Game.SCALE, (yPixel + yPixelOffset + f.charHeight * index) * Game.SCALE)
             }
@@ -259,18 +259,23 @@ object Renderer {
 
     /**
      * Renders a tagged text object.
+     * @params the parameters to use initiallly, may be changed by tags later
      */
-    fun renderTaggedText(taggedText: TaggedText, xPixel: Int, yPixel: Int) {
-        val context = TextRenderContext(xPixel, yPixel, TextRenderParams())
+    fun renderTaggedText(taggedText: TaggedText, xPixel: Int, yPixel: Int, params: TextRenderParams = TextRenderParams()) {
+        val original = params.copy()
+        val context = TextRenderContext(xPixel, yPixel, params)
         var lastTagIndex = 0
-        for((thisTagIndex, tag) in taggedText.tags) {
+        for ((thisTagIndex, tag) in taggedText.tags) {
             val substring = taggedText.text.substring(lastTagIndex, thisTagIndex)
-            Renderer.renderText(substring, context.currentXPixel, context.currentYPixel, context.currentRenderParams)
-            val bounds = TextManager.getStringBounds(substring)
+            renderText(substring, context.currentXPixel, context.currentYPixel, context.currentRenderParams)
+            val bounds = TextManager.getStringBounds(substring, context.currentRenderParams.size, context.currentRenderParams.style)
             context.currentXPixel += bounds.width
-            tag.type.execute(context, tag.argument)
+            tag.forEach { it.type.execute(context, it.argument) }
             lastTagIndex = thisTagIndex
         }
-        Renderer.renderText(taggedText.text.substring(lastTagIndex), context.currentXPixel, context.currentYPixel, context.currentRenderParams)
+        renderText(taggedText.text.substring(lastTagIndex), context.currentXPixel, context.currentYPixel, context.currentRenderParams)
+        params.color = original.color
+        params.size = original.size
+        params.style = original.style
     }
 }

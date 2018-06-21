@@ -1,42 +1,146 @@
 package screen.elements
 
+import data.WeakMutableList
+
 import io.PressType
+import main.Game
 import screen.Mouse
 import screen.ScreenManager
+import screen.WindowGroup
 
-private var nextID = 0
+typealias Alignment = () -> Int
 
-open class RootGUIElement(val parentWindow: GUIWindow,
-                          /**
-                           * Should return the requested dimension whenever necessary
-                           * Will be used to update said dimension if it changes
-                           * (think of it like: alignment is the calculator,
-                           * the actual pixel value is where it gets stored for performance reasons)
-                           */
-                          widthAlignment: () -> Int, heightAlignment: () -> Int,
-                          open: Boolean = parentWindow.open, var layer: Int = 0) {
+private var nextId = 0
 
-    constructor(parentWindow: GUIWindow,
-                widthPixels: Int, heightPixels: Int,
-                open: Boolean = parentWindow.open,
-                layer: Int = 0) :
-            this(parentWindow, { widthPixels }, { heightPixels }, open, layer)
+sealed class RootGUIElement constructor(var name: String, xAlignment: Alignment, yAlignment: Alignment, widthAlignment: Alignment, heightAlignment: Alignment, open: Boolean, layer: Int) {
 
-    var widthAlignment = widthAlignment
+    val id = nextId++
+
+    var layer = layer
+
+    var open: Boolean = open
         set(value) {
-            field = value
-            widthPixels = value()
+            if (!value && field) {
+                field = false
+                mouseOn = false
+                if (this is GUIElement) {
+                    parentWindow.openChildren.remove(this)
+                    if (ScreenManager.selectedElement == this) {
+                        ScreenManager.selectedElement = ScreenManager.getHighestElement(Mouse.xPixel, Mouse.yPixel)
+                    }
+                } else if (this is GUIWindow) {
+                    ScreenManager.openWindows.remove(this)
+                    if (ScreenManager.selectedWindow == this) {
+                        ScreenManager.selectedWindow = ScreenManager.getHighestWindow(Mouse.xPixel, Mouse.yPixel)
+                    }
+                }
+                onClose()
+                children.forEach { if (it.matchParentClosing) it.open = false }
+            } else if (value && !field) {
+                field = true
+                mouseOn = ScreenManager.isMouseOn(this)
+                if (this is GUIElement)
+                    parentWindow.openChildren.add(this)
+                else if (this is GUIWindow) {
+                    ScreenManager.openWindows.add(this)
+                    if (openAtMouse) {
+                        var x = Mouse.xPixel
+                        if (x + widthPixels > Game.WIDTH)
+                            x = Game.WIDTH - widthPixels
+                        else if (x < 0)
+                            x = 0
+                        var y = Mouse.yPixel
+                        if (y + heightPixels > Game.HEIGHT)
+                            y = Game.HEIGHT - heightPixels
+                        else if (y < 0)
+                            y = 0
+                        // asdfjkalsdfasdfjkliadsfjkladsfkljasdfkljadfsjkladsfjklafdsjkladfskjladfsjkladfsjkladfsjkladfsjkladsfjkla dsfT TODO do offsets that don't remove original alignments
+                        alignments.x = { x }
+                        alignments.y = { y }
+                    }
+                }
+                onOpen()
+                children.forEach {
+                    if (it.matchParentOpening) {
+                        it.open = true
+                    }
+                }
+            }
         }
-    var heightAlignment = heightAlignment
+    var alignments = ElementAlignments(this, xAlignment, yAlignment, widthAlignment, heightAlignment)
         set(value) {
-            field = value
-            heightPixels = value()
+            if (field != value) {
+                field = value
+                value.update()
+            }
         }
-    val id = nextID++
+
+    open var xPixel: Int = alignments.x()
+        protected set(value) {
+            if (field != value) {
+                val old = field
+                field = value
+                onPositionChange(old, yPixel)
+                children.forEach {
+                    it.alignments.updatePosition()
+                    it.onParentPositionChange(old, yPixel)
+                }
+            }
+        }
+
+    open var yPixel: Int = alignments.y()
+        protected set(value) {
+            if (field != value) {
+                val old = field
+                field = value
+                onPositionChange(xPixel, old)
+                children.forEach {
+                    it.alignments.updatePosition()
+                    it.onParentPositionChange(xPixel, old)
+                }
+            }
+        }
+    /**
+     * This will be calculated and assigned to the width pixels every time a dimension or position of this or a parent changes,
+     * or the updateAlignment() function is called
+     */
+    var widthPixels = alignments.width()
+        protected set(value) {
+            if (field != value) {
+                val old = field
+                field = value
+                onDimensionChange(old, heightPixels)
+                children.forEach {
+                    it.alignments.updateDimension()
+                    it.onParentDimensionChange(old, heightPixels)
+                }
+            }
+        }
+
+    /**
+     * This will be calculated and assigned to the height pixels every time a dimension or position of this or a parent changes,
+     * or the updateAlignment() function is called
+     */
+    var heightPixels = alignments.height()
+        protected set(value) {
+            if (field != value) {
+                val old = field
+                field = value
+                onDimensionChange(widthPixels, old)
+                children.forEach {
+                    it.alignments.updateDimension()
+                    it.onParentDimensionChange(widthPixels, old)
+                }
+            }
+        }
+
+    abstract val parentWindow: GUIWindow
+
     private val _children = mutableListOf<GUIElement>()
+
     val children = object : MutableList<GUIElement> by _children {
         override fun add(element: GUIElement): Boolean {
-            if(_children.any { it.id == element.id })
+            if (_children.any { it.id == element.id })
                 return false
             val result = _children.add(element)
             if (result) {
@@ -56,8 +160,9 @@ open class RootGUIElement(val parentWindow: GUIWindow,
         override fun remove(element: GUIElement): Boolean {
             val result = _children.remove(element)
             if (result) {
-                if (element.open)
+                if (element.open) {
                     parentWindow.openChildren.remove(element)
+                }
                 this@RootGUIElement.onRemoveChild(element)
             }
             return result
@@ -72,92 +177,6 @@ open class RootGUIElement(val parentWindow: GUIWindow,
                 this@RootGUIElement.onRemoveChild(child)
             }
         }
-    }
-    var open: Boolean = open
-        set(value) {
-            if (this !is GUIElement && value != parentWindow.open) {
-                parentWindow.open = value
-            }
-            if (!value && field) {
-                field = false
-                mouseOn = false
-                parentWindow.openChildren.remove(this)
-                if (ScreenManager.selectedElement == this) {
-                    ScreenManager.selectedElement = ScreenManager.getHighestElement(Mouse.xPixel, Mouse.yPixel)
-                }
-                onClose()
-                children.forEach { if (it.matchParentClosing) it.open = false }
-            } else if (value && !field) {
-                field = true
-                mouseOn = ScreenManager.isMouseOn(this)
-                parentWindow.openChildren.add(this)
-                onOpen()
-                children.forEach {
-                    if (it.matchParentOpening) {
-                        it.open = true
-                    }
-                }
-            }
-        }
-    var mouseOn: Boolean = false
-        set(value) {
-            if (value && !field) {
-                onMouseEnter()
-                field = value
-            } else if (!value && field) {
-                onMouseLeave()
-                field = value
-            }
-        }
-    open var xPixel
-        get() = parentWindow.xPixel
-        set(value) {
-            parentWindow.xPixel = value
-        }
-    open var yPixel
-        get() = parentWindow.yPixel
-        set(value) {
-            parentWindow.yPixel = value
-        }
-    /**
-     * This will be calculated and assigned to the width pixels every time a dimension or position of this or a parent changes,
-     * or the updateAlignment() function is called
-     */
-    open var widthPixels = widthAlignment()
-        set(value) {
-            if (field != value) {
-                val old = field
-                field = value
-                onDimensionChange(old, heightPixels)
-                children.forEach {
-                    it.updateAlignment()
-                    it.onParentDimensionChange(old, heightPixels)
-                }
-            }
-        }
-    /**
-     * This will be calculated and assigned to the height pixels every time a dimension or position of this or a parent changes,
-     * or the updateAlignment() function is called
-     */
-    open var heightPixels = heightAlignment()
-        set(value) {
-            if (field != value) {
-                val old = field
-                field = value
-                onDimensionChange(widthPixels, old)
-                children.forEach {
-                    it.updateAlignment()
-                    it.onParentDimensionChange(widthPixels, old)
-                }
-            }
-        }
-
-    open val name
-        get() = parentWindow.name
-
-    init {
-        if (open)
-            mouseOn = ScreenManager.isMouseOn(this)
     }
 
     /* Util */
@@ -185,6 +204,31 @@ open class RootGUIElement(val parentWindow: GUIWindow,
         return r
     }
 
+    fun anyChild(predicate: (RootGUIElement) -> Boolean): Boolean {
+
+        fun recursivelyFind(predicate: (RootGUIElement) -> Boolean, e: RootGUIElement): Boolean {
+            e.children.forEach {
+                if (predicate(it))
+                    return true
+                if (recursivelyFind(predicate, it))
+                    return true
+            }
+            return false
+        }
+
+        return recursivelyFind(predicate, this)
+    }
+
+    var mouseOn: Boolean = false
+        set(value) {
+            if (value && !field) {
+                onMouseEnter()
+                field = value
+            } else if (!value && field) {
+                onMouseLeave()
+                field = value
+            }
+        }
     /* Settings */
     /** Open when the parent opens */
     var matchParentOpening = true
@@ -194,17 +238,23 @@ open class RootGUIElement(val parentWindow: GUIWindow,
     var transparentToInteraction = false
     /** Modify dimensions automatically when the parent's dimensions change */
     var matchParentLayer = true
+
     /**
      * Have the ScreenManager's render() method call this classes render method. Only useful as false if this is is
      * being rendered by some other container, for instance, GUIElementList
      */
     var autoRender = true
         set(value) {
-            if(field != value) {
+            if (field != value) {
                 field = value
                 children.forEach { it.autoRender = value }
             }
         }
+
+    init {
+        if (open)
+            mouseOn = ScreenManager.isMouseOn(this)
+    }
 
     /** Opens if closed, closes if opened */
     fun toggle() {
@@ -255,68 +305,129 @@ open class RootGUIElement(val parentWindow: GUIWindow,
     open fun onDimensionChange(oldWidth: Int, oldHeight: Int) {
     }
 
+    /** When the user resizes the screen */
+    open fun onScreenSizeChange(oldWidth: Int, oldHeight: Int) {
+    }
+
     /** When either the x or y pixel of this changes */
     open fun onPositionChange(pXPixel: Int, pYPixel: Int) {
     }
 
-    override fun toString(): String = "Root child of $parentWindow"
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        other as RootGUIElement
+        if (name != other.name) return false
+        if (layer != other.layer) return false
+        if (open != other.open) return false
+        if (alignments != other.alignments) return false
+        if (xPixel != other.xPixel) return false
+        if (yPixel != other.yPixel) return false
+        if (widthPixels != other.widthPixels) return false
+        if (heightPixels != other.heightPixels) return false
+        return true
+    }
 
-    override operator fun equals(other: Any?): Boolean = other is RootGUIElement && other.id == id
+    override fun hashCode(): Int {
+        var result = name.hashCode()
+        result = 31 * result + id
+        result = 31 * result + layer
+        result = 31 * result + open.hashCode()
+        result = 31 * result + alignments.hashCode()
+        result = 31 * result + xPixel
+        result = 31 * result + yPixel
+        result = 31 * result + widthPixels
+        result = 31 * result + heightPixels
+        return result
+    }
 
-    override fun hashCode() = id
+    class ElementAlignments(parent: RootGUIElement, x: Alignment, y: Alignment, width: Alignment, height: Alignment) {
+        var parent = parent
+            set(value) {
+                if(field != value) {
+                    field = value
+                    update()
+                }
+            }
+
+        var x = x
+            set(value) {
+                if (field !== value) {
+                    field = value
+                    parent.xPixel = value() + ((parent as? GUIElement)?.parent?.xPixel ?: 0)
+                }
+            }
+        var y = y
+            set(value) {
+                if (field !== value) {
+                    field = value
+                    parent.yPixel = value() + ((parent as? GUIElement)?.parent?.yPixel ?: 0)
+                }
+            }
+        var width = width
+            set(value) {
+                if (field !== value) {
+                    field = value
+                    parent.widthPixels = value()
+                }
+            }
+        var height = height
+            set(value) {
+                if (field !== value) {
+                    field = value
+                    parent.heightPixels = value()
+                }
+            }
+
+        fun updatePosition() {
+            if (parent is GUIElement) {
+                parent.xPixel = x() + (parent as GUIElement).parent.xPixel
+                parent.yPixel = y() + (parent as GUIElement).parent.yPixel
+            } else {
+                parent.xPixel = x()
+                parent.yPixel = y()
+            }
+        }
+
+        fun updateDimension() {
+            parent.widthPixels = width()
+            parent.heightPixels = height()
+        }
+
+        fun update() {
+            updatePosition()
+            updateDimension()
+        }
+
+        fun copy(): ElementAlignments {
+            return ElementAlignments(parent, x, y, width, height)
+        }
+
+        override fun equals(other: Any?): Boolean {
+            return this === other
+        }
+
+        override fun hashCode(): Int {
+            var result = x.hashCode()
+            result = 31 * result + y.hashCode()
+            result = 31 * result + width.hashCode()
+            result = 31 * result + height.hashCode()
+            return result
+        }
+    }
+
 }
 
-abstract class GUIElement(parent: RootGUIElement,
-                          override val name: String,
-                          xAlignment: () -> Int, yAlignment: () -> Int,
-                          widthAlignment: () -> Int, heightAlignment: () -> Int,
-                          open: Boolean = false,
-                          layer: Int = parent.layer + 1) :
-        RootGUIElement(parent.parentWindow, widthAlignment, heightAlignment, open, layer) {
+open class GUIElement(parent: RootGUIElement, name: String, xAlignment: Alignment, yAlignment: Alignment, widthAlignment: Alignment, heightAlignment: Alignment, open: Boolean = false, layer: Int = parent.layer + 1) :
+        RootGUIElement(name, xAlignment, yAlignment, widthAlignment, heightAlignment, open, layer) {
 
-    constructor(parent: RootGUIElement,
-                name: String,
-                relXPixel: Int, relYPixel: Int,
-                widthPixels: Int, heightPixels: Int,
-                open: Boolean = false,
-                layer: Int = parent.layer + 1) :
-            this(parent, name, { relXPixel }, { relYPixel }, { widthPixels }, { heightPixels }, open, layer)
+    constructor(parent: RootGUIElement, name: String, xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int, open: Boolean = false, layer: Int = parent.layer + 1) :
+            this(parent, name, { xPixel }, { yPixel }, { widthPixels }, { heightPixels }, open, layer)
 
-    constructor(parentWindow: GUIWindow,
-                name: String,
-                xAlignment: () -> Int, yAlignment: () -> Int,
-                widthAlignment: () -> Int, heightAlignment: () -> Int,
-                open: Boolean = false,
-                layer: Int = parentWindow.rootChild.layer + 1) :
-            this(parentWindow.rootChild, name, xAlignment, yAlignment, widthAlignment, heightAlignment, open, layer)
-
-    constructor(parent: GUIWindow,
-                name: String, xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int,
-                open: Boolean = false,
-                layer: Int = parent.rootChild.layer + 1) :
-            this(parent.rootChild, name, xPixel, yPixel, widthPixels, heightPixels, open, layer)
-
-    /**
-     * This will be calculated and assigned to the x pixel every time a dimension or position of this or a parent changes,
-     * or the updateAlignment() function is called
-     */
-    var xAlignment = xAlignment
-        set(value) {
-            field = value
-            xPixel = parent.xPixel + value()
-        }
-    /**
-     * This will be calculated and assigned to the y pixel every time a dimension or position of this or a parent changes,
-     * or the updateAlignment() function is called
-     */
-    var yAlignment = yAlignment
-        set(value) {
-            field = value
-            yPixel = parent.yPixel + value()
-        }
     var parent: RootGUIElement = parent
         set(value) {
             if (field != value) {
+                parentWindow = field.parentWindow
                 field.children.remove(this)
                 if (open)
                     field.parentWindow.openChildren.remove(this)
@@ -327,66 +438,12 @@ abstract class GUIElement(parent: RootGUIElement,
             }
         }
 
-    /**
-     * THIS SETTER IS MEANT FOR PRIVATE USE ONLY PLS NO USE
-     */
-    final override var xPixel = parent.xPixel + xAlignment()
-        set(value) {
-            if (field != value) {
-                val old = field
-                field = value
-                onPositionChange(old, yPixel)
-                children.forEach {
-                    it.updateAlignment()
-                    it.onParentPositionChange(old, yPixel)
-                }
-            }
-        }
-
-    /**
-     * THIS SETTER IS MEANT FOR PRIVATE USE ONLY PLS NO USE
-     */
-    final override var yPixel = parent.yPixel + yAlignment()
-        set(value) {
-            if (field != value) {
-                val old = field
-                field = value
-                onPositionChange(xPixel, old)
-                children.forEach {
-                    it.updateAlignment()
-                    it.onParentPositionChange(xPixel, old)
-                }
-            }
-        }
-
-    override var widthPixels: Int
-        get() = super.widthPixels
-        set(value) {
-            if (super.widthPixels != value) {
-                super.widthPixels = value
-                parent.onChildDimensionChange(this)
-            }
-        }
-
-    override var heightPixels: Int
-        get() = super.heightPixels
-        set(value) {
-            if (super.heightPixels != value) {
-                super.heightPixels = value
-                parent.onChildDimensionChange(this)
-            }
-        }
+    final override var parentWindow = if (parent is GUIWindow) parent else parent.parentWindow
+        private set
 
     init {
+        alignments.update()
         parent.children.add(this)
-    }
-
-    /* Util */
-    fun updateAlignment() {
-        xPixel = xAlignment() + parent.xPixel
-        yPixel = yAlignment() + parent.yPixel
-        widthPixels = widthAlignment()
-        heightPixels = heightAlignment()
     }
 
     /* Events */
@@ -402,16 +459,96 @@ abstract class GUIElement(parent: RootGUIElement,
     open fun onParentPositionChange(pXPixel: Int, pYPixel: Int) {
     }
 
-    override fun toString(): String {
-        return javaClass.simpleName + ": $name at $xPixel, $yPixel absolute, ${xAlignment()}, ${yAlignment()} relative, width: $widthPixels, height: $heightPixels, layer: $layer, parent: ${parent.name}"
+    override fun toString() = "${javaClass.simpleName}: $name at $xPixel, $yPixel absolute, ${alignments.x()}, ${alignments.y()} relative, w: $widthPixels, h: $heightPixels"
+}
+
+open class GUIWindow(name: String, xAlignment: Alignment, yAlignment: Alignment, widthAlignment: Alignment, heightAlignment: Alignment, windowGroup: WindowGroup, open: Boolean = false, layer: Int = 0) :
+        RootGUIElement(name, xAlignment, yAlignment, widthAlignment, heightAlignment, open, layer) {
+
+    constructor(name: String, xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int, windowGroup: WindowGroup, open: Boolean = false, layer: Int = 0) :
+            this(name, { xPixel }, { yPixel }, { widthPixels }, { heightPixels }, windowGroup, open, layer)
+
+    /**
+     * Ordered constantly based on layer
+     */
+    val openChildren = WeakMutableList<GUIElement>().apply {
+        onAdd = {
+            this.sortBy { it.layer }
+        }
     }
 
-    override fun hashCode(): Int {
-        var result = super.hashCode()
-        result = 31 * result + name.hashCode()
-        result = 31 * result + parent.hashCode()
-        result = 31 * result + xPixel
-        result = 31 * result + yPixel
-        return result
+    override val parentWindow = this
+
+    var windowGroup: WindowGroup = windowGroup
+        set(value) {
+            field.windows.remove(this)
+            value.windows.add(this)
+            field = value
+        }
+
+    var topLeftGroup = AutoFormatGUIGroup(this, name + " top left group", { 1 }, { 1 }, open = open, xPixelSeparation = 5)
+    var topRightGroup = AutoFormatGUIGroup(this, name + " top right group", { this.widthPixels - 5 }, { 1 }, open = open, xPixelSeparation = -5)
+    var bottomRightGroup = AutoFormatGUIGroup(this, name + " bottom right group", { this.widthPixels - 5 }, { this.heightPixels - 5 }, open = open, xPixelSeparation = -5)
+    var bottomLeftGroup = AutoFormatGUIGroup(this, name + " bottom left group", { this.widthPixels - 5 }, { 1 }, open = open, xPixelSeparation = 5)
+
+    /* Settings */
+
+    /** If this should not interfere with sending controls to the level when selected */
+    var partOfLevel = false
+    /** If this should, when opened, move as near to the mouse as possible (but not beyond the screen) */
+    var openAtMouse = false
+
+    init {
+        windowGroup.windows.add(this)
+        ScreenManager.windows.add(this)
+        if (open) {
+            ScreenManager.openWindows.add(this)
+        }
     }
+
+    /* Util */
+    /**
+     * @param pos 0 - top left, 1 - top right, 2 - bottom right, 3 - bottom left
+     */
+    fun generateCloseButton(layer: Int = this.layer + 1, pos: Int = 1): GUICloseButton {
+        return GUICloseButton(getGroup(pos), name + " close button", { 0 }, { 0 }, open, layer, this)
+    }
+
+    /**
+     * @param pos 0 - top left, 1 - top right, 2 - bottom right, 3 - bottom left
+     */
+    fun generateDragGrip(layer: Int = this.layer + 1, pos: Int = 1): GUIDragGrip {
+        return GUIDragGrip(getGroup(pos), name + " drag grip", { 0 }, { 0 }, open, layer, this)
+    }
+
+    /**
+     * @param pos 0 - top left, 1 - top right, 2 - bottom right, 3 - bottom left
+     */
+    fun generateDimensionDragGrip(layer: Int = this.layer + 1, pos: Int = 1): GUIDimensionDragGrip {
+        return GUIDimensionDragGrip(getGroup(pos), name + " dimension drag grip", { 0 }, { 0 }, open, layer, this)
+    }
+
+    private fun getGroup(pos: Int): AutoFormatGUIGroup {
+        when (pos) {
+            0 -> return topLeftGroup
+            1 -> return topRightGroup
+            2 -> return bottomRightGroup
+            3 -> return bottomLeftGroup
+        }
+        return topRightGroup
+    }
+
+    override fun update() {
+
+        fun updateChild(c: RootGUIElement) {
+            c.children.forEach {
+                it.update()
+                updateChild(it)
+            }
+        }
+
+        updateChild(this)
+    }
+
+    override fun toString() = "$name window at $xPixel, $yPixel absolute, ${alignments.x()}, ${alignments.y()} relative"
 }

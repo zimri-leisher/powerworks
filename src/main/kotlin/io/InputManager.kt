@@ -29,20 +29,15 @@ data class ControlPress(val control: Control, val pressType: PressType)
 
 enum class PressType { PRESSED, REPEAT, RELEASED }
 
-enum class SpecialChar(val char: Char) {
-    ESCAPE(''),
-    ENTER('\n'),
-    BACKSPACE('\b'),
-    UP_ARROW('f'),
-    DOWN_ARROW('f'),
-    LEFT_ARROW('f'),
-    RIGHT_ARROW('f');
-
-    companion object {
-        operator fun get(c: Char): SpecialChar? {
-            return values().firstOrNull { it.char == c }
-        }
-    }
+enum class SpecialChar {
+    ESCAPE,
+    ENTER,
+    BACKSPACE,
+    UP,
+    DOWN,
+    LEFT,
+    RIGHT,
+    SHIFT;
 }
 
 object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotionListener {
@@ -79,8 +74,10 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
 
     /**
      * The characters that will be sent to text handler
+     * The String is the name of the key (e.g. ESCAPE or A or UP)
+     * The Char is the character that should appear (e.g., if SHIFT and A are pressed, it is A)
      */
-    val charsInTextQueue = mutableListOf<Char>()
+    val charsInTextQueue = mutableListOf<Pair<String, Char>>()
 
     /**
      * The object that should be sent key type (as in related to pressing, not category) events.
@@ -134,11 +131,11 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
     fun update() {
         if (textHandler != null) {
             charsInTextQueue.forEach {
-                val sp = SpecialChar[it]
-                if(sp != null)
+                val sp = SpecialChar.values().firstOrNull { specialChar -> specialChar.name == it.first }
+                if (sp != null)
                     textHandler!!.handleSpecialKey(sp)
-                else
-                    textHandler!!.handleChar(it)
+                else if(it.second.isDefined())
+                    textHandler!!.handleChar(it.second)
             }
             charsInTextQueue.clear()
         }
@@ -203,12 +200,13 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
     }
 
     override fun keyTyped(e: KeyEvent) {
-        charsInTextQueue.add(e.keyChar)
     }
 
     override fun keyPressed(e: KeyEvent) {
         if (textHandler == null)
             inputEvent.put(KeyEvent.getKeyText(e.extendedKeyCode).toUpperCase(), PressType.PRESSED)
+        else
+            charsInTextQueue.add(Pair(KeyEvent.getKeyText(e.extendedKeyCode).toUpperCase(), e.keyChar))
     }
 
     override fun keyReleased(e: KeyEvent) {

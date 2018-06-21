@@ -43,10 +43,10 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
 
     private val screenTooltipTemplates = sortedMapOf<Int, MutableList<(RootGUIElement) -> String?>>()
 
-    private var window = GUIWindow("Mouse", { xPixel }, { yPixel }, { 0 }, { 0 }, true, 0, ScreenManager.Groups.MOUSE).apply {
+    private var window = GUIWindow("Mouse", { xPixel + 4 }, { yPixel }, { 0 }, { 0 }, ScreenManager.Groups.MOUSE, true, 0).apply {
         transparentToInteraction = true
     }
-    private var group = GUIGroup(window.rootChild, "Mouse info group", { 0 }, { 0 }, open = true).apply {
+    private var group = GUIGroup(window, "Mouse info group", { 0 }, { 0 }, open = true).apply {
         transparentToInteraction = true
     }
 
@@ -124,13 +124,13 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
         if (s != null) {
             text.text = s
             text.open = true
-            background.updateAlignment()
+            background.alignments.updateDimension()
             background.open = true
         } else {
             text.open = false
             background.open = false
         }
-        window.updateAlignment()
+        window.alignments.updatePosition()
     }
 
     internal fun render() {
@@ -138,8 +138,8 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
             val i = heldItemType!!
             val q = Game.mainInv.getQuantity(i)
             val t = i.icon
-            Renderer.renderTextureKeepAspect(t, xPixel, yPixel, GUIItemSlot.WIDTH, GUIItemSlot.HEIGHT)
-            Renderer.renderText(q, xPixel, yPixel)
+            Renderer.renderTextureKeepAspect(t, xPixel + 4, yPixel, GUIItemSlot.WIDTH, GUIItemSlot.HEIGHT)
+            Renderer.renderText(q, xPixel + 4, yPixel)
         }
         when(Game.currentDebugCode) {
             DebugCode.TUBE_INFO -> {

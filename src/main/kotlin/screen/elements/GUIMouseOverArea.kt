@@ -2,7 +2,7 @@ package screen.elements
 
 class GUIMouseOverArea(parent: RootGUIElement, name: String,
                        xAlignment: () -> Int = { 0 }, yAlignment: () -> Int = { 0 },
-                       widthAlignment: () -> Int = parent.widthAlignment, heightAlignment: () -> Int = parent.heightAlignment,
+                       widthAlignment: () -> Int, heightAlignment: () -> Int,
                        initializerList: GUIMouseOverArea.() -> Unit = {},
                        open: Boolean = false,
                        layer: Int = parent.layer + 1) :

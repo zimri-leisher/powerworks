@@ -18,12 +18,12 @@ class LevelViewWindow(name: String,
                       open: Boolean = false,
                       layer: Int = 0,
                       windowGroup: WindowGroup) :
-        GUIWindow(name, xPixel, yPixel, widthPixels, heightPixels, open, layer, windowGroup),
+        GUIWindow(name, xPixel, yPixel, widthPixels, heightPixels, windowGroup, open, layer),
         ControlPressHandler {
 
     var CAMERA_SPEED = 1
 
-    val view = GUILevelView(rootChild, name,
+    val view = GUILevelView(this, name,
             { 0 }, { 0 },
             { this.widthPixels }, { this.heightPixels },
             camera, zoomLevel, open)

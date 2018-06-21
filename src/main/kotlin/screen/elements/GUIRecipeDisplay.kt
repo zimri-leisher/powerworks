@@ -18,7 +18,7 @@ class GUIRecipeDisplay(parent: RootGUIElement, name: String, xAlignment: () -> I
                 produceList.currentResources = value.produce
                 produceList.width = value.produce.size
                 mouseOverAreaOpenGroup.children.remove(background)
-                background.updateAlignment()
+                background.alignments.updateDimension()
             } else if (field != value) {
                 value!! // must not be null because null == null
                 icon.texture = value.icon.icon
@@ -27,7 +27,7 @@ class GUIRecipeDisplay(parent: RootGUIElement, name: String, xAlignment: () -> I
                 produceList.currentResources = value.produce
                 produceList.width = value.produce.size
                 mouseOverAreaOpenGroup.children.remove(background)
-                background.updateAlignment()
+                background.alignments.updateDimension()
             }
             field = value
         }
@@ -47,14 +47,14 @@ class GUIRecipeDisplay(parent: RootGUIElement, name: String, xAlignment: () -> I
                 updateDimensionAlignmentOnTextureChange = false
                 transparentToInteraction = true
                 matchParentOpening = false
-                mouseOverArea = GUIMouseOverArea(this, name + " mouse over info", { 0 }, { 0 }, this.widthAlignment, this.heightAlignment, {
+                mouseOverArea = GUIMouseOverArea(this, name + " mouse over info", { 0 }, { 0 }, this.alignments.width, this.alignments.height, {
                     transparentToInteraction = true
                     val mouseOver = this
                     mouseOverAreaOpenGroup = GUIGroup(this, "Open group", { 0 }, { 0 }, {
                         val consumeText = GUIText(this, "consume text", this@apply.widthPixels + 3, 1, "Consume:", layer = this.layer + 2)
-                        consumeList = GUIResourceListDisplay(this, "consume list display", fakeRecipe.consume, { consumeText.xAlignment() }, { consumeText.yAlignment() + consumeText.heightPixels + 1 }, fakeRecipe.consume.size, 1)
-                        val produceText = GUIText(this, "produce text", consumeText.xAlignment(), consumeList.yAlignment() + consumeList.heightPixels + 1, "Produce:", layer = this.layer + 2)
-                        produceList = GUIResourceListDisplay(this, "produce list icons", fakeRecipe.produce, { consumeText.xAlignment() }, { produceText.yAlignment() + produceText.heightPixels + 1 }, fakeRecipe.produce.size, 1)
+                        consumeList = GUIResourceListDisplay(this, "consume list display", fakeRecipe.consume, { consumeText.alignments.x() }, { consumeText.alignments.y() + consumeText.heightPixels + 1 }, fakeRecipe.consume.size, 1)
+                        val produceText = GUIText(this, "produce text", consumeText.alignments.x(), consumeList.alignments.y() + consumeList.heightPixels + 1, "Produce:", layer = this.layer + 2)
+                        produceList = GUIResourceListDisplay(this, "produce list icons", fakeRecipe.produce, { consumeText.alignments.x() }, { produceText.alignments.y() + produceText.heightPixels + 1 }, fakeRecipe.produce.size, 1)
                     })
                     background = GUIDefaultTextureRectangle(mouseOver, this@GUIRecipeDisplay.name + " background", { this@apply.widthPixels + 1 }, { -1 }, { mouseOverAreaOpenGroup.widthPixels }, { mouseOverAreaOpenGroup.heightPixels })
                 }).apply { transparentToInteraction = true }

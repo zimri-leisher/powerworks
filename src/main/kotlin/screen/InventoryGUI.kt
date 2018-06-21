@@ -18,12 +18,13 @@ class InventoryGUI(name: String,
         GUIWindow(name, xPixel, yPixel,
                 inv.width * (GUIItemSlot.WIDTH + ITEM_SLOT_PADDING) + ITEM_SLOT_PADDING,
                 inv.height * (GUIItemSlot.HEIGHT + ITEM_SLOT_PADDING) + ITEM_SLOT_PADDING + 5,
+                ScreenManager.Groups.INVENTORY,
                 open,
-                layer, ScreenManager.Groups.INVENTORY) {
+                layer) {
 
 
     private val itemSlots: Array<GUIItemSlot>
-    private val background = GUIDefaultTextureRectangle(this.rootChild, name + " background", 0, 0)
+    private val background = GUIDefaultTextureRectangle(this, name + " background", 0, 0)
 
     init {
         openAtMouse = true
@@ -35,7 +36,7 @@ class InventoryGUI(name: String,
                 arr[x + y * inv.width] = GUIItemSlot(background, name + " item slot ${x + y * inv.width}", ITEM_SLOT_PADDING + x * (GUIItemSlot.WIDTH + ITEM_SLOT_PADDING), ITEM_SLOT_PADDING + 5 + y * (GUIItemSlot.HEIGHT + ITEM_SLOT_PADDING), x + y * inv.width, inv)
             }
         }
-        GUIText(background, "Inventory GUI name text", 0, 0, displayName)
+        GUIText(background, "Inventory GUI name text", 0, 0, displayName, allowTags = true)
         itemSlots = arr as Array<GUIItemSlot>
         // You want to be able to move and edit inventories at the same time
         partOfLevel = true

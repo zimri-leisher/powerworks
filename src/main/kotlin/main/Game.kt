@@ -60,7 +60,6 @@ object Game : Canvas(), Runnable, ControlPressHandler {
     var FRAMES_PER_SECOND = 60f
     var NS_PER_FRAME: Float = 1000000000 / FRAMES_PER_SECOND
 
-    /* Base statistics */
     var framesCount = 0
     var updatesCount = 0
     var secondsCount = 0
@@ -70,8 +69,12 @@ object Game : Canvas(), Runnable, ControlPressHandler {
     private var defaultCursor = Cursor.getDefaultCursor()
     private var clearCursor = Toolkit.getDefaultToolkit().createCustomCursor(ImageIO.read(ResourceManager.getRawResource("/textures/cursor/cursor_default.png")), Point(0, 0), "Blank cursor")
 
-    /* Settings */
+    /**
+     * Whether or not to sleep every cycle (if not, it will run render as fast as possible)
+     */
     var THREAD_WAITING = true
+
+    val JAR_PATH = Game::class.java.protectionDomain.codeSource.location.toURI().path.drop(1)
 
     /**
      * The current debug code that is used for displaying miscellaneous information.
@@ -81,6 +84,7 @@ object Game : Canvas(), Runnable, ControlPressHandler {
 
     var LEVEL_PAUSED = false
     var PAUSE_LEVEL_IN_ESCAPE_MENU = false
+
     val INVENTORY_WIDTH = 8
     val INVENTOR_HEIGHT = 6
 
@@ -130,8 +134,12 @@ object Game : Canvas(), Runnable, ControlPressHandler {
         System.setSecurityManager(SecurityManager())
         ModManager.initialize()
         frame.isVisible = true
-        testTags()
         start()
+    }
+
+    private fun start() {
+        THREAD.start()
+        running = true
     }
 
     override fun run() {
@@ -179,14 +187,11 @@ object Game : Canvas(), Runnable, ControlPressHandler {
 
     fun update() {
         if (resized) {
-            val oldW = Game.WIDTH
-            val oldH = Game.HEIGHT
             Game.WIDTH = Game.width / SCALE
             Game.HEIGHT = Game.height / SCALE
-            ScreenManager.screenSizeChange(oldW, oldH)
+            ScreenManager.screenSizeChange()
             resized = false
         }
-        //spark()
         FileSystem.update()
         InputManager.update()
         Mouse.update()
@@ -194,8 +199,6 @@ object Game : Canvas(), Runnable, ControlPressHandler {
         LocalAnimation.update()
         ScreenManager.update()
         if (State.CURRENT_STATE == State.INGAME) {
-            if (updatesCount % 60 == 0)
-                currentLevel.maxRenderSteps++
             currentLevel.update()
         }
         State.update()
@@ -217,11 +220,6 @@ object Game : Canvas(), Runnable, ControlPressHandler {
                 bufferStrat.show()
             } while (bufferStrat.contentsRestored())
         } while (bufferStrat.contentsLost())
-    }
-
-    private fun start() {
-        THREAD.start()
-        running = true
     }
 
     private fun stop() {
@@ -256,8 +254,10 @@ object Game : Canvas(), Runnable, ControlPressHandler {
                 Control.SCREEN_INFO -> currentDebugCode = DebugCode.SCREEN_INFO
                 Control.POSITION_INFO -> currentDebugCode = DebugCode.POSITION_INFO
                 Control.ESCAPE -> {
-                    ScreenManager.openWindows.sortedBy { it.layer }.firstOrNull { window -> window.windowGroup != ScreenManager.Groups.BACKGROUND && window.windowGroup != ScreenManager.Groups.VIEW &&
-                        window.anyChild { it is GUICloseButton && it.open == true && it.actOn == window } }?.open = false
+                    ScreenManager.openWindows.sortedBy { it.layer }.firstOrNull { window ->
+                        window.windowGroup != ScreenManager.Groups.BACKGROUND && window.windowGroup != ScreenManager.Groups.VIEW &&
+                                window.anyChild { it is GUICloseButton && it.open == true && it.actOn == window }
+                    }?.open = false
                 }
                 Control.TOGGLE_INVENTORY -> {
                     if (State.CURRENT_STATE != State.INGAME)

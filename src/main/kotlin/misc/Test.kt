@@ -18,7 +18,6 @@ fun main(args: Array<String>) {
 }
 
 fun testTags() {
-    println(TextManager.parseTags("testing 1<color=red>this is red<style=bold>this is red and bold<default>this is default<image=misc/logo> an image was rendered before this"))
 }
 
 fun asyncTest() {

@@ -80,12 +80,12 @@ class WeakMutableList<T> {
         var index = 0
 
         override fun hasNext(): Boolean {
-            if(index + 1 > list.lastIndex)
+            if (index + 1 > list.lastIndex)
                 return false
             var next = list[index + 1]
-            while(next.get() == null) {
+            while (next.get() == null) {
                 index++
-                if(index + 1 > list.lastIndex)
+                if (index + 1 > list.lastIndex)
                     return false
                 next = list[index + 1]
             }
@@ -95,7 +95,7 @@ class WeakMutableList<T> {
         override fun next(): T {
             index++
             var next = list[index]
-            while(next.get() == null) {
+            while (next.get() == null) {
                 index++
                 next = list[index]
             }
@@ -104,7 +104,7 @@ class WeakMutableList<T> {
                 o!!
             } catch (e: KotlinNullPointerException) {
                 println("GC'd")
-                if(index + 1 > list.lastIndex) {
+                if (index + 1 > list.lastIndex) {
                     index = 0
                     // this will go back down till it finds something that hasnt been removed
                 }
@@ -123,7 +123,7 @@ class WeakMutableList<T> {
         return list.map { it.get()!! }.stream()
     }
 
-    fun filter(f: (T) -> Boolean) = list.filter { if(it.get() == null) false else f(it.get()!!) }.map { it.get()!! }
+    fun filter(f: (T) -> Boolean) = list.filter { if (it.get() == null) false else f(it.get()!!) }.map { it.get()!! }
 
     fun isNotEmpty(): Boolean {
         check()
@@ -134,4 +134,6 @@ class WeakMutableList<T> {
         check()
         return list.filter { it.get() != null }.map { it.get()!! }.sortedBy(f)
     }
+
+    fun joinToString() = list.joinToString { it.get().toString() + ", " }
 }

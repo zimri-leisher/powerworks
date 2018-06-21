@@ -70,7 +70,7 @@ object ViewControlGUI : GUIWindow("In game view selector window", { Game.WIDTH -
                     }
                 }
         )
-        viewControls.add(rootChild)
+        viewControls.add(this)
     }
 }
 
@@ -80,7 +80,7 @@ object ViewControlGUI : GUIWindow("In game view selector window", { Game.WIDTH -
 object IngameGUI : GUIWindow("In game gui",
         { 0 }, { 0 },
         { Game.WIDTH }, { Game.HEIGHT },
-        windowGroup = ScreenManager.Groups.BACKGROUND
+        ScreenManager.Groups.BACKGROUND
 ), ControlPressHandler {
 
     const val MAX_VIEWS = 4
@@ -92,8 +92,7 @@ object IngameGUI : GUIWindow("In game gui",
 
     init {
         InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.TOGGLE_VIEW_CONTROLS)
-        adjustDimensions = true
-        GUITexturePane(this.rootChild, "In game gui background", { 0 }, { 0 }, Image.GUI.MAIN_MENU_BACKGROUND_FILLER, { Game.WIDTH }, { Game.HEIGHT })
+        GUITexturePane(this, "In game gui background", { 0 }, { 0 }, Image.GUI.MAIN_MENU_BACKGROUND_FILLER, { Game.WIDTH }, { Game.HEIGHT })
         ViewControlGUI.open
     }
 
@@ -128,8 +127,8 @@ object IngameGUI : GUIWindow("In game gui",
         for (v in views) {
             // If there are any fullscreen views, keep them fullscreen
             if (v.widthPixels == oldWidth && v.heightPixels == oldHeight) {
-                v.widthAlignment = { widthPixels }
-                v.heightAlignment = { heightPixels }
+                v.alignments.width = { widthPixels }
+                v.alignments.height = { heightPixels }
             }
         }
     }

@@ -31,10 +31,9 @@ object HUD {
             { IngameGUI.heightPixels - GUIItemSlot.HEIGHT },
             { HOTBAR_SIZE * GUIItemSlot.WIDTH },
             { GUIItemSlot.HEIGHT },
+            ScreenManager.Groups.HOTBAR,
             true,
-            IngameGUI.layer + 2,
-            // Above the background, view group and inventory group
-            ScreenManager.Groups.HOTBAR),
+            IngameGUI.layer + 2),
             ControlPressHandler,
             ResourceContainerChangeListener {
 
@@ -50,7 +49,7 @@ object HUD {
                     selectOverlay.open = false
                 } else {
                     selectOverlay.open = true
-                    selectOverlay.updateAlignment()
+                    selectOverlay.alignments.updatePosition()
                     Mouse.heldItemType = items[value]
                 }
             }
@@ -124,13 +123,13 @@ object HUD {
 
         }
 
-        private val selectOverlay = GUITexturePane(rootChild, "Hotbar slot selected overlay", { selected * GUIItemSlot.WIDTH }, { 0 }, texture = Image.GUI.HOTBAR_SELECTED_SLOT, layer = layer + 2)
+        private val selectOverlay = GUITexturePane(this, "Hotbar slot selected overlay", { selected * GUIItemSlot.WIDTH }, { 0 }, texture = Image.GUI.HOTBAR_SELECTED_SLOT, layer = layer + 2)
 
         init {
             partOfLevel = true
             InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.SLOT_1, Control.SLOT_2, Control.SLOT_3, Control.SLOT_4, Control.SLOT_5, Control.SLOT_6, Control.SLOT_7, Control.SLOT_8, Control.GIVE_TEST_ITEM)
             for (i in 0 until HOTBAR_SIZE) {
-                GUIItemSlot(rootChild, "Hotbar slot $i", i * GUIItemSlot.WIDTH, 0, i, items, open = true)
+                GUIItemSlot(this, "Hotbar slot $i", i * GUIItemSlot.WIDTH, 0, i, items, open = true)
             }
             Game.mainInv.listeners.add(this)
             selectOverlay.transparentToInteraction = true

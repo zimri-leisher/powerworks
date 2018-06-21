@@ -36,8 +36,8 @@ class GUIButton(parent: RootGUIElement,
 
     init {
         this.text.transparentToInteraction = true
-        this.text.xAlignment = { (this.widthPixels - this.text.widthPixels) / 2 }
-        this.text.yAlignment = { (this.heightPixels - this.text.heightPixels) / 2 }
+        this.text.alignments.x = { (this.widthPixels - this.text.widthPixels) / 2 }
+        this.text.alignments.y = { (this.heightPixels - this.text.heightPixels) / 2 }
         // if it is the default specs
     }
 

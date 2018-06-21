@@ -57,8 +57,8 @@ class GUIDragGrip(parent: RootGUIElement,
                                 nY
                         ))
             }
-            actOn.xAlignment = { nX }
-            actOn.yAlignment = { nY }
+            actOn.alignments.x = { nX }
+            actOn.alignments.y = { nY }
         }
     }
 

@@ -89,8 +89,6 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
 
     var selectedLevelObject: LevelObject? = null
 
-    var maxRenderSteps = 0
-
     var mouseOnLevel = false
     var mouseLevelXPixel = 0
     var mouseLevelYPixel = 0

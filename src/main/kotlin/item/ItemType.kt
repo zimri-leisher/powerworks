@@ -47,7 +47,7 @@ open class ItemType(initializer: ItemType.() -> Unit = {}) : ResourceType {
 
         val MINER = ItemType {
             name = "Miner"
-            icon = SyncAnimation.MINER.images[0]
+            icon = SyncAnimation.MINER
             placedBlockID = MachineBlockType.MINER.id
         }
 
@@ -99,6 +99,7 @@ open class ItemType(initializer: ItemType.() -> Unit = {}) : ResourceType {
 
         val SOLIDIFIER = ItemType {
             name = "Molten Ore Solidifier"
+            icon = SyncAnimation.SOLIDIFIER
             placedBlockID = MachineBlockType.SOLIDIFIER.id
         }
 

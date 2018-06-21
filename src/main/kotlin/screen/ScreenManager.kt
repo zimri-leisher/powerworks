@@ -7,6 +7,13 @@ import data.WeakMutableList
 import graphics.Renderer
 import main.Game
 import misc.GeometryHelper
+import screen.ScreenManager.getHighestElement
+import screen.ScreenManager.getHighestWindow
+import screen.ScreenManager.selectedElement
+import screen.ScreenManager.selectedWindow
+import screen.ScreenManager.windowGroups
+import screen.animations.Animation
+import screen.elements.GUIElement
 import screen.elements.GUIWindow
 import screen.elements.RootGUIElement
 import java.awt.Rectangle
@@ -34,10 +41,12 @@ object ScreenManager : ControlPressHandler {
     val windows = ConcurrentlyModifiableWeakMutableList<GUIWindow>()
     internal val openWindows = WeakMutableList<GUIWindow>()
 
+    val playingAnimations = ConcurrentlyModifiableMutableList<Animation<*>>()
+
     /**
      * The last GUIElement interacted with. Keep in mind this doesn't look at elements with the transparentToInteraction flag set to true
      */
-    var selectedElement: RootGUIElement? = null
+    var selectedElement: GUIElement? = null
 
     /**
      * The last GUIWindow interacted with. Keep in mind this doesn't look at elements with the transparentToInteraction flag set to true
@@ -70,6 +79,7 @@ object ScreenManager : ControlPressHandler {
 
     fun update() {
         updateMouseOn()
+        playingAnimations.forEach { it.update() }
         forEachElement(func = { it.update() })
         openWindows.forEach { it.update() }
     }
@@ -102,21 +112,15 @@ object ScreenManager : ControlPressHandler {
     }
 
     /** @return the highest element, layer-wise, that intersects the given x and y coordinates and matches the predicate. */
-    fun getHighestElement(xPixel: Int, yPixel: Int, window: GUIWindow? = getHighestWindow(xPixel, yPixel), predicate: (RootGUIElement) -> Boolean = { true }): RootGUIElement? {
+    fun getHighestElement(xPixel: Int, yPixel: Int, window: GUIWindow? = getHighestWindow(xPixel, yPixel), predicate: (GUIElement) -> Boolean = { true }): GUIElement? {
         return window?.openChildren?.stream()?.filter {
             intersectsElement(xPixel, yPixel, it) && predicate(it)
         }?.max { o1, o2 -> o1.layer.compareTo(o2.layer) }?.orElseGet { null }
     }
 
-    fun screenSizeChange(oldWidth: Int, oldHeight: Int) {
+    fun screenSizeChange() {
         windows.forEach {
-            if (it.adjustDimensions) {
-                it.widthPixels = it.widthAlignment()
-                it.heightPixels = it.heightAlignment()
-            }
-            it.xPixel = it.xAlignment()
-            it.yPixel = it.yAlignment()
-            it.onScreenSizeChange(oldWidth, oldHeight)
+            it.alignments.update()
         }
         Renderer.defaultClip = Rectangle(Game.WIDTH * Game.SCALE, Game.HEIGHT * Game.SCALE)
     }
@@ -152,13 +156,13 @@ object ScreenManager : ControlPressHandler {
         }
     }
 
-// TODO update screen control handlers by going through the selected elements. if one is part of the level, add the gui view under it to the screen handler
+    // TODO update screen control handlers by going through the selected elements. if one is part of the level, add the gui view under it to the screen handler
 
-    private fun forEachElement(func: ((RootGUIElement) -> Unit), pred: ((RootGUIElement) -> Boolean)? = null) {
-        windows.forEach { recursivelyCall(it.rootChild, func, pred) }
+    private fun forEachElement(func: ((GUIElement) -> Unit), pred: ((GUIElement) -> Boolean)? = null) {
+        windows.forEach { it.children.forEach { recursivelyCall(it, func, pred) } }
     }
 
-    private fun recursivelyCall(e: RootGUIElement, l: (RootGUIElement) -> Unit, f: ((RootGUIElement) -> Boolean)? = null) {
+    private fun recursivelyCall(e: GUIElement, l: (GUIElement) -> Unit, f: ((GUIElement) -> Boolean)? = null) {
         if (f == null || f(e)) {
             l(e)
             e.children.forEach { recursivelyCall(it, l, f) }
@@ -188,7 +192,7 @@ object ScreenManager : ControlPressHandler {
     }
 
     private fun printDebug() {
-        fun RootGUIElement.print(spaces: String = ""): String {
+        fun GUIElement.print(spaces: String = ""): String {
             var v = spaces + toString()
             for (g in children)
                 v += "\n" + g.print(spaces + "   ")
@@ -196,10 +200,12 @@ object ScreenManager : ControlPressHandler {
         }
         for (group in windowGroups) {
             println(group.name + ":")
+            println("windows: ${group.windows.size}, ${group.windows.joinToString()}")
             for (window in group.windows) {
+                println("windows in ${group.name}: $window")
                 if (window.open) {
                     println("   $window:")
-                    println(window.rootChild.print("      "))
+                    println(window.children.forEach { it.print("      ") })
                 }
             }
         }

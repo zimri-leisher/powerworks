@@ -17,7 +17,7 @@ class GUIMouseOverTextPane(parent: RootGUIElement, name: String,
                 field = value
                 guiText.text = value
                 children.remove(background)
-                background.updateAlignment()
+                background.alignments.updateDimension()
             }
         }
 

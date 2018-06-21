@@ -260,6 +260,7 @@ class Image constructor(image: BufferedImage) : Texture {
         val CHEST_LARGE = ResourceManager.registerImage("block/chest_large")
         val CRAFTER = ResourceManager.registerImage("block/crafter")
         val FURNACE = ResourceManager.registerImage("block/furnace")
+        val SOLIDIFIER = ResourceManager.registerImage("block/solidifier")
         val TUBE_4_WAY = ResourceManager.registerImage("block/tube/4_way")
         val TUBE_2_WAY_VERTICAL = ResourceManager.registerImage("block/tube/2_way_vertical")
         val TUBE_2_WAY_HORIZONTAL = ResourceManager.registerImage("block/tube/2_way_horizontal")

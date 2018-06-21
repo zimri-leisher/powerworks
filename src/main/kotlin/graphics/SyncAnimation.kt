@@ -89,7 +89,8 @@ class SyncAnimation(
         val WEAPON_2_2 = SyncAnimation("/textures/weapon/weapon1/dir_2.png", 3, arrayOf(8, 8, 8), true)
         val WEAPON_2_3 = SyncAnimation("/textures/weapon/weapon1/dir_3.png", 3, arrayOf(8, 8, 8), true)
 
-        val MINER = SyncAnimation("/textures/block/miner/miner.png", 5, arrayOf(5, 5, 5, 5, 5), true)
+        val MINER = SyncAnimation("block/miner", 5, arrayOf(5, 5, 5, 5, 5), true)
+        val SOLIDIFIER = SyncAnimation("block/solidifier", 4, arrayOf(10, 10, 10, 10), true)
 
         fun update() {
             ALL.forEach { it.update() }

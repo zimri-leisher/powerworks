@@ -37,8 +37,8 @@ class GUIDimensionDragGrip(parent: RootGUIElement,
                 nWidthPixels = Math.min(Game.WIDTH, nWidthPixels)
                 nHeightPixels = Math.min(Game.HEIGHT, nHeightPixels)
             }
-            actOn.widthAlignment = { nWidthPixels }
-            actOn.heightAlignment = { nHeightPixels }
+            actOn.alignments.width = { nWidthPixels }
+            actOn.alignments.height = { nHeightPixels }
         }
     }
 
@@ -49,8 +49,8 @@ class GUIDimensionDragGrip(parent: RootGUIElement,
                 nWidthPixels = Math.min(Game.WIDTH, nWidthPixels)
                 nHeightPixels = Math.min(Game.HEIGHT, nHeightPixels)
             }
-            actOn.widthAlignment = { nWidthPixels }
-            actOn.heightAlignment = { nHeightPixels }
+            actOn.alignments.width = { nWidthPixels }
+            actOn.alignments.height = { nHeightPixels }
         }
     }
 

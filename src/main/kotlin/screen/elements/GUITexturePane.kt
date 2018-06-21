@@ -20,8 +20,8 @@ class GUITexturePane(parent: RootGUIElement,
         set(value) {
             if (field != value) {
                 if (widthPixels == field.widthPixels && heightPixels == field.heightPixels && updateDimensionAlignmentOnTextureChange) {
-                    widthAlignment = { value.widthPixels }
-                    heightAlignment = { value.heightPixels }
+                    alignments.width = { value.widthPixels }
+                    alignments.height = { value.heightPixels }
                 }
                 field = value
             }

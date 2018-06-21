@@ -345,8 +345,8 @@ class TubeBlockGroup {
 
         fun render() {
             for (item in itemsBeingMoved) {
-                Renderer.renderTextureKeepAspect(item.item.type.icon, item.xPixel + 4, item.yPixel + 4, 8, 8)
-                Renderer.renderText(item.item.quantity, item.xPixel + 4, item.yPixel + 4)
+                Renderer.renderTextureKeepAspect(item.item.type.icon, item.xPixel + 4, item.yPixel, 8, 8)
+                Renderer.renderText(item.item.quantity, item.xPixel + 4, item.yPixel)
                 if (Game.currentDebugCode == DebugCode.TUBE_INFO)
                     renderPath(item)
             }
