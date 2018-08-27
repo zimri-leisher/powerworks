@@ -1,7 +1,7 @@
 package audio
 
 import audiocue.AudioCue
-import main.ResourceManager
+import data.ResourceManager
 
 enum class Sound(path: String, maxConcurrent: Int) {
     GRASS_FOOTSTEP("/sounds/footstep/grass.wav", 6),

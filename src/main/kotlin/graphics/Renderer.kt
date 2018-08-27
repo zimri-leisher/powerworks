@@ -8,6 +8,14 @@ import main.Game
 import java.awt.*
 import java.awt.geom.AffineTransform
 
+/**
+ * The main render helper.
+ * This should be called directly in the render() methods of appropriate level objects/screen elements.
+ * If the object is being rendered inside of a GUILevelView, the coordinates are automatically converted from level coordinates
+ * to screen coordinates. If it is a separate gui element, it will remain unconverted.
+ * This means there is no need to specify at any time whether you mean level or screen pixel coordinates, as long as you're keeping
+ * render methods in their appropriate places
+ */
 object Renderer {
 
     var defaultClip = Rectangle(Game.WIDTH * Game.SCALE, Game.HEIGHT * Game.SCALE)
@@ -62,11 +70,11 @@ object Renderer {
     }
 
     fun renderEmptyRectangle(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int, color: Int = 0xFFFFFF, params: TextureRenderParams = defaultParams, borderThickness: Int = 1) {
-        val absoluteXPixel = (xPixel + params.xPixelOffset + xPixelOffset) * Game.SCALE
-        val absoluteYPixel = (yPixel + params.yPixelOffset + yPixelOffset) * Game.SCALE
         val scaledScale = Game.SCALE * params.scale
-        val absoluteWidthPixels = widthPixels * scaledScale * params.scaleWidth
-        val absoluteHeightPixels = heightPixels * scaledScale * params.scaleHeight
+        val absoluteXPixel = (xPixel + params.xPixelOffset + xPixelOffset) * Game.SCALE + if(widthPixels < 0) (widthPixels * scaledScale).toInt() else 0
+        val absoluteYPixel = (yPixel + params.yPixelOffset + yPixelOffset) * Game.SCALE + if(heightPixels < 0) (heightPixels * scaledScale).toInt() else 0
+        val absoluteWidthPixels = Math.abs(widthPixels) * scaledScale * params.scaleWidth
+        val absoluteHeightPixels = Math.abs(heightPixels) * scaledScale * params.scaleHeight
         g2d.color = Color(color)
         var oldComposite: Composite? = null
         var oldTransform: AffineTransform? = null
@@ -76,7 +84,7 @@ object Renderer {
         }
         if (params.rotation != 0f) {
             oldTransform = g2d.transform
-            g2d.rotate(Math.toRadians(params.rotation.toDouble()), (absoluteXPixel + widthPixels / 2).toDouble(), (yPixel + heightPixels / 2).toDouble())
+            g2d.rotate(Math.toRadians(params.rotation.toDouble()), (absoluteXPixel + absoluteWidthPixels / 2).toDouble(), (absoluteYPixel + absoluteHeightPixels/ 2).toDouble())
         }
         g2d.stroke = BasicStroke(Game.SCALE.toFloat() * borderThickness)
         g2d.drawRect(absoluteXPixel, absoluteYPixel, absoluteWidthPixels.toInt(), absoluteHeightPixels.toInt())
@@ -263,17 +271,18 @@ object Renderer {
      */
     fun renderTaggedText(taggedText: TaggedText, xPixel: Int, yPixel: Int, params: TextRenderParams = TextRenderParams()) {
         val original = params.copy()
-        val context = TextRenderContext(xPixel, yPixel, params)
+        val context = TextRenderContext(Rectangle(xPixel, yPixel, 0, 0), params)
         var lastTagIndex = 0
         for ((thisTagIndex, tag) in taggedText.tags) {
             val substring = taggedText.text.substring(lastTagIndex, thisTagIndex)
-            renderText(substring, context.currentXPixel, context.currentYPixel, context.currentRenderParams)
+            renderText(substring, context.currentBounds.width + context.currentBounds.x, context.currentBounds.y, context.currentRenderParams)
             val bounds = TextManager.getStringBounds(substring, context.currentRenderParams.size, context.currentRenderParams.style)
-            context.currentXPixel += bounds.width
+            context.currentBounds.width += bounds.width
+            context.currentBounds.height = Math.max(context.currentBounds.height, bounds.height)
             tag.forEach { it.type.execute(context, it.argument) }
             lastTagIndex = thisTagIndex
         }
-        renderText(taggedText.text.substring(lastTagIndex), context.currentXPixel, context.currentYPixel, context.currentRenderParams)
+        renderText(taggedText.text.substring(lastTagIndex), context.currentBounds.width + context.currentBounds.x, context.currentBounds.y, context.currentRenderParams)
         params.color = original.color
         params.size = original.size
         params.style = original.style

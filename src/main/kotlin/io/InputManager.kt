@@ -1,11 +1,11 @@
 package io
 
-import main.Game
 import data.ConcurrentlyModifiableMutableMap
 import data.WeakMutableList
-import screen.Mouse
+import main.Game
 import screen.ScreenManager
 import screen.elements.GUILevelView
+import screen.mouse.Mouse
 import java.awt.event.*
 import io.OutputManager as out
 
@@ -18,9 +18,10 @@ enum class ControlPressHandlerType {
     GLOBAL,
     /** Only this object in the level*/
     LEVEL_THIS,
-    /** Anywhere in the level*/
+    /** Anywhere in the level. More specifically, if the last selected gui element is a GUILevelView*/
     LEVEL_ANY,
-    /** Only this object on the screen*/
+    /** Only this object on the screen. More specifically, if the control handler is the last selected gui element, or the control handler is a gui window with partOfLevel set to false.
+     * If the last selected window has partOfLevel set to true, the control handler will receive the controls if it the highest GUILevelView directly under the mouse*/
     SCREEN_THIS
     // no need for SCREEN_ANY because that's the same as global
 }
@@ -50,7 +51,7 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
                     ControlPressHandler,
                     ControlPressHandlerType>,
             // the control maps and the controls themselves
-            // each pair in this map specifies the controlmap and the controls that the handler wants to recieve when that map is active
+            // each pair in this map specifies the control map and the controls that the handler wants to receive when that map is active
             Map<
                     ControlMap,
                     // you've tried to remove this 'out' before. don't bother.
@@ -64,7 +65,7 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
     var inputEvent = ConcurrentlyModifiableMutableMap<String, PressType>()
 
     /* Each control can only happen once per update */
-    val queue = linkedSetOf<ControlPress>()
+    var queue = linkedSetOf<ControlPress>()
 
     var mouseMoved: MouseEvent? = null
 
@@ -75,12 +76,12 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
     /**
      * The characters that will be sent to text handler
      * The String is the name of the key (e.g. ESCAPE or A or UP)
-     * The Char is the character that should appear (e.g., if SHIFT and A are pressed, it is A)
+     * The Char is the character that should appear (e.g., if SHIFT and A are pressed, it is 'A', if there is no SHIFT, it is 'a')
      */
     val charsInTextQueue = mutableListOf<Pair<String, Char>>()
 
     /**
-     * The object that should be sent key type (as in related to pressing, not category) events.
+     * The object that should be sent key type (the word 'type' as in related to pressing, not category) events.
      * If the character typed is one of the SpecialChars, it will be sent through the handleSpecialChar method,
      * otherwise it will be send through handleChar
      */
@@ -93,6 +94,15 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
      */
     fun registerControlPressHandler(h: ControlPressHandler, type: ControlPressHandlerType, controls: Map<ControlMap, Array<Control>>? = null) {
         handlers.put(Pair(h, type), controls)
+    }
+
+    /**
+     * Registers a control press handler
+     * @param type one of GLOBAL, LEVEL_ANY, LEVEL_THIS and SCREEN_THIS
+     * @param controls the list of controls to send to this
+     */
+    fun registerControlPressHandler(h: ControlPressHandler, type: ControlPressHandlerType, controls: List<Control>) {
+        registerControlPressHandler(h, type, *controls.toTypedArray())
     }
 
     /**
@@ -129,20 +139,24 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
     }
 
     fun update() {
+
         if (textHandler != null) {
             charsInTextQueue.forEach {
                 val sp = SpecialChar.values().firstOrNull { specialChar -> specialChar.name == it.first }
                 if (sp != null)
                     textHandler!!.handleSpecialKey(sp)
-                else if(it.second.isDefined())
+                else if (it.second.isDefined())
                     textHandler!!.handleChar(it.second)
             }
             charsInTextQueue.clear()
         }
+
         for (i in inputsBeingPressed) {
             map.translate(i, inputsBeingPressed.filter { it != i }.toMutableSet()).forEach { queue.add(ControlPress(it, PressType.REPEAT)) }
         }
+
         for ((k, v) in inputEvent) {
+
             if ((v == PressType.PRESSED && !inputsBeingPressed.contains(k)) || (v == PressType.RELEASED && inputsBeingPressed.contains(k))) {
                 map.translate(k, inputsBeingPressed.filter { it != k }.toMutableSet()).forEach { queue.add(ControlPress(it, v)) }
                 if (v == PressType.PRESSED &&
@@ -165,15 +179,20 @@ object InputManager : KeyListener, MouseWheelListener, MouseListener, MouseMotio
             }
             mouseMoved = null
         }
+        // this is here so that interaction controls get sent first because they can occasionally determine where other controls get sent
+        queue = LinkedHashSet(queue.sortedBy { if(it.control in Control.Group.INTERACTION) -1 else 0 })
         for (p in queue) {
             handlers.forEach { k, v ->
                 if (k.second == ControlPressHandlerType.GLOBAL ||
                         (k.second == ControlPressHandlerType.SCREEN_THIS && currentScreenHandlers.contains(k.first)) ||
-                        (k.second == ControlPressHandlerType.LEVEL_ANY && ScreenManager.selectedElement is GUILevelView) ||
+                        // the second part of this is here so that even if the level view hasn't been selected yet but it is about to
+                        (k.second == ControlPressHandlerType.LEVEL_ANY && (ScreenManager.selectedElement is GUILevelView ||
+                                (ScreenManager.getHighestElement(Mouse.xPixel, Mouse.yPixel) is GUILevelView && (p.control in Control.Group.INTERACTION || p.control in Control.Group.SCROLL)))) ||
                         (k.second == ControlPressHandlerType.LEVEL_THIS &&
                                 // we want the part below because otherwise the level controls will trigger even when we
-                                // press on a gui element that is higher. However, we don't care if it is a gui view because
-                                // that's how we're supposed to interact
+                                // press on a gui element that is higher. They stop the controls from being sent to the level object
+                                // if there is an element in front of it, basically
+                                // However, we don't care if it is a gui view because that's how we're supposed to interact
                                 (ScreenManager.selectedWindow == null || ScreenManager.selectedElement is GUILevelView)
                                 && currentLevelHandlers.contains(k.first))) {
                     sendPress(p, k.first, v)

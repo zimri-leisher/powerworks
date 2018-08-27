@@ -4,6 +4,7 @@ import audio.AudioManager
 import item.Inventory
 import item.ItemType
 import screen.*
+import screen.mouse.Mouse
 
 class State(val activate: (State) -> (Unit), val deactivate: (State) -> (Unit)) {
     companion object {

@@ -3,7 +3,8 @@ package screen.elements
 import graphics.Image
 import graphics.Renderer
 import resource.ResourceList
-import screen.Mouse
+import screen.mouse.Mouse
+import screen.mouse.Tooltips
 
 class GUIResourceDisplaySlot(parent: RootGUIElement, name: String, xPixel: Int, yPixel: Int, var list: ResourceList, var index: Int, open: Boolean = false, layer: Int = parent.layer + 1) :
         GUIElement(parent, name, xPixel, yPixel, WIDTH, HEIGHT, open, layer) {
@@ -22,7 +23,7 @@ class GUIResourceDisplaySlot(parent: RootGUIElement, name: String, xPixel: Int, 
         val HEIGHT = 16
 
         init {
-            Mouse.addScreenTooltipTemplate({
+            Tooltips.addScreenTooltipTemplate({
                 if (it is GUIResourceDisplaySlot) {
                     val pair = it.list[it.index]
                     if (pair != null)

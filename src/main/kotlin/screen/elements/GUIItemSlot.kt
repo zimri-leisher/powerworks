@@ -10,8 +10,9 @@ import main.Game
 import resource.ResourceContainer
 import screen.HUD
 import screen.InventoryGUI
-import screen.Mouse
+import screen.mouse.Mouse
 import screen.ScreenManager
+import screen.mouse.Tooltips
 
 
 class GUIItemSlot(parent: RootGUIElement, name: String, xPixel: Int, yPixel: Int, var index: Int, var inv: ResourceContainer<ItemType>,
@@ -59,7 +60,7 @@ class GUIItemSlot(parent: RootGUIElement, name: String, xPixel: Int, yPixel: Int
         currentTexture = Image.GUI.ITEM_SLOT
     }
 
-    override fun onMouseActionOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+    override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
         if (isDisplay)
             return
         if (type == PressType.PRESSED) {
@@ -113,7 +114,7 @@ class GUIItemSlot(parent: RootGUIElement, name: String, xPixel: Int, yPixel: Int
         const val HEIGHT = 16
 
         init {
-            Mouse.addScreenTooltipTemplate({
+            Tooltips.addScreenTooltipTemplate({
                 if (it is GUIItemSlot && it.currentItem != null) {
                     return@addScreenTooltipTemplate "${it.currentItem!!.type.name} * ${it.currentItem!!.quantity}"
                 }

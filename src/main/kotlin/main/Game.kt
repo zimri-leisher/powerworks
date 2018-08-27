@@ -3,6 +3,7 @@ package main
 import audio.AudioManager
 import data.FileManager
 import data.FileSystem
+import data.ResourceManager
 import graphics.LocalAnimation
 import graphics.Renderer
 import graphics.SyncAnimation
@@ -28,7 +29,9 @@ import javax.imageio.ImageIO
 import javax.swing.JFrame
 import io.OutputManager as out
 import graphics.text.TextManager
-import misc.testTags
+import screen.mouse.Mouse
+import screen.mouse.Tool
+import screen.mouse.Tooltips
 
 const val TRACE_GRAPHICS = false
 
@@ -109,8 +112,12 @@ object Game : Canvas(), Runnable, ControlPressHandler {
                 resized = true
             }
         })
+        // order matters with some of these!
+        ScreenManager
         TextManager
         FileManager
+        Tool
+        Tooltips
         addKeyListener(InputManager)
         addMouseWheelListener(InputManager)
         addMouseMotionListener(InputManager)
@@ -194,7 +201,7 @@ object Game : Canvas(), Runnable, ControlPressHandler {
         }
         FileSystem.update()
         InputManager.update()
-        Mouse.update()
+        Tooltips.update()
         SyncAnimation.update()
         LocalAnimation.update()
         ScreenManager.update()

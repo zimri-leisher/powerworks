@@ -2,13 +2,11 @@ package data
 
 import graphics.Renderer
 import main.Game
-import main.ResourceManager
 import screen.ScreenManager
 import java.io.File
 import java.nio.file.*
 import java.util.*
 import javax.imageio.ImageIO
-import java.nio.file.WatchEvent
 
 object FileManager {
 
@@ -20,6 +18,7 @@ object FileManager {
             directory("data") {
                 directory("settings/controls", GameDirectoryIdentifier.CONTROLS) {
                     copyOfFile("/settings/controls/default.txt")
+                    copyOfFile("/settings/controls/texteditor.txt")
                 }
                 directory("saves", GameDirectoryIdentifier.SAVES)
             }
@@ -47,5 +46,5 @@ object FileManager {
 }
 
 enum class GameDirectoryIdentifier : DirectoryIdentifier {
-    JAR, TEMP, ENCLOSING, MODS, SCREENSHOTS, SAVES, CONTROLS
+    ENCLOSING, MODS, SCREENSHOTS, SAVES, CONTROLS
 }

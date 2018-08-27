@@ -19,7 +19,7 @@ object LevelSelectorGUI : GUIWindow("Level selector window", { 0 }, { 0 }, { Gam
     class GUILevelInfoDisplay(val levelInfo: LevelInfo, parent: RootGUIElement) : GUIElement(parent, "level info for level ${levelInfo.name}", 0, 0, WIDTH, HEIGHT, parent.open) {
 
         init {
-            GUIButton(this, name + " button", 0, 0, levelInfo.name, widthPixels, heightPixels, onRelease = {
+            GUIButton(this, name + " button", 0, 0, levelInfo.name, false, widthPixels, heightPixels, onRelease = {
                 Game.currentLevel = SimplexLevel(levelInfo)
                 LevelSelectorGUI.open = false
                 State.setState(State.INGAME)
@@ -37,10 +37,13 @@ object LevelSelectorGUI : GUIWindow("Level selector window", { 0 }, { 0 }, { Gam
     init {
         GUITexturePane(this, "background texture", { 0 }, { 0 }, Image.GUI.MAIN_MENU_BACKGROUND_FILLER, { widthPixels }, { heightPixels }).run {
             AutoFormatGUIGroup(this, "level menu buttons auto format group", 4, 4, accountForChildHeight = true, yPixelSeparation = 2, initializerList = {
-                GUIButton(this, "main menu return button", 0, 0, "Return to main menu", onRelease = {
+                val parsed = TextManager.parseTags("<size=40><img=misc/back_arrow>")
+                GUIButton(this, "main menu return button", 0, 0, "<size=40><img=misc/back_arrow>", true,  TextManager.getStringBounds(parsed).width + 4, TextManager.getStringBounds(parsed).height + 4, onRelease = {
                     this@LevelSelectorGUI.open = false
                     MainMenuGUI.open = true
-                })
+                }).apply {
+                    text.allowTags = true
+                }
             })
             GUIText(this, "Level selector choice prompt text", { (this@LevelSelectorGUI.widthPixels - TextManager.getStringBounds("Select level").width) / 2 }, {4}, "Select level")
             val e = GUIDefaultTextureRectangle(this, "level info list background", { (this@LevelSelectorGUI.widthPixels - GUILevelInfoDisplay.WIDTH - GUIVerticalScrollBar.WIDTH) / 2 }, { 12 }, { GUILevelInfoDisplay.WIDTH + GUIVerticalScrollBar.WIDTH + 4 }, { heightPixels - 16 }).apply {

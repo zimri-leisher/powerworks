@@ -9,7 +9,7 @@ import resource.ResourceContainerChangeListener
 import resource.ResourceType
 import screen.SolidifierBlockGUI
 
-class SolidifierBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(MachineBlockType.SOLIDIFIER, xTile, yTile, rotation), ResourceContainerChangeListener, ControlPressHandler {
+class SolidifierBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(MachineBlockType.SOLIDIFIER, xTile, yTile, rotation), ResourceContainerChangeListener {
     val tank = containers.first { it is FluidTank } as FluidTank
 
     val out = containers.first { it is Inventory } as Inventory
@@ -18,7 +18,6 @@ class SolidifierBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(Mach
     var currentlySolidifying: MoltenOreFluidType? = null
 
     init {
-        InputManager.registerControlPressHandler(this, ControlPressHandlerType.LEVEL_THIS, Control.INTERACT)
         containers.forEach { it.listeners.add(this) }
     }
 
@@ -36,11 +35,11 @@ class SolidifierBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(Mach
 
     override fun onContainerClear(container: ResourceContainer<*>) {
         if(container == tank)
-            currentlySolidifying = null; on = false; currentWork = 0;
+            currentlySolidifying = null; on = false; currentWork = 0
     }
 
-    override fun handleControlPress(p: ControlPress) {
-        if(p.pressType == PressType.PRESSED && p.control == Control.INTERACT) {
+    override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+        if(type == PressType.PRESSED) {
             gui.toggle()
         }
     }

@@ -10,6 +10,7 @@ import resource.*
 import screen.elements.GUIItemSlot
 import screen.elements.GUITexturePane
 import screen.elements.GUIWindow
+import screen.mouse.Mouse
 
 /**
  * The heads-up-display, consisting of handy information that remains on the screen when in game

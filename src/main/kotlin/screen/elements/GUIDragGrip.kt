@@ -4,7 +4,7 @@ import graphics.Image
 import graphics.Renderer
 import io.PressType
 import main.Game
-import screen.Mouse
+import screen.mouse.Mouse
 
 
 class GUIDragGrip(parent: RootGUIElement,
@@ -22,7 +22,7 @@ class GUIDragGrip(parent: RootGUIElement,
     var actOnSXPixel = 0
     var actOnSYPixel = 0
 
-    override fun onMouseActionOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+    override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
         if (type == PressType.PRESSED) {
             dragging = true
             sXPixel = Mouse.xPixel

@@ -1,6 +1,7 @@
-package main
+package data
 
 import graphics.Image
+import main.Game
 import mod.Mod
 import mod.ModManager
 import java.awt.AlphaComposite
@@ -31,7 +32,7 @@ object ResourceManager {
             if(preExisting != null)
                 return preExisting
             try {
-                url = ResourceManager.getRawResource(possibility)
+                url = getRawResource(possibility)
                 break
             } catch (e: ResourceNotFoundException) {
                 continue

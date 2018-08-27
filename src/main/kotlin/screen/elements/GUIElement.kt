@@ -4,7 +4,7 @@ import data.WeakMutableList
 
 import io.PressType
 import main.Game
-import screen.Mouse
+import screen.mouse.Mouse
 import screen.ScreenManager
 import screen.WindowGroup
 
@@ -12,11 +12,9 @@ typealias Alignment = () -> Int
 
 private var nextId = 0
 
-sealed class RootGUIElement constructor(var name: String, xAlignment: Alignment, yAlignment: Alignment, widthAlignment: Alignment, heightAlignment: Alignment, open: Boolean, layer: Int) {
+sealed class RootGUIElement constructor(var name: String, xAlignment: Alignment, yAlignment: Alignment, widthAlignment: Alignment, heightAlignment: Alignment, open: Boolean, var layer: Int) {
 
     val id = nextId++
-
-    var layer = layer
 
     var open: Boolean = open
         set(value) {
@@ -282,11 +280,15 @@ sealed class RootGUIElement constructor(var name: String, xAlignment: Alignment,
     }
 
     /** When the mouse is clicked on this and it is on the highest layer, unless transparentToInteraction is true */
-    open fun onMouseActionOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+    open fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
     }
 
-    open fun onMouseActionOff(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+    open fun onInteractOff(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
 
+    }
+
+    /** When the mouse is scrolled and the mouse is on this element */
+    open fun onScroll(dir: Int) {
     }
 
     /** When the mouse enters the rectangle defined by xPixel, yPixel, widthPixels, heightPixels. Called even if it's on the bottom */
@@ -295,10 +297,6 @@ sealed class RootGUIElement constructor(var name: String, xAlignment: Alignment,
 
     /** When the mouse leaves the rectangle defined by xPixel, yPixel, widthPixels, heightPixels. Called even if it's on the bottom layer */
     open fun onMouseLeave() {
-    }
-
-    /** When the mouse is scrolled and the mouse is on this element */
-    open fun onMouseScroll(dir: Int) {
     }
 
     /** When either the width or height of this changes */

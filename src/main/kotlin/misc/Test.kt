@@ -14,10 +14,19 @@ import kotlin.system.measureNanoTime
 import kotlin.system.measureTimeMillis
 
 fun main(args: Array<String>) {
-    testTags()
+    println(numWays(4))
 }
 
-fun testTags() {
+fun numWays(totalSteps: Int, possibleSteps: List<Int> = listOf(1, 2)): Int {
+    if(totalSteps == 0)
+        return 1
+    var total = 0
+    for(possibleStep in possibleSteps) {
+        if(possibleStep <= totalSteps) {
+            total += numWays(totalSteps - possibleStep, possibleSteps)
+        }
+    }
+    return total
 }
 
 fun asyncTest() {
@@ -34,6 +43,10 @@ fun asyncTest() {
     }
     println("time taken: $time, resulting value: ${c.get()}")
 }
+
+// unique list of numbers that end in the total steps
+// difference between the numbers is one of the possible steps
+//
 
 fun testAsyncStuff() {
     println("generating")

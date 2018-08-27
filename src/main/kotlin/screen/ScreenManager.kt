@@ -1,21 +1,17 @@
 package screen
 
-import io.*
 import data.ConcurrentlyModifiableMutableList
 import data.ConcurrentlyModifiableWeakMutableList
 import data.WeakMutableList
 import graphics.Renderer
+import io.*
 import main.Game
 import misc.GeometryHelper
-import screen.ScreenManager.getHighestElement
-import screen.ScreenManager.getHighestWindow
-import screen.ScreenManager.selectedElement
-import screen.ScreenManager.selectedWindow
-import screen.ScreenManager.windowGroups
 import screen.animations.Animation
 import screen.elements.GUIElement
 import screen.elements.GUIWindow
 import screen.elements.RootGUIElement
+import screen.mouse.Mouse
 import java.awt.Rectangle
 
 object ScreenManager : ControlPressHandler {
@@ -181,10 +177,13 @@ object ScreenManager : ControlPressHandler {
             if (t == PressType.PRESSED)
                 updateSelected()
             if (Control.Group.SCROLL.contains(c))
-                selectedElement?.onMouseScroll(if (c == Control.SCROLL_UP) 1 else -1)
+                selectedElement?.onScroll(if (c == Control.SCROLL_UP) 1 else -1)
             else {
-                selectedElement?.onMouseActionOn(t, x, y, b, (c == Control.SHIFT_INTERACT), (c == Control.CONTROL_INTERACT), (c == Control.ALT_INTERACT))
-                forEachElement({ it.onMouseActionOff(t, x, y, b, (c == Control.SHIFT_INTERACT), (c == Control.CONTROL_INTERACT), (c == Control.ALT_INTERACT)) }, { it != selectedElement && it.open })
+                val shift = InputManager.inputsBeingPressed.contains("SHIFT")
+                val control = InputManager.inputsBeingPressed.contains("CONTROL")
+                val alt = InputManager.inputsBeingPressed.contains("ALT")
+                selectedElement?.onInteractOn(t, x, y, b, shift, control, alt)
+                forEachElement({ it.onInteractOff(t, x, y, b, shift, control, alt) }, { it != selectedElement && it.open })
             }
             if (t == PressType.RELEASED)
                 updateSelected()

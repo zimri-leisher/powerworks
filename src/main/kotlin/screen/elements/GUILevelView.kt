@@ -1,6 +1,7 @@
 package screen.elements
 
 import graphics.Renderer
+import io.PressType
 import level.LevelObject
 import level.MovementListener
 import level.moving.MovingObject
@@ -147,7 +148,7 @@ class GUILevelView(parent: RootGUIElement,
         } while (currentBuffer.contentsLost())
     }
 
-    override fun onMouseScroll(dir: Int) {
+    override fun onScroll(dir: Int) {
         if (dir == -1) {
             if (zoomLevel + 1 <= MIN_ZOOM)
                 zoomLevel++

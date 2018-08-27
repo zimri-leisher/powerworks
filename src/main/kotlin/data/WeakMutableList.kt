@@ -46,7 +46,7 @@ class WeakMutableList<T> {
                 o!!
                 f(o)
             } catch (e: KotlinNullPointerException) {
-                println("GC'd")
+                println("GC'd 1")
             }
         }
     }
@@ -103,7 +103,7 @@ class WeakMutableList<T> {
             try {
                 o!!
             } catch (e: KotlinNullPointerException) {
-                println("GC'd")
+                println("GC'd 2")
                 if (index + 1 > list.lastIndex) {
                     index = 0
                     // this will go back down till it finds something that hasnt been removed

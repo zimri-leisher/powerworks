@@ -1,4 +1,4 @@
-package screen
+package screen.mouse
 
 import graphics.Image
 import graphics.Renderer
@@ -17,6 +17,8 @@ import main.State
 import resource.ResourceContainer
 import resource.ResourceContainerChangeListener
 import resource.ResourceType
+import screen.HUD
+import screen.ScreenManager
 import screen.elements.*
 
 object Mouse : ControlPressHandler, ResourceContainerChangeListener {
@@ -39,22 +41,18 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
      */
     var heldItemType: ItemType? = null
 
-    private val levelTooltipTemplates = sortedMapOf<Int, MutableList<(LevelObject) -> String?>>()
-
-    private val screenTooltipTemplates = sortedMapOf<Int, MutableList<(RootGUIElement) -> String?>>()
-
-    private var window = GUIWindow("Mouse", { xPixel + 4 }, { yPixel }, { 0 }, { 0 }, ScreenManager.Groups.MOUSE, true, 0).apply {
+    internal var window = GUIWindow("Mouse", { xPixel + 4 }, { yPixel }, { 0 }, { 0 }, ScreenManager.Groups.MOUSE, true, 0).apply {
         transparentToInteraction = true
     }
     private var group = GUIGroup(window, "Mouse info group", { 0 }, { 0 }, open = true).apply {
         transparentToInteraction = true
     }
 
-    private var text = GUIText(group, "Mouse info group text", 2, 2, "", layer = group.layer + 3).apply {
+    internal var text = GUIText(group, "Mouse info group text", 2, 2, "", layer = group.layer + 3).apply {
         open = false
     }
 
-    private var background = GUIDefaultTextureRectangle(group, "Mouse info group background", { 0 }, { 0 }, { text.widthPixels + 4 }, { text.heightPixels + 4 }, layer = group.layer + 2).apply {
+    internal var background = GUIDefaultTextureRectangle(group, "Mouse info group background", { 0 }, { 0 }, { text.widthPixels + 4 }, { text.heightPixels + 4 }, layer = group.layer + 2).apply {
         open = false
     }
 
@@ -77,60 +75,6 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
 
     fun clearSecondaryIcon() {
         icon.open = false
-    }
-
-    /**
-     * @param f called for each LevelObject under the mouse. Returned text will be rendered at mouse
-     */
-    fun addLevelTooltipTemplate(f: (LevelObject) -> String?, priority: Int = 0) {
-        if (levelTooltipTemplates.get(priority) == null)
-            levelTooltipTemplates.put(priority, mutableListOf())
-        levelTooltipTemplates.get(priority)!!.add(f)
-    }
-
-    /**
-     * @param f called for each GUIElement under the mouse. Returned text will be rendered at mouse
-     */
-    fun addScreenTooltipTemplate(f: (RootGUIElement) -> String?, priority: Int = 0) {
-        if (screenTooltipTemplates.get(priority) == null)
-            screenTooltipTemplates.put(priority, mutableListOf())
-        screenTooltipTemplates.get(priority)!!.add(f)
-    }
-
-    internal fun update() {
-        var s: String? = null
-        val screen = ScreenManager.getHighestElement(xPixel, yPixel, ScreenManager.getHighestWindow(xPixel, yPixel, { !it.transparentToInteraction }), { !it.transparentToInteraction })
-        if (screen != null) {
-            for (v in screenTooltipTemplates.values) {
-                for (f in v) {
-                    s = f(screen)
-                    if (s != null)
-                        break
-                }
-            }
-        }
-        if (s == null && State.CURRENT_STATE == State.INGAME) {
-            val level = Game.currentLevel.selectedLevelObject
-            if (level != null) {
-                for (v in levelTooltipTemplates.values) {
-                    for (f in v) {
-                        s = f(level)
-                        if (s != null)
-                            break
-                    }
-                }
-            }
-        }
-        if (s != null) {
-            text.text = s
-            text.open = true
-            background.alignments.updateDimension()
-            background.open = true
-        } else {
-            text.open = false
-            background.open = false
-        }
-        window.alignments.updatePosition()
     }
 
     internal fun render() {

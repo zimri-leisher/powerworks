@@ -18,9 +18,6 @@ internal object TestGUI : GUIWindow("Testing GUI", 0, 0, Game.WIDTH, Game.HEIGHT
             text = GUIText(this, "text", 40, 80, "|italics|t", allowTags = true).apply {
                 GUIOutline(this, "fasdfasdf")
             }
-            GUIText(this, "text", 40, 90, "ttest", allowTags = true, renderParams = TextRenderParams(size = 40)).apply {
-                GUIOutline(this, "fasdfasdf")
-            }
             GUITextInputField(this, "test", { 40 }, { 40 }, 50, 2, onPressEnter = { currentText ->
                 this@TestGUI.text.text = currentText
             }).apply {

@@ -5,7 +5,7 @@ import graphics.Renderer
 import graphics.Texture
 import io.PressType
 import misc.GeometryHelper
-import screen.Mouse
+import screen.mouse.Mouse
 
 interface VerticalScrollable {
     val viewHeightPixels: Int
@@ -30,7 +30,7 @@ class GUIVerticalScrollBar(parent: RootGUIElement,
     var currentScrollBarHeight = 0
     var currentPos = 0
         set(value) {
-            field = Math.min(Math.max(value, -1), maxPos)
+            field = Math.min(Math.max(value, 0), maxPos)
             s.onScroll()
         }
     var dragging = false
@@ -44,6 +44,7 @@ class GUIVerticalScrollBar(parent: RootGUIElement,
 
     fun updateScrollBarHeight() {
         val s = parent as VerticalScrollable
+        // i know, fuck you
         currentPos = currentPos
         currentScrollBarHeight = Math.min((s.viewHeightPixels.toDouble() / (if (s.maxHeightPixels == 0) 1 else s.maxHeightPixels).toDouble() * heightPixels.toDouble()).toInt(), heightPixels - 2)
     }
@@ -54,7 +55,7 @@ class GUIVerticalScrollBar(parent: RootGUIElement,
         currentTextures[2] = otherTextures[i * 3 + 2]
     }
 
-    override fun onMouseActionOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+    override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
         when (type) {
             PressType.PRESSED -> if (GeometryHelper.intersects(xPixel, yPixel, 1, 1, this.xPixel + 1, currentPos + this.yPixel + 1, 4, currentScrollBarHeight)) {
                 dragging = true
@@ -71,13 +72,17 @@ class GUIVerticalScrollBar(parent: RootGUIElement,
         }
     }
 
-    override fun onMouseScroll(dir: Int) {
+    override fun onScroll(dir: Int) {
         currentPos += dir * GUIElementList.SCROLL_SENSITIVITY
     }
 
     override fun onParentChange(oldParent: RootGUIElement) {
         if(parent !is VerticalScrollable)
             throw Exception("Parent must be VerticalScrollable")
+        updateScrollBarHeight()
+    }
+
+    override fun onParentDimensionChange(oldWidth: Int, oldHeight: Int) {
         updateScrollBarHeight()
     }
 

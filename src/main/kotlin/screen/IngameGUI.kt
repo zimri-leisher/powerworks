@@ -11,6 +11,7 @@ import screen.elements.GUIElement
 import screen.elements.GUITexturePane
 import screen.elements.GUIWindow
 import screen.elements.RootGUIElement
+import screen.mouse.Mouse
 
 private var viewCount = 0
 private val viewControls = mutableListOf<RootGUIElement>()
@@ -32,7 +33,7 @@ object ViewControlGUI : GUIWindow("In game view selector window", { Game.WIDTH -
                         viewControls.add(this)
                     }
 
-                    override fun onMouseActionOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+                    override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
                         if (type == PressType.PRESSED) {
                             // If it is on the space in between one of the four buttons, don't do anything
                             if ((xPixel - this.xPixel) % (VIEW_SELECTOR_BUTTON_WIDTH + 2) > VIEW_SELECTOR_BUTTON_WIDTH) return

@@ -22,8 +22,8 @@ object AudioManager : MovementListener{
             if (vol != 0.0) {
                 if (!it.playing)
                     it.playing = true
-                it.s!!.setVolume(getVolume(it.xPixel, it.yPixel), it.instance)
-                it.s!!.setPan(getPan(it.xPixel), it.instance)
+                it.s.setVolume(getVolume(it.xPixel, it.yPixel), it.instance)
+                it.s.setPan(getPan(it.xPixel), it.instance)
             } else {
                 if (it.playing)
                     it.playing = false

@@ -24,7 +24,7 @@ class GUIElementList(parent: RootGUIElement, name: String,
         initializerList()
     }
 
-    override fun onMouseScroll(dir: Int) {
+    override fun onScroll(dir: Int) {
         scrollBar.currentPos += dir * SCROLL_SENSITIVITY
     }
 

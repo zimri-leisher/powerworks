@@ -7,10 +7,11 @@ import item.ItemType
 import level.moving.MovingObject
 import main.Game
 import screen.HUD
-import screen.Mouse
+import screen.mouse.Mouse
+import screen.mouse.Tooltips
 
 class DroppedItem(xPixel: Int, yPixel: Int, val itemType: ItemType, quantity: Int = 1) :
-        MovingObject(LevelObjectType.DROPPED_ITEM, xPixel, yPixel, 0, Hitbox.DROPPED_ITEM), ControlPressHandler {
+        MovingObject(LevelObjectType.DROPPED_ITEM, xPixel, yPixel, 0, Hitbox.DROPPED_ITEM) {
 
     var quantity = quantity
         set(value) {
@@ -21,16 +22,8 @@ class DroppedItem(xPixel: Int, yPixel: Int, val itemType: ItemType, quantity: In
             }
         }
 
-    override fun onAddToLevel() {
-        InputManager.registerControlPressHandler(this, ControlPressHandlerType.LEVEL_THIS, Control.INTERACT)
-    }
-
-    override fun onRemoveFromLevel() {
-        InputManager.removeControlPressHandler(this)
-    }
-
-    override fun handleControlPress(p: ControlPress) {
-        if (p.control == Control.INTERACT && p.pressType == PressType.RELEASED) {
+    override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+        if (type == PressType.RELEASED) {
             Level.remove(this)
             Game.mainInv.add(Item(itemType, quantity))
             Mouse.heldItemType = itemType
@@ -48,7 +41,7 @@ class DroppedItem(xPixel: Int, yPixel: Int, val itemType: ItemType, quantity: In
 
     companion object {
         init {
-            Mouse.addLevelTooltipTemplate({
+            Tooltips.addLevelTooltipTemplate({
                 if (it is DroppedItem)
                     return@addLevelTooltipTemplate "${it.itemType.name} * ${it.quantity}"
                 return@addLevelTooltipTemplate null

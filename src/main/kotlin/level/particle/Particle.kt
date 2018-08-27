@@ -1,5 +1,6 @@
 package level.particle
 
+import data.ConcurrentlyModifiableMutableList
 import graphics.TextureRenderParams
 import graphics.Renderer
 import level.Level

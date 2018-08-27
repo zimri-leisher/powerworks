@@ -9,6 +9,7 @@ class GUIButton(parent: RootGUIElement,
                 name: String,
                 xAlignment: () -> Int, yAlignment: () -> Int,
                 text: String,
+                allowTags: Boolean = false,
                 widthAlignment: () -> Int = { if (TextManager.getStringBounds(text).width > WIDTH - 4) TextManager.getStringBounds(text).width + 4 else WIDTH }, heightAlignment: () -> Int = { HEIGHT },
                 private var onPress: () -> (Unit) = {}, private var onRelease: () -> (Unit) = {}, open: Boolean = false,
                 layer: Int = parent.layer + 1) :
@@ -18,10 +19,11 @@ class GUIButton(parent: RootGUIElement,
                 name: String,
                 xPixel: Int, yPixel: Int,
                 text: String,
+                allowTags: Boolean = false,
                 widthPixels: Int = if (TextManager.getStringBounds(text).width > WIDTH - 4) TextManager.getStringBounds(text).width + 4 else WIDTH, heightPixels: Int = HEIGHT,
                 onPress: () -> Unit = {}, onRelease: () -> Unit = {}, open: Boolean = false,
                 layer: Int = parent.layer + 1) :
-            this(parent, name, {xPixel}, {yPixel}, text, {widthPixels}, {heightPixels}, onPress, onRelease, open, layer)
+            this(parent, name, {xPixel}, {yPixel}, text, allowTags, {widthPixels}, {heightPixels}, onPress, onRelease, open, layer)
 
     var down = false
 
@@ -32,7 +34,7 @@ class GUIButton(parent: RootGUIElement,
             Image(Utils.modify(Utils.genRectangle(widthPixels, heightPixels), ImageParams(rotation = 2))))
 
     var currentTexture: Texture = textures[0]
-    var text = GUIText(this, name + " text", 0, 0, text, open = open).apply { transparentToInteraction = true }
+    var text = GUIText(this, name + " text", 0, 0, text, allowTags = allowTags, open = open).apply { transparentToInteraction = true }
 
     init {
         this.text.transparentToInteraction = true
@@ -50,7 +52,7 @@ class GUIButton(parent: RootGUIElement,
         currentTexture = textures[0]
     }
 
-    override fun onMouseActionOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+    override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
         if (type == PressType.PRESSED) {
             currentTexture = textures[2]
             onPress.invoke()

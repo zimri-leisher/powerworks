@@ -1,9 +1,13 @@
 package level
 
 import graphics.Renderer
-import level.block.GhostBlock
+import graphics.TextureRenderParams
+import io.PressType
+import level.block.Block
+import level.moving.MovingObject
 import main.DebugCode
 import main.Game
+import screen.mouse.Tool
 import java.io.DataOutputStream
 
 abstract class LevelObject protected constructor(
@@ -14,12 +18,27 @@ abstract class LevelObject protected constructor(
          * Should be the default (unrotated) instance of the hitbox.
          */
         hitbox: Hitbox = type.hitbox,
-        requiresUpdate: Boolean = type.requiresUpdate) {
+        requiresUpdate: Boolean = type.requiresUpdate,
+        /**
+         * Whether or not the INTERACTOR tool should allow clicking on this
+         */
+        var isInteractable: Boolean = true) {
 
     open val xTile = xPixel shr 4
     open val yTile = yPixel shr 4
     open val xChunk = xTile shr CHUNK_TILE_EXP
     open val yChunk = yTile shr CHUNK_TILE_EXP
+
+    var mouseOn = false
+        set(value) {
+            if (value && !field) {
+                onMouseEnter()
+                field = value
+            } else if (!value && field) {
+                field = value
+                onMouseLeave()
+            }
+        }
 
     var hitbox = Hitbox.rotate(hitbox, rotation)
         private set
@@ -56,13 +75,15 @@ abstract class LevelObject protected constructor(
             }
         }
 
-    init {
-
-    }
-
     open fun render() {
         if (Game.currentDebugCode == DebugCode.RENDER_HITBOXES)
             renderHitbox()
+        if(mouseOn) {
+            if (this is Block)
+                Renderer.renderEmptyRectangle(xPixel, yPixel, type.widthTiles shl 4, type.heightTiles shl 4, 0x1A6AF4, TextureRenderParams(alpha = .45f))
+            else if (this is MovingObject)
+                Renderer.renderEmptyRectangle(xPixel, yPixel, hitbox.width, hitbox.height, 0x1A6AF4, TextureRenderParams(alpha = .45f))
+        }
     }
 
     /**
@@ -103,6 +124,30 @@ abstract class LevelObject protected constructor(
         if (hitbox == Hitbox.NONE)
             return null
         return Level.getCollision(this, xPixel, yPixel, predicate)
+    }
+
+    /**
+     * When the mouse is clicked on this
+     */
+    open fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+    }
+
+    /**
+     * When the mouse is scrolled and is over this
+     */
+    open fun onScroll(dir: Int) {
+    }
+
+    /**
+     * When the mouse enters the rectangle defined by xPixel, yPixel, widthPixels, heightPixels. Called even if it's on the bottom
+     */
+    open fun onMouseEnter() {
+    }
+
+    /**
+     * When the mouse leaves the rectangle defined by xPixel, yPixel, widthPixels, heightPixels. Called even if it's on the bottom layer
+     */
+    open fun onMouseLeave() {
     }
 
     /**

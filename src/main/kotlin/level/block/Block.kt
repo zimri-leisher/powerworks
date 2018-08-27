@@ -2,13 +2,10 @@ package level.block
 
 import graphics.LocalAnimation
 import graphics.Renderer
-import io.*
 import level.*
 import level.particle.ParticleEffect
-import main.Game
 import resource.ResourceContainerGroup
 import resource.ResourceNodeGroup
-import screen.Mouse
 import java.io.DataOutputStream
 
 abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotation: Int = 0) : LevelObject(type, xTile shl 4, yTile shl 4, rotation) {
@@ -99,6 +96,7 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotatio
         val texture = textures[rotation]
         Renderer.renderTexture(texture.texture, xPixel - texture.xPixelOffset, yPixel - texture.yPixelOffset)
         super.render()
+
     }
 
     /**
@@ -140,7 +138,6 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotatio
 
     override fun save(out: DataOutputStream) {
         super.save(out)
-
     }
 
     override fun toString(): String {
@@ -157,32 +154,5 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotatio
         result = 31 * result + xTile
         result = 31 * result + yTile
         return result
-    }
-
-    companion object : ControlPressHandler {
-
-        init {
-            InputManager.registerControlPressHandler(this, ControlPressHandlerType.LEVEL_ANY, Control.INTERACT, Control.SECONDARY_INTERACT)
-        }
-
-        override fun handleControlPress(p: ControlPress) {
-            if (p.pressType == PressType.PRESSED) {
-                val block = Game.currentLevel.selectedLevelObject
-                if (block is Block) {
-                    if (p.control == Control.SECONDARY_INTERACT) {
-                        Level.remove(block)
-                        // TODO
-                    }
-                } else if (block == null) {
-                    if (p.control == Control.INTERACT && Game.currentLevel.ghostBlock != null) {
-                        val gBlock = Game.currentLevel.ghostBlock!!
-                        if(Level.add(gBlock.type.instantiate(gBlock.xPixel, gBlock.yPixel, gBlock.rotation))) {
-                            val h = Mouse.heldItemType!!
-                            Game.mainInv.remove(h, 1)
-                        }
-                    }
-                }
-            }
-        }
     }
 }

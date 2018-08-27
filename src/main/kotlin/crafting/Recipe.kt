@@ -40,6 +40,8 @@ class Recipe(
 
         val CIRCUIT = Recipe(ResourceList(IngotItemType.COPPER_INGOT to 1), ResourceList(ItemType.CIRCUIT to 4), ItemType.CIRCUIT, category = RecipeCategory.MACHINE_PARTS)
 
+        //val ROBOT = Recipe(ResourceList(IngotItemType.IRON_INGOT to 8, ItemType.CIRCUIT to 8, ItemType.CABLE to 16), ResourceList())
+
         val CRAFTER = Recipe(ResourceList(IngotItemType.IRON_INGOT to 4, ItemType.CIRCUIT to 8, ItemType.CABLE to 8), ResourceList(ItemType.CRAFTER to 1), ItemType.CRAFTER, category = RecipeCategory.MACHINE)
     }
 }

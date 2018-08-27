@@ -133,7 +133,7 @@ open class MachineBlockType<T : MachineBlock>(initializer: MachineBlockType<T>.(
                 val tank = FluidTank(10, { it is MoltenOreFluidType })
                 val out = Inventory(1, 1)
                 listOf(
-                        ResourceNode(0, 0, 0, ResourceCategory.FLUID, true, false, tank),
+                        ResourceNode(1, 0, 0, ResourceCategory.FLUID, true, false, tank),
                         ResourceNode(1, 1, 2, ResourceCategory.ITEM, false, true, out)
                 )
             }

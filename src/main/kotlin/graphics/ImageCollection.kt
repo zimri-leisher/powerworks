@@ -1,9 +1,8 @@
 package graphics
 
-import main.ResourceManager
+import data.ResourceManager
 import java.awt.GraphicsEnvironment
 import java.awt.image.BufferedImage
-import javax.imageio.ImageIO
 
 class ImageCollection(path: String, numberOfImages: Int) {
 

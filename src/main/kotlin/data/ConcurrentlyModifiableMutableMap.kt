@@ -39,6 +39,8 @@ class ConcurrentlyModifiableMutableMap<T, K> {
 
     operator fun iterator() = elements.iterator()
 
+    override fun toString() = elements.toString()
+
     fun clear() {
         elements.clear()
         toAdd.clear()

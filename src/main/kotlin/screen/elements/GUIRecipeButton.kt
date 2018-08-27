@@ -37,7 +37,7 @@ class GUIRecipeButton(parent: RootGUIElement,
         }
     }
 
-    override fun onMouseActionOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+    override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
         if (type == PressType.PRESSED && button == 1) {
             RecipeSelectorGUI.open = true
             RecipeSelectorGUI.windowGroup.bringToTop(RecipeSelectorGUI)

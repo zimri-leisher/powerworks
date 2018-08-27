@@ -1,7 +1,5 @@
 package data
 
-import main.Game
-import main.ResourceManager
 import java.io.File
 import java.net.URL
 import java.nio.file.*

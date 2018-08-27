@@ -6,6 +6,7 @@ import graphics.Texture
 import resource.ResourceCategory
 import resource.ResourceType
 import fluid.MoltenOreFluidType
+import level.LevelObjectType
 import level.block.*
 
 private var nextID = 0
@@ -161,4 +162,8 @@ class IngotItemType(initializer: IngotItemType.() -> Unit) : ItemType() {
             icon = Image.Item.COPPER_INGOT
         }
     }
+}
+
+class SpawnerItemType(initializer: SpawnerItemType.() -> Unit) : ItemType() {
+    var spawnType: LevelObjectType<*> = LevelObjectType.ERROR
 }

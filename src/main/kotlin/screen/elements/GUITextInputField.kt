@@ -3,10 +3,10 @@ package screen.elements
 import graphics.Renderer
 import graphics.text.TextManager
 import graphics.text.TextRenderParams
-import io.InputManager
-import io.PressType
-import io.SpecialChar
-import io.TextHandler
+import io.*
+import java.awt.datatransfer.DataFlavor
+import java.awt.Toolkit
+
 
 class GUIAutocompleteMenu(parent: GUITextInputField) : GUIElement(parent, parent.name + " autocomplete menu", 0, TextManager.getFont().charHeight, 1, 1, false) {
     var options = mutableListOf<String>()
@@ -28,13 +28,12 @@ class GUITextInputField(parent: RootGUIElement, name: String,
                         var charRule: GUITextInputField.(Char) -> Boolean = { true },
                         open: Boolean = false,
                         layer: Int = parent.layer + 1) :
-        GUIElement(parent, name, xAlignment, yAlignment, { widthChars * TextManager.getFont().charWidth }, { heightChars * (TextManager.getFont().charHeight + 1) + 1 }, open, layer), TextHandler {
-
+        GUIElement(parent, name, xAlignment, yAlignment, { widthChars * TextManager.getFont().charWidth }, { heightChars * (TextManager.getFont().charHeight + 1) + 1 }, open, layer), TextHandler, ControlPressHandler {
     val maxChars = widthChars * heightChars
 
     val text = StringBuilder(defaultValue)
-    var lines: List<String> = listOf(text.toString())
 
+    var lines: List<String> = listOf(text.toString())
     /**
      * Selected doesn't necessarily mean showing a cursor, it could mean highlighted
      * If this was the last thing clicked on and escape has not been pressed, this should be selected
@@ -58,23 +57,27 @@ class GUITextInputField(parent: RootGUIElement, name: String,
      * Just a way to tell if the outline is flashing the OK sign (lighter color) or the ERROR sign (darker color)
      */
     private var positiveFlash = false
+
     private var outlineFlashTicks = -1
-
     private var cursorFlashTicks = -1
-    private var cursorFlash = false
 
+    private var cursorFlash = false
     var currentIndex = 0
 
     var autocompleteMenu = GUIAutocompleteMenu(this)
 
-    override fun onMouseActionOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+    init {
+        InputManager.registerControlPressHandler(this, ControlPressHandlerType.SCREEN_THIS, Control.PASTE_FROM_CLIPBOARD, Control.COPY_TO_CLIPBOARD, Control.CUT_TO_CLIPBOARD)
+    }
+
+    override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
         if (type == PressType.PRESSED) {
             selected = true
             currentIndex = Math.min(text.lastIndex + 1, getIndex(xPixel, yPixel))
         }
     }
 
-    override fun onMouseActionOff(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+    override fun onInteractOff(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
         selected = false
     }
 
@@ -102,6 +105,16 @@ class GUITextInputField(parent: RootGUIElement, name: String,
             SpecialChar.RIGHT -> currentIndex = Math.min(text.length, currentIndex + 1)
             SpecialChar.DOWN -> currentIndex = Math.min(text.length, currentIndex + widthChars)
             SpecialChar.UP -> currentIndex = Math.max(0, currentIndex - widthChars)
+        }
+    }
+
+    override fun handleControlPress(p: ControlPress) {
+        if(p.pressType == PressType.PRESSED) {
+            if(p.control == Control.PASTE_FROM_CLIPBOARD) {
+                val data = Toolkit.getDefaultToolkit()
+                        .systemClipboard.getData(DataFlavor.stringFlavor).toString()
+                insert(data)
+            }
         }
     }
 

@@ -6,12 +6,11 @@ import data.DirectoryChangeWatcher
 import data.FileManager
 import data.GameDirectoryIdentifier
 import graphics.Image
-import graphics.TextureRenderParams
 import graphics.Renderer
+import graphics.TextureRenderParams
 import io.*
 import item.ItemType
 import level.block.Block
-import level.block.BlockType
 import level.block.GhostBlock
 import level.moving.MovingObject
 import level.particle.Particle
@@ -27,10 +26,10 @@ import resource.ResourceCategory
 import resource.ResourceNode
 import resource.ResourceType
 import screen.CameraMovementListener
-import screen.Mouse
-import screen.Mouse.DROPPED_ITEM_PICK_UP_RANGE
 import screen.elements.GUILevelView
-import java.awt.Color
+import screen.mouse.Mouse
+import screen.mouse.Mouse.DROPPED_ITEM_PICK_UP_RANGE
+import screen.mouse.Tool
 import java.io.*
 import java.nio.charset.Charset
 import java.nio.file.Files
@@ -45,7 +44,7 @@ val CHUNK_TILE_EXP = (Math.log(CHUNK_SIZE_TILES.toDouble()) / Math.log(2.0)).toI
 val CHUNK_PIXEL_EXP = CHUNK_TILE_EXP + 4
 val CHUNK_SIZE_PIXELS = CHUNK_SIZE_TILES shl 4
 
-abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMovementListener, ControlPressHandler {
+abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMovementListener {
 
     val widthTiles = levelInfo.settings.widthTiles
     val heightTiles = levelInfo.settings.heightTiles
@@ -60,6 +59,9 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
     val particles = ConcurrentlyModifiableMutableList<Particle>()
     val chunks: Array<Chunk>
     val loadedChunks = CopyOnWriteArrayList<Chunk>()
+
+    var ghostBlock: GhostBlock? = null
+    var ghostBlockRotation = 0
 
     val oreNoises = mutableMapOf<OreTileType, Noise>()
 
@@ -83,17 +85,17 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
     }
 
     // TODO come up with final solution for this - make a new type of level object?
-    var ghostBlockRotation = 0
-
-    var ghostBlock: GhostBlock? = null
-
+    /**
+     * The level object which the mouse is over, if two are on top of each other, it picks the first moving object, then the block.
+     * Note tha, unlike ScreenManager.selectedElement, this isn't the last element clicked on.
+     */
     var selectedLevelObject: LevelObject? = null
 
     var mouseOnLevel = false
     var mouseLevelXPixel = 0
     var mouseLevelYPixel = 0
 
-    // TODO redo this with LevelOutputStream and such
+    // TODO redo this with LevelOutputStream and such. This is pretty ew.
     private fun DataOutputStream.writeAndNewline(s: Any?) {
         writeChars(s.toString())
         writeChars("\n")
@@ -136,7 +138,6 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
             }
         }
         chunks = gen.requireNoNulls()
-        InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.ROTATE_BLOCK)
     }
 
     fun render(view: GUILevelView) {
@@ -174,12 +175,6 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
                 if (b != null) {
                     b.render()
                 }
-                if (ghostBlock != null) {
-                    val g = ghostBlock!!
-                    if (g.xTile == x && g.yTile == y) {
-                        g.render()
-                    }
-                }
             }
             // Render the moving objects in sorted order
             for (xChunk in (minX shr CHUNK_TILE_EXP) until (maxX shr CHUNK_TILE_EXP)) {
@@ -199,33 +194,24 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
                     Renderer.renderEmptyRectangle(s.xPixel, s.yPixel, s.hitbox.width, s.hitbox.height, 0x1A6AF4, TextureRenderParams(alpha = .45f))
             }
         }
+
         TubeBlockGroup.render()
-        /*
-        for (y in (maxY - 1) downTo minY) {
-            for (x in minX until maxX) {
-                val c = getChunkFromTile(x, y)
-                c.getTile(x, y).render()
-                c.getBlock(x, y)?.render()
-                count++
+        Tool.render()
+
+        val chunksInTileRectangle = Chunks.getFromTileRectangle(minX, minY, maxX - minX - 1, maxY - minY - 1)
+        for (c in chunksInTileRectangle) {
+            for (nList in c.resourceNodes!!) {
+                for (n in nList) {
+                    renderNodeDebug(n)
+                }
             }
         }
-         */
-        val chunksInTileRectangle = Chunks.getFromTileRectangle(minX, minY, maxX - minX - 1, maxY - minY - 1)
         if (Game.currentDebugCode == DebugCode.CHUNK_INFO) {
             for (c in chunksInTileRectangle) {
                 Renderer.renderEmptyRectangle(c.xTile shl 4, c.yTile shl 4, CHUNK_SIZE_PIXELS, CHUNK_SIZE_PIXELS)
                 Renderer.renderText("x: ${c.xChunk}, y: ${c.yChunk}", (c.xTile shl 4), (c.yTile shl 4))
                 Renderer.renderText("updates required: ${c.updatesRequired!!.size}", (c.xTile shl 4), (c.yTile shl 4) + 4)
                 Renderer.renderText("moving objects: ${c.moving!!.size} (${c.movingOnBoundary!!.size} on boundary)", (c.xTile shl 4), (c.yTile shl 4) + 8)
-            }
-        }
-        if (Game.currentDebugCode == DebugCode.TUBE_INFO || Game.currentDebugCode == DebugCode.RESOURCE_NODES_INFO) {
-            for (c in chunksInTileRectangle) {
-                for (nList in c.resourceNodes!!) {
-                    for (n in nList) {
-                        renderNodeDebug(n)
-                    }
-                }
             }
         }
     }
@@ -242,8 +228,8 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
             }
         }
         particles.forEach { it.update() }
-        updateGhostBlock()
         updateSelectedLevelObject()
+        Tool.update()
     }
 
     // Most of these functions below are messy but they are only used here and only for simplifying boilerplate
@@ -269,29 +255,6 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
     }
 
     /**
-     * Makes the ghost block that appears on the mouse when holding a placeable item up-to-date
-     */
-    private fun updateGhostBlock() {
-        val currentItem = Mouse.heldItemType
-        if (currentItem == null || currentItem.placedBlock == BlockType.ERROR || (Game.mainInv.getQuantity(currentItem) == 0)) {
-            if (ghostBlock != null)
-                Level.remove(ghostBlock!!)
-            ghostBlock = null
-        } else if (currentItem.placedBlock != BlockType.ERROR) {
-            val placedType = currentItem.placedBlock
-            val xTile = ((mouseLevelXPixel) shr 4) - placedType.widthTiles / 2
-            val yTile = ((mouseLevelYPixel) shr 4) - placedType.heightTiles / 2
-            ghostBlock = GhostBlock(placedType, xTile, yTile, ghostBlockRotation)
-        }
-    }
-
-    override fun handleControlPress(p: ControlPress) {
-        if (p.control == Control.ROTATE_BLOCK && p.pressType == PressType.PRESSED) {
-            ghostBlockRotation = (ghostBlockRotation + 1) % 4
-        }
-    }
-
-    /**
      * Called when any view moves
      */
     override fun onCameraMove(view: GUILevelView, pXPixel: Int, pYPixel: Int) {
@@ -303,6 +266,8 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
     // Will I know what I did at 3:16 AM later? Hopefully. Right now this seems reasonable
 
     // older Zim says it's good enough and does the job. Because not used anywhere else, no real problems keeping this
+
+    // even older Zim (18 yrs old now) says it turns out a lot of it got moved away anyways, so it worked perfectly as a temporary solution!
 
     override fun onMouseMove(pXPixel: Int, pYPixel: Int) {
         updateViewBeingInteractedWith()
@@ -325,14 +290,19 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
      * Updates the control press handlers that get controls sent to them, if any exist
      */
     private fun updateSelectedLevelObject() {
-        InputManager.currentLevelHandlers.clear()
         val block = Blocks.get(mouseLevelXPixel shr 4, mouseLevelYPixel shr 4)
-        val moving = MovingObjects.get(mouseLevelXPixel, mouseLevelYPixel)
-        selectedLevelObject = moving ?: block
-        if (block is ControlPressHandler)
-            InputManager.currentLevelHandlers.add(block)
+        val moving = MovingObjects.get(mouseLevelXPixel, mouseLevelYPixel).firstOrNull()
+        val nextSelected = moving ?: block
+        if (nextSelected != selectedLevelObject || nextSelected?.mouseOn == false) {
+            selectedLevelObject?.mouseOn = false
+            nextSelected?.mouseOn = true
+        }
+        selectedLevelObject = nextSelected
+        InputManager.currentLevelHandlers.clear()
         if (moving is ControlPressHandler)
             InputManager.currentLevelHandlers.add(moving)
+        else if (block is ControlPressHandler)
+            InputManager.currentLevelHandlers.add(block)
     }
 
     /**
@@ -433,11 +403,11 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
             return l
         }
 
-        fun get(xPixel: Int, yPixel: Int): MovingObject? {
+        fun get(xPixel: Int, yPixel: Int): List<MovingObject> {
             val chunk = Chunks.getFromPixel(xPixel, yPixel)
-            var ret = chunk.moving!!.firstOrNull { GeometryHelper.contains(it.xPixel + it.hitbox.xStart, it.yPixel + it.hitbox.yStart, it.hitbox.width, it.hitbox.height, xPixel, yPixel, 0, 0) }
-            if (ret == null)
-                ret = chunk.movingOnBoundary!!.firstOrNull { GeometryHelper.contains(it.xPixel + it.hitbox.xStart, it.yPixel + it.hitbox.yStart, it.hitbox.width, it.hitbox.height, xPixel, yPixel, 0, 0) }
+            var ret = chunk.moving!!.filter { GeometryHelper.contains(it.xPixel + it.hitbox.xStart, it.yPixel + it.hitbox.yStart, it.hitbox.width, it.hitbox.height, xPixel, yPixel, 0, 0) }
+            if (ret.isEmpty())
+                ret = chunk.movingOnBoundary!!.filter { GeometryHelper.contains(it.xPixel + it.hitbox.xStart, it.yPixel + it.hitbox.yStart, it.hitbox.width, it.hitbox.height, xPixel, yPixel, 0, 0) }
             return ret
         }
     }

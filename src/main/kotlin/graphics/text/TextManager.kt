@@ -1,7 +1,7 @@
 package graphics.text
 
 import main.Game
-import main.ResourceManager
+import data.ResourceManager
 import java.awt.Font
 import java.awt.FontFormatException
 import java.awt.GraphicsEnvironment
@@ -97,7 +97,7 @@ object TextManager {
     }
 
     private fun genFont(size: Int, style: FontStyle): FontInfo {
-        println("genning new font")
+        println("Generating new font")
         val f = defaultFont.deriveFont(style.style, size.toFloat())
         val testBounds = f.getStringBounds(TESTING_STRING, defaultFontRenderContext).bounds.apply {
             setBounds(0, 0, width / Game.SCALE, height / Game.SCALE)
@@ -117,21 +117,19 @@ object TextManager {
     }
 
     fun getStringBounds(t: TaggedText, size: Int = DEFAULT_SIZE, style: FontStyle = FontStyle.PLAIN): Rectangle {
-        val bounds = Rectangle(0, 0)
-        val context = TextRenderContext(0, 0, TextRenderParams(size = size, style = style))
+        val context = TextRenderContext(Rectangle(0, 0, 0, 0), TextRenderParams(size = size, style = style))
         var lastIndex = 0
         for((index, tags) in t.tags) {
-            println("iterating through tags")
             val previousText = t.text.substring(lastIndex, index)
             val substringBounds = getStringBounds(previousText, context.currentRenderParams.size, context.currentRenderParams.style)
-            bounds.add(Rectangle(context.currentXPixel, context.currentYPixel, substringBounds.width, substringBounds.height))
+            context.currentBounds.width += substringBounds.width
+            context.currentBounds.height = Math.max(context.currentBounds.height, substringBounds.height)
             tags.forEach { it.type.execute(context, it.argument) }
             lastIndex = index
         }
         val lastSubstringBounds = getStringBounds(t.text.substring(lastIndex), context.currentRenderParams.size, context.currentRenderParams.style)
-        println("bounds of last rectangle: $lastSubstringBounds")
-        bounds.add(Rectangle(context.currentXPixel, context.currentYPixel, lastSubstringBounds.width, lastSubstringBounds.height))
-        println("text: $t, bounds: $bounds")
-        return bounds
+        context.currentBounds.width += lastSubstringBounds.width
+        context.currentBounds.height = Math.max(context.currentBounds.height, lastSubstringBounds.height)
+        return context.currentBounds
     }
 }

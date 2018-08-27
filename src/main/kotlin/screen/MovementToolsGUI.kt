@@ -1,14 +1,14 @@
 package screen
 
-import graphics.text.TextManager
 import graphics.Image
+import graphics.text.TextManager
 import io.*
-import level.moving.MovingObject
 import main.Game
 import screen.elements.*
+import screen.mouse.Mouse
 
 /**
- * A bunch of tools for moving where you want
+ * Some tools for moving where you want
  */
 object MovementToolsGUI : GUIWindow("Player movement tools", { Game.WIDTH - 80 }, { GUICloseButton.HEIGHT }, { 80 }, { 40 }, ScreenManager.Groups.PLAYER_UTIL), ControlPressHandler {
 
@@ -24,17 +24,11 @@ object MovementToolsGUI : GUIWindow("Player movement tools", { Game.WIDTH - 80 }
     init {
         partOfLevel = true
         InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.TOGGLE_MOVEMENT_TOOLS)
-        InputManager.registerControlPressHandler(this, ControlPressHandlerType.LEVEL_ANY, Control.INTERACT)
         GUIDefaultTextureRectangle(this, name + " background", 0, 0).run {
-            val teleporterBounds = TextManager.getStringBounds("Teleporter")
-            GUIButton(this, this@MovementToolsGUI.name + " teleporter button", 2, 2, "Teleporter", teleporterBounds.width + 2, teleporterBounds.height + 2, {
-                teleporter = !teleporter
-            })
-            val runSpeedPrompt = GUIText(this, this@MovementToolsGUI.name + " run speed prompt", 2, teleporterBounds.height + 4, "Movement speed:")
-            val inputBounds = TextManager.getStringBounds("1 ")
-            GUITextInputField(this, this@MovementToolsGUI.name + " run speed input", { runSpeedPrompt.widthPixels + 4 }, { teleporterBounds.height + 4 }, 3, 1,
+            val runSpeedPrompt = GUIText(this, this@MovementToolsGUI.name + " run speed prompt", 2, 4, "Movement speed:")
+            GUITextInputField(this, this@MovementToolsGUI.name + " run speed input", { runSpeedPrompt.widthPixels + 4 }, { 4 }, 3, 1,
                     "1", charRule = { char -> char.isDigit() }, onPressEnter = { text ->
-                this.selected = false;
+                this.selected = false
                 IngameGUI.views.forEach { it.CAMERA_SPEED = text.toInt() }
             })
         }
@@ -44,8 +38,6 @@ object MovementToolsGUI : GUIWindow("Player movement tools", { Game.WIDTH - 80 }
         if (p.pressType == PressType.PRESSED) {
             if (p.control == Control.TOGGLE_MOVEMENT_TOOLS) {
                 open = !open
-            } else if (p.control == Control.INTERACT && Game.currentLevel.selectedLevelObject == null && teleporter) {
-                (Game.currentLevel.viewBeingInteractedWith?.camera as? MovingObject)?.setPosition(Game.currentLevel.mouseLevelXPixel, Game.currentLevel.mouseLevelYPixel)
             }
         }
     }

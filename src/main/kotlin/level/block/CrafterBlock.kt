@@ -9,7 +9,7 @@ import resource.ResourceList
 import resource.ResourceType
 import screen.CraftingBlockGUI
 
-class CrafterBlock(override val type: CrafterBlockType, xTile: Int, yTile: Int, rotation: Int) : MachineBlock(type, xTile, yTile, rotation), ResourceContainerChangeListener, ControlPressHandler, Crafter {
+class CrafterBlock(override val type: CrafterBlockType, xTile: Int, yTile: Int, rotation: Int) : MachineBlock(type, xTile, yTile, rotation), ResourceContainerChangeListener, Crafter {
 
     override val crafterType: Int
         get() = type.craftingType
@@ -27,7 +27,6 @@ class CrafterBlock(override val type: CrafterBlockType, xTile: Int, yTile: Int, 
             // only allow addition if there are less ingredients than required
             container.additionRule = { resource, quantity -> recipe != null && resource in recipe!!.consume && container.getQuantity(resource) + quantity <= recipe!!.consume.getQuantity(resource) }
         }
-        InputManager.registerControlPressHandler(this, ControlPressHandlerType.LEVEL_THIS, Control.INTERACT)
     }
 
     override fun onContainerClear(container: ResourceContainer<*>) {
@@ -60,8 +59,8 @@ class CrafterBlock(override val type: CrafterBlockType, xTile: Int, yTile: Int, 
         }
     }
 
-    override fun handleControlPress(p: ControlPress) {
-        if (p.pressType == PressType.PRESSED && p.control == Control.INTERACT) {
+    override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+        if (type == PressType.PRESSED) {
             crafterGUI.toggle()
         }
     }

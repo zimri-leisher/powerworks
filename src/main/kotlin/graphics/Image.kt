@@ -1,7 +1,7 @@
 package graphics
 
 import main.Game
-import main.ResourceManager
+import data.ResourceManager
 import screen.elements.GUIRecipeDisplay
 import java.awt.AlphaComposite
 import java.awt.Color
@@ -253,6 +253,7 @@ class Image constructor(image: BufferedImage) : Texture {
         val ARROW = ResourceManager.registerImage("misc/arrow", Utils.modify(ResourceManager.registerImage("misc/arrow"), ImageParams(alphaMultiplier = 100)))
         val TELEPORT_ICON = ResourceManager.registerImage("misc/teleport_icon")
         val THIN_ARROW = ResourceManager.registerImage("misc/thin_arrow")
+        val BACK_ARROW = ResourceManager.registerImage("misc/back_arrow")
     }
 
     object Block {

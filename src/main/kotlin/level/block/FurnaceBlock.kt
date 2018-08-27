@@ -12,7 +12,7 @@ import resource.ResourceContainerChangeListener
 import resource.ResourceType
 import screen.FurnaceBlockGUI
 
-class FurnaceBlock(type: MachineBlockType<FurnaceBlock>, xTile: Int, yTile: Int, rotation: Int = 0) : MachineBlock(type, xTile, yTile, rotation), ResourceContainerChangeListener, ControlPressHandler {
+class FurnaceBlock(type: MachineBlockType<FurnaceBlock>, xTile: Int, yTile: Int, rotation: Int = 0) : MachineBlock(type, xTile, yTile, rotation), ResourceContainerChangeListener {
 
     // the internal inventory, not the internal tank
     val queue = containers.first { it is Inventory }
@@ -21,7 +21,6 @@ class FurnaceBlock(type: MachineBlockType<FurnaceBlock>, xTile: Int, yTile: Int,
     private val gui = FurnaceBlockGUI(this)
 
     init {
-        InputManager.registerControlPressHandler(this, ControlPressHandlerType.LEVEL_THIS, Control.INTERACT)
         containers.forEach { it.listeners.add(this) }
     }
 
@@ -69,8 +68,8 @@ class FurnaceBlock(type: MachineBlockType<FurnaceBlock>, xTile: Int, yTile: Int,
         }
     }
 
-    override fun handleControlPress(p: ControlPress) {
-        if (p.control == Control.INTERACT && p.pressType == PressType.PRESSED) {
+    override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+        if (type == PressType.PRESSED) {
             gui.toggle()
         }
     }

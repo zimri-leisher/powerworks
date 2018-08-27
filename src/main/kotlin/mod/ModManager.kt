@@ -2,7 +2,7 @@ package mod
 
 import data.FileManager
 import data.GameDirectoryIdentifier
-import main.ResourceManager
+import data.ResourceManager
 import java.io.File
 import java.io.FileNotFoundException
 import java.net.URL

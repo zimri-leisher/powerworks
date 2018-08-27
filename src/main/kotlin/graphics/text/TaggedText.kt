@@ -1,8 +1,6 @@
 package graphics.text
 
-import java.awt.Color
-import main.ResourceManager
-import graphics.Renderer
+import data.ResourceManager
 
 data class TaggedText(val text: String, val tags: Map<Int, List<TextTag>>) {
     companion object {
@@ -43,10 +41,12 @@ enum class TextTagType(val identifier: String, val execute: (context: TextRender
         context.currentRenderParams.style = FontStyle.valueOf(arg.toUpperCase().replace(' ', '_'))
     }),
     IMAGE("image", { context, arg ->
-        val image = main.ResourceManager.getImage(arg)
+        val image = ResourceManager.getImage(arg)
         val info = graphics.text.TextManager.getFont(context.currentRenderParams.size, context.currentRenderParams.style)
         val size = Math.max(info.charHeight, info.charWidth)
-        graphics.Renderer.renderTextureKeepAspect(image, context.currentXPixel, context.currentYPixel, size, size)
-        context.currentXPixel += size
+        // we're rendering this at the end of the string, thus we use the width plus the x for the x of the render, and same for the height
+        graphics.Renderer.renderTextureKeepAspect(image, context.currentBounds.width + context.currentBounds.x, context.currentBounds.y, size, size)
+        context.currentBounds.width += size
+        context.currentBounds.height = Math.max(context.currentBounds.height, size)
     }, listOf("img"));
 }
