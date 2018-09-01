@@ -1,7 +1,7 @@
 package audio
 
-import audiocue.AudioCue
 import data.ResourceManager
+import src.main.java.com.adonax.audiocue.AudioCue
 
 enum class Sound(path: String, maxConcurrent: Int) {
     GRASS_FOOTSTEP("/sounds/footstep/grass.wav", 6),

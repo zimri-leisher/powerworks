@@ -9,6 +9,7 @@ import level.block.BlockType
 import level.block.GhostBlock
 import level.moving.MovingObject
 import main.Game
+import resource.ResourceType
 
 /**
  * A tool is an object that is used by the client to interact with the level through the mouse
@@ -111,7 +112,7 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
 
             override fun onUse(control: Control, type: PressType, mouseLevelXPixel: Int, mouseLevelYPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
                 if (currentlyActive) {
-                    if (type == PressType.PRESSED) {
+                    if (type == PressType.RELEASED) {
                         if (control == Control.ROTATE_BLOCK) {
                             Game.currentLevel.ghostBlockRotation = (Game.currentLevel.ghostBlockRotation + 1) % 4
                         } else if (control == Control.PLACE_BLOCK) {

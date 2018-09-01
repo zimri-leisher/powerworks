@@ -5,7 +5,7 @@ import item.IngotItemType
 import resource.ResourceCategory
 import resource.ResourceType
 
-open class FluidType(initializer: FluidType.() -> Unit = {}) : ResourceType {
+open class FluidType(initializer: FluidType.() -> Unit = {}) : ResourceType() {
 
     override val category
         get() = ResourceCategory.FLUID

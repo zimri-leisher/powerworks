@@ -5,7 +5,7 @@ import resource.ResourceNodeGroup
 import resource.ResourceType
 
 class ResourceRoutingNetwork<R : ResourceType> {
-    val nodes = ResourceNodeGroup("Node group of resource routing network")
+    val nodes = ResourceNodeGroup("Resource routing network node group")
 
     var behavior = ResourceNetworkRoutingBehavior.DEFAULT
 
@@ -13,4 +13,8 @@ class ResourceRoutingNetwork<R : ResourceType> {
         val nearest = nodes.getOutputters(resource, quantity).maxBy { Math.abs(it.xTile - xTileFrom) + Math.abs(it.yTile - yTileFrom) }
         return nearest
     }
+
+    fun contains(resource: ResourceType, quantity: Int) = nodes.getAttachedContainers().sumBy { it.getQuantity(resource) } >= quantity
+
+    fun getQuantity(resource: ResourceType) = nodes.getAttachedContainers().sumBy { it.getQuantity(resource) }
 }

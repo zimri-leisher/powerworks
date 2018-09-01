@@ -3,6 +3,7 @@ module powerworks {
     requires kotlin.stdlib;
     requires kotlinx.coroutines.core;
     requires kotlin.stdlib.jdk8;
+    requires AudioCue.SNAPSHOT;
     uses mod.Mod;
     exports audio;
     exports crafting;

@@ -3,6 +3,7 @@ package resource
 import level.Hitbox
 import level.Level
 import misc.GeometryHelper
+import routing.ResourceRoutingNetwork
 
 /**
  * A node that allows for movement of resources between places on the level. While it exists in the level, it is not rendered
@@ -36,6 +37,11 @@ class ResourceNode<R : ResourceType>(
      * If false, calls to can/couldOutput will return false if there is no attached node, regardless of whether there is space in the level
      */
     var outputToLevel = true
+
+    /**
+     * The resource routing network to which this is part of
+     */
+    var network: ResourceRoutingNetwork<R> = ResourceRoutingNetwork()
 
     /**
      * @return if the resource is the right type and this node allows output and the attached container is able to remove the resources.

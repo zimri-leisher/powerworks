@@ -29,7 +29,7 @@ class PipeBlockGroup {
     /**
      * Removes all nodes that were given to the network because of this
      */
-    private fun removeCorrespondingNodes(p: PipeBlock) {
+    fun removeCorrespondingNodes(p: PipeBlock) {
         val r = nodes.filter { it.xTile != p.xTile && it.yTile != p.yTile }
         nodes.removeAll(r)
         r.forEach { Level.remove(it) }

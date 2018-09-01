@@ -11,7 +11,7 @@ import level.block.*
 
 private var nextID = 0
 
-open class ItemType(initializer: ItemType.() -> Unit = {}) : ResourceType {
+open class ItemType(initializer: ItemType.() -> Unit = {}) : ResourceType() {
 
     val id = nextID++
     override var name = "Error"

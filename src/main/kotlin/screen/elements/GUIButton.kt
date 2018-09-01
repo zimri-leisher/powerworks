@@ -1,7 +1,6 @@
 package screen.elements
 
 import graphics.*
-import graphics.Renderer.params
 import graphics.text.TextManager
 import io.PressType
 
@@ -77,7 +76,7 @@ class GUIButton(parent: RootGUIElement,
     }
 
     override fun render() {
-        Renderer.renderTexture(currentTexture, xPixel, yPixel, params)
+        Renderer.renderTexture(currentTexture, xPixel, yPixel)
     }
 
     companion object {

@@ -3,7 +3,8 @@ package graphics
 import java.awt.image.BufferedImage
 
 class SyncAnimation(
-        val images: ImageCollection,
+        path: String,
+        numberOfFrames: Int,
         /**
          * Each frame time corresponds to how long the animation should stay at the image it's on,
          */
@@ -11,10 +12,12 @@ class SyncAnimation(
         /**
          * Whether or not this should be playing by default
          */
-        var playing: Boolean = false) : Texture {
+        var playing: Boolean = false,
+        var loop: Boolean = true,
+        var reverse: Boolean = false) : Texture {
 
-    constructor(path: String, numberOfFrames: Int, frameTimes: Array<Int>, playing: Boolean = false) : this(ImageCollection(path, numberOfFrames), frameTimes, playing)
 
+    val images = ImageCollection(path, numberOfFrames)
     /**
      * The current frame
      */
@@ -64,14 +67,31 @@ class SyncAnimation(
     }
 
     private fun update() {
-        if(!playing)
+        if (!playing)
             return
         tick++
-        if(frameTimes[frame] <= tick) {
+        if (frameTimes[frame] <= tick) {
             tick = 0
-            frame++
-            if(frame > frameTimes.lastIndex) {
-                frame = 0
+            if (reverse) {
+                if(frame == 0) {
+                    if(!loop) {
+                        playing = false
+                    } else {
+                        frame = frameTimes.lastIndex
+                    }
+                } else {
+                    frame--
+                }
+            } else {
+                if (frame == frameTimes.lastIndex) {
+                    if (!loop) {
+                        playing = false
+                    } else {
+                        frame = 0
+                    }
+                } else {
+                    frame++
+                }
             }
         }
         currentImage = images[frame].currentImage
@@ -91,6 +111,8 @@ class SyncAnimation(
 
         val MINER = SyncAnimation("block/miner", 5, arrayOf(5, 5, 5, 5, 5), true)
         val SOLIDIFIER = SyncAnimation("block/solidifier", 4, arrayOf(10, 10, 10, 10), true)
+
+        val MAIN_MENU_PLAY_BUTTON = SyncAnimation("gui/play_button", 7, arrayOf(20, 15, 10, 10, 7), false, false)
 
         fun update() {
             ALL.forEach { it.update() }

@@ -1,15 +1,22 @@
 package screen
 
-import graphics.Image
-import graphics.text.TextRenderParams
+import graphics.Animation
+import graphics.Renderer
+import graphics.TextureRenderParams
 import main.Game
-import screen.elements.*
+import screen.elements.GUIElement
+import screen.elements.GUIText
+import screen.elements.GUIWindow
 
 internal object TestGUI : GUIWindow("Testing GUI", 0, 0, Game.WIDTH, Game.HEIGHT, windowGroup = ScreenManager.Groups.BACKGROUND) {
 
     lateinit var text: GUIText
 
     init {
+
+
+
+        /*
         GUITexturePane(this, "Test GUI background", { 0 }, { 0 }, Image.GUI.MAIN_MENU_BACKGROUND, { Math.max(Game.WIDTH, Image.GUI.MAIN_MENU_BACKGROUND.widthPixels) }, { Math.max(Game.HEIGHT, Image.GUI.MAIN_MENU_BACKGROUND.heightPixels) }).run {
             GUIButton(this, "Test GUI back button", 1, 1, "Back to Main Menu", onRelease = {
                 this@TestGUI.open = false
@@ -24,5 +31,6 @@ internal object TestGUI : GUIWindow("Testing GUI", 0, 0, Game.WIDTH, Game.HEIGHT
                 autocompleteMenu.options.addAll(listOf("<color=", "<style=", "<italic>", "<corlasdf>"))
             }
         }
+        */
     }
 }

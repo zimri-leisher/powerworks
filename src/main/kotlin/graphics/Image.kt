@@ -239,7 +239,7 @@ data class ImageParams(
         /** 1.0 is default, 2.0 is double brightness and 0.5 is half brightness*/
         val brightnessMultiplier: Double = 1.0)
 
-class Image constructor(image: BufferedImage) : Texture {
+class Image(image: BufferedImage) : Texture {
 
     override var currentImage = image
 
@@ -270,6 +270,7 @@ class Image constructor(image: BufferedImage) : Texture {
         val TUBE_DOWN_CLOSE = ResourceManager.registerImage("block/tube/down_close")
         val TUBE_LEFT_CLOSE = ResourceManager.registerImage("block/tube/left_close")
         val TUBE_UP_CONNECT = ResourceManager.registerImage("block/tube/up_connect")
+        val PIPE_UP_CONNECT = ResourceManager.registerImage("block/pipe/up_connect")
         val PIPE_4_WAY = ResourceManager.registerImage("block/pipe/4_way")
         val PIPE_2_WAY_VERTICAL = ResourceManager.registerImage("block/pipe/2_way_vertical")
         val PIPE_2_WAY_HORIZONTAL = ResourceManager.registerImage("block/pipe/2_way_horizontal")
@@ -302,6 +303,7 @@ class Image constructor(image: BufferedImage) : Texture {
         val MAIN_MENU_LOGO = ResourceManager.registerImage("gui/main_menu_logo")
         val MAIN_MENU_LOGO_2 = ResourceManager.registerImage("gui/main_menu_logo_2")
         val MAIN_MENU_LOGO_3 = ResourceManager.registerImage("gui/main_menu_logo_3")
+        val MAIN_MENU_PLAY_BUTTON = ResourceManager.registerImage("gui/play_button")
         val DEFAULT_CORNER_TOP_RIGHT = ResourceManager.registerImage("gui/default/top_right_corner")
         val DEFAULT_CORNER_TOP_LEFT = ResourceManager.registerImage("gui/default/top_left_corner")
         val DEFAULT_CORNER_BOTTOM_RIGHT = ResourceManager.registerImage("gui/default/bottom_right_corner")

@@ -1,6 +1,7 @@
 package screen.elements
 
 import data.WeakMutableList
+import graphics.TextureRenderParams
 
 import io.PressType
 import main.Game
@@ -52,7 +53,6 @@ sealed class RootGUIElement constructor(var name: String, xAlignment: Alignment,
                             y = Game.HEIGHT - heightPixels
                         else if (y < 0)
                             y = 0
-                        // asdfjkalsdfasdfjkliadsfjkladsfkljasdfkljadfsjkladsfjklafdsjkladfskjladfsjkladfsjkladfsjkladfsjkladsfjkla dsfT TODO do offsets that don't remove original alignments
                         alignments.x = { x }
                         alignments.y = { y }
                     }
@@ -176,6 +176,9 @@ sealed class RootGUIElement constructor(var name: String, xAlignment: Alignment,
             }
         }
     }
+
+    var totalRenderParams = TextureRenderParams()
+    var localRenderParams = TextureRenderParams()
 
     /* Util */
     /* Gets the specified element by name. If checkChildren is true (default), it checks recursively */

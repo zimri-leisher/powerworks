@@ -10,7 +10,7 @@ class GUIMouseOverTextPane(parent: RootGUIElement, name: String,
 
     private lateinit var guiText: GUIText
     private lateinit var background: GUIDefaultTextureRectangle
-    private val mouseOverArea: GUIMouseOverArea
+    private val mouseOverArea: GUIMouseOverPopupArea
     var text: String = text
         set(value) {
             if (field != value) {
@@ -23,7 +23,7 @@ class GUIMouseOverTextPane(parent: RootGUIElement, name: String,
 
     init {
         transparentToInteraction = true
-        mouseOverArea = GUIMouseOverArea(this, name + " mouse over area", widthAlignment = widthAlignment, heightAlignment = heightAlignment, initializerList = {
+        mouseOverArea = GUIMouseOverPopupArea(this, name + " mouse over area", widthAlignment = widthAlignment, heightAlignment = heightAlignment, initializerList = {
             this@GUIMouseOverTextPane.guiText = GUIText(this, name + " text", 0, 0, text, layer = this.layer + 2)
             this@GUIMouseOverTextPane.background = GUIDefaultTextureRectangle(this, name + " background", { 0 }, { 0 }, { guiText.widthPixels }, { guiText.heightPixels })
         })

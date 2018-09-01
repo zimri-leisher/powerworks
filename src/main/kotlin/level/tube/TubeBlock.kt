@@ -66,6 +66,12 @@ class TubeBlock(xTile: Int, yTile: Int) : Block(BlockType.TUBE, xTile, yTile) {
         group.convertToIntersection(this)
     }
 
+    override fun onRemoveFromLevel() {
+        group.removeCorrespondingNodes(this)
+        group.removeTube(this)
+        super.onRemoveFromLevel()
+    }
+
     private fun mergeGroups(t: TubeBlock) {
         if(t.group == group)
             return

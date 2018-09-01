@@ -19,11 +19,13 @@ version '1.0'
 
 repositories {
     mavenCentral()
+    maven { url 'https://jitpack.io' }
 }
 
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
     compile 'org.jetbrains.kotlinx:kotlinx-coroutines-core:0.22.5'
+    compile 'com.github.philfrei:AudioCue:-SNAPSHOT'
 }
 
 sourceSets {

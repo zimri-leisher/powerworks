@@ -18,18 +18,10 @@ data class TextureRenderParams(
                      */
                     var alpha: Float = 1.0f,
                     /**
-                     * Amount of x pixels to be added when rendering
-                     */
-                    var xPixelOffset: Int = 0,
-                    /**
-                     * Amount of y pixels to be added when rendering
-                     */
-                    var yPixelOffset: Int = 0,
-                    /**
                      * Degrees rotation
                      */
-                    var rotation: Float = 0f) {
+                    var rotation: Int = 0) {
     fun combine(other: TextureRenderParams): TextureRenderParams {
-        return TextureRenderParams(scale * other.scale, scaleWidth * other.scaleWidth, scaleHeight * other.scaleHeight, alpha * other.alpha, xPixelOffset + other.xPixelOffset, yPixelOffset + other.yPixelOffset, (rotation + other.rotation) % 360)
+        return TextureRenderParams(scale * other.scale, scaleWidth * other.scaleWidth, scaleHeight * other.scaleHeight, alpha * other.alpha,(rotation + other.rotation) % 360)
     }
 }

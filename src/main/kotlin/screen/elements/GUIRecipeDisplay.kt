@@ -36,7 +36,7 @@ class GUIRecipeDisplay(parent: RootGUIElement, name: String, xAlignment: () -> I
     private lateinit var consumeList: GUIResourceListDisplay
     private lateinit var produceList: GUIResourceListDisplay
     private lateinit var mouseOverAreaOpenGroup: GUIGroup
-    private lateinit var mouseOverArea: GUIMouseOverArea
+    private lateinit var mouseOverArea: GUIMouseOverPopupArea
     private lateinit var background: GUIDefaultTextureRectangle
 
     init {
@@ -47,7 +47,7 @@ class GUIRecipeDisplay(parent: RootGUIElement, name: String, xAlignment: () -> I
                 updateDimensionAlignmentOnTextureChange = false
                 transparentToInteraction = true
                 matchParentOpening = false
-                mouseOverArea = GUIMouseOverArea(this, name + " mouse over info", { 0 }, { 0 }, this.alignments.width, this.alignments.height, {
+                mouseOverArea = GUIMouseOverPopupArea(this, name + " mouse over info", { 0 }, { 0 }, this.alignments.width, this.alignments.height, {
                     transparentToInteraction = true
                     val mouseOver = this
                     mouseOverAreaOpenGroup = GUIGroup(this, "Open group", { 0 }, { 0 }, {

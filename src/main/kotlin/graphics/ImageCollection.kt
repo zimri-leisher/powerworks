@@ -4,7 +4,7 @@ import data.ResourceManager
 import java.awt.GraphicsEnvironment
 import java.awt.image.BufferedImage
 
-class ImageCollection(path: String, numberOfImages: Int) {
+class ImageCollection(path: String, numberOfFrames: Int) {
 
     companion object {
         val CURSOR_RIGHT_CLICK = ImageCollection("cursor/cursor_right_click_anim", 8)
@@ -30,13 +30,13 @@ class ImageCollection(path: String, numberOfImages: Int) {
 
     init {
         val image = ResourceManager.registerImage(path).currentImage
-        if (image.width % numberOfImages != 0)
+        if (image.width % numberOfFrames != 0)
             throw Exception("Image is not properly formatted")
-        width = image.width / numberOfImages
+        width = image.width / numberOfFrames
         height = image.height
-        val t = arrayOfNulls<Texture>(numberOfImages)
+        val t = arrayOfNulls<Texture>(numberOfFrames)
         val conf = GraphicsEnvironment.getLocalGraphicsEnvironment().defaultScreenDevice.defaultConfiguration
-        for (i in 0 until numberOfImages) {
+        for (i in 0 until numberOfFrames) {
             val sub = image.getSubimage(width * i, 0, width, image.height)
             val newImage = BufferedImage(sub.colorModel, sub.raster.createCompatibleWritableRaster(width, image.height), image.isAlphaPremultiplied, null)
             val dest = conf.createCompatibleImage(newImage.width, newImage.height, newImage.transparency)

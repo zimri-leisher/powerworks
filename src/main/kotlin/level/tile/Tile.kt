@@ -18,7 +18,7 @@ open class Tile(type: TileType = TileType.GRASS, val xTile: Int, val yTile: Int)
     val rotation = (Math.random() * 4).toInt()
 
     fun render() {
-        Renderer.renderTexture(texture, xPixel, yPixel, TextureRenderParams(rotation = rotation * 90f))
+        Renderer.renderTexture(texture, xPixel, yPixel, TextureRenderParams(rotation = rotation * 90))
     }
 
     override fun toString(): String {

@@ -8,7 +8,6 @@ import item.ItemType
 import level.CHUNK_PIXEL_EXP
 import level.DroppedItem
 import level.Level
-import level.LevelObject
 import level.pipe.PipeBlock
 import level.tube.TubeBlock
 import main.DebugCode
@@ -85,7 +84,7 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
             Renderer.renderTextureKeepAspect(t, xPixel + 4, yPixel, GUIItemSlot.WIDTH, GUIItemSlot.HEIGHT)
             Renderer.renderText(q, xPixel + 4, yPixel)
         }
-        when(Game.currentDebugCode) {
+        when (Game.currentDebugCode) {
             DebugCode.TUBE_INFO -> {
                 val t = Game.currentLevel.selectedLevelObject
                 if (t is TubeBlock) {
@@ -168,18 +167,20 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
     override fun handleControlPress(p: ControlPress) {
         if (p.pressType == PressType.PRESSED) {
             when (p.control) {
-                Control.DROP_HELD_ITEM -> dropHeldItem()
+                Control.DROP_HELD_ITEM -> if (State.CURRENT_STATE == State.INGAME) dropHeldItem()
                 Control.PICK_UP_DROPPED_ITEMS -> {
-                    val i = Level.DroppedItems.getInRadius(Game.currentLevel.mouseLevelXPixel, Game.currentLevel.mouseLevelYPixel, DROPPED_ITEM_PICK_UP_RANGE)
-                    if (i.isNotEmpty()) {
-                        val g = i.first()
-                        if (!Game.mainInv.full) {
-                            Game.mainInv.add(g.itemType, g.quantity)
-                            Level.remove(g)
-                            if (heldItemType == null) {
-                                heldItemType = g.itemType
+                    if (State.CURRENT_STATE == State.INGAME) {
+                        val i = Level.DroppedItems.getInRadius(Game.currentLevel.mouseLevelXPixel, Game.currentLevel.mouseLevelYPixel, DROPPED_ITEM_PICK_UP_RANGE)
+                        if (i.isNotEmpty()) {
+                            val g = i.first()
+                            if (!Game.mainInv.full) {
+                                Game.mainInv.add(g.itemType, g.quantity)
+                                Level.remove(g)
+                                if (heldItemType == null) {
+                                    heldItemType = g.itemType
+                                }
+                                HUD.Hotbar.items.add(g.itemType)
                             }
-                            HUD.Hotbar.items.add(g.itemType)
                         }
                     }
                 }

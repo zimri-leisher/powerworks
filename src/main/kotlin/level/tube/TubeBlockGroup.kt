@@ -70,7 +70,7 @@ class TubeBlockGroup {
     /**
      * Removes all nodes that were given to the network because of this
      */
-    private fun removeCorrespondingNodes(t: TubeBlock) {
+    fun removeCorrespondingNodes(t: TubeBlock) {
         val r = nodes.filter { it.xTile != t.xTile && it.yTile != t.yTile }
         nodes.removeAll(r)
         r.forEach { Level.remove(it) }

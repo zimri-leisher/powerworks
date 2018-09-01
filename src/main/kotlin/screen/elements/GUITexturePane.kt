@@ -39,7 +39,7 @@ class GUITexturePane(parent: RootGUIElement,
 
     override fun render() {
         if (keepAspect)
-            Renderer.renderTextureKeepAspect(texture, xPixel, yPixel, widthPixels, heightPixels)
+            Renderer.renderTextureKeepAspect(texture, xPixel, yPixel, widthPixels, heightPixels, params)
         else
             Renderer.renderTexture(texture, xPixel, yPixel, widthPixels, heightPixels, params)
     }

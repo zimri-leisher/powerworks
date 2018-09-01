@@ -71,8 +71,8 @@ object Renderer {
 
     fun renderEmptyRectangle(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int, color: Int = 0xFFFFFF, params: TextureRenderParams = defaultParams, borderThickness: Int = 1) {
         val scaledScale = Game.SCALE * params.scale
-        val absoluteXPixel = (xPixel + params.xPixelOffset + xPixelOffset) * Game.SCALE + if(widthPixels < 0) (widthPixels * scaledScale).toInt() else 0
-        val absoluteYPixel = (yPixel + params.yPixelOffset + yPixelOffset) * Game.SCALE + if(heightPixels < 0) (heightPixels * scaledScale).toInt() else 0
+        val absoluteXPixel = (xPixel + xPixelOffset) * Game.SCALE + if(widthPixels < 0) (widthPixels * scaledScale).toInt() else 0
+        val absoluteYPixel = (yPixel + yPixelOffset) * Game.SCALE + if(heightPixels < 0) (heightPixels * scaledScale).toInt() else 0
         val absoluteWidthPixels = Math.abs(widthPixels) * scaledScale * params.scaleWidth
         val absoluteHeightPixels = Math.abs(heightPixels) * scaledScale * params.scaleHeight
         g2d.color = Color(color)
@@ -82,7 +82,7 @@ object Renderer {
             oldComposite = g2d.composite
             g2d.composite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, params.alpha)
         }
-        if (params.rotation != 0f) {
+        if (params.rotation != 0) {
             oldTransform = g2d.transform
             g2d.rotate(Math.toRadians(params.rotation.toDouble()), (absoluteXPixel + absoluteWidthPixels / 2).toDouble(), (absoluteYPixel + absoluteHeightPixels/ 2).toDouble())
         }
@@ -91,7 +91,7 @@ object Renderer {
         if (params.alpha != 1.0f) {
             g2d.composite = oldComposite
         }
-        if (params.rotation != 0f) {
+        if (params.rotation != 0) {
             g2d.transform = oldTransform
         }
     }
@@ -107,14 +107,14 @@ object Renderer {
      * Renders a texture at the x and y pixel with the given parameters
      */
     fun renderTexture(t: Texture, xPixel: Int, yPixel: Int, params: TextureRenderParams) {
-        val absoluteXPixel = (xPixel + params.xPixelOffset + xPixelOffset) * Game.SCALE
-        val absoluteYPixel = (yPixel + params.yPixelOffset + yPixelOffset) * Game.SCALE
+        val absoluteXPixel = (xPixel + xPixelOffset) * Game.SCALE
+        val absoluteYPixel = (yPixel + yPixelOffset) * Game.SCALE
         val scaledScale = Game.SCALE * params.scale
         val absoluteWidthPixels = t.widthPixels * scaledScale * params.scaleWidth
         val absoluteHeightPixels = t.heightPixels * scaledScale * params.scaleHeight
         var oldTransform: AffineTransform? = null
         var oldComposite: Composite? = null
-        if (params.rotation != 0f) {
+        if (params.rotation != 0) {
             oldTransform = g2d.transform
             g2d.rotate(Math.toRadians(params.rotation.toDouble()), (absoluteXPixel + absoluteWidthPixels / 2).toDouble(), (absoluteYPixel + absoluteHeightPixels / 2).toDouble())
         }
@@ -123,7 +123,7 @@ object Renderer {
             g2d.composite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, params.alpha)
         }
         g2d.drawImage(t.currentImage, absoluteXPixel, absoluteYPixel, absoluteWidthPixels.toInt(), absoluteHeightPixels.toInt(), null)
-        if (params.rotation != 0f) {
+        if (params.rotation != 0) {
             g2d.transform = oldTransform
         }
         if (params.alpha != 1.0f) {
@@ -190,8 +190,8 @@ object Renderer {
      * Renders a texture at the x and y pixel with the given params, stretching it to fit the width and height pixels
      */
     fun renderTexture(t: Texture, xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int, params: TextureRenderParams) {
-        val absoluteXPixel = (xPixel + params.xPixelOffset + xPixelOffset) * Game.SCALE
-        val absoluteYPixel = (yPixel + params.yPixelOffset + yPixelOffset) * Game.SCALE
+        val absoluteXPixel = (xPixel + xPixelOffset) * Game.SCALE
+        val absoluteYPixel = (yPixel + yPixelOffset) * Game.SCALE
         val scaledScale = Game.SCALE * params.scale
         val absoluteWidthPixels: Float
         val absoluteHeightPixels: Float
@@ -215,7 +215,7 @@ object Renderer {
         absoluteHeightPixels = h * scaledScale * params.scaleHeight
         var oldTransform: AffineTransform? = null
         var oldComposite: Composite? = null
-        if (params.rotation != 0f) {
+        if (params.rotation != 0) {
             oldTransform = g2d.transform
             g2d.rotate(Math.toRadians(params.rotation.toDouble()), (absoluteXPixel + absoluteWidthPixels / 2).toDouble(), (absoluteYPixel + absoluteHeightPixels / 2).toDouble())
         }
@@ -224,7 +224,7 @@ object Renderer {
             g2d.composite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, params.alpha)
         }
         g2d.drawImage(t.currentImage, absoluteXPixel, absoluteYPixel, absoluteWidthPixels.toInt(), absoluteHeightPixels.toInt(), null)
-        if (params.rotation != 0f) {
+        if (params.rotation != 0) {
             g2d.transform = oldTransform
         }
         if (params.alpha != 1.0f) {

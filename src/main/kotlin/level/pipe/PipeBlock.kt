@@ -56,7 +56,14 @@ class PipeBlock(xTile: Int, yTile: Int) : Block(BlockType.PIPE, xTile, yTile) {
     }
 
     override fun onAdjacentBlockRemove(b: Block) {
+        updateConnections()
         updateState()
+    }
+
+    override fun onRemoveFromLevel() {
+        group.removeCorrespondingNodes(this)
+        group.removePipe(this)
+        super.onRemoveFromLevel()
     }
 
     private fun mergeGroups(t: PipeBlock) {
@@ -139,6 +146,8 @@ class PipeBlock(xTile: Int, yTile: Int) : Block(BlockType.PIPE, xTile, yTile) {
             Renderer.renderTexture(Image.Block.PIPE_DOWN_CLOSE, xPixel + 4, yPixel + 10)
         if (closedEnds[3])
             Renderer.renderTexture(Image.Block.PIPE_LEFT_CLOSE, xPixel - Image.Block.PIPE_LEFT_CLOSE.widthPixels, yPixel + 2)
+        if(nodeConnections[0].isNotEmpty())
+            Renderer.renderTexture(Image.Block.PIPE_UP_CONNECT, xPixel + 4, yPixel - Image.Block.PIPE_UP_CONNECT.heightPixels - 1)
         if (Game.currentDebugCode == DebugCode.RENDER_HITBOXES)
             renderHitbox()
     }

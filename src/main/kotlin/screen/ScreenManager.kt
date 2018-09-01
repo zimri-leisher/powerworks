@@ -7,7 +7,7 @@ import graphics.Renderer
 import io.*
 import main.Game
 import misc.GeometryHelper
-import screen.animations.Animation
+import screen.animations.GUIAnimation
 import screen.elements.GUIElement
 import screen.elements.GUIWindow
 import screen.elements.RootGUIElement
@@ -37,7 +37,7 @@ object ScreenManager : ControlPressHandler {
     val windows = ConcurrentlyModifiableWeakMutableList<GUIWindow>()
     internal val openWindows = WeakMutableList<GUIWindow>()
 
-    val playingAnimations = ConcurrentlyModifiableMutableList<Animation<*>>()
+    val playingAnimations = ConcurrentlyModifiableMutableList<GUIAnimation<*>>()
 
     /**
      * The last GUIElement interacted with. Keep in mind this doesn't look at elements with the transparentToInteraction flag set to true

@@ -32,6 +32,7 @@ import graphics.text.TextManager
 import screen.mouse.Mouse
 import screen.mouse.Tool
 import screen.mouse.Tooltips
+import graphics.Animation
 
 const val TRACE_GRAPHICS = false
 
@@ -202,6 +203,7 @@ object Game : Canvas(), Runnable, ControlPressHandler {
         FileSystem.update()
         InputManager.update()
         Tooltips.update()
+        Animation.update()
         SyncAnimation.update()
         LocalAnimation.update()
         ScreenManager.update()
