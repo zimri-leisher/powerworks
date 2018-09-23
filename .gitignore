@@ -13,8 +13,6 @@
 .idea/**/dataSources.local.xml
 .idea/**/sqlDataSources.xml
 .idea/**/dynamic.xml
-.idea/**/uiDesigner.xml
-
 # CMake
 cmake-build-debug/
 cmake-build-release/
@@ -58,6 +56,4 @@ gradle-app.setting
 # Cache of project
 .gradletasknamecache
 
-# # Work around https://youtrack.jetbrains.com/issue/IDEA-116898
-# gradle/wrapper/gradle-wrapper.properties
-/.idea/
+/powerworks.iml

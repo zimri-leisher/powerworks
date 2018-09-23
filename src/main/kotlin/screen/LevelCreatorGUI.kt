@@ -15,7 +15,7 @@ object LevelCreatorGUI : GUIWindow("Level creator", { 0 }, { 0 }, { Game.WIDTH }
     var currentSettings = LevelGeneratorSettings()
 
     init {
-        GUITexturePane(this, "Level creator background", { 0 }, { 0 }, Image.GUI.MAIN_MENU_BACKGROUND_FILLER, { widthPixels }, { heightPixels }).run {
+        GUITexturePane(this, "Level creator background", { 0 }, { 0 }, Image.GUI.GREY_FILLER, { widthPixels }, { heightPixels }).run {
             GUIButton(this, "Level create button", { (widthPixels - GUIButton.WIDTH) / 2 }, { heightPixels - GUIButton.HEIGHT - 16 }, "Create level", onRelease = {
                 Level.levelInfos.add(LevelInfo(currentName, LocalDateTime.now().toString(), currentSettings, File(""), File("")))
             })

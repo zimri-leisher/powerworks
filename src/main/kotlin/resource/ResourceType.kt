@@ -1,9 +1,9 @@
 package resource
 
-import graphics.Texture
+import com.badlogic.gdx.graphics.g2d.TextureRegion
 
 abstract class ResourceType {
-    abstract val icon: Texture
+    abstract val icon: TextureRegion
     abstract val category: ResourceCategory
     abstract val name: String
 

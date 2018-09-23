@@ -8,6 +8,8 @@ import level.block.Block
 import level.block.BlockType
 import main.DebugCode
 import main.Game
+import main.heightPixels
+import main.widthPixels
 import misc.GeometryHelper
 import misc.GeometryHelper.getOppositeAngle
 import misc.GeometryHelper.getXSign
@@ -59,7 +61,7 @@ class TubeBlock(xTile: Int, yTile: Int) : Block(BlockType.TUBE, xTile, yTile) {
     }
 
     override fun onAdjacentBlockRemove(b: Block) {
-        // TODO
+        // TODO check if this is actually working, i dont remember
         updateConnections()
         updateState()
         // this needs to remove the intersection if it is no longer one
@@ -144,17 +146,17 @@ class TubeBlock(xTile: Int, yTile: Int) : Block(BlockType.TUBE, xTile, yTile) {
     }
 
     override fun render() {
-        Renderer.renderTexture(state.texture, xPixel, yPixel - 4)
+        Renderer.renderTexture(state.texture, xPixel, yPixel + 20)
         if (closedEnds[0])
-            Renderer.renderTexture(Image.Block.TUBE_UP_CLOSE, xPixel, yPixel - Image.Block.TUBE_UP_CLOSE.heightPixels + 2)
+            Renderer.renderTexture(Image.Block.TUBE_UP_CLOSE, xPixel, yPixel + 18)
         if (closedEnds[1])
-            Renderer.renderTexture(Image.Block.TUBE_RIGHT_CLOSE, xPixel + 16, yPixel - 5)
+            Renderer.renderTexture(Image.Block.TUBE_RIGHT_CLOSE, xPixel + 16, yPixel + 21 - Image.Block.TUBE_RIGHT_CLOSE.heightPixels)
         if (closedEnds[2])
-            Renderer.renderTexture(Image.Block.TUBE_DOWN_CLOSE, xPixel, yPixel + 2)
+            Renderer.renderTexture(Image.Block.TUBE_DOWN_CLOSE, xPixel, yPixel + 14 - Image.Block.TUBE_DOWN_CLOSE.heightPixels)
         if (closedEnds[3])
-            Renderer.renderTexture(Image.Block.TUBE_LEFT_CLOSE, xPixel - Image.Block.TUBE_LEFT_CLOSE.widthPixels, yPixel - 5)
+            Renderer.renderTexture(Image.Block.TUBE_LEFT_CLOSE, xPixel - Image.Block.TUBE_LEFT_CLOSE.widthPixels, yPixel + 21 - Image.Block.TUBE_LEFT_CLOSE.heightPixels)
         if(nodeConnections[0].isNotEmpty())
-            Renderer.renderTexture(Image.Block.TUBE_UP_CONNECT, xPixel + 1, yPixel - Image.Block.TUBE_UP_CONNECT.heightPixels - 4)
+            Renderer.renderTexture(Image.Block.TUBE_UP_CONNECT, xPixel + 1, yPixel + 20)
         if (Game.currentDebugCode == DebugCode.RENDER_HITBOXES)
             renderHitbox()
     }

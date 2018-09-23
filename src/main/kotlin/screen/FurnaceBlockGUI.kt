@@ -26,7 +26,7 @@ class FurnaceBlockGUI(val block: FurnaceBlock) : GUIWindow("Furnace block gui fo
     }
 
     companion object {
-        val WIDTH = CraftingBlockGUI.WIDTH
+        val WIDTH = CrafterBlockGUI.WIDTH
         val HEIGHT = 60
     }
 }

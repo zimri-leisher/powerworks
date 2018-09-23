@@ -1,14 +1,14 @@
 package level.tube
 
+import data.WeakMutableList
 import graphics.Renderer
 import item.Item
 import item.ItemType
 import level.Level
+import main.DebugCode
 import main.Game
 import misc.GeometryHelper
 import misc.PixelCoord
-import data.WeakMutableList
-import main.DebugCode
 import resource.*
 import java.io.DataOutputStream
 
@@ -129,6 +129,7 @@ class TubeBlockGroup {
         return t.state in TubeState.Group.INTERSECTION || t.nodeConnections.any { it.isNotEmpty() }
     }
 
+    // TODO one day find out if this not having a hashCode() will mess stuff up
     class RoutingNode(val parent: RoutingNode? = null, val goal: IntersectionTube, val intersection: IntersectionTube, val directionFromParent: Int, val g: Int, val h: Int) {
         val xTile: Int
             get() = intersection.tubeBlock.xTile
@@ -159,7 +160,6 @@ class TubeBlockGroup {
         override fun toString(): String {
             return "$xTile, $yTile, dir from parent: $directionFromParent"
         }
-
     }
 
     data class Step(val coord: PixelCoord, val nextDir: Int)
@@ -238,7 +238,7 @@ class TubeBlockGroup {
     }
 
     fun save(out: DataOutputStream) {
-
+        // TODO
     }
 
     override fun toString() = "Tube block group $id"
@@ -261,7 +261,8 @@ class TubeBlockGroup {
         }
     }
 
-    private fun getNearestTube(item: ItemPackage) = tubes.firstOrNull { it.xTile == item.xPixel shr 4 && it.yTile == item.yPixel shr 4 } ?: tubes.first { GeometryHelper.isAdjacentOrIntersecting((item.xPixel shr 4) - GeometryHelper.getXSign(item.dir), (item.yPixel shr 4) - GeometryHelper.getYSign(item.dir), it.xTile, it.yTile) }
+    private fun getNearestTube(item: ItemPackage) = tubes.firstOrNull { it.xTile == item.xPixel shr 4 && it.yTile == item.yPixel shr 4 }
+            ?: tubes.first { GeometryHelper.isAdjacentOrIntersecting((item.xPixel shr 4) - GeometryHelper.getXSign(item.dir), (item.yPixel shr 4) - GeometryHelper.getYSign(item.dir), it.xTile, it.yTile) }
 
     private data class ItemPackage(var item: Item, var start: ResourceNode<ItemType>, var goal: ResourceNode<ItemType>, var currentIndex: Int, var path: ItemPath, var xPixel: Int, var yPixel: Int, var dir: Int = 0)
 
@@ -298,7 +299,7 @@ class TubeBlockGroup {
         fun update() {
             val iterator = itemsBeingMoved.iterator()
             for (item in iterator) {
-                if(!item.goal.couldOuput(item.item.type, item.item.quantity)) {
+                if (!item.goal.couldOuput(item.item.type, item.item.quantity)) {
 
                 }
                 // already know it contains the resources so no need to use canOutput

@@ -6,7 +6,7 @@ import screen.RecipeSelectorGUI
 
 class GUIRecipeButton(parent: RootGUIElement,
                       name: String,
-                      xAlignment: () -> Int, yAlignment: () -> Int,
+                      xAlignment: Alignment, yAlignment: Alignment,
                       recipe: Recipe?, val onRecipeChange: (Recipe?) -> Unit = {}) : GUIElement(
         parent, name, xAlignment, yAlignment, { WIDTH }, { HEIGHT }) {
 

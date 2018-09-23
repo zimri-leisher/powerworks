@@ -69,7 +69,7 @@ class FileSystem(basePath: Path, baseIdentifier: DirectoryIdentifier? = null, cl
     }
 
     /**
-     * If the given identifier exists, does nothing, otherwise, it creates the relevant directories
+     * If the given directory defined by the identifier exists, does nothing, otherwise, it creates the relevant directories
      */
     fun ensureDirectoryExists(id: DirectoryIdentifier) {
         val path = getPath(id)

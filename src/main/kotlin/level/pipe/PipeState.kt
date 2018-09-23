@@ -1,10 +1,10 @@
 package level.pipe
 
+import com.badlogic.gdx.graphics.g2d.TextureRegion
 import graphics.Image
 import graphics.ImageCollection
-import graphics.Texture
 
-enum class PipeState(val texture: Texture, val connections: Array<Boolean>, val closedEnds: Array<Boolean> = arrayOf(false, false, false, false)) {
+enum class PipeState(val texture: TextureRegion, val connections: Array<Boolean>, val closedEnds: Array<Boolean> = arrayOf(false, false, false, false)) {
     NONE(Image.Block.PIPE_2_WAY_VERTICAL, arrayOf(
             false, false, false, false
     ), arrayOf(
@@ -85,6 +85,7 @@ enum class PipeState(val texture: Texture, val connections: Array<Boolean>, val 
                 RIGHT_DOWN,
                 DOWN_LEFT,
                 LEFT_UP);
+
         operator fun contains(t: PipeState): Boolean {
             return states.contains(t)
         }

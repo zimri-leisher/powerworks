@@ -1,14 +1,15 @@
 package screen.elements
 
+import com.badlogic.gdx.graphics.g2d.TextureRegion
 import graphics.Renderer
-import graphics.Renderer.params
-import graphics.Texture
+import main.heightPixels
+import main.widthPixels
 
 class GUITexturePane(parent: RootGUIElement,
                      name: String,
-                     xAlignment: () -> Int, yAlignment: () -> Int,
-                     texture: Texture,
-                     widthAlignment: () -> Int = { texture.widthPixels }, heightAlignment: () -> Int = { texture.heightPixels },
+                     xAlignment: Alignment, yAlignment: Alignment,
+                     texture: TextureRegion,
+                     widthAlignment: Alignment = { texture.widthPixels }, heightAlignment: Alignment = { texture.heightPixels },
                      open: Boolean = false,
                      layer: Int = parent.layer + 1,
                      var keepAspect: Boolean = false) :
@@ -30,7 +31,7 @@ class GUITexturePane(parent: RootGUIElement,
     constructor(parent: RootGUIElement,
                 name: String,
                 relXPixel: Int, relYPixel: Int,
-                texture: Texture,
+                texture: TextureRegion,
                 widthPixels: Int = texture.widthPixels, heightPixels: Int = texture.heightPixels,
                 open: Boolean = false,
                 layer: Int = parent.layer + 1,
@@ -39,8 +40,8 @@ class GUITexturePane(parent: RootGUIElement,
 
     override fun render() {
         if (keepAspect)
-            Renderer.renderTextureKeepAspect(texture, xPixel, yPixel, widthPixels, heightPixels, params)
+            Renderer.renderTextureKeepAspect(texture, xPixel, yPixel, widthPixels, heightPixels, localRenderParams)
         else
-            Renderer.renderTexture(texture, xPixel, yPixel, widthPixels, heightPixels, params)
+            Renderer.renderTexture(texture, xPixel, yPixel, widthPixels, heightPixels, localRenderParams)
     }
 }

@@ -1,5 +1,6 @@
 package level
 
+import com.badlogic.gdx.graphics.Color
 import graphics.Renderer
 import graphics.TextureRenderParams
 import io.PressType
@@ -7,7 +8,6 @@ import level.block.Block
 import level.moving.MovingObject
 import main.DebugCode
 import main.Game
-import screen.mouse.Tool
 import java.io.DataOutputStream
 
 abstract class LevelObject protected constructor(
@@ -78,12 +78,6 @@ abstract class LevelObject protected constructor(
     open fun render() {
         if (Game.currentDebugCode == DebugCode.RENDER_HITBOXES)
             renderHitbox()
-        if(mouseOn) {
-            if (this is Block)
-                Renderer.renderEmptyRectangle(xPixel, yPixel, type.widthTiles shl 4, type.heightTiles shl 4, 0x1A6AF4, TextureRenderParams(alpha = .45f))
-            else if (this is MovingObject)
-                Renderer.renderEmptyRectangle(xPixel, yPixel, hitbox.width, hitbox.height, 0x1A6AF4, TextureRenderParams(alpha = .45f))
-        }
     }
 
     /**
@@ -101,7 +95,7 @@ abstract class LevelObject protected constructor(
     }
 
     protected fun renderHitbox() {
-        Renderer.renderFilledRectangle(xPixel + hitbox.xStart, yPixel + hitbox.yStart, hitbox.width, hitbox.height, 0xFF0010)
+        Renderer.renderFilledRectangle(xPixel + hitbox.xStart, yPixel + hitbox.yStart, hitbox.width, hitbox.height, TextureRenderParams(color = Color(0xFF0010)))
     }
 
     /**

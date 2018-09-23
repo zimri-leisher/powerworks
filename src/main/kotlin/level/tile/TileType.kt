@@ -1,7 +1,7 @@
 package level.tile
 
+import com.badlogic.gdx.graphics.g2d.TextureRegion
 import graphics.ImageCollection
-import graphics.Texture
 import item.ItemType
 import item.OreItemType
 
@@ -40,10 +40,10 @@ open class OreTileType(textures: ImageCollection, name: String,
     }
 }
 
-open class TileType(val name: String, val textures: Array<Texture>) {
+open class TileType(val name: String, val textures: Array<TextureRegion>) {
 
     constructor(name: String, textures: ImageCollection) : this(name, textures.textures)
-    constructor(name: String, texture: Texture) : this(name, arrayOf(texture))
+    constructor(name: String, texture: TextureRegion) : this(name, arrayOf(texture))
 
     val id = nextID++
 

@@ -4,6 +4,10 @@ module powerworks {
     requires kotlinx.coroutines.core;
     requires kotlin.stdlib.jdk8;
     requires AudioCue.SNAPSHOT;
+    requires gdx;
+    requires gdx.backend.lwjgl;
+    requires lwjgl;
+    requires gdx.freetype;
     uses mod.Mod;
     exports audio;
     exports crafting;

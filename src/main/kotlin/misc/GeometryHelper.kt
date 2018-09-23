@@ -32,7 +32,7 @@ object GeometryHelper {
     fun addAngles(dir1: Int, dir2: Int): Int = (dir1 + dir2) % 4
 
     fun getYSign(dir: Int): Int {
-        return if (dir == 0) -1 else if (dir == 2) 1 else 0
+        return if (dir == 0) 1 else if (dir == 2) -1 else 0
     }
 
     fun getDir(x: Int, y: Int): Int {
@@ -43,7 +43,7 @@ object GeometryHelper {
         if (x >= 1)
             return 1
         if (y <= -1)
-            return 0
-        return 2
+            return 2
+        return 0
     }
 }

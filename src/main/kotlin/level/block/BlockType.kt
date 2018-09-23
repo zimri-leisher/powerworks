@@ -4,9 +4,8 @@ import audio.Sound
 import crafting.Crafter
 import fluid.FluidTank
 import fluid.MoltenOreFluidType
+import graphics.Animation
 import graphics.Image
-import graphics.LocalAnimation
-import graphics.SyncAnimation
 import item.Inventory
 import item.OreItemType
 import level.Hitbox
@@ -55,6 +54,7 @@ open class BlockType<T : Block>(initializer: BlockType<T>.() -> Unit = {}) : Lev
 }
 
 open class MachineBlockType<T : MachineBlock>(initializer: MachineBlockType<T>.() -> Unit = {}) : BlockType<T>() {
+
     /**
      * Power consumption multiplier, inverse of this
      */
@@ -74,7 +74,7 @@ open class MachineBlockType<T : MachineBlock>(initializer: MachineBlockType<T>.(
         val MINER = MachineBlockType<MinerBlock> {
             name = "Miner"
             instantiate = { xPixel, yPixel, rotation -> MinerBlock(xPixel shr 4, yPixel shr 4, rotation) }
-            textures = LevelObjectTextures(LevelObjectTexture(LocalAnimation(SyncAnimation.MINER, true), yPixelOffset = 32))
+            textures = LevelObjectTextures(LevelObjectTexture(Animation.MINER[0], yPixelOffset = 32))
             widthTiles = 2
             heightTiles = 2
             hitbox = Hitbox.TILE2X2
@@ -83,7 +83,7 @@ open class MachineBlockType<T : MachineBlock>(initializer: MachineBlockType<T>.(
                 val internalInventory = Inventory(1, 1)
                 internalInventory.additionRule = { _, _ -> internalInventory.totalQuantity < 1 }
                 listOf(
-                        ResourceNode(0, 0, 0, ResourceCategory.ITEM, false, true, internalInventory)
+                        ResourceNode(0, heightTiles, 0, ResourceCategory.ITEM, false, true, internalInventory)
                 )
             }
         }
@@ -127,14 +127,14 @@ open class MachineBlockType<T : MachineBlock>(initializer: MachineBlockType<T>.(
             widthTiles = 2
             heightTiles = 2
             loop = true
-            textures = LevelObjectTextures(LevelObjectTexture(SyncAnimation.SOLIDIFIER, yPixelOffset = 21))
+            textures = LevelObjectTextures(LevelObjectTexture(Animation.SOLIDIFIER[0], yPixelOffset = 21))
             hitbox = Hitbox.TILE2X2
             nodesTemplate = BlockNodesTemplate(widthTiles, heightTiles) {
                 val tank = FluidTank(10, { it is MoltenOreFluidType })
                 val out = Inventory(1, 1)
                 listOf(
-                        ResourceNode(1, 0, 0, ResourceCategory.FLUID, true, false, tank),
-                        ResourceNode(1, 1, 2, ResourceCategory.ITEM, false, true, out)
+                        ResourceNode(1, 1, 0, ResourceCategory.FLUID, true, false, tank),
+                        ResourceNode(1, 0, 2, ResourceCategory.ITEM, false, true, out)
                 )
             }
         }
@@ -160,8 +160,8 @@ class CrafterBlockType(initializer: CrafterBlockType.() -> Unit) : MachineBlockT
             nodesTemplate = BlockNodesTemplate(widthTiles, heightTiles) {
                 val internalInventory = Inventory(internalStorageSize, 1)
                 listOf(
-                        ResourceNode(0, 0, 0, ResourceCategory.ITEM, true, false, internalInventory),
-                        ResourceNode(1, 1, 2, ResourceCategory.ITEM, false, true, internalInventory)
+                        ResourceNode(0, 1, 0, ResourceCategory.ITEM, true, false, internalInventory),
+                        ResourceNode(1, 0, 2, ResourceCategory.ITEM, false, true, internalInventory)
                 )
             }
         }

@@ -2,14 +2,12 @@ package screen
 
 import graphics.Animation
 import graphics.Image
-import graphics.text.TextManager
 import io.PressType
 import main.Game
+import main.heightPixels
+import main.widthPixels
 import screen.animations.SlideOpenAnimation
-import screen.elements.GUIElement
-import screen.elements.GUIText
-import screen.elements.GUITexturePane
-import screen.elements.GUIWindow
+import screen.elements.*
 
 object MainMenuGUI : GUIWindow("Main menu", { 0 }, { 0 }, { Game.WIDTH }, { Game.HEIGHT }, ScreenManager.Groups.BACKGROUND, true, 0) {
 
@@ -24,28 +22,27 @@ object MainMenuGUI : GUIWindow("Main menu", { 0 }, { 0 }, { Game.WIDTH }, { Game
         }
 
         logo = GUITexturePane(this, "Main menu logo",
-                { (Game.WIDTH - Image.GUI.MAIN_MENU_LOGO.widthPixels) / 2 - 1 },
-                { (Game.HEIGHT - Image.GUI.MAIN_MENU_LOGO.heightPixels) / 2 - 50 },
+                { (Game.WIDTH - Image.GUI.MAIN_MENU_LOGO.widthPixels) / 2 + 1 },
+                { (Game.HEIGHT - Image.GUI.MAIN_MENU_LOGO.heightPixels) / 2 + 50 },
                 Image.GUI.MAIN_MENU_LOGO,
                 layer = 7)
 
-        object : GUIElement(logo, "Main menu play button", { (logo.widthPixels - Animation.MAIN_MENU_PLAY_BUTTON.frames[0].widthPixels) / 2 }, { logo.heightPixels }, { Animation.MAIN_MENU_PLAY_BUTTON.frames[0].widthPixels }, { Animation.MAIN_MENU_PLAY_BUTTON.frames[0].heightPixels }) {
+        object : GUIElement(logo, "Main menu play button", { (logo.widthPixels - Animation.MAIN_MENU_PLAY_BUTTON.frames[0].widthPixels) / 2 }, { -Animation.MAIN_MENU_PLAY_BUTTON.frames[0].heightPixels }, { Animation.MAIN_MENU_PLAY_BUTTON.frames[0].widthPixels }, { Animation.MAIN_MENU_PLAY_BUTTON.frames[0].heightPixels }) {
 
-            val texture = GUITexturePane(this, "Main menu play button texture", 0, 0, Animation.MAIN_MENU_PLAY_BUTTON).apply {
+            val texture = GUITexturePane(this, "Main menu play button texture", 0, 0, Animation.MAIN_MENU_PLAY_BUTTON[0]).apply {
                 transparentToInteraction = true
             }
 
             init {
-                GUIText(this, "Main menu play button text", widthPixels - 32, 7, "<size=30>Play", allowTags = true).apply {
+                GUIText(this, "Main menu play button text", widthPixels - 32, heightPixels - 12, "<size=30>Play", allowTags = true).apply {
                     transparentToInteraction = true
                 }
             }
 
             override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
                 if (type == PressType.RELEASED) {
-                    this@MainMenuGUI.open = false
                     LevelSelectorGUI.open = true
-                    SlideOpenAnimation(LevelSelectorGUI).playing = true
+                    SlideOpenAnimation(LevelSelectorGUI, this@MainMenuGUI).playing = true
                 }
             }
 
@@ -55,7 +52,7 @@ object MainMenuGUI : GUIWindow("Main menu", { 0 }, { 0 }, { Game.WIDTH }, { Game
 
             override fun onMouseLeave() {
                 with(Animation.MAIN_MENU_PLAY_BUTTON) {
-                    if(getCurrentStepID() == "inside_loop") {
+                    if (getCurrentStepID() == "inside_loop") {
                         playBackwardsFrom("outside_loop")
                     } else {
                         playBackwards()

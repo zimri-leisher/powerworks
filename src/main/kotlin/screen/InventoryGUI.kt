@@ -1,9 +1,10 @@
 package screen
 
-import graphics.Image
-import graphics.Utils
 import item.Inventory
-import screen.elements.*
+import screen.elements.GUIDefaultTextureRectangle
+import screen.elements.GUIItemSlot
+import screen.elements.GUIText
+import screen.elements.GUIWindow
 
 /**
  * A GUIWindow that you can instantiate for any inventory
@@ -33,7 +34,7 @@ class InventoryGUI(name: String,
         val arr = arrayOfNulls<GUIItemSlot>(inv.width * inv.height)
         for (y in 0 until inv.height) {
             for (x in 0 until inv.width) {
-                arr[x + y * inv.width] = GUIItemSlot(background, name + " item slot ${x + y * inv.width}", ITEM_SLOT_PADDING + x * (GUIItemSlot.WIDTH + ITEM_SLOT_PADDING), ITEM_SLOT_PADDING + 5 + y * (GUIItemSlot.HEIGHT + ITEM_SLOT_PADDING), x + y * inv.width, inv)
+                arr[x + y * inv.width] = GUIItemSlot(background, name + " item slot ${x + y * inv.width}", ITEM_SLOT_PADDING + x * (GUIItemSlot.WIDTH + ITEM_SLOT_PADDING), ITEM_SLOT_PADDING + 5 + (inv.height - y - 1) * (GUIItemSlot.HEIGHT + ITEM_SLOT_PADDING), x + y * inv.width, inv)
             }
         }
         GUIText(background, "Inventory GUI name text", 0, 0, displayName, allowTags = true)

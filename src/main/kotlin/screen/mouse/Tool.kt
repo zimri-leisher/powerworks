@@ -1,5 +1,6 @@
 package screen.mouse
 
+import com.badlogic.gdx.graphics.Color
 import graphics.Renderer
 import graphics.TextureRenderParams
 import io.*
@@ -87,9 +88,9 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
             override fun render() {
                 val s = Game.currentLevel.selectedLevelObject!!
                 if (s is Block)
-                    Renderer.renderEmptyRectangle(s.xPixel, s.yPixel, s.type.widthTiles shl 4, s.type.heightTiles shl 4, 0x1A6AF4, TextureRenderParams(alpha = .45f))
+                    Renderer.renderEmptyRectangle(s.xPixel, s.yPixel, s.type.widthTiles shl 4, s.type.heightTiles shl 4, params = TextureRenderParams(color = Color(0x1A6AF472)))
                 else if (s is MovingObject)
-                    Renderer.renderEmptyRectangle(s.xPixel, s.yPixel, s.hitbox.width, s.hitbox.height, 0x1A6AF4, TextureRenderParams(alpha = .45f))
+                    Renderer.renderEmptyRectangle(s.xPixel, s.yPixel, s.hitbox.width, s.hitbox.height, params = TextureRenderParams(color = Color(0x1A6AF472)))
             }
         }
 
@@ -213,7 +214,7 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
             }
 
             override fun render() {
-                Renderer.renderEmptyRectangle(dragStartXPixel, dragStartYPixel, (currentDragXPixel - dragStartXPixel), (currentDragYPixel - dragStartYPixel), 0xBBBBBB)
+                Renderer.renderEmptyRectangle(dragStartXPixel, dragStartYPixel, (currentDragXPixel - dragStartXPixel), (currentDragYPixel - dragStartYPixel), params = TextureRenderParams(color = Color(0xBBBBBB)))
             }
         }
 

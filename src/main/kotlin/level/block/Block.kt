@@ -1,8 +1,9 @@
 package level.block
 
-import graphics.LocalAnimation
 import graphics.Renderer
-import level.*
+import level.CHUNK_TILE_EXP
+import level.Level
+import level.LevelObject
 import level.particle.ParticleEffect
 import resource.ResourceContainerGroup
 import resource.ResourceNodeGroup
@@ -13,10 +14,10 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotatio
     override val type = type
 
     /**
-     * The reason this exists and the render method doesn't use the textures defined in the BlockType is because this allows for us to instantiate LocalAnimations
-     * @see LocalAnimation
+     * The reason this exists and the render method doesn't use the textures defined in the BlockType is because this allows for us to
+     * have animations that are local to this block (that aren't in sync with every other animation of the same type)
      */
-    val textures: LevelObjectTextures
+    val textures = type.textures
 
     /**
      * The specific local nodes as specified by BlockType.nodesTemplate
@@ -31,19 +32,6 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotatio
      * For example, for a block of type ChestBlockType.SMALL_CHEST, this would consist of a single 8x3 inventory
      */
     val containers = ResourceContainerGroup(nodes.getAttachedContainers())
-
-    init {
-        // start local animations
-        val newTextures = mutableListOf<LevelObjectTexture>()
-        for (texture in type.textures) {
-            if (texture.texture is LocalAnimation) {
-                newTextures.add(LevelObjectTexture(LocalAnimation(texture.texture.animation, texture.texture.playing, texture.texture.speed), texture.xPixelOffset, texture.yPixelOffset))
-            } else {
-                newTextures.add(texture)
-            }
-        }
-        textures = LevelObjectTextures(*newTextures.toTypedArray())
-    }
 
     /**
      * Don't forget to call super.onAddToLevel() in subclasses overriding this so that the onAdjacentBlockAdd methods of adjacent blocks are called
@@ -96,7 +84,6 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotatio
         val texture = textures[rotation]
         Renderer.renderTexture(texture.texture, xPixel - texture.xPixelOffset, yPixel - texture.yPixelOffset)
         super.render()
-
     }
 
     /**

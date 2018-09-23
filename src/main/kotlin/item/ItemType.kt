@@ -1,11 +1,10 @@
 package item
 
 import graphics.Image
-import graphics.SyncAnimation
-import graphics.Texture
 import resource.ResourceCategory
 import resource.ResourceType
 import fluid.MoltenOreFluidType
+import graphics.Animation
 import level.LevelObjectType
 import level.block.*
 
@@ -15,7 +14,7 @@ open class ItemType(initializer: ItemType.() -> Unit = {}) : ResourceType() {
 
     val id = nextID++
     override var name = "Error"
-    override var icon: Texture = Image.Misc.ERROR
+    override var icon = Image.Misc.ERROR
 
     override val category
         get() = ResourceCategory.ITEM
@@ -48,7 +47,7 @@ open class ItemType(initializer: ItemType.() -> Unit = {}) : ResourceType() {
 
         val MINER = ItemType {
             name = "Miner"
-            icon = SyncAnimation.MINER
+            icon = Animation.MINER[0]
             placedBlockID = MachineBlockType.MINER.id
         }
 
@@ -100,7 +99,7 @@ open class ItemType(initializer: ItemType.() -> Unit = {}) : ResourceType() {
 
         val SOLIDIFIER = ItemType {
             name = "Molten Ore Solidifier"
-            icon = SyncAnimation.SOLIDIFIER
+            icon = Animation.SOLIDIFIER[0]
             placedBlockID = MachineBlockType.SOLIDIFIER.id
         }
 

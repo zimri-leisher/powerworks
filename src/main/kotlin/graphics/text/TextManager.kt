@@ -1,35 +1,38 @@
 package graphics.text
 
+import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.graphics.g2d.BitmapFont
+import com.badlogic.gdx.graphics.g2d.GlyphLayout
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator
 import main.Game
-import data.ResourceManager
-import java.awt.Font
+import misc.Numbers
 import java.awt.FontFormatException
-import java.awt.GraphicsEnvironment
 import java.awt.Rectangle
-import java.awt.font.FontRenderContext
 import java.io.IOException
 import java.util.regex.Pattern
 
-data class FontInfo(val font: Font, val charWidth: Int, val charHeight: Int)
+data class FontInfo(val font: BitmapFont, val charWidth: Float, val charHeight: Float)
 
 object TextManager {
 
-    private val defaultFontRenderContext = FontRenderContext(null, false, false)
     private val fonts = mutableMapOf<Pair<Int, FontStyle>, FontInfo>()
-    private lateinit var defaultFont: Font
+    private val fontFile = Gdx.files.internal("font/Graph-35-pix.ttf")
+    private var fontGenerator = FreeTypeFontGenerator(fontFile)
+    lateinit var defaultFont: BitmapFont
+    val glyphLayout = GlyphLayout()
     const val DEFAULT_SIZE = 20
-    private const val TESTING_STRING = "1234567890qwertyuiopasdfghjklzxcvbnm`=[]\\;',./QWERTYUIOPASDFGHJLZXCVBNM{}|:\"<>?"
+    private const val DEFAULT_CHARS = "1234567890qwertyuiopasdfghjklzxcvbnm`=[]\\;',./QWERTYUIOPASDFGHJLZXCVBNM{}|:\"<>?"
 
     init {
         try {
-            val font = Font.createFont(Font.TRUETYPE_FONT, ResourceManager.getRawResourceAsStream("/font/Graph-35-pix.ttf")).deriveFont(FontStyle.PLAIN.style, DEFAULT_SIZE.toFloat())
-            val ge = GraphicsEnvironment.getLocalGraphicsEnvironment()
-            ge.registerFont(font)
-            defaultFont = font
-            val testBounds = font.getStringBounds(TESTING_STRING, defaultFontRenderContext).bounds.apply {
-                setBounds(0, 0, width / Game.SCALE, height / Game.SCALE)
+            val defaultParams = FreeTypeFontGenerator.FreeTypeFontParameter()
+            with(defaultParams) {
+                size = DEFAULT_SIZE
+                characters = DEFAULT_CHARS
             }
-            fonts.put(Pair(DEFAULT_SIZE, FontStyle.PLAIN), FontInfo(font, Math.ceil(testBounds.width.toDouble() / TESTING_STRING.length).toInt(), testBounds.height))
+            defaultFont = fontGenerator.generateFont(defaultParams)
+            glyphLayout.setText(defaultFont, DEFAULT_CHARS)
+            fonts.put(Pair(DEFAULT_SIZE, FontStyle.PLAIN), FontInfo(defaultFont, Numbers.ceil((glyphLayout.width / DEFAULT_CHARS.length) / Game.SCALE).toFloat(), Math.ceil((glyphLayout.height.toDouble()) / Game.SCALE).toFloat()))
         } catch (ex: FontFormatException) {
             ex.printStackTrace()
         } catch (ex: IOException) {
@@ -37,6 +40,10 @@ object TextManager {
         }
     }
 
+    /**
+     * Goes through a string containing text tags (see the TextTagType enum) and returns a pre-generated TaggedText
+     * object that can be passed into the Renderer.renderTaggedText method
+     */
     fun parseTags(text: String): TaggedText {
         val tags = mutableMapOf<Int, MutableList<TextTag>>()
         val untaggedString = StringBuilder()
@@ -96,13 +103,18 @@ object TextManager {
         return font
     }
 
+    // TODO style doesn't work right now. Could create a default java font, then load it to bitmap?
     private fun genFont(size: Int, style: FontStyle): FontInfo {
         println("Generating new font")
-        val f = defaultFont.deriveFont(style.style, size.toFloat())
-        val testBounds = f.getStringBounds(TESTING_STRING, defaultFontRenderContext).bounds.apply {
-            setBounds(0, 0, width / Game.SCALE, height / Game.SCALE)
+        val param = FreeTypeFontGenerator.FreeTypeFontParameter()
+        with(param) {
+            this.size = size
+            this.characters = DEFAULT_CHARS
         }
-        return FontInfo(f, Math.ceil(testBounds.width.toDouble() / TESTING_STRING.length).toInt(), testBounds.height)
+        val f = fontGenerator.generateFont(param)
+        glyphLayout.setText(f, DEFAULT_CHARS)
+        println("${(glyphLayout.width.toDouble() / DEFAULT_CHARS.length)}, ${(glyphLayout.width.toDouble() / DEFAULT_CHARS.length) / Game.SCALE}")
+        return FontInfo(f, ((glyphLayout.width / DEFAULT_CHARS.length) / Game.SCALE), ((glyphLayout.height / Game.SCALE)))
     }
 
     /**
@@ -113,7 +125,7 @@ object TextManager {
             return Rectangle(0, 0)
         val lines = s.split("\n")
         val f = getFont(size, style)
-        return Rectangle(lines.maxBy { it.length }!!.length * f.charWidth, lines.size * f.charHeight)
+        return Rectangle((lines.maxBy { it.length }!!.length * f.charWidth).toInt(), (lines.size * f.charHeight).toInt())
     }
 
     fun getStringBounds(t: TaggedText, size: Int = DEFAULT_SIZE, style: FontStyle = FontStyle.PLAIN): Rectangle {
@@ -131,5 +143,10 @@ object TextManager {
         context.currentBounds.width += lastSubstringBounds.width
         context.currentBounds.height = Math.max(context.currentBounds.height, lastSubstringBounds.height)
         return context.currentBounds
+    }
+
+    fun dispose() {
+        fontGenerator.dispose()
+        fonts.forEach { _, u -> u.font.dispose() }
     }
 }

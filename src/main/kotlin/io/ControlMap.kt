@@ -2,7 +2,6 @@ package io
 
 import data.FileManager
 import data.GameDirectoryIdentifier
-import io.OutputManager as out
 
 private data class ControlBind(val code: String, val otherCodes: Set<String>, val notOtherCodes: Set<String>, val control: Control, val only: Boolean)
 

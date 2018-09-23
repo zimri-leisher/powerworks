@@ -7,14 +7,14 @@ import resource.ResourceContainer
 import resource.ResourceContainerChangeListener
 import resource.ResourceList
 import resource.ResourceType
-import screen.CraftingBlockGUI
+import screen.CrafterBlockGUI
 
 class CrafterBlock(override val type: CrafterBlockType, xTile: Int, yTile: Int, rotation: Int) : MachineBlock(type, xTile, yTile, rotation), ResourceContainerChangeListener, Crafter {
 
     override val crafterType: Int
         get() = type.craftingType
 
-    val crafterGUI = CraftingBlockGUI(this)
+    val crafterGUI = CrafterBlockGUI(this)
     var recipe: Recipe? = null
 
     private var currentResources = ResourceList()

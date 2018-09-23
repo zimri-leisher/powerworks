@@ -5,7 +5,7 @@ import resource.ResourceContainerChangeListener
 import resource.ResourceType
 
 class GUIResourceContainerDisplay(parent: RootGUIElement, name: String, val container: ResourceContainer<*>,
-                                  xAlignment: () -> Int, yAlignment: () -> Int, val width: Int, val height: Int,
+                                  xAlignment: Alignment, yAlignment: Alignment, val width: Int, val height: Int,
                                   open: Boolean = false, layer: Int = parent.layer + 1) :
         GUIElement(parent, name, xAlignment, yAlignment, { width * 16 + 4 }, { height * 16 + 4 }, open, layer), ResourceContainerChangeListener {
 

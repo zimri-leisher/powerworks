@@ -8,7 +8,7 @@ import screen.mouse.Mouse
 
 class GUIDimensionDragGrip(parent: RootGUIElement,
                            name: String,
-                           xAlignment: () -> Int, yAlignment: () -> Int,
+                           xAlignment: Alignment, yAlignment: Alignment,
                            open: Boolean = false,
                            layer: Int = parent.layer + 1,
                            val actOn: GUIWindow,
@@ -56,9 +56,9 @@ class GUIDimensionDragGrip(parent: RootGUIElement,
 
     override fun render() {
         if (!dragging)
-            Renderer.renderTexture(Image.GUI.DIMENSION_DRAG_GRIP, xPixel, yPixel)
+            Renderer.renderTexture(Image.GUI.DIMENSION_DRAG_GRIP, xPixel, yPixel, localRenderParams)
         else {
-            Renderer.renderEmptyRectangle(actOn.xPixel, actOn.yPixel, nWidthPixels, nHeightPixels)
+            Renderer.renderEmptyRectangle(actOn.xPixel, actOn.yPixel, nWidthPixels, nHeightPixels, params = localRenderParams)
         }
     }
 

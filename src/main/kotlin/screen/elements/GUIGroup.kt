@@ -4,7 +4,7 @@ import java.awt.Rectangle
 
 open class GUIGroup(parent: RootGUIElement,
                     name: String,
-                    xAlignment: () -> Int, yAlignment: () -> Int,
+                    xAlignment: Alignment, yAlignment: Alignment,
                     initializerList: GUIGroup.() -> Unit = {},
                     open: Boolean = false,
                     layer: Int = parent.layer + 1) :

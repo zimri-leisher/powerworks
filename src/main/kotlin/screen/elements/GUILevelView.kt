@@ -1,5 +1,6 @@
 package screen.elements
 
+import com.badlogic.gdx.graphics.OrthographicCamera
 import graphics.Renderer
 import io.PressType
 import level.LevelObject
@@ -13,8 +14,8 @@ import java.awt.image.VolatileImage
 
 class GUILevelView(parent: RootGUIElement,
                    name: String,
-                   xAlignment: () -> Int, yAlignment: () -> Int,
-                   widthAlignment: () -> Int, heightAlignment: () -> Int,
+                   xAlignment: Alignment, yAlignment: Alignment,
+                   widthAlignment: Alignment, heightAlignment: Alignment,
                    camera: LevelObject, zoomLevel: Int = 10,
                    open: Boolean = false,
                    layer: Int = parent.layer + 1) :
@@ -50,6 +51,8 @@ class GUILevelView(parent: RootGUIElement,
 
     private var viewHeightPixels = (heightPixels / zoomMultiplier).toInt()
 
+    val libgdxCamera = OrthographicCamera(viewWidthPixels.toFloat() * Game.SCALE, viewHeightPixels.toFloat() * Game.SCALE)
+
     var zoomLevel = zoomLevel
         set(value) {
             field = value
@@ -58,10 +61,6 @@ class GUILevelView(parent: RootGUIElement,
             onCameraMove(camera.xPixel, camera.yPixel)
         }
 
-    var currentBuffer = Game.graphicsConfiguration.createCompatibleVolatileImage(viewWidthPixels * Game.SCALE, viewHeightPixels * Game.SCALE, Transparency.TRANSLUCENT)
-
-    lateinit var pregeneratedBuffers: Array<VolatileImage>
-
     var viewRectangle: Rectangle
 
     init {
@@ -69,8 +68,8 @@ class GUILevelView(parent: RootGUIElement,
         if (camera is MovingObject) {
             camera.moveListeners.add(this)
         }
+        onCameraMove(camera.xPixel, camera.yPixel)
         viewRectangle = Rectangle(camera.xPixel - viewWidthPixels / 2, camera.yPixel - viewHeightPixels / 2, viewWidthPixels, viewHeightPixels)
-        fillPregenBuffers()
     }
 
     override fun onClose() {
@@ -81,35 +80,25 @@ class GUILevelView(parent: RootGUIElement,
         Game.currentLevel.openViews.add(this)
     }
 
-    /**
-     * Generates VolatileImages for each possible zoom level at once. Flushing (NOTE: FLUSHING IS WHAT CAUSED THE HUGE MEMORY SPIKES. NEEDS INVESTIGATION) and validating are handled in updateView
-     */
-    private fun fillPregenBuffers() {
-        val g = arrayOfNulls<VolatileImage>(MIN_ZOOM - MAX_ZOOM + 1)
-        for (i in MAX_ZOOM..MIN_ZOOM) {
-            g[i - MAX_ZOOM] = Game.graphicsConfiguration.createCompatibleVolatileImage((widthPixels / (i * ZOOM_INCREMENT)).toInt() * Game.SCALE, (heightPixels / (i * ZOOM_INCREMENT)).toInt() * Game.SCALE, Transparency.TRANSLUCENT)
-        }
-        pregeneratedBuffers = g.requireNoNulls()
-    }
-
     private fun updateView() {
         viewWidthPixels = (widthPixels / zoomMultiplier).toInt()
         viewHeightPixels = (heightPixels / zoomMultiplier).toInt()
-        pregeneratedBuffers[zoomLevel - MAX_ZOOM].validate(Game.graphicsConfiguration)
-        currentBuffer = pregeneratedBuffers[zoomLevel - MAX_ZOOM]
         viewRectangle = Rectangle(camera.xPixel - viewWidthPixels / 2, camera.yPixel - viewHeightPixels / 2, viewWidthPixels, viewHeightPixels)
-    }
-
-    override fun update() {
+        libgdxCamera.viewportWidth = viewWidthPixels.toFloat() * Game.SCALE
+        libgdxCamera.viewportHeight = viewHeightPixels.toFloat() * Game.SCALE
     }
 
     private fun onCameraMove(pXPixel: Int, pYPixel: Int) {
+        libgdxCamera.position.apply {
+            x = camera.xPixel.toFloat() * Game.SCALE
+            y = camera.yPixel.toFloat() * Game.SCALE
+        }
+        libgdxCamera.update()
         viewRectangle = Rectangle(camera.xPixel - viewWidthPixels / 2, camera.yPixel - viewHeightPixels / 2, viewWidthPixels, viewHeightPixels)
         moveListeners.forEach { it.onCameraMove(this, pXPixel, pYPixel) }
     }
 
     override fun onDimensionChange(oldWidth: Int, oldHeight: Int) {
-        fillPregenBuffers()
         updateView()
         Game.currentLevel.updateViewBeingInteractedWith()
     }
@@ -125,27 +114,10 @@ class GUILevelView(parent: RootGUIElement,
     }
 
     override fun render() {
-        val oldG2D = Renderer.g2d
-        do {
-            if (currentBuffer.validate(Game.graphicsConfiguration) == VolatileImage.IMAGE_INCOMPATIBLE)
-                updateView()
-            Renderer.g2d = currentBuffer.createGraphics()
-            Renderer.g2d.clearRect(0, 0, Game.WIDTH * Game.SCALE, Game.HEIGHT * Game.SCALE)
-            Renderer.xPixelOffset = -(camera.xPixel - viewWidthPixels / 2)
-            Renderer.yPixelOffset = -(camera.yPixel - viewHeightPixels / 2)
-            Game.currentLevel.render(this)
-            //Level.render
-            //    Tile.render
-            //    split entities into x groups, sorted by lowest y first, one between the middle of each tile, y coordinate wise
-            //    starting from the bottom of the lowest y group (coordinate wise):
-            //        render necessary line of blocks that would be below it (block stores 4 pts, if closest point is within view rectangle render it?)
-            //        render entities group in order
-            Renderer.g2d.dispose()
-            Renderer.g2d = oldG2D
-            Renderer.xPixelOffset = 0
-            Renderer.yPixelOffset = 0
-            oldG2D.drawImage(currentBuffer, xPixel * Game.SCALE, yPixel * Game.SCALE, widthPixels * Game.SCALE, heightPixels * Game.SCALE, null)
-        } while (currentBuffer.contentsLost())
+        val screenMatrix = Renderer.batch.projectionMatrix.cpy()
+        Renderer.batch.projectionMatrix = libgdxCamera.combined
+        Game.currentLevel.render(this)
+        Renderer.batch.projectionMatrix = screenMatrix
     }
 
     override fun onScroll(dir: Int) {

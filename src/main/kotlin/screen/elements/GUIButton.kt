@@ -1,15 +1,16 @@
 package screen.elements
 
-import graphics.*
+import graphics.Renderer
 import graphics.text.TextManager
 import io.PressType
+import main.toWhite
 
 class GUIButton(parent: RootGUIElement,
                 name: String,
-                xAlignment: () -> Int, yAlignment: () -> Int,
+                xAlignment: Alignment, yAlignment: Alignment,
                 text: String,
                 allowTags: Boolean = false,
-                widthAlignment: () -> Int = { if (TextManager.getStringBounds(text).width > WIDTH - 4) TextManager.getStringBounds(text).width + 4 else WIDTH }, heightAlignment: () -> Int = { HEIGHT },
+                widthAlignment: Alignment = { if (TextManager.getStringBounds(text).width > WIDTH - 4) TextManager.getStringBounds(text).width + 4 else WIDTH }, heightAlignment: Alignment = { HEIGHT },
                 private var onPress: () -> (Unit) = {}, private var onRelease: () -> (Unit) = {}, open: Boolean = false,
                 layer: Int = parent.layer + 1) :
         GUIElement(parent, name, xAlignment, yAlignment, widthAlignment, heightAlignment, open, layer) {
@@ -22,18 +23,13 @@ class GUIButton(parent: RootGUIElement,
                 widthPixels: Int = if (TextManager.getStringBounds(text).width > WIDTH - 4) TextManager.getStringBounds(text).width + 4 else WIDTH, heightPixels: Int = HEIGHT,
                 onPress: () -> Unit = {}, onRelease: () -> Unit = {}, open: Boolean = false,
                 layer: Int = parent.layer + 1) :
-            this(parent, name, {xPixel}, {yPixel}, text, allowTags, {widthPixels}, {heightPixels}, onPress, onRelease, open, layer)
+            this(parent, name, { xPixel }, { yPixel }, text, allowTags, { widthPixels }, { heightPixels }, onPress, onRelease, open, layer)
 
     var down = false
 
-    // 0: unhighlighted, 1: highlighted, 2: clicked
-    private val textures = arrayOf<Texture>(
-            Image(Utils.genRectangle(widthPixels, heightPixels)),
-            Image(Utils.modify(Utils.genRectangle(widthPixels, heightPixels), ImageParams(brightnessMultiplier = 1.2))),
-            Image(Utils.modify(Utils.genRectangle(widthPixels, heightPixels), ImageParams(rotation = 2))))
-
-    var currentTexture: Texture = textures[0]
-    var text = GUIText(this, name + " text", 0, 0, text, allowTags = allowTags, open = open).apply { transparentToInteraction = true }
+    var text = GUIText(this, name + " text", 0, 0, text, allowTags = allowTags, open = open).apply {
+        transparentToInteraction = true
+    }
 
     init {
         this.text.transparentToInteraction = true
@@ -43,44 +39,36 @@ class GUIButton(parent: RootGUIElement,
     }
 
     override fun onMouseEnter() {
-        currentTexture = textures[1]
+        localRenderParams.color.mul(1.2f, 1.2f, 1.2f, 1f)
     }
 
     override fun onMouseLeave() {
+        localRenderParams.color.toWhite()
         down = false
-        currentTexture = textures[0]
     }
 
     override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
         if (type == PressType.PRESSED) {
-            currentTexture = textures[2]
             onPress.invoke()
+            localRenderParams.rotation = 180f
+            localRenderParams.color.sub(.1f, .1f, .1f, 0f)
             down = true
         } else if (type == PressType.RELEASED) {
             if (down) {
-                currentTexture = textures[1]
                 onRelease.invoke()
+                localRenderParams.rotation = 0f
+                localRenderParams.color.toWhite()
                 down = false
             }
         }
     }
 
-    override fun onOpen() {
-        if (mouseOn)
-            currentTexture = textures[1]
-        else currentTexture = textures[0]
-    }
-
-    override fun onClose() {
-        currentTexture = textures[0]
-    }
-
     override fun render() {
-        Renderer.renderTexture(currentTexture, xPixel, yPixel)
+        Renderer.renderDefaultRectangle(xPixel, yPixel, widthPixels, heightPixels, localRenderParams)
     }
 
     companion object {
-        val WIDTH = 64
-        val HEIGHT = 16
+        const val WIDTH = 64
+        const val HEIGHT = 16
     }
 }

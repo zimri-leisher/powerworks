@@ -2,14 +2,16 @@ package screen.elements
 
 class AutoFormatGUIGroup(parent: RootGUIElement,
                          name: String,
-                         xAlignment: () -> Int, yAlignment: () -> Int,
+                         xAlignment: Alignment, yAlignment: Alignment,
                          open: Boolean = false,
                          layer: Int = parent.layer + 1,
                          initializerList: (GUIGroup.() -> Unit)? = null,
-                         val yPixelSeparation: Int = 0,
-                         val xPixelSeparation: Int = 0,
-                         val accountForChildWidth: Boolean = false,
-                         val accountForChildHeight: Boolean = false) :
+                         var yPixelSeparation: Int = 0,
+                         var xPixelSeparation: Int = 0,
+                         var accountForChildWidth: Boolean = false,
+                         var accountForChildHeight: Boolean = false,
+                         var flipX: Boolean = false,
+                         var flipY: Boolean = false) :
         GUIGroup(parent, name, xAlignment, yAlignment, {}, open, layer) {
 
     constructor(parent: RootGUIElement,
@@ -21,11 +23,13 @@ class AutoFormatGUIGroup(parent: RootGUIElement,
                 yPixelSeparation: Int = 0,
                 xPixelSeparation: Int = 0,
                 accountForChildWidth: Boolean = false,
-                accountForChildHeight: Boolean = false) :
-            this(parent, name, { relXPixel }, { relYPixel }, open, layer, initializerList, yPixelSeparation, xPixelSeparation, accountForChildWidth, accountForChildHeight)
+                accountForChildHeight: Boolean = false,
+                flipX: Boolean = false,
+                flipY: Boolean = false) :
+            this(parent, name, { relXPixel }, { relYPixel }, open, layer, initializerList, yPixelSeparation, xPixelSeparation, accountForChildWidth, accountForChildHeight, flipX, flipY)
 
-    var nextYPixel = 0
     var nextXPixel = 0
+    var nextYPixel = 0
 
     init {
         if (initializerList != null)
@@ -40,13 +44,25 @@ class AutoFormatGUIGroup(parent: RootGUIElement,
     }
 
     override fun onAddChild(child: GUIElement) {
-        val x = nextXPixel
-        val y = nextYPixel
+        var x = nextXPixel
+        var y = nextYPixel
+        val xDiff = xPixelSeparation + if(accountForChildWidth) child.widthPixels else 0
+        val yDiff = yPixelSeparation + if(accountForChildHeight) child.heightPixels else 0
+        if(flipY) {
+            y -= child.heightPixels
+            nextYPixel -= yDiff
+        } else {
+            nextYPixel += yDiff
+        }
+        if(flipX) {
+            x -= child.widthPixels
+            nextXPixel -= xDiff
+        } else {
+            nextXPixel += xDiff
+        }
         child.alignments.x = { x }
         child.alignments.y = { y }
         child.layer = layer + 1
-        nextXPixel += (if (accountForChildWidth) child.widthPixels else 0) + xPixelSeparation
-        nextYPixel += (if (accountForChildHeight) child.heightPixels else 0) + yPixelSeparation
         super.onAddChild(child)
     }
 }

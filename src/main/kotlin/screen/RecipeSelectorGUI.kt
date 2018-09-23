@@ -1,8 +1,6 @@
 package screen
 
 import crafting.Recipe
-import graphics.Image
-import graphics.Utils
 import io.PressType
 import screen.elements.*
 
@@ -22,7 +20,7 @@ object RecipeSelectorGUI : GUIWindow("Recipe selector", 20, 20, 100, 120, Screen
         val background = GUIDefaultTextureRectangle(this, "Background", 0, 0)
         GUIText(background, "Name text", 0, 0, "Select a recipe:")
         for ((i, recipe) in Recipe.ALL.withIndex()) {
-            val display = GUIRecipeDisplay(background, "Recipe $i display", {(i % RECIPIES_PER_ROW) * GUIRecipeDisplay.WIDTH + 1}, {(i / RECIPIES_PER_ROW) * GUIRecipeDisplay.HEIGHT + 6}, recipe)
+            val display = GUIRecipeDisplay(background, "Recipe $i display", { (i % RECIPIES_PER_ROW) * GUIRecipeDisplay.WIDTH + 1 }, { (i / RECIPIES_PER_ROW) * GUIRecipeDisplay.HEIGHT + 6 }, recipe)
             GUIClickableRegion(display, "Recipe $i click region", { 0 }, { 0 }, { GUIRecipeDisplay.WIDTH }, { GUIRecipeDisplay.HEIGHT }, { pressType, _, _, button, shift, ctrl, alt ->
                 if (pressType == PressType.PRESSED && button == 1) {
                     selected = recipe

@@ -13,7 +13,7 @@ typealias Alignment = () -> Int
 
 private var nextId = 0
 
-sealed class RootGUIElement constructor(var name: String, xAlignment: Alignment, yAlignment: Alignment, widthAlignment: Alignment, heightAlignment: Alignment, open: Boolean, var layer: Int) {
+sealed class RootGUIElement(var name: String, xAlignment: Alignment, yAlignment: Alignment, widthAlignment: Alignment, heightAlignment: Alignment, open: Boolean, var layer: Int) {
 
     val id = nextId++
 
@@ -177,7 +177,13 @@ sealed class RootGUIElement constructor(var name: String, xAlignment: Alignment,
         }
     }
 
+    /**
+     * TODO this should be the combination of the parent's totalRenderParams and this's localRenderParams
+     */
     var totalRenderParams = TextureRenderParams()
+    /**
+     * The parameters used for all rendering done by this element.
+     */
     var localRenderParams = TextureRenderParams()
 
     /* Util */
@@ -487,10 +493,10 @@ open class GUIWindow(name: String, xAlignment: Alignment, yAlignment: Alignment,
             field = value
         }
 
-    var topLeftGroup = AutoFormatGUIGroup(this, name + " top left group", { 1 }, { 1 }, open = open, xPixelSeparation = 5)
-    var topRightGroup = AutoFormatGUIGroup(this, name + " top right group", { this.widthPixels - 5 }, { 1 }, open = open, xPixelSeparation = -5)
-    var bottomRightGroup = AutoFormatGUIGroup(this, name + " bottom right group", { this.widthPixels - 5 }, { this.heightPixels - 5 }, open = open, xPixelSeparation = -5)
-    var bottomLeftGroup = AutoFormatGUIGroup(this, name + " bottom left group", { this.widthPixels - 5 }, { 1 }, open = open, xPixelSeparation = 5)
+    var topLeftGroup = AutoFormatGUIGroup(this, name + " top left group", { 1 }, { this.heightPixels - 5 }, open = open, xPixelSeparation = 5)
+    var topRightGroup = AutoFormatGUIGroup(this, name + " top right group", { this.widthPixels - 5 }, { this.heightPixels - 5 }, open = open, xPixelSeparation = -5)
+    var bottomRightGroup = AutoFormatGUIGroup(this, name + " bottom right group", { this.widthPixels - 5 }, { 1 }, open = open, xPixelSeparation = -5)
+    var bottomLeftGroup = AutoFormatGUIGroup(this, name + " bottom left group", { 1 }, { 1 }, open = open, xPixelSeparation = 5)
 
     /* Settings */
 
@@ -529,6 +535,9 @@ open class GUIWindow(name: String, xAlignment: Alignment, yAlignment: Alignment,
         return GUIDimensionDragGrip(getGroup(pos), name + " dimension drag grip", { 0 }, { 0 }, open, layer, this)
     }
 
+    /**
+     * @param pos 0 - top left, 1 - top right, 2 - bottom right, 3 - bottom left
+     */
     private fun getGroup(pos: Int): AutoFormatGUIGroup {
         when (pos) {
             0 -> return topLeftGroup

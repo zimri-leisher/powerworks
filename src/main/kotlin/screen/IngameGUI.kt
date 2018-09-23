@@ -93,7 +93,7 @@ object IngameGUI : GUIWindow("In game gui",
 
     init {
         InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.TOGGLE_VIEW_CONTROLS)
-        GUITexturePane(this, "In game gui background", { 0 }, { 0 }, Image.GUI.MAIN_MENU_BACKGROUND_FILLER, { Game.WIDTH }, { Game.HEIGHT })
+        GUITexturePane(this, "In game gui background", { 0 }, { 0 }, Image.GUI.GREY_FILLER, { Game.WIDTH }, { Game.HEIGHT })
         ViewControlGUI.open
     }
 

@@ -1,12 +1,10 @@
 package screen.elements
 
-import graphics.Image
 import graphics.Renderer
-import graphics.Utils
 
 class GUIDefaultTextureRectangle(parent: RootGUIElement, name: String,
-                                 xAlignment: () -> Int, yAlignment: () -> Int,
-                                 widthAlignment: () -> Int = parent.alignments.width, heightAlignment: () -> Int = parent.alignments.height,
+                                 xAlignment: Alignment, yAlignment: Alignment,
+                                 widthAlignment: Alignment = parent.alignments.width, heightAlignment: Alignment = parent.alignments.height,
                                  open: Boolean = false, layer: Int = parent.layer + 1) :
         GUIElement(parent, name, xAlignment, yAlignment, widthAlignment, heightAlignment, open, layer) {
 
@@ -14,13 +12,7 @@ class GUIDefaultTextureRectangle(parent: RootGUIElement, name: String,
             parent, name, { xPixel }, { yPixel }, { widthPixels }, { heightPixels }, open, layer
     )
 
-    var texture = Image(Utils.genRectangle(widthAlignment(), heightAlignment()))
-
-    override fun onDimensionChange(oldWidth: Int, oldHeight: Int) {
-        texture = Image(Utils.genRectangle(alignments.width(), alignments.height()))
-    }
-
     override fun render() {
-        Renderer.renderTexture(texture, xPixel, yPixel)
+        Renderer.renderDefaultRectangle(xPixel, yPixel, widthPixels, heightPixels, localRenderParams)
     }
 }

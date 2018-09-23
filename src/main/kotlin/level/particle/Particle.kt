@@ -17,7 +17,7 @@ class Particle(val type: ParticleType, var xPixel: Int, var yPixel: Int, var rot
 
     fun render() {
         if (rotation != 0)
-            Renderer.renderTexture(type.texture, xPixel, yPixel, TextureRenderParams(rotation = 90 * rotation))
+            Renderer.renderTexture(type.texture, xPixel, yPixel, TextureRenderParams(rotation = 90f * rotation))
         else
             Renderer.renderTexture(type.texture, xPixel, yPixel)
     }

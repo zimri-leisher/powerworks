@@ -1,10 +1,10 @@
 package audio
 
+import data.ConcurrentlyModifiableMutableList
 import level.LevelObject
 import level.MovementListener
 import level.moving.MovingObject
 import main.Game
-import data.ConcurrentlyModifiableMutableList
 import java.util.*
 
 private fun Sound.play(vol: Double = 1.0, pan: Double = 0.0, speed: Double = 1.0, loops: Int = 0): Int {
@@ -14,7 +14,7 @@ private fun Sound.play(vol: Double = 1.0, pan: Double = 0.0, speed: Double = 1.0
     return s
 }
 
-object AudioManager : MovementListener{
+object AudioManager : MovementListener {
 
     override fun onMove(m: MovingObject, pXPixel: Int, pYPixel: Int) {
         levelSounds.forEach {
@@ -44,10 +44,10 @@ object AudioManager : MovementListener{
     var LEVEL_SOUNDS_PAUSED = false
     var ears: LevelObject? = null
         set(value) {
-            if(value is MovingObject) {
+            if (value is MovingObject) {
                 value.moveListeners.add(this)
             }
-            if(field != null && field is MovingObject) {
+            if (field != null && field is MovingObject) {
                 val g = field as MovingObject
                 g.moveListeners.remove(this)
             }

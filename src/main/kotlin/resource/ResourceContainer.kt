@@ -2,7 +2,7 @@ package resource
 
 abstract class ResourceContainer<R : ResourceType>(val resourceCategory: ResourceCategory, var typeRule: ResourceContainer<R>.(ResourceType) -> Boolean = { true }) {
 
-    // TODO worried about forgetting checkIfAble and thus skipping add/remove rule checks, how2fix??
+    // TODO worried about forgetting checkIfAble and thus skipping add/remove rule checks, how2fix?? thoughts from later - still dont know.
 
     /**
      * Should be checked in the addition method of all resource containers. If false, and the checkIfAble arg of the add method is true, no addition operation will be done

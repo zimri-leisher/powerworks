@@ -2,8 +2,9 @@ package screen.elements
 
 import graphics.Image
 import graphics.Renderer
-import graphics.Texture
 import io.PressType
+import main.heightPixels
+import main.widthPixels
 import misc.GeometryHelper
 import screen.mouse.Mouse
 
@@ -15,19 +16,20 @@ interface VerticalScrollable {
 
 class GUIVerticalScrollBar(parent: RootGUIElement,
                            name: String,
-                           xAlignment: () -> Int, yAlignment: () -> Int,
-                           heightAlignment: () -> Int,
+                           xAlignment: Alignment, yAlignment: Alignment,
+                           heightAlignment: Alignment,
                            open: Boolean = false,
                            layer: Int = parent.layer + 1) :
         GUIElement(parent, name, xAlignment, yAlignment, { WIDTH }, heightAlignment, open, layer) {
 
     val s = parent as VerticalScrollable
-    val currentTextures = arrayOf<Texture>(Image.GUI.SCROLL_BAR_UNHIGHLIGHT_TOP, Image.GUI.SCROLL_BAR_UNHIGHLIGHT_MIDDLE, Image.GUI.SCROLL_BAR_UNHIGHLIGHT_BOTTOM)
-    val otherTextures = arrayOf<Texture>(Image.GUI.SCROLL_BAR_UNHIGHLIGHT_TOP, Image.GUI.SCROLL_BAR_UNHIGHLIGHT_MIDDLE, Image.GUI.SCROLL_BAR_UNHIGHLIGHT_BOTTOM,
+    val currentTextures = arrayOf(Image.GUI.SCROLL_BAR_UNHIGHLIGHT_TOP, Image.GUI.SCROLL_BAR_UNHIGHLIGHT_MIDDLE, Image.GUI.SCROLL_BAR_UNHIGHLIGHT_BOTTOM)
+    val otherTextures = arrayOf(Image.GUI.SCROLL_BAR_UNHIGHLIGHT_TOP, Image.GUI.SCROLL_BAR_UNHIGHLIGHT_MIDDLE, Image.GUI.SCROLL_BAR_UNHIGHLIGHT_BOTTOM,
             Image.GUI.SCROLL_BAR_HIGHLIGHT_TOP, Image.GUI.SCROLL_BAR_HIGHLIGHT_MIDDLE, Image.GUI.SCROLL_BAR_HIGHLIGHT_BOTTOM,
             Image.GUI.SCROLL_BAR_CLICK_TOP, Image.GUI.SCROLL_BAR_CLICK_MIDDLE, Image.GUI.SCROLL_BAR_CLICK_BOTTOM)
 
     var currentScrollBarHeight = 0
+    // the top of the scroll bar thingy itself
     var currentPos = 0
         set(value) {
             field = Math.min(Math.max(value, 0), maxPos)
@@ -57,13 +59,15 @@ class GUIVerticalScrollBar(parent: RootGUIElement,
 
     override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
         when (type) {
-            PressType.PRESSED -> if (GeometryHelper.intersects(xPixel, yPixel, 1, 1, this.xPixel + 1, currentPos + this.yPixel + 1, 4, currentScrollBarHeight)) {
-                dragging = true
-                mYPixelPrev = yPixel
-                setTexture(2)
+            PressType.PRESSED -> {
+                if (intersectsScrollBar(xPixel, yPixel)) {
+                    dragging = true
+                    mYPixelPrev = yPixel
+                    setTexture(2)
+                }
             }
             PressType.RELEASED -> {
-                if (mouseOn && GeometryHelper.intersects(xPixel, yPixel, 1, 1, this.xPixel + 1, currentPos + this.yPixel + 1, 4, currentScrollBarHeight))
+                if (mouseOn && intersectsScrollBar(xPixel, yPixel))
                     setTexture(1)
                 else
                     setTexture(0)
@@ -72,12 +76,15 @@ class GUIVerticalScrollBar(parent: RootGUIElement,
         }
     }
 
+    private fun intersectsScrollBar(xPixel: Int, yPixel: Int) =
+            GeometryHelper.intersects(xPixel, yPixel, 1, 1, this.xPixel + 1, this.yPixel + heightPixels - currentPos - 1 - currentScrollBarHeight, 4, currentScrollBarHeight)
+
     override fun onScroll(dir: Int) {
         currentPos += dir * GUIElementList.SCROLL_SENSITIVITY
     }
 
     override fun onParentChange(oldParent: RootGUIElement) {
-        if(parent !is VerticalScrollable)
+        if (parent !is VerticalScrollable)
             throw Exception("Parent must be VerticalScrollable")
         updateScrollBarHeight()
     }
@@ -105,21 +112,18 @@ class GUIVerticalScrollBar(parent: RootGUIElement,
                 setTexture(0)
         }
         if (mYPixel != mYPixelPrev && dragging) {
-            //if (yPixel + currentPos + (mYPixel - mYPixelPrev) + 1 + currentScrollBarHeight <= yPixel + heightPixels - 1 && yPixel + (currentPos + (mYPixel - mYPixelPrev)) >= yPixel) {
-            currentPos += mYPixel - mYPixelPrev
+            currentPos -= mYPixel - mYPixelPrev
             mYPixelPrev = mYPixel
-            //}
         }
     }
 
     override fun render() {
-        Renderer.renderTexture(Image.GUI.SCROLL_BAR_TOP, xPixel, yPixel)
-        Renderer.renderTexture(Image.GUI.SCROLL_BAR_MIDDLE, xPixel, yPixel + 2, 6, heightPixels - 4)
-        Renderer.renderTexture(Image.GUI.SCROLL_BAR_BOTTOM, xPixel, yPixel + heightPixels - 2)
-        Renderer.renderTexture(currentTextures[0], xPixel + 1, currentPos + 1 + yPixel)
-        for (i in currentTextures[0].heightPixels..currentScrollBarHeight - currentTextures[2].heightPixels - 1)
-            Renderer.renderTexture(currentTextures[1], xPixel + 1, i + currentPos + 1 + yPixel)
-        Renderer.renderTexture(currentTextures[2], xPixel + 1, currentScrollBarHeight - currentTextures[2].heightPixels + yPixel + currentPos + 1)
+        Renderer.renderTexture(Image.GUI.SCROLL_BAR_TOP, xPixel, yPixel + heightPixels - 2)
+        Renderer.renderTexture(Image.GUI.SCROLL_BAR_MIDDLE, xPixel, yPixel + 2, WIDTH, heightPixels - 4)
+        Renderer.renderTexture(Image.GUI.SCROLL_BAR_BOTTOM, xPixel, yPixel)
+        Renderer.renderTexture(currentTextures[0], xPixel + 1, yPixel + heightPixels - currentPos - currentTextures[0].heightPixels - 1)
+        Renderer.renderTexture(currentTextures[1], xPixel + 1, yPixel + heightPixels - currentPos - currentScrollBarHeight + currentTextures[2].heightPixels - 2, currentTextures[1].widthPixels, currentScrollBarHeight - currentTextures[0].heightPixels)
+        Renderer.renderTexture(currentTextures[2], xPixel + 1, yPixel + heightPixels - currentPos - currentScrollBarHeight - 1)
     }
 
     companion object {

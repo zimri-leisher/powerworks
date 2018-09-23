@@ -1,14 +1,14 @@
 package graphics
 
-import java.awt.image.BufferedImage
+import com.badlogic.gdx.graphics.g2d.TextureRegion
 
 sealed class AnimationStep(val stepID: String?) {
 
     /**
      * This function is called once per tick while this step is active. The function may choose to never return true
      * and continue holding the animation, or it could return false and the next animation step would start executing.
-     * Immediately after this function passes execution (returns true), the reset method will be called by the StepChain
-     * class
+     * Immediately after this function passes execution (returns true), the reset method of this will be called by the
+     * StepChain class
      *
      * @param context the animation this step is part of.
      * This is used inside the AnimationStep children to change frames, ticks, whether or not the animation is playing and so on
@@ -149,9 +149,20 @@ class StepChain(stepID: String? = null, val closure: StepChain.() -> Unit) : Ani
         return index
     }
 
+    /**
+     * Adds a sequence of toFrame steps defined by the frameRange parameter with the given times
+     * @param frameRange the range of frames (e.g. 0..10 or 5 until 7)
+     * @param times the ticks parameter to pass to the toFrame step for the given step (denoted by index, if this is index
+     * 2 in the array it will set the second frame of this sequence to the ticks in that index)
+     * @param stepID the identifier that will be given to the first frame in this sequence. You can use this with the goToStep step to move backwards or forwards
+     * in the execution order to this one. This identifier only works inside of the closure it's created in.
+     * What this means is if you give a step inside of a loop a step ID, you won't be able to navigate to that step
+     * from outside of the loop. Simply put, you cannot use goToStep to move inside or outside of the brackets it was created
+     * in. If multiple steps have the same ID, the first one with that ID will be selected. If null, this step has no ID
+     */
     fun sequence(frameRange: IntRange, times: Array<Int>, stepID: String? = null) {
         for (i in frameRange) {
-            toFrame(i, times[i])
+            toFrame(i, times[i - frameRange.first], if (i == frameRange.first) stepID else null)
         }
     }
 
@@ -171,7 +182,7 @@ class StepChain(stepID: String? = null, val closure: StepChain.() -> Unit) : Ani
     /**
      * Adds a step that pauses execution of the next step until a period of ticks
      * @param ticks the number of ticks to wait before going on to the next step
-     * @param stepID the identifier of this frame. You can use this with the goToStep step to move backwards or forwards
+     * @param stepID the identifier of this step. You can use this with the goToStep step to move backwards or forwards
      * in the execution order to this one. This identifier only works inside of the closure it's created in.
      * What this means is if you give a step inside of a loop a step ID, you won't be able to navigate to that step
      * from outside of the loop. Simply put, you cannot use goToStep to move inside or outside of the brackets it was created
@@ -183,7 +194,7 @@ class StepChain(stepID: String? = null, val closure: StepChain.() -> Unit) : Ani
 
     /**
      * Adds a step that moves execution to the specified stepID
-     * @param stepID the identifier of this frame. You can use this with the goToStep step to move backwards or forwards
+     * @param stepID the identifier of this step. You can use this with the goToStep step to move backwards or forwards
      * in the execution order to this one. This identifier only works inside of the closure it's created in.
      * What this means is if you give a step inside of a loop a step ID, you won't be able to navigate to that step
      * from outside of the loop. Simply put, you cannot use goToStep to move inside or outside of the brackets it was created
@@ -196,7 +207,7 @@ class StepChain(stepID: String? = null, val closure: StepChain.() -> Unit) : Ani
     /**
      * Adds a step that will execute steps inside the closure a specified number of times, or forever
      * @param numberOfTimes the number of times to go through the steps in the closure. If -1, it will loop forever
-     * @param stepID the identifier of this frame. You can use this with the goToStep step to move backwards or forwards
+     * @param stepID the identifier of this step. You can use this with the goToStep step to move backwards or forwards
      * in the execution order to this one. This identifier only works inside of the closure it's created in.
      * What this means is if you give a step inside of a loop a step ID, you won't be able to navigate to that step
      * from outside of the loop. Simply put, you cannot use goToStep to move inside or outside of the brackets it was created
@@ -210,7 +221,7 @@ class StepChain(stepID: String? = null, val closure: StepChain.() -> Unit) : Ani
 
     /**
      * Adds a step that will execute multiple, other steps together
-     * @param stepID the identifier of this frame. You can use this with the goToStep step to move backwards or forwards
+     * @param stepID the identifier of this step. You can use this with the goToStep step to move backwards or forwards
      * in the execution order to this one. This identifier only works inside of the closure it's created in.
      * What this means is if you give a step inside of a loop a step ID, you won't be able to navigate to that step
      * from outside of the loop. Simply put, you cannot use goToStep to move inside or outside of the brackets it was created
@@ -225,7 +236,7 @@ class StepChain(stepID: String? = null, val closure: StepChain.() -> Unit) : Ani
     /**
      * Adds a step that will stop execution. Please note the difference between stopping the animation and stopping
      * the execution--stopping execution doesn't reset frames or steps. It merely keeps execution exactly where it is.
-     * @param stepID the identifier of this frame. You can use this with the goToStep step to move backwards or forwards
+     * @param stepID the identifier of this step. You can use this with the goToStep step to move backwards or forwards
      * in the execution order to this one. This identifier only works inside of the closure it's created in.
      * What this means is if you give a step inside of a loop a step ID, you won't be able to navigate to that step
      * from outside of the loop. Simply put, you cannot use goToStep to move inside or outside of the brackets it was created
@@ -236,15 +247,9 @@ class StepChain(stepID: String? = null, val closure: StepChain.() -> Unit) : Ani
     }
 }
 
-class Animation(path: String, val numberOfFrames: Int, closure: StepChain.() -> Unit) : Texture {
+class Animation(path: String, val numberOfFrames: Int, startPlaying: Boolean = false, closure: StepChain.() -> Unit) {
 
-    override val currentImage: BufferedImage
-        get() = frames[currentFrame].currentImage
-    override val widthPixels: Int
-        get() = currentImage.width
-    override val heightPixels: Int
-        get() = currentImage.height
-
+    // TODO add local animations
 
     val frames = ImageCollection(path, numberOfFrames)
     var currentFrame = 0
@@ -256,6 +261,8 @@ class Animation(path: String, val numberOfFrames: Int, closure: StepChain.() -> 
     }
 
     init {
+        if (startPlaying)
+            play()
         ALL.add(this)
     }
 
@@ -363,6 +370,11 @@ class Animation(path: String, val numberOfFrames: Int, closure: StepChain.() -> 
         }
     }
 
+    /**
+     * @return the TextureRegion at the given index. This is not the same thing as a step!
+     */
+    operator fun get(i: Int) = frames[i]
+
     companion object {
 
         val ALL = mutableListOf<Animation>()
@@ -376,6 +388,13 @@ class Animation(path: String, val numberOfFrames: Int, closure: StepChain.() -> 
                 toFrame(5, 15)
                 toFrame(6, 15)
             }
+        }
+        val MINER = Animation("block/miner", 5, true) {
+            sequence(0 until 5, arrayOf(5, 5, 5, 5, 5))
+        }
+
+        val SOLIDIFIER = Animation("block/solidifier", 4, true) {
+            sequence(0 until 4, arrayOf(10, 10, 10, 10))
         }
 
         fun update() {

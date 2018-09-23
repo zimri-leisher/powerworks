@@ -5,6 +5,10 @@ import misc.TileCoord
 import resource.ResourceContainer
 import resource.ResourceNode
 
+/**
+ * A way of storing the positions of nodes for a block type. This will be instantiated at an offset for any block placed
+ * at any rotation in the level (if it has nodes)
+ */
 class BlockNodesTemplate(val widthTiles: Int, val heightTiles: Int,
                          // lambda so calculations can happen here
                          nodesInitializer: BlockNodesTemplate.() -> List<ResourceNode<*>> = { listOf() }) {
@@ -41,10 +45,10 @@ class BlockNodesTemplate(val widthTiles: Int, val heightTiles: Int,
     companion object {
         private fun rotate(xTile: Int, yTile: Int, widthTiles: Int, heightTiles: Int, dir: Int): TileCoord {
             return when (dir % 4) {
-                1 -> TileCoord(widthTiles - yTile - 1, xTile)
-                2 -> TileCoord(widthTiles - xTile - 1, heightTiles - yTile - 1)
-                3 -> TileCoord(yTile, heightTiles - xTile - 1)
-                else -> TileCoord(xTile, yTile)
+                1 -> TileCoord(widthTiles - yTile - 1, heightTiles - xTile)
+                2 -> TileCoord(widthTiles - xTile - 1, yTile + 1)
+                3 -> TileCoord(yTile, xTile + 1)
+                else -> TileCoord(xTile, heightTiles - yTile)
             }
         }
 

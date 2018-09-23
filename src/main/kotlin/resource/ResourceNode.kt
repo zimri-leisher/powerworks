@@ -10,10 +10,7 @@ import routing.ResourceRoutingNetwork
  * by default and is not a subclass of LevelObject.
  *
  * An example of a place where they appear is the MinerBlock, which uses one with allowOut = true to produce the ore it mines
- * from the ground and either put it into the connected inventory or place it on the ground. This raises the question of how it gets into
- * a tube network, as tubes don't have inventories. Tube blocks work by being grouped, with each group having a separate
- * inventory. Then, when a tube detects a node has been placed next to it, it creates a node of its own that connects with
- * the adjacent node.
+ * from the ground and either put it into the connected inventory or place it on the ground.
  */
 class ResourceNode<R : ResourceType>(
         val xTile: Int, val yTile: Int,
@@ -138,7 +135,7 @@ class ResourceNode<R : ResourceType>(
             // we already checked if we were able to, everything here is under the assumption it is successful
             attachedNode!!.input(resource, quantity, false)
         } else if (outputToLevel) {
-            // TODO make this better some time
+            // TODO make this better some time, have it actually spawn in the center
             val xSign = GeometryHelper.getXSign(dir)
             val ySign = GeometryHelper.getYSign(dir)
             Level.add(((xTile shl 4) + 7) + (8 + Hitbox.DROPPED_ITEM.width) * xSign, ((yTile shl 4) + 7) + (8 + Hitbox.DROPPED_ITEM.height) * ySign, resource, quantity) == quantity

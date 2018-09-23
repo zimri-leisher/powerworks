@@ -1,14 +1,17 @@
 package screen.elements
 
 import graphics.Renderer
+import graphics.TextureRenderParams
 import graphics.text.TextManager
 import graphics.text.TextRenderParams
 import io.*
-import java.awt.datatransfer.DataFlavor
+import main.toColor
+import misc.Numbers
 import java.awt.Toolkit
+import java.awt.datatransfer.DataFlavor
 
 
-class GUIAutocompleteMenu(parent: GUITextInputField) : GUIElement(parent, parent.name + " autocomplete menu", 0, TextManager.getFont().charHeight, 1, 1, false) {
+class GUIAutocompleteMenu(parent: GUITextInputField) : GUIElement(parent, parent.name + " autocomplete menu", 0, Numbers.ceil(TextManager.getFont().charHeight), 1, 1, false) {
     var options = mutableListOf<String>()
 
     var currentlySelectedOption: String? = null
@@ -19,7 +22,7 @@ class GUIAutocompleteMenu(parent: GUITextInputField) : GUIElement(parent, parent
 }
 
 class GUITextInputField(parent: RootGUIElement, name: String,
-                        xAlignment: () -> Int, yAlignment: () -> Int,
+                        xAlignment: Alignment, yAlignment: Alignment,
                         val widthChars: Int, val heightChars: Int,
                         var prompt: String = "",
                         var defaultValue: String = "",
@@ -28,12 +31,14 @@ class GUITextInputField(parent: RootGUIElement, name: String,
                         var charRule: GUITextInputField.(Char) -> Boolean = { true },
                         open: Boolean = false,
                         layer: Int = parent.layer + 1) :
-        GUIElement(parent, name, xAlignment, yAlignment, { widthChars * TextManager.getFont().charWidth }, { heightChars * (TextManager.getFont().charHeight + 1) + 1 }, open, layer), TextHandler, ControlPressHandler {
+        GUIElement(parent, name, xAlignment, yAlignment, { (widthChars * TextManager.getFont().charWidth).toInt() }, { Numbers.ceil(heightChars * (TextManager.getFont().charHeight + 1)) + 1 }, open, layer), TextHandler, ControlPressHandler {
+
     val maxChars = widthChars * heightChars
 
     val text = StringBuilder(defaultValue)
 
     var lines: List<String> = listOf(text.toString())
+
     /**
      * Selected doesn't necessarily mean showing a cursor, it could mean highlighted
      * If this was the last thing clicked on and escape has not been pressed, this should be selected
@@ -44,8 +49,10 @@ class GUITextInputField(parent: RootGUIElement, name: String,
                 field = value
                 if (value) {
                     InputManager.textHandler = this
+                    InputManager.map = ControlMap.TEXT_EDITOR
                 } else {
                     InputManager.textHandler = null
+                    InputManager.map = ControlMap.DEFAULT
                     currentIndex = -1
                     cursorFlash = false
                     cursorFlashTicks = -1
@@ -67,7 +74,7 @@ class GUITextInputField(parent: RootGUIElement, name: String,
     var autocompleteMenu = GUIAutocompleteMenu(this)
 
     init {
-        InputManager.registerControlPressHandler(this, ControlPressHandlerType.SCREEN_THIS, Control.PASTE_FROM_CLIPBOARD, Control.COPY_TO_CLIPBOARD, Control.CUT_TO_CLIPBOARD)
+        InputManager.registerControlPressHandler(this, ControlPressHandlerType.SCREEN_THIS, ControlMap.TEXT_EDITOR)
     }
 
     override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
@@ -86,44 +93,53 @@ class GUITextInputField(parent: RootGUIElement, name: String,
             negativeFlashOutline()
         } else {
             val currentWord = text.split(' ').lastOrNull()?.trim()
-            if(currentWord != null && currentWord.length > CHARS_BEFORE_AUTOCOMPLETE) {
+            if (currentWord != null && currentWord.length > CHARS_BEFORE_AUTOCOMPLETE) {
                 val options = autocompleteMenu.getPossibleOptions(currentWord)
                 println(options)
             }
         }
     }
 
-    override fun handleSpecialKey(s: SpecialChar) {
-        when (s) {
-            SpecialChar.ESCAPE -> selected = false
-            SpecialChar.ENTER -> {
-                onPressEnter(text.toString())
-                positiveFlashOutline()
-            }
-            SpecialChar.BACKSPACE -> delete(1)
-            SpecialChar.LEFT -> currentIndex = Math.max(0, currentIndex - 1)
-            SpecialChar.RIGHT -> currentIndex = Math.min(text.length, currentIndex + 1)
-            SpecialChar.DOWN -> currentIndex = Math.min(text.length, currentIndex + widthChars)
-            SpecialChar.UP -> currentIndex = Math.max(0, currentIndex - widthChars)
-        }
-    }
-
     override fun handleControlPress(p: ControlPress) {
-        if(p.pressType == PressType.PRESSED) {
-            if(p.control == Control.PASTE_FROM_CLIPBOARD) {
-                val data = Toolkit.getDefaultToolkit()
-                        .systemClipboard.getData(DataFlavor.stringFlavor).toString()
-                insert(data)
+        if (p.pressType == PressType.PRESSED) {
+            when (p.control) {
+                Control.PASTE_FROM_CLIPBOARD -> {
+                    val data = Toolkit.getDefaultToolkit()
+                            .systemClipboard.getData(DataFlavor.stringFlavor).toString()
+                    insert(data)
+                }
+                Control.ESCAPE -> {
+                    selected = false
+                }
+                Control.SUBMIT -> {
+                    onPressEnter(text.toString())
+                    positiveFlashOutline()
+                }
+                Control.DELETE -> {
+                    delete(1)
+                }
+                Control.CURSOR_LEFT -> {
+                    currentIndex = Math.max(0, currentIndex - 1)
+                }
+                Control.CURSOR_RIGHT -> {
+                    currentIndex = Math.min(text.length, currentIndex + 1)
+                }
+                Control.CURSOR_DOWN -> {
+                    currentIndex = Math.min(text.length, currentIndex + widthChars)
+                }
+                Control.CURSOR_UP -> {
+                    currentIndex = Math.max(0, currentIndex - widthChars)
+                }
             }
         }
     }
 
-    fun getIndex(xPixel: Int, yPixel: Int): Int {
+    private fun getIndex(xPixel: Int, yPixel: Int): Int {
         val relX = xPixel - this.xPixel - 2
         val relY = yPixel - this.yPixel - 2
         val charWidth = TextManager.getFont().charWidth
         val charHeight = TextManager.getFont().charHeight
-        return Math.max(0, (relY / charHeight) * widthChars + relX / charWidth)
+        return Math.max(0, Numbers.ceil((relY / charHeight) * widthChars + relX / charWidth))
     }
 
     fun insert(s: String): Boolean {
@@ -184,18 +200,21 @@ class GUITextInputField(parent: RootGUIElement, name: String,
     override fun render() {
         val charWidth = TextManager.getFont().charWidth
         val charHeight = TextManager.getFont().charHeight
-        Renderer.renderEmptyRectangle(xPixel - 1, yPixel - 1, widthPixels + 2, heightPixels + 2, if (outlineFlashTicks == -1) OUTLINE_COLOR else if (positiveFlash) OUTLINE_POS_FLASH_COLOR else OUTLINE_NEG_FLASH_COLOR)
-        Renderer.renderFilledRectangle(xPixel, yPixel, widthPixels, heightPixels, BOX_COLOR)
+        val oldColor = localRenderParams.color
+        localRenderParams.color.mul(toColor(if (outlineFlashTicks == -1) OUTLINE_COLOR else if (positiveFlash) OUTLINE_POS_FLASH_COLOR else OUTLINE_NEG_FLASH_COLOR))
+        Renderer.renderEmptyRectangle(xPixel - 1, yPixel - 1, widthPixels + 2, heightPixels + 2, params = localRenderParams)
+        localRenderParams.color = oldColor.cpy().mul(toColor(BOX_COLOR))
+        Renderer.renderFilledRectangle(xPixel, yPixel, widthPixels, heightPixels, localRenderParams)
         // asssume that this will be ok
         if (text.isEmpty()) {
-            Renderer.renderText(prompt, xPixel + 1, yPixel + 1, TextRenderParams(color = PROMPT_COLOR), true)
+            Renderer.renderText(prompt, xPixel + 1, yPixel + 1, TextRenderParams(color = oldColor.cpy().mul(toColor(PROMPT_COLOR))), true)
         } else {
             for ((index, line) in lines.withIndex()) {
-                Renderer.renderText(line, xPixel + 1, yPixel + 1 + ((charHeight + LINE_SPACING) * index), TextRenderParams(color = TEXT_COLOR), true)
+                Renderer.renderText(line, xPixel + 1, yPixel + 1 + Numbers.ceil((charHeight + LINE_SPACING) * index), TextRenderParams(color = oldColor.cpy().mul(toColor(TEXT_COLOR))), true)
             }
         }
         if (selected && cursorFlash) {
-            Renderer.renderFilledRectangle(xPixel + charWidth * (currentIndex % widthChars), yPixel + ((currentIndex / widthChars) * (charHeight + 1)), 1, charHeight + 2, color = TEXT_COLOR)
+            Renderer.renderFilledRectangle(xPixel + Numbers.ceil(charWidth * (currentIndex % widthChars)), yPixel + Numbers.ceil((currentIndex / widthChars) * (charHeight + 1)), 1, Numbers.ceil(charHeight) + 2, TextureRenderParams(color = oldColor.cpy().mul(toColor(TEXT_COLOR))))
         }
     }
 

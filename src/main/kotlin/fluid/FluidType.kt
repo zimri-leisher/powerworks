@@ -1,5 +1,6 @@
 package fluid
 
+import com.badlogic.gdx.graphics.Color
 import graphics.Image
 import item.IngotItemType
 import resource.ResourceCategory
@@ -12,7 +13,7 @@ open class FluidType(initializer: FluidType.() -> Unit = {}) : ResourceType() {
     override var icon = Image.Misc.ERROR
     override var name = "Error"
 
-    var color: Int = 0xFFFFFF
+    var color = Color(0f, 0f, 0f, 1f)
 
     init {
         ALL.add(this)
@@ -37,14 +38,14 @@ class MoltenOreFluidType(initializer: MoltenOreFluidType.() -> Unit) : FluidType
     companion object {
         val MOLTEN_IRON = MoltenOreFluidType {
             name = "Molten Iron"
-            color = 0xF8D700
+            color.set(0xF8D700)
             icon = Image.Fluid.MOLTEN_IRON
             ingot = IngotItemType.IRON_INGOT
         }
 
         val MOLTEN_COPPER = MoltenOreFluidType {
             name = "Molten Copper"
-            color = 0XF8D000
+            color.set(0XF8D000)
             icon = Image.Fluid.MOLTEN_COPPER
             ingot = IngotItemType.COPPER_INGOT
         }

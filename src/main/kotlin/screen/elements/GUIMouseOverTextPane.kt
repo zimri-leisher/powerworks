@@ -1,8 +1,8 @@
 package screen.elements
 
 class GUIMouseOverTextPane(parent: RootGUIElement, name: String,
-                           xAlignment: () -> Int, yAlignment: () -> Int,
-                           widthAlignment: () -> Int, heightAlignment: () -> Int,
+                           xAlignment: Alignment, yAlignment: Alignment,
+                           widthAlignment: Alignment, heightAlignment: Alignment,
                            text: String,
                            open: Boolean = false,
                            layer: Int = parent.layer + 1) :

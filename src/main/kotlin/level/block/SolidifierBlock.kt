@@ -2,7 +2,7 @@ package level.block
 
 import fluid.FluidTank
 import fluid.MoltenOreFluidType
-import io.*
+import io.PressType
 import item.Inventory
 import resource.ResourceContainer
 import resource.ResourceContainerChangeListener
@@ -22,8 +22,8 @@ class SolidifierBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(Mach
     }
 
     override fun onContainerChange(container: ResourceContainer<*>, resource: ResourceType, quantity: Int) {
-        if(container == tank) {
-            if(tank.currentAmount > 0) {
+        if (container == tank) {
+            if (tank.currentAmount > 0) {
                 currentlySolidifying = tank.currentFluidType!! as MoltenOreFluidType
                 on = true
             } else {
@@ -34,23 +34,26 @@ class SolidifierBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(Mach
     }
 
     override fun onContainerClear(container: ResourceContainer<*>) {
-        if(container == tank)
-            currentlySolidifying = null; on = false; currentWork = 0
+        if (container == tank) {
+            currentlySolidifying = null
+            on = false
+            currentWork = 0
+        }
     }
 
     override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
-        if(type == PressType.PRESSED) {
+        if (type == PressType.PRESSED) {
             gui.toggle()
         }
     }
 
     override fun onFinishWork() {
-        if(out.add(currentlySolidifying!!.ingot)) {
-            if(tank.remove(currentlySolidifying!!)) {
+        if (out.add(currentlySolidifying!!.ingot)) {
+            if (tank.remove(currentlySolidifying!!)) {
                 nodes.output(currentlySolidifying!!.ingot, 1)
             }
         }
-        if(tank.currentAmount == 0) {
+        if (tank.currentAmount == 0) {
             currentlySolidifying = null
         }
     }

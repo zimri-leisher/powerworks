@@ -19,8 +19,8 @@ class GUIResourceDisplaySlot(parent: RootGUIElement, name: String, xPixel: Int, 
     }
 
     companion object {
-        val WIDTH = 16
-        val HEIGHT = 16
+        const val WIDTH = 16
+        const val HEIGHT = 16
 
         init {
             Tooltips.addScreenTooltipTemplate({

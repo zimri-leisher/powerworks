@@ -1,10 +1,10 @@
 package level.tube
 
+import com.badlogic.gdx.graphics.g2d.TextureRegion
 import graphics.Image.Block
-import graphics.Texture
 import graphics.ImageCollection as Col
 
-enum class TubeState(val texture: Texture, val connections: Array<Boolean>, val closedEnds: Array<Boolean> = arrayOf(false, false, false, false)) {
+enum class TubeState(val texture: TextureRegion, val connections: Array<Boolean>, val closedEnds: Array<Boolean> = arrayOf(false, false, false, false)) {
     NONE(Block.TUBE_2_WAY_VERTICAL, arrayOf(
             false, false, false, false
     ), arrayOf(
@@ -13,7 +13,7 @@ enum class TubeState(val texture: Texture, val connections: Array<Boolean>, val 
     UP_ONLY(Block.TUBE_2_WAY_VERTICAL, arrayOf(
             true, false, false, false
     ), arrayOf(
-           false, false, true, false
+            false, false, true, false
     )),
     RIGHT_ONLY(Block.TUBE_2_WAY_HORIZONTAL, arrayOf(
             false, true, false, false
@@ -85,6 +85,7 @@ enum class TubeState(val texture: Texture, val connections: Array<Boolean>, val 
                 RIGHT_DOWN,
                 DOWN_LEFT,
                 LEFT_UP);
+
         operator fun contains(t: TubeState): Boolean {
             return states.contains(t)
         }

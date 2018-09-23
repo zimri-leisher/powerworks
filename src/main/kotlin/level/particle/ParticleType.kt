@@ -1,10 +1,10 @@
 package level.particle
 
+import com.badlogic.gdx.graphics.g2d.TextureRegion
 import graphics.Image
-import graphics.Texture
 
 class ParticleType(initializer: ParticleType.() -> Unit) {
-    var texture: Texture = Image.Misc.ERROR
+    var texture: TextureRegion = Image.Misc.ERROR
     /**
      * The minimum amount of ticks this particle can last until being removed from the level
      */

@@ -9,7 +9,7 @@ class ModPermissionsPolicy : Policy() {
 
     override fun getPermissions(codesource: CodeSource?): PermissionCollection {
         val p = Permissions()
-        if(codesource != null) {
+        if(codesource != null && codesource.location != null) {
             if (codesource.location.path == Game.JAR_PATH) {
                 p.add(AllPermission())
             }

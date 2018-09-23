@@ -15,6 +15,6 @@ class GUIOutline(parent: RootGUIElement,
     }
 
     override fun render() {
-        Renderer.renderEmptyRectangle(xPixel, yPixel, widthPixels, heightPixels, borderThickness = borderThickness)
+        Renderer.renderEmptyRectangle(xPixel, yPixel, widthPixels, heightPixels, borderThickness = borderThickness.toFloat())
     }
 }

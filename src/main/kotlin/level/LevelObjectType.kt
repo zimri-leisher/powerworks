@@ -25,7 +25,7 @@ open class LevelObjectType<T : LevelObject>(initializer: LevelObjectType<T>.() -
         val ERROR = LevelObjectType<LevelObject>()
 
         val DROPPED_ITEM = LevelObjectType<DroppedItem> {
-            // default to ERROR item type because this should not be used technically. Instead, instantiate the actual class with the given item type
+            // Instead, instantiate the actual class with the given item type. TODO fix this, this is bad - what to do?
             instantiate = { _, _, _ -> throw Exception("Don't use the LevelObjectType.DROPPED_ITEM.instantiate function") }
             hitbox = Hitbox.DROPPED_ITEM
         }

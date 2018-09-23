@@ -6,9 +6,10 @@ import graphics.Renderer
 import level.Level
 import level.block.Block
 import level.block.BlockType
-import level.tube.TubeBlock
 import main.DebugCode
 import main.Game
+import main.heightPixels
+import main.widthPixels
 import misc.GeometryHelper
 import misc.GeometryHelper.getOppositeAngle
 import misc.GeometryHelper.getXSign
@@ -40,9 +41,9 @@ class PipeBlock(xTile: Int, yTile: Int) : Block(BlockType.PIPE, xTile, yTile) {
     }
 
     override fun onAdjacentBlockAdd(b: Block) {
-        // If it is a tube block, its onAddToLevel() event will call updateConnections() which will do the connecting for us,
+        // If it is a pipe block, its onAddToLevel() event will call updateConnections() which will do the connecting for us,
         // so no need to worry about us doing it for them
-        if (b !is TubeBlock) {
+        if (b !is PipeBlock) {
             val dir = GeometryHelper.getDir(b.xTile - xTile, b.yTile - yTile)
             if (dir != -1) {
                 updateNodeConnections(dir)
@@ -67,7 +68,7 @@ class PipeBlock(xTile: Int, yTile: Int) : Block(BlockType.PIPE, xTile, yTile) {
     }
 
     private fun mergeGroups(t: PipeBlock) {
-        if(t.group == group)
+        if (t.group == group)
             return
         if (t.group.size > group.size) {
             t.group.merge(group)
@@ -84,12 +85,12 @@ class PipeBlock(xTile: Int, yTile: Int) : Block(BlockType.PIPE, xTile, yTile) {
     }
 
     fun updateConnection(dir: Int) {
-        updateTubeConnection(dir)
+        updatePipeConnection(dir)
         updateNodeConnections(dir)
     }
 
-    fun updateTubeConnection(dir: Int) {
-        // If there is a node connection, and tubes can't have nodes connecting to other tubes, then no need to check
+    fun updatePipeConnection(dir: Int) {
+        // If there is a node connection, and pipes can't have nodes connecting to other pipes, then no need to check
         if (nodeConnections[dir].isEmpty()) {
             val new = getPipeAt(dir)
             // Don't do anything if there was no change
@@ -105,7 +106,7 @@ class PipeBlock(xTile: Int, yTile: Int) : Block(BlockType.PIPE, xTile, yTile) {
     }
 
     fun updateNodeConnections(dir: Int) {
-        // If there is a node connection, and tubes can't have nodes connecting to other tubes, then no need to check
+        // If there is a node connection, and pipes can't have nodes connecting to other pipes, then no need to check
         if (pipeConnections[dir] == null) {
             // Get all nodes that could possibly disconnect to a node if placed here
             val nodes = Level.ResourceNodes.getAll<FluidType>(xTile + getXSign(dir), yTile + getYSign(dir), ResourceCategory.FLUID, { isOppositeAngle(it.dir, dir) })
@@ -137,17 +138,17 @@ class PipeBlock(xTile: Int, yTile: Int) : Block(BlockType.PIPE, xTile, yTile) {
     }
 
     override fun render() {
-        Renderer.renderTexture(state.texture, xPixel, yPixel - 2)
+        Renderer.renderTexture(state.texture, xPixel, yPixel + 18)
         if (closedEnds[0])
-            Renderer.renderTexture(Image.Block.PIPE_UP_CLOSE, xPixel + 4, yPixel - Image.Block.PIPE_UP_CLOSE.heightPixels - 2)
+            Renderer.renderTexture(Image.Block.PIPE_UP_CLOSE, xPixel + 4, yPixel + 18)
         if (closedEnds[1])
-            Renderer.renderTexture(Image.Block.PIPE_RIGHT_CLOSE, xPixel + 16, yPixel + 2)
+            Renderer.renderTexture(Image.Block.PIPE_RIGHT_CLOSE, xPixel + 16, yPixel + (16 - Image.Block.PIPE_RIGHT_CLOSE.heightPixels) / 2)
         if (closedEnds[2])
-            Renderer.renderTexture(Image.Block.PIPE_DOWN_CLOSE, xPixel + 4, yPixel + 10)
+            Renderer.renderTexture(Image.Block.PIPE_DOWN_CLOSE, xPixel + 4, yPixel - (6 - Image.Block.PIPE_DOWN_CLOSE.heightPixels))
         if (closedEnds[3])
-            Renderer.renderTexture(Image.Block.PIPE_LEFT_CLOSE, xPixel - Image.Block.PIPE_LEFT_CLOSE.widthPixels, yPixel + 2)
-        if(nodeConnections[0].isNotEmpty())
-            Renderer.renderTexture(Image.Block.PIPE_UP_CONNECT, xPixel + 4, yPixel - Image.Block.PIPE_UP_CONNECT.heightPixels - 1)
+            Renderer.renderTexture(Image.Block.PIPE_LEFT_CLOSE, xPixel - Image.Block.PIPE_LEFT_CLOSE.widthPixels, yPixel + (16 - Image.Block.PIPE_LEFT_CLOSE.heightPixels) / 2)
+        if (nodeConnections[0].isNotEmpty())
+            Renderer.renderTexture(Image.Block.PIPE_UP_CONNECT, xPixel + 4, yPixel + 17)
         if (Game.currentDebugCode == DebugCode.RENDER_HITBOXES)
             renderHitbox()
     }

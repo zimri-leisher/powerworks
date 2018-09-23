@@ -1,27 +1,22 @@
 package graphics
 
+import com.badlogic.gdx.graphics.Color
+
 data class TextureRenderParams(
-                    /**
-                     * The amount to scale width and height
-                     */
-                    var scale: Float = 1.0f,
-                    /**
-                     * The amount to scale width
-                     */
-                    var scaleWidth: Float = 1.0f,
-                    /**
-                     * The amount to scale height
-                     */
-                    var scaleHeight: Float = 1.0f,
-                    /**
-                     * The alpha multiplier
-                     */
-                    var alpha: Float = 1.0f,
-                    /**
-                     * Degrees rotation
-                     */
-                    var rotation: Int = 0) {
+        /**
+         * The amount to scale the x axis. This will scale from the origin of the rendered texture
+         */
+        var scaleX: Float = 1.0f,
+        /**
+         * The amount to scale the y axis. This will scale from the origin of the rendered texture
+         */
+        var scaleY: Float = 1.0f,
+        var color: Color = Color(1f, 1f, 1f, 1f),
+        /**
+         * Degrees rotation
+         */
+        var rotation: Float = 0f) {
     fun combine(other: TextureRenderParams): TextureRenderParams {
-        return TextureRenderParams(scale * other.scale, scaleWidth * other.scaleWidth, scaleHeight * other.scaleHeight, alpha * other.alpha,(rotation + other.rotation) % 360)
+        return TextureRenderParams(scaleX * other.scaleX, scaleY * other.scaleY, color.mul(other.color), (rotation + other.rotation) % 360)
     }
 }

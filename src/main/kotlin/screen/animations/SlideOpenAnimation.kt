@@ -3,7 +3,7 @@ package screen.animations
 import main.Game
 import screen.elements.GUIWindow
 
-class SlideOpenAnimation(subject: GUIWindow) : GUIAnimation<GUIWindow>(subject) {
+class SlideOpenAnimation(subject: GUIWindow, val closeOnFinish: GUIWindow) : GUIAnimation<GUIWindow>(subject) {
 
     private val move = MoveToAnimation(subject, 0, 0)
 
@@ -22,5 +22,6 @@ class SlideOpenAnimation(subject: GUIWindow) : GUIAnimation<GUIWindow>(subject) 
     }
 
     override fun onStop() {
+        closeOnFinish.open = false
     }
 }

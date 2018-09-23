@@ -3,16 +3,13 @@ package screen
 import data.ConcurrentlyModifiableMutableList
 import data.ConcurrentlyModifiableWeakMutableList
 import data.WeakMutableList
-import graphics.Renderer
 import io.*
-import main.Game
 import misc.GeometryHelper
 import screen.animations.GUIAnimation
 import screen.elements.GUIElement
 import screen.elements.GUIWindow
 import screen.elements.RootGUIElement
 import screen.mouse.Mouse
-import java.awt.Rectangle
 
 object ScreenManager : ControlPressHandler {
 
@@ -59,12 +56,12 @@ object ScreenManager : ControlPressHandler {
     }
 
     init {
-        InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.INTERACT, Control.SHIFT_INTERACT, Control.ALT_INTERACT, Control.CONTROL_INTERACT, Control.SCROLL_UP, Control.SCROLL_DOWN, Control.SECONDARY_INTERACT)
+        InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.Group.INTERACTION)
     }
 
     fun render() {
         _backwardsWindowGroups.forEach {
-            it.windows.forEach {
+            it.windows.sortedBy { -it.layer }.forEach {
                 it.openChildren.forEach {
                     if (it.autoRender)
                         it.render()
@@ -118,7 +115,6 @@ object ScreenManager : ControlPressHandler {
         windows.forEach {
             it.alignments.update()
         }
-        Renderer.defaultClip = Rectangle(Game.WIDTH * Game.SCALE, Game.HEIGHT * Game.SCALE)
     }
 
     fun updateSelected() {
@@ -152,7 +148,7 @@ object ScreenManager : ControlPressHandler {
         }
     }
 
-    // TODO update screen control handlers by going through the selected elements. if one is part of the level, add the gui view under it to the screen handler
+    // TODO update screen control handlers by going through the selected elements. if one is part of the level, add the gui view under it to the screen handler - find out if this has been done?
 
     private fun forEachElement(func: ((GUIElement) -> Unit), pred: ((GUIElement) -> Boolean)? = null) {
         windows.forEach { it.children.forEach { recursivelyCall(it, func, pred) } }

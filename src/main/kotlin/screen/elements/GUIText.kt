@@ -7,7 +7,7 @@ import graphics.text.TextRenderParams
 
 class GUIText(parent: RootGUIElement,
               name: String,
-              xAlignment: () -> Int, yAlignment: () -> Int,
+              xAlignment: Alignment, yAlignment: Alignment,
               text: Any?,
               val renderParams: TextRenderParams = TextRenderParams(),
               allowTags: Boolean = false,

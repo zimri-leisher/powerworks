@@ -8,7 +8,9 @@ import data.GameDirectoryIdentifier
 import graphics.Image
 import graphics.Renderer
 import graphics.TextureRenderParams
-import io.*
+import io.ControlPressHandler
+import io.InputManager
+import io.MouseMovementListener
 import item.ItemType
 import level.block.Block
 import level.block.GhostBlock
@@ -84,7 +86,6 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
         }
     }
 
-    // TODO come up with final solution for this - make a new type of level object?
     /**
      * The level object which the mouse is over, if two are on top of each other, it picks the first moving object, then the block.
      * Note tha, unlike ScreenManager.selectedElement, this isn't the last element clicked on.
@@ -185,15 +186,6 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
                     }
             }
         }
-        if (selectedLevelObject != null && ghostBlock == null) {
-            val s = selectedLevelObject!!
-            if (r.contains(s.xPixel, s.yPixel)) {
-                if (s is Block)
-                    Renderer.renderEmptyRectangle(s.xPixel, s.yPixel, s.type.widthTiles shl 4, s.type.heightTiles shl 4, 0x1A6AF4, TextureRenderParams(alpha = .45f))
-                else if (s is MovingObject)
-                    Renderer.renderEmptyRectangle(s.xPixel, s.yPixel, s.hitbox.width, s.hitbox.height, 0x1A6AF4, TextureRenderParams(alpha = .45f))
-            }
-        }
 
         TubeBlockGroup.render()
         Tool.render()
@@ -209,9 +201,11 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
         if (Game.currentDebugCode == DebugCode.CHUNK_INFO) {
             for (c in chunksInTileRectangle) {
                 Renderer.renderEmptyRectangle(c.xTile shl 4, c.yTile shl 4, CHUNK_SIZE_PIXELS, CHUNK_SIZE_PIXELS)
-                Renderer.renderText("x: ${c.xChunk}, y: ${c.yChunk}", (c.xTile shl 4), (c.yTile shl 4))
-                Renderer.renderText("updates required: ${c.updatesRequired!!.size}", (c.xTile shl 4), (c.yTile shl 4) + 4)
-                Renderer.renderText("moving objects: ${c.moving!!.size} (${c.movingOnBoundary!!.size} on boundary)", (c.xTile shl 4), (c.yTile shl 4) + 8)
+                Renderer.renderText(
+                        "x: ${c.xChunk}, y: ${c.yChunk}\n" +
+                                "updates required: ${c.updatesRequired!!.size}\n" +
+                                "moving objects: ${c.moving!!.size} (${c.movingOnBoundary!!.size} on boundary)",
+                        c.xTile shl 4, c.yTile shl 4)
             }
         }
     }
@@ -237,10 +231,10 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
         val xSign = GeometryHelper.getXSign(n.dir)
         val ySign = GeometryHelper.getYSign(n.dir)
         if (n.allowOut) {
-            Renderer.renderTexture(Image.Misc.THIN_ARROW, (n.xTile shl 4) + 4 + 8 * xSign, (n.yTile shl 4) + 4 + 8 * ySign, TextureRenderParams(rotation = 90 * n.dir))
+            Renderer.renderTexture(Image.Misc.THIN_ARROW, (n.xTile shl 4) + 4 + 8 * xSign, (n.yTile shl 4) + 4 + 8 * ySign, TextureRenderParams(rotation = 90f * n.dir))
         }
         if (n.allowIn) {
-            Renderer.renderTexture(Image.Misc.THIN_ARROW, (n.xTile shl 4) + 4 + 8 * xSign, (n.yTile shl 4) + 4 + 8 * ySign, TextureRenderParams(rotation = 90 * GeometryHelper.getOppositeAngle(n.dir)))
+            Renderer.renderTexture(Image.Misc.THIN_ARROW, (n.xTile shl 4) + 4 + 8 * xSign, (n.yTile shl 4) + 4 + 8 * ySign, TextureRenderParams(rotation = 90f * GeometryHelper.getOppositeAngle(n.dir)))
         }
     }
 
@@ -609,7 +603,7 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
             return null
         }
 
-        // TODO do this async
+        // TODO use async for stuff like this?
         fun doesPairCollide(l: LevelObject, xPixel: Int = l.xPixel, yPixel: Int = l.yPixel, l2: LevelObject, xPixel2: Int = l2.xPixel, yPixel2: Int = l2.yPixel): Boolean {
             return GeometryHelper.intersects(xPixel + l.hitbox.xStart, yPixel + l.hitbox.yStart, l.hitbox.width, l.hitbox.height, xPixel2 + l2.hitbox.xStart, yPixel2 + l2.hitbox.yStart, l2.hitbox.width, l2.hitbox.height)
         }
@@ -633,13 +627,17 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
             } else if (l is MovingObject) {
                 if (l is DroppedItem) {
                     // get nearest dropped item of the same type that is not a full stack
-                    val d = DroppedItems.getInRadius(l.xPixel, l.yPixel, DROPPED_ITEM_PICK_UP_RANGE, { it.itemType == l.itemType && it.quantity < it.itemType.maxStack }).maxBy { it.quantity }
+                    val d = DroppedItems.getInRadius(l.xPixel, l.yPixel, DROPPED_ITEM_PICK_UP_RANGE) { it.itemType == l.itemType && it.quantity < it.itemType.maxStack }.maxBy { it.quantity }
                     if (d != null) {
                         if (d.quantity + l.quantity <= l.itemType.maxStack) {
                             d.quantity += l.quantity
                             // dont set in level because it was never technically called into existence
                             return true
                         } else {
+                            // if we won't be able to finish off the rest of the stack
+                            if(l.getCollision(l.xPixel, l.yPixel) != null) {
+                                return false
+                            }
                             l.quantity -= (l.itemType.maxStack - d.quantity)
                             d.quantity = l.itemType.maxStack
                         }

@@ -9,7 +9,7 @@ import screen.mouse.Mouse
 
 class GUIDragGrip(parent: RootGUIElement,
                   name: String,
-                  xAlignment: () -> Int, yAlignment: () -> Int,
+                  xAlignment: Alignment, yAlignment: Alignment,
                   open: Boolean = false,
                   layer: Int = parent.layer + 1,
                   val actOn: GUIWindow,

@@ -47,9 +47,9 @@ class LevelViewWindow(name: String,
         val c = p.control
         val m = camera as MovingObject
         if (c == Control.UP) {
-            m.yVel -= CAMERA_SPEED
-        } else if (c == Control.DOWN) {
             m.yVel += CAMERA_SPEED
+        } else if (c == Control.DOWN) {
+            m.yVel -= CAMERA_SPEED
         } else if (c == Control.RIGHT) {
             m.xVel += CAMERA_SPEED
         } else if (c == Control.LEFT) {

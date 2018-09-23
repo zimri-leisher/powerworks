@@ -7,4 +7,6 @@ object Numbers {
     fun max(vararg nums: Int) = nums.max()!!
 
     fun sign(num: Int) = if(num < 0) -1 else 1
+
+    fun ceil(f: Float) = f.toInt() + 1
 }

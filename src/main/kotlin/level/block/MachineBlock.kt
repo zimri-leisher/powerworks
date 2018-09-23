@@ -2,7 +2,6 @@ package level.block
 
 import audio.AudioManager
 import audio.AudioManager.SoundSource
-import graphics.LocalAnimation
 
 abstract class MachineBlock(override val type: MachineBlockType<out MachineBlock>, xTile: Int, yTile: Int, rotation: Int, on: Boolean = type.defaultOn) : Block(type, xTile, yTile, rotation) {
 
@@ -13,16 +12,10 @@ abstract class MachineBlock(override val type: MachineBlockType<out MachineBlock
                 onTurnOff()
                 if(currentSound != null)
                     currentSound!!.playing = false
-                if (texture.texture is LocalAnimation) {
-                    texture.texture.playing = false
-                }
             } else if (value && !field) {
                 onTurnOn()
                 if(currentSound == null && type.onSound != null) {
                     AudioManager.play(type.onSound!!, xPixel, yPixel, true)
-                }
-                if (texture.texture is LocalAnimation) {
-                    texture.texture.playing = true
                 }
             }
             field = value

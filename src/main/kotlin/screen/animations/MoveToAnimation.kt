@@ -10,10 +10,6 @@ class MoveToAnimation(subject: RootGUIElement, val xDest: Int, val yDest: Int, v
     var yOffset = 0f
     var ticks = 0
 
-    init {
-
-    }
-
     override fun onStart() {
         val xDist = xDest - subject.alignments.x()
         val yDist = yDest - subject.alignments.y()
@@ -34,7 +30,6 @@ class MoveToAnimation(subject: RootGUIElement, val xDest: Int, val yDest: Int, v
         }
         xOffset += xVel
         yOffset += yVel
-        println("$xOffset, $yOffset")
         subject.alignments.update()
         ticks++
     }
@@ -47,5 +42,4 @@ class MoveToAnimation(subject: RootGUIElement, val xDest: Int, val yDest: Int, v
             y = { yDest }
         }
     }
-
 }

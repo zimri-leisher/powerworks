@@ -1,5 +1,7 @@
 buildscript {
-    ext.kotlin_version = '1.2.50'
+    ext.kotlin_version = '1.2.61'
+    ext.lwjglVersion = "3.0.0a"
+    ext.gdxVersion = '1.9.8'
 
     repositories {
         mavenCentral()
@@ -12,7 +14,7 @@ buildscript {
 
 plugins {
     id 'java'
-    id "org.jetbrains.kotlin.jvm" version "1.2.50"
+    id "org.jetbrains.kotlin.jvm" version "1.2.61"
 }
 
 version '1.0'
@@ -20,12 +22,19 @@ version '1.0'
 repositories {
     mavenCentral()
     maven { url 'https://jitpack.io' }
+    maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
 }
 
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
     compile 'org.jetbrains.kotlinx:kotlinx-coroutines-core:0.22.5'
     compile 'com.github.philfrei:AudioCue:-SNAPSHOT'
+    compile "com.badlogicgames.gdx:gdx:$gdxVersion"
+    compile "com.badlogicgames.gdx:gdx-backend-lwjgl:$gdxVersion"
+    compile "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+    //compile "com.badlogicgames.gdx:gdx-tools:$gdxVersion"
+    compile "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
+    compile "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-desktop"
 }
 
 sourceSets {

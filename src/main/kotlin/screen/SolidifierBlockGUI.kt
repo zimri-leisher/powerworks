@@ -22,7 +22,7 @@ class SolidifierBlockGUI(val block: SolidifierBlock) : GUIWindow("GUI window for
     }
 
     companion object {
-        val WIDTH = CraftingBlockGUI.WIDTH
+        val WIDTH = CrafterBlockGUI.WIDTH
         val HEIGHT = 60
     }
 }
