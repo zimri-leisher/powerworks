@@ -1,5 +1,6 @@
 package screen.elements
 
+import com.badlogic.gdx.Input
 import crafting.Recipe
 import io.PressType
 import screen.RecipeSelectorGUI
@@ -38,7 +39,7 @@ class GUIRecipeButton(parent: RootGUIElement,
     }
 
     override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
-        if (type == PressType.PRESSED && button == 1) {
+        if (type == PressType.PRESSED && button == Input.Buttons.LEFT) {
             RecipeSelectorGUI.open = true
             RecipeSelectorGUI.windowGroup.bringToTop(RecipeSelectorGUI)
             waitingForRecipeSelection = true

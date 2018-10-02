@@ -18,11 +18,11 @@ import resource.ResourceCategory
 import resource.ResourceNode
 
 open class BlockType<T : Block>(initializer: BlockType<T>.() -> Unit = {}) : LevelObjectType<T>() {
-
     var textures = LevelObjectTextures(LevelObjectTexture(Image.Misc.ERROR))
     var name = "Error"
     var widthTiles = 1
     var heightTiles = 1
+
     var nodesTemplate = BlockNodesTemplate.NONE
 
     init {
@@ -32,9 +32,12 @@ open class BlockType<T : Block>(initializer: BlockType<T>.() -> Unit = {}) : Lev
         ALL.add(this)
     }
 
+    protected fun template(closure: () -> List<ResourceNode<*>>) = BlockNodesTemplate(widthTiles, heightTiles, closure())
+
     override fun toString() = name
 
     companion object {
+
         val ALL = mutableListOf<BlockType<*>>()
 
         val ERROR = BlockType<DefaultBlock>()
@@ -44,17 +47,16 @@ open class BlockType<T : Block>(initializer: BlockType<T>.() -> Unit = {}) : Lev
             textures = LevelObjectTextures(LevelObjectTexture(Image.Block.TUBE_2_WAY_VERTICAL))
             instantiate = { xPixel, yPixel, _ -> TubeBlock(xPixel shr 4, yPixel shr 4) }
         }
-
         val PIPE = BlockType<PipeBlock> {
             name = "Pipe"
             textures = LevelObjectTextures(LevelObjectTexture(Image.Block.PIPE_2_WAY_VERTICAL))
             instantiate = { xPixel, yPixel, _ -> PipeBlock(xPixel shr 4, yPixel shr 4) }
         }
     }
+
 }
 
 open class MachineBlockType<T : MachineBlock>(initializer: MachineBlockType<T>.() -> Unit = {}) : BlockType<T>() {
-
     /**
      * Power consumption multiplier, inverse of this
      */
@@ -63,6 +65,7 @@ open class MachineBlockType<T : MachineBlock>(initializer: MachineBlockType<T>.(
     var maxWork = 200
     var loop = true
     var onSound: Sound? = null
+
     var defaultOn = false
 
     init {
@@ -71,19 +74,20 @@ open class MachineBlockType<T : MachineBlock>(initializer: MachineBlockType<T>.(
     }
 
     companion object {
+
         val MINER = MachineBlockType<MinerBlock> {
             name = "Miner"
             instantiate = { xPixel, yPixel, rotation -> MinerBlock(xPixel shr 4, yPixel shr 4, rotation) }
-            textures = LevelObjectTextures(LevelObjectTexture(Animation.MINER[0], yPixelOffset = 32))
+            textures = LevelObjectTextures(LevelObjectTexture(Animation.MINER[0]))
             widthTiles = 2
             heightTiles = 2
             hitbox = Hitbox.TILE2X2
             defaultOn = true
-            nodesTemplate = BlockNodesTemplate(widthTiles, heightTiles) {
-                val internalInventory = Inventory(1, 1)
-                internalInventory.additionRule = { _, _ -> internalInventory.totalQuantity < 1 }
+            val internalInventory = Inventory(1, 1)
+            internalInventory.additionRule = { _, _ -> internalInventory.totalQuantity < 1 }
+            nodesTemplate = template {
                 listOf(
-                        ResourceNode(0, heightTiles, 0, ResourceCategory.ITEM, false, true, internalInventory)
+                        ResourceNode(0, 1, 0, ResourceCategory.ITEM, false, true, internalInventory)
                 )
             }
         }
@@ -94,7 +98,7 @@ open class MachineBlockType<T : MachineBlock>(initializer: MachineBlockType<T>.(
             widthTiles = 3
             heightTiles = 3
             hitbox = Hitbox.TILE2X2
-            nodesTemplate = BlockNodesTemplate(widthTiles, heightTiles) {
+            nodesTemplate = template {
                 val internalInventory = Inventory(1, 1)
                 listOf(
                         ResourceNode(0, 0, 0, ResourceCategory.ITEM, true, false, internalInventory)
@@ -107,10 +111,10 @@ open class MachineBlockType<T : MachineBlock>(initializer: MachineBlockType<T>.(
             instantiate = { xPixel, yPixel, rotation -> FurnaceBlock(this, xPixel shr 4, yPixel shr 4, rotation) }
             widthTiles = 2
             requiresUpdate = true
-            textures = LevelObjectTextures(LevelObjectTexture(Image.Block.FURNACE, yPixelOffset = 18))
+            textures = LevelObjectTextures(LevelObjectTexture(Image.Block.FURNACE))
             loop = true
             hitbox = Hitbox.TILE2X1
-            nodesTemplate = BlockNodesTemplate(widthTiles, heightTiles) {
+            nodesTemplate = template {
                 val internalInventory = Inventory(1, 1)
                 val internalTank = FluidTank(1)
                 internalInventory.typeRule = { it is OreItemType }
@@ -120,16 +124,15 @@ open class MachineBlockType<T : MachineBlock>(initializer: MachineBlockType<T>.(
                 )
             }
         }
-
         val SOLIDIFIER = MachineBlockType<SolidifierBlock> {
             name = "Molten Ore Solidifer"
             instantiate = { xPixel, yPixel, rotation -> SolidifierBlock(xPixel shr 4, yPixel shr 4, rotation) }
             widthTiles = 2
             heightTiles = 2
             loop = true
-            textures = LevelObjectTextures(LevelObjectTexture(Animation.SOLIDIFIER[0], yPixelOffset = 21))
+            textures = LevelObjectTextures(LevelObjectTexture(Animation.SOLIDIFIER[0]))
             hitbox = Hitbox.TILE2X2
-            nodesTemplate = BlockNodesTemplate(widthTiles, heightTiles) {
+            nodesTemplate = template {
                 val tank = FluidTank(10, { it is MoltenOreFluidType })
                 val out = Inventory(1, 1)
                 listOf(
@@ -139,10 +142,12 @@ open class MachineBlockType<T : MachineBlock>(initializer: MachineBlockType<T>.(
             }
         }
     }
+
 }
 
 class CrafterBlockType(initializer: CrafterBlockType.() -> Unit) : MachineBlockType<CrafterBlock>() {
     var craftingType = Crafter.ITEM_CRAFTER
+
     var internalStorageSize = 2
 
     init {
@@ -156,8 +161,8 @@ class CrafterBlockType(initializer: CrafterBlockType.() -> Unit) : MachineBlockT
             name = "Crafter"
             hitbox = Hitbox.TILE2X2
             instantiate = { xPixel, yPixel, rotation -> CrafterBlock(this, xPixel shr 4, yPixel shr 4, rotation) }
-            textures = LevelObjectTextures(LevelObjectTexture(Image.Block.CRAFTER, yPixelOffset = 25))
-            nodesTemplate = BlockNodesTemplate(widthTiles, heightTiles) {
+            textures = LevelObjectTextures(LevelObjectTexture(Image.Block.CRAFTER))
+            nodesTemplate = template {
                 val internalInventory = Inventory(internalStorageSize, 1)
                 listOf(
                         ResourceNode(0, 1, 0, ResourceCategory.ITEM, true, false, internalInventory),
@@ -166,16 +171,18 @@ class CrafterBlockType(initializer: CrafterBlockType.() -> Unit) : MachineBlockT
             }
         }
     }
+
 }
 
 class FluidTankBlockType(initializer: FluidTankBlockType.() -> Unit) : BlockType<FluidTankBlock>() {
+
     var maxAmount = 1
 
     init {
         instantiate = { xPixel, yPixel, rotation -> FluidTankBlock(this, xPixel shr 4, yPixel shr 4, rotation) }
         initializer()
         val storage = FluidTank(maxAmount)
-        nodesTemplate = BlockNodesTemplate(widthTiles, heightTiles) {
+        nodesTemplate = template {
             listOf(
                     ResourceNode(0, 0, 0, ResourceCategory.FLUID, true, true, storage),
                     ResourceNode(0, 0, 1, ResourceCategory.FLUID, true, true, storage),
@@ -190,6 +197,7 @@ class FluidTankBlockType(initializer: FluidTankBlockType.() -> Unit) : BlockType
             maxAmount = 20
         }
     }
+
 }
 
 class ChestBlockType(initializer: ChestBlockType.() -> Unit) : BlockType<ChestBlock>() {
@@ -201,12 +209,13 @@ class ChestBlockType(initializer: ChestBlockType.() -> Unit) : BlockType<ChestBl
         instantiate = { xPixel, yPixel, rotation -> ChestBlock(this, xPixel shr 4, yPixel shr 4, rotation) }
         initializer()
         val storage = Inventory(invWidth, invHeight)
-        nodesTemplate = BlockNodesTemplate(widthTiles, heightTiles) {
+        nodesTemplate = template {
             listOf(
                     ResourceNode(0, 0, 0, ResourceCategory.ITEM, true, true, storage),
                     ResourceNode(0, 0, 1, ResourceCategory.ITEM, true, true, storage),
                     ResourceNode(0, 0, 2, ResourceCategory.ITEM, true, true, storage),
-                    ResourceNode(0, 0, 3, ResourceCategory.ITEM, true, true, storage))
+                    ResourceNode(0, 0, 3, ResourceCategory.ITEM, true, true, storage)
+            )
         }
     }
 
@@ -214,14 +223,14 @@ class ChestBlockType(initializer: ChestBlockType.() -> Unit) : BlockType<ChestBl
         val SMALL = ChestBlockType {
             name = "Small chest"
             invName = "Small chest"
-            textures = LevelObjectTextures(LevelObjectTexture(Image.Block.CHEST_SMALL, yPixelOffset = 16))
+            textures = LevelObjectTextures(LevelObjectTexture(Image.Block.CHEST_SMALL))
             invWidth = 8
             invHeight = 3
         }
         val LARGE = ChestBlockType {
             name = "Large chest"
             invName = "Large chest"
-            textures = LevelObjectTextures(LevelObjectTexture(Image.Block.CHEST_LARGE, yPixelOffset = 16))
+            textures = LevelObjectTextures(LevelObjectTexture(Image.Block.CHEST_LARGE))
             invWidth = 8
             invHeight = 6
         }

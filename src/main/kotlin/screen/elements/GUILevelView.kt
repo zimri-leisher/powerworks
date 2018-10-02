@@ -2,15 +2,12 @@ package screen.elements
 
 import com.badlogic.gdx.graphics.OrthographicCamera
 import graphics.Renderer
-import io.PressType
 import level.LevelObject
 import level.MovementListener
 import level.moving.MovingObject
 import main.Game
 import screen.CameraMovementListener
 import java.awt.Rectangle
-import java.awt.Transparency
-import java.awt.image.VolatileImage
 
 class GUILevelView(parent: RootGUIElement,
                    name: String,
@@ -46,12 +43,13 @@ class GUILevelView(parent: RootGUIElement,
         }
 
     var zoomMultiplier = zoomLevel * ZOOM_INCREMENT
+        private set
 
     private var viewWidthPixels = (widthPixels / zoomMultiplier).toInt()
 
     private var viewHeightPixels = (heightPixels / zoomMultiplier).toInt()
 
-    val libgdxCamera = OrthographicCamera(viewWidthPixels.toFloat() * Game.SCALE, viewHeightPixels.toFloat() * Game.SCALE)
+    val libgdxCamera = OrthographicCamera(Game.WIDTH.toFloat() * Game.SCALE, Game.HEIGHT.toFloat() * Game.SCALE)
 
     var zoomLevel = zoomLevel
         set(value) {
@@ -84,8 +82,8 @@ class GUILevelView(parent: RootGUIElement,
         viewWidthPixels = (widthPixels / zoomMultiplier).toInt()
         viewHeightPixels = (heightPixels / zoomMultiplier).toInt()
         viewRectangle = Rectangle(camera.xPixel - viewWidthPixels / 2, camera.yPixel - viewHeightPixels / 2, viewWidthPixels, viewHeightPixels)
-        libgdxCamera.viewportWidth = viewWidthPixels.toFloat() * Game.SCALE
-        libgdxCamera.viewportHeight = viewHeightPixels.toFloat() * Game.SCALE
+        libgdxCamera.zoom = 1 / zoomMultiplier
+        libgdxCamera.update()
     }
 
     private fun onCameraMove(pXPixel: Int, pYPixel: Int) {
@@ -99,6 +97,8 @@ class GUILevelView(parent: RootGUIElement,
     }
 
     override fun onDimensionChange(oldWidth: Int, oldHeight: Int) {
+        libgdxCamera.viewportWidth = Game.WIDTH.toFloat() * Game.SCALE
+        libgdxCamera.viewportHeight = Game.HEIGHT.toFloat() * Game.SCALE
         updateView()
         Game.currentLevel.updateViewBeingInteractedWith()
     }
@@ -131,7 +131,7 @@ class GUILevelView(parent: RootGUIElement,
     }
 
     companion object {
-        const val ZOOM_INCREMENT = 0.1
+        const val ZOOM_INCREMENT = 0.1f
         const val MAX_ZOOM = 4
         const val MIN_ZOOM = 25
     }

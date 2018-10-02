@@ -7,11 +7,18 @@ import main.Game
 import main.heightPixels
 import main.widthPixels
 import screen.animations.SlideOpenAnimation
-import screen.elements.*
+import screen.elements.GUIElement
+import screen.elements.GUIText
+import screen.elements.GUITexturePane
+import screen.elements.GUIWindow
 
 object MainMenuGUI : GUIWindow("Main menu", { 0 }, { 0 }, { Game.WIDTH }, { Game.HEIGHT }, ScreenManager.Groups.BACKGROUND, true, 0) {
 
     internal var logo: GUITexturePane
+
+    override fun onDimensionChange(oldWidth: Int, oldHeight: Int) {
+        println("dimension of main menu changed")
+    }
 
     init {
 

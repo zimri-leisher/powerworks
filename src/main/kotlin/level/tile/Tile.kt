@@ -15,7 +15,7 @@ open class Tile(type: TileType = TileType.GRASS, val xTile: Int, val yTile: Int)
 
     open val type = type
     val texture = type.textures[(Math.random() * type.textures.size).toInt()]
-    val rotation = (Math.random() * 4).toInt()
+    var rotation = 0
 
     fun render() {
         Renderer.renderTexture(texture, xPixel, yPixel, TextureRenderParams(rotation = rotation * 90f))

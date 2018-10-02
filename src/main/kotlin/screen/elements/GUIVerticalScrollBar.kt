@@ -106,7 +106,7 @@ class GUIVerticalScrollBar(parent: RootGUIElement,
         val mYPixel = Mouse.yPixel
         val mXPixel = Mouse.xPixel
         if (mouseOn && !dragging) {
-            if (GeometryHelper.intersects(mXPixel, mYPixel, 1, 1, xPixel + 1, currentPos + yPixel + 1, 4, currentScrollBarHeight))
+            if (intersectsScrollBar(Mouse.xPixel, Mouse.yPixel))
                 setTexture(1)
             else
                 setTexture(0)

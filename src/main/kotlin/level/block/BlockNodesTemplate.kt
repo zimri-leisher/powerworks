@@ -11,12 +11,10 @@ import resource.ResourceNode
  */
 class BlockNodesTemplate(val widthTiles: Int, val heightTiles: Int,
                          // lambda so calculations can happen here
-                         nodesInitializer: BlockNodesTemplate.() -> List<ResourceNode<*>> = { listOf() }) {
-    val nodes = mutableListOf<ResourceNode<*>>()
+                         val nodes: List<ResourceNode<*>> = listOf()) {
     val containers = mutableListOf<ResourceContainer<*>>()
 
     init {
-        nodes.addAll(nodesInitializer())
         // get all the containers of the nodes, only one of each. Later, we will use memory equivalence to check what new instantiated node will have which new instantiated container
         containers.addAll(nodes.mapNotNull { if (it.attachedContainer !in containers) it.attachedContainer else null })
     }

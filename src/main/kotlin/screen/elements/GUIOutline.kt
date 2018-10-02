@@ -2,6 +2,9 @@ package screen.elements
 
 import graphics.Renderer
 
+/**
+ * Draws a white empty rectangle around the parent given (just outside the edge of its width and height pixels)
+ */
 class GUIOutline(parent: RootGUIElement,
                  name: String,
                  var borderThickness: Int = 1, open: Boolean = false

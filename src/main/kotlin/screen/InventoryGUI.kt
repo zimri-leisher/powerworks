@@ -1,5 +1,6 @@
 package screen
 
+import graphics.text.TextManager
 import item.Inventory
 import screen.elements.GUIDefaultTextureRectangle
 import screen.elements.GUIItemSlot
@@ -17,8 +18,8 @@ class InventoryGUI(name: String,
                    open: Boolean = false,
                    layer: Int = 1) :
         GUIWindow(name, xPixel, yPixel,
-                inv.width * (GUIItemSlot.WIDTH + ITEM_SLOT_PADDING) + ITEM_SLOT_PADDING,
-                inv.height * (GUIItemSlot.HEIGHT + ITEM_SLOT_PADDING) + ITEM_SLOT_PADDING + 5,
+                inv.width * (GUIItemSlot.WIDTH + ITEM_SLOT_PADDING) + ITEM_SLOT_PADDING + 2,
+                inv.height * (GUIItemSlot.HEIGHT + ITEM_SLOT_PADDING) + ITEM_SLOT_PADDING + 7,
                 ScreenManager.Groups.INVENTORY,
                 open,
                 layer) {
@@ -34,10 +35,10 @@ class InventoryGUI(name: String,
         val arr = arrayOfNulls<GUIItemSlot>(inv.width * inv.height)
         for (y in 0 until inv.height) {
             for (x in 0 until inv.width) {
-                arr[x + y * inv.width] = GUIItemSlot(background, name + " item slot ${x + y * inv.width}", ITEM_SLOT_PADDING + x * (GUIItemSlot.WIDTH + ITEM_SLOT_PADDING), ITEM_SLOT_PADDING + 5 + (inv.height - y - 1) * (GUIItemSlot.HEIGHT + ITEM_SLOT_PADDING), x + y * inv.width, inv)
+                arr[x + y * inv.width] = GUIItemSlot(background, name + " item slot ${x + y * inv.width}", ITEM_SLOT_PADDING + x * (GUIItemSlot.WIDTH + ITEM_SLOT_PADDING) + 1, ITEM_SLOT_PADDING + (inv.height - y - 1) * (GUIItemSlot.HEIGHT + ITEM_SLOT_PADDING) + 1, x + y * inv.width, inv)
             }
         }
-        GUIText(background, "Inventory GUI name text", 0, 0, displayName, allowTags = true)
+        GUIText(background, "Inventory GUI name text", 0, heightPixels - TextManager.getStringHeight(displayName), displayName, allowTags = true)
         itemSlots = arr as Array<GUIItemSlot>
         // You want to be able to move and edit inventories at the same time
         partOfLevel = true

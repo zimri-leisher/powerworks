@@ -29,7 +29,7 @@ object HUD {
      */
     object Hotbar : GUIWindow("In game default hotbar",
             { (IngameGUI.widthPixels - (HOTBAR_SIZE * GUIItemSlot.WIDTH)) / 2 },
-            { IngameGUI.heightPixels - GUIItemSlot.HEIGHT },
+            { 0 },
             { HOTBAR_SIZE * GUIItemSlot.WIDTH },
             { GUIItemSlot.HEIGHT },
             ScreenManager.Groups.HOTBAR,

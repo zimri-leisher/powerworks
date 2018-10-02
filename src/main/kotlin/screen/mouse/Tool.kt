@@ -10,7 +10,6 @@ import level.block.BlockType
 import level.block.GhostBlock
 import level.moving.MovingObject
 import main.Game
-import resource.ResourceType
 
 /**
  * A tool is an object that is used by the client to interact with the level through the mouse
@@ -113,10 +112,13 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
 
             override fun onUse(control: Control, type: PressType, mouseLevelXPixel: Int, mouseLevelYPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
                 if (currentlyActive) {
-                    if (type == PressType.RELEASED) {
+                    if (type == PressType.PRESSED) {
                         if (control == Control.ROTATE_BLOCK) {
                             Game.currentLevel.ghostBlockRotation = (Game.currentLevel.ghostBlockRotation + 1) % 4
-                        } else if (control == Control.PLACE_BLOCK) {
+                        }
+                    }
+                    if (type == PressType.RELEASED) {
+                        if (control == Control.PLACE_BLOCK) {
                             val block = Game.currentLevel.selectedLevelObject
                             if (block == null) {
                                 if (Game.currentLevel.ghostBlock != null) {
@@ -162,7 +164,7 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
 
             override fun onUse(control: Control, type: PressType, mouseLevelXPixel: Int, mouseLevelYPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
                 if (currentlyActive) {
-                    if(type == PressType.PRESSED) {
+                    if (type == PressType.PRESSED) {
                         (Game.currentLevel.viewBeingInteractedWith?.camera as? MovingObject)?.setPosition(Game.currentLevel.mouseLevelXPixel, Game.currentLevel.mouseLevelYPixel)
                     }
                 }
@@ -216,6 +218,29 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
             override fun render() {
                 Renderer.renderEmptyRectangle(dragStartXPixel, dragStartYPixel, (currentDragXPixel - dragStartXPixel), (currentDragYPixel - dragStartYPixel), params = TextureRenderParams(color = Color(0xBBBBBB)))
             }
+        }
+
+        val DEBUG = object : Tool(Control.Group.INTERACTION) {
+
+            override fun onUse(control: Control, type: PressType, mouseLevelXPixel: Int, mouseLevelYPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+                if (currentlyActive) {
+                    if (type == PressType.PRESSED) {
+                        Level.Tiles.get(mouseLevelXPixel shr 4, mouseLevelYPixel shr 4).apply {
+                            println("Test")
+                            rotation = (rotation + 1) % 4
+                        }
+                    }
+                }
+            }
+
+            override fun updateCurrentlyActive() {
+                currentlyActive = false
+            }
+
+            override fun render() {
+                Renderer.renderText(Level.Tiles.get(Game.currentLevel.mouseLevelXPixel shr 4, Game.currentLevel.mouseLevelYPixel shr 4).rotation, ((Game.currentLevel.mouseLevelXPixel shr 4) shl 4) + 4, ((Game.currentLevel.mouseLevelYPixel shr 4) shl 4) + 4)
+            }
+
         }
 
         fun render() {

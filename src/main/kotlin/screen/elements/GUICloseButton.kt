@@ -15,7 +15,7 @@ class GUICloseButton(parent: RootGUIElement,
                      val actOn: GUIWindow) : GUIElement(parent, name, xAlignment, yAlignment, { WIDTH }, { HEIGHT }, open, layer) {
 
     override fun render() {
-        Renderer.renderTexture(Image.GUI.CLOSE_BUTTON, xPixel, yPixel, localRenderParams)
+        Renderer.renderTexture(if (mouseOn) Image.GUI.CLOSE_BUTTON_HIGHLIGHT else Image.GUI.CLOSE_BUTTON, xPixel, yPixel, localRenderParams)
     }
 
     override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {

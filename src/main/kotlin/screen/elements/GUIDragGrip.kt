@@ -4,8 +4,9 @@ import graphics.Image
 import graphics.Renderer
 import io.PressType
 import main.Game
+import main.heightPixels
+import main.widthPixels
 import screen.mouse.Mouse
-
 
 class GUIDragGrip(parent: RootGUIElement,
                   name: String,
@@ -17,20 +18,21 @@ class GUIDragGrip(parent: RootGUIElement,
         GUIElement(parent, name, xAlignment, yAlignment, { WIDTH }, { HEIGHT }, open, layer) {
 
     var dragging = false
-    var sXPixel = 0
-    var sYPixel = 0
-    var actOnSXPixel = 0
-    var actOnSYPixel = 0
+    var startingXPixel = 0
+    var startingYPixel = 0
+    var actOnStartingXPixel = 0
+    var actOnStartingYPixel = 0
 
     override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
         if (type == PressType.PRESSED) {
             dragging = true
-            sXPixel = Mouse.xPixel
-            sYPixel = Mouse.yPixel
-            actOnSXPixel = actOn.xPixel
-            actOnSYPixel = actOn.yPixel
+            startingXPixel = Mouse.xPixel
+            startingYPixel = Mouse.yPixel
+            actOnStartingXPixel = actOn.xPixel
+            actOnStartingYPixel = actOn.yPixel
+        } else if (type == PressType.RELEASED) {
+            dragging = false
         }
-        else if (type == PressType.RELEASED) dragging = false
     }
 
     override fun onClose() {
@@ -38,13 +40,17 @@ class GUIDragGrip(parent: RootGUIElement,
     }
 
     override fun render() {
-        Renderer.renderTexture(Image.GUI.DRAG_GRIP, xPixel, yPixel)
+        if (dragging || mouseOn) {
+            Renderer.renderTexture(Image.GUI.DRAG_GRIP_HIGHLIGHT, xPixel - 1, yPixel - 1)
+        } else {
+            Renderer.renderTexture(Image.GUI.DRAG_GRIP, xPixel, yPixel)
+        }
     }
 
     override fun update() {
         if (dragging) {
-            var nX = Mouse.xPixel - sXPixel + actOnSXPixel
-            var nY = Mouse.yPixel - sYPixel + actOnSYPixel
+            var nX = Mouse.xPixel - startingXPixel + actOnStartingXPixel
+            var nY = Mouse.yPixel - startingYPixel + actOnStartingYPixel
             if (keepInsideWindowBounds) {
                 nX = Math.max(0,
                         Math.min(
@@ -63,7 +69,7 @@ class GUIDragGrip(parent: RootGUIElement,
     }
 
     companion object {
-        const val WIDTH = 4
-        const val HEIGHT = 4
+        val WIDTH = Image.GUI.DRAG_GRIP.widthPixels
+        val HEIGHT = Image.GUI.DRAG_GRIP.heightPixels
     }
 }

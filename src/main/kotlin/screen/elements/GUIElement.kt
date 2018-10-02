@@ -48,7 +48,7 @@ sealed class RootGUIElement(var name: String, xAlignment: Alignment, yAlignment:
                             x = Game.WIDTH - widthPixels
                         else if (x < 0)
                             x = 0
-                        var y = Mouse.yPixel
+                        var y = Mouse.yPixel - heightPixels
                         if (y + heightPixels > Game.HEIGHT)
                             y = Game.HEIGHT - heightPixels
                         else if (y < 0)
@@ -103,13 +103,13 @@ sealed class RootGUIElement(var name: String, xAlignment: Alignment, yAlignment:
      * or the updateAlignment() function is called
      */
     var widthPixels = alignments.width()
-        protected set(value) {
+        private set(value) {
             if (field != value) {
                 val old = field
                 field = value
                 onDimensionChange(old, heightPixels)
                 children.forEach {
-                    it.alignments.updateDimension()
+                    it.alignments.update()
                     it.onParentDimensionChange(old, heightPixels)
                 }
             }
@@ -120,13 +120,13 @@ sealed class RootGUIElement(var name: String, xAlignment: Alignment, yAlignment:
      * or the updateAlignment() function is called
      */
     var heightPixels = alignments.height()
-        protected set(value) {
+        private set(value) {
             if (field != value) {
                 val old = field
                 field = value
                 onDimensionChange(widthPixels, old)
                 children.forEach {
-                    it.alignments.updateDimension()
+                    it.alignments.update()
                     it.onParentDimensionChange(widthPixels, old)
                 }
             }

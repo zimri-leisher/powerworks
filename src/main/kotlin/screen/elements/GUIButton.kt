@@ -3,14 +3,19 @@ package screen.elements
 import graphics.Renderer
 import graphics.text.TextManager
 import io.PressType
-import main.toWhite
 
 class GUIButton(parent: RootGUIElement,
                 name: String,
                 xAlignment: Alignment, yAlignment: Alignment,
                 text: String,
                 allowTags: Boolean = false,
-                widthAlignment: Alignment = { if (TextManager.getStringBounds(text).width > WIDTH - 4) TextManager.getStringBounds(text).width + 4 else WIDTH }, heightAlignment: Alignment = { HEIGHT },
+                widthAlignment: Alignment = {
+                    val width = TextManager.getStringWidth(text)
+                    if (width > WIDTH - 4)
+                        width + 4
+                    else
+                        WIDTH
+                }, heightAlignment: Alignment = { HEIGHT },
                 private var onPress: () -> (Unit) = {}, private var onRelease: () -> (Unit) = {}, open: Boolean = false,
                 layer: Int = parent.layer + 1) :
         GUIElement(parent, name, xAlignment, yAlignment, widthAlignment, heightAlignment, open, layer) {
@@ -20,7 +25,7 @@ class GUIButton(parent: RootGUIElement,
                 xPixel: Int, yPixel: Int,
                 text: String,
                 allowTags: Boolean = false,
-                widthPixels: Int = if (TextManager.getStringBounds(text).width > WIDTH - 4) TextManager.getStringBounds(text).width + 4 else WIDTH, heightPixels: Int = HEIGHT,
+                widthPixels: Int = if (TextManager.getStringWidth(text) > WIDTH - 4) TextManager.getStringWidth(text) + 4 else WIDTH, heightPixels: Int = HEIGHT,
                 onPress: () -> Unit = {}, onRelease: () -> Unit = {}, open: Boolean = false,
                 layer: Int = parent.layer + 1) :
             this(parent, name, { xPixel }, { yPixel }, text, allowTags, { widthPixels }, { heightPixels }, onPress, onRelease, open, layer)
@@ -39,11 +44,12 @@ class GUIButton(parent: RootGUIElement,
     }
 
     override fun onMouseEnter() {
-        localRenderParams.color.mul(1.2f, 1.2f, 1.2f, 1f)
+        localRenderParams.brightness = 1.1f
     }
 
     override fun onMouseLeave() {
-        localRenderParams.color.toWhite()
+        localRenderParams.rotation = 0f
+        localRenderParams.brightness = 1f
         down = false
     }
 
@@ -51,13 +57,13 @@ class GUIButton(parent: RootGUIElement,
         if (type == PressType.PRESSED) {
             onPress.invoke()
             localRenderParams.rotation = 180f
-            localRenderParams.color.sub(.1f, .1f, .1f, 0f)
+            localRenderParams.brightness = 0.9f
             down = true
         } else if (type == PressType.RELEASED) {
             if (down) {
                 onRelease.invoke()
                 localRenderParams.rotation = 0f
-                localRenderParams.color.toWhite()
+                localRenderParams.brightness = 1.1f
                 down = false
             }
         }

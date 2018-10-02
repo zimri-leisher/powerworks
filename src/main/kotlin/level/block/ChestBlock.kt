@@ -1,5 +1,6 @@
 package level.block
 
+import com.badlogic.gdx.Input
 import io.*
 import item.Inventory
 import item.ItemType
@@ -17,7 +18,7 @@ class ChestBlock(override val type: ChestBlockType, xTile: Int, yTile: Int, rota
 
     override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
         if(type == PressType.PRESSED) {
-            if(button == 1) {
+            if(button == Input.Buttons.LEFT) {
                 if(shift) {
                     val item = inv[0]!!
                     nodes.output(item.type, item.quantity, onlyTo = { it.attachedNode != null })

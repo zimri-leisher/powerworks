@@ -12,11 +12,12 @@ data class TextureRenderParams(
          */
         var scaleY: Float = 1.0f,
         var color: Color = Color(1f, 1f, 1f, 1f),
+        var brightness: Float = 1f,
         /**
          * Degrees rotation
          */
         var rotation: Float = 0f) {
     fun combine(other: TextureRenderParams): TextureRenderParams {
-        return TextureRenderParams(scaleX * other.scaleX, scaleY * other.scaleY, color.mul(other.color), (rotation + other.rotation) % 360)
+        return TextureRenderParams(scaleX * other.scaleX, scaleY * other.scaleY, color.mul(other.color), brightness * other.brightness, (rotation + other.rotation) % 360)
     }
 }

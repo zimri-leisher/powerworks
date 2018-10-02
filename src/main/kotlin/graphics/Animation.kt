@@ -389,6 +389,7 @@ class Animation(path: String, val numberOfFrames: Int, startPlaying: Boolean = f
                 toFrame(6, 15)
             }
         }
+
         val MINER = Animation("block/miner", 5, true) {
             sequence(0 until 5, arrayOf(5, 5, 5, 5, 5))
         }

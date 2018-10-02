@@ -21,7 +21,7 @@ object TextManager {
     lateinit var defaultFont: BitmapFont
     val glyphLayout = GlyphLayout()
     const val DEFAULT_SIZE = 20
-    private const val DEFAULT_CHARS = "1234567890qwertyuiopasdfghjklzxcvbnm`=[]\\;',./QWERTYUIOPASDFGHJLZXCVBNM{}|:\"<>?"
+    const val DEFAULT_CHARS = "1234567890qwertyuiopasdfghjklzxcvbnm`=[]\\;',./QWERTYUIOPASDFGHJLZXCVBNM{}|:\"<>?"
 
     init {
         try {
@@ -32,7 +32,7 @@ object TextManager {
             }
             defaultFont = fontGenerator.generateFont(defaultParams)
             glyphLayout.setText(defaultFont, DEFAULT_CHARS)
-            fonts.put(Pair(DEFAULT_SIZE, FontStyle.PLAIN), FontInfo(defaultFont, Numbers.ceil((glyphLayout.width / DEFAULT_CHARS.length) / Game.SCALE).toFloat(), Math.ceil((glyphLayout.height.toDouble()) / Game.SCALE).toFloat()))
+            fonts.put(Pair(DEFAULT_SIZE, FontStyle.PLAIN), FontInfo(defaultFont, (glyphLayout.width / DEFAULT_CHARS.length) / Game.SCALE, glyphLayout.height / Game.SCALE))
         } catch (ex: FontFormatException) {
             ex.printStackTrace()
         } catch (ex: IOException) {
@@ -113,12 +113,11 @@ object TextManager {
         }
         val f = fontGenerator.generateFont(param)
         glyphLayout.setText(f, DEFAULT_CHARS)
-        println("${(glyphLayout.width.toDouble() / DEFAULT_CHARS.length)}, ${(glyphLayout.width.toDouble() / DEFAULT_CHARS.length) / Game.SCALE}")
         return FontInfo(f, ((glyphLayout.width / DEFAULT_CHARS.length) / Game.SCALE), ((glyphLayout.height / Game.SCALE)))
     }
 
     /**
-     * @return the width and height of the given string at the given size, including newlines and assuming monospacing
+     * @return the width and height of the given string at the given size, including newlines
      */
     fun getStringBounds(s: String, size: Int = DEFAULT_SIZE, style: FontStyle = FontStyle.PLAIN): Rectangle {
         if (s.isEmpty())
@@ -128,6 +127,31 @@ object TextManager {
         return Rectangle((lines.maxBy { it.length }!!.length * f.charWidth).toInt(), (lines.size * f.charHeight).toInt())
     }
 
+    /**
+     * @return the width of the string. If there are newlines, this will be the length of the longest line
+     */
+    fun getStringWidth(s: String, size: Int = DEFAULT_SIZE, style: FontStyle = FontStyle.PLAIN): Int {
+        if (s.isEmpty())
+            return 0
+        val lines = s.split("\n")
+        val f = getFont(size, style)
+        return (lines.maxBy { it.length }!!.length * f.charWidth).toInt()
+    }
+
+    /**
+     * @return the height of the string. This is essentially the character height times the number of lines
+     */
+    fun getStringHeight(s: String, size: Int = DEFAULT_SIZE, style: FontStyle = FontStyle.PLAIN): Int {
+        if (s.isEmpty())
+            return 0
+        val lines = s.split("\n")
+        val f = getFont(size, style)
+        return (lines.size * f.charHeight).toInt()
+    }
+
+    /**
+     * @return the width and height of the given tagged text at the given size, including newlines and tags
+     */
     fun getStringBounds(t: TaggedText, size: Int = DEFAULT_SIZE, style: FontStyle = FontStyle.PLAIN): Rectangle {
         val context = TextRenderContext(Rectangle(0, 0, 0, 0), TextRenderParams(size = size, style = style))
         var lastIndex = 0
@@ -143,6 +167,20 @@ object TextManager {
         context.currentBounds.width += lastSubstringBounds.width
         context.currentBounds.height = Math.max(context.currentBounds.height, lastSubstringBounds.height)
         return context.currentBounds
+    }
+
+    /**
+     * @return the width of the given tagged text at the given size, including newlines and tags
+     */
+    fun getStringWidth(t: TaggedText, size: Int = DEFAULT_SIZE, style: FontStyle = FontStyle.PLAIN): Int {
+        return getStringBounds(t, size, style).width // TODO this (and the height) could probably be optimized
+    }
+
+    /**
+     * @return the height of the given tagged text at the given size, including newlines and tags
+     */
+    fun getStringHeight(t: TaggedText, size: Int = DEFAULT_SIZE, style: FontStyle = FontStyle.PLAIN): Int {
+        return getStringBounds(t, size, style).height
     }
 
     fun dispose() {

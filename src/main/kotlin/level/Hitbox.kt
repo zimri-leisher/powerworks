@@ -9,15 +9,16 @@ class Hitbox private constructor(val xStart: Int, val yStart: Int, val width: In
         val NONE = Hitbox(0, 0, 0, 0)
 
         fun rotate(h: Hitbox, rotation: Int): Hitbox {
-            if(h == NONE)
+            if (h == NONE)
                 return NONE
-            return when(rotation) {
-                1 -> Hitbox(h.yStart, -h.xStart, h.height, h.width)
-                2 -> Hitbox(-h.xStart, -h.yStart, h.width, h.height)
-                3 -> Hitbox(-h.yStart, h.xStart, h.height, h.width)
-                else -> h
+            return with(h) {
+                when (rotation % 4) {
+                    1 -> Hitbox(h.yStart, -h.xStart, h.height, h.width)
+                    2 -> Hitbox(-h.xStart, -h.yStart, h.width, h.height)
+                    3 -> Hitbox(xStart + (width - height) / 2, yStart + (height - width) / 2, height, width)
+                    else -> h
+                }
             }
-
         }
     }
 }

@@ -233,7 +233,7 @@ object InputManager : InputProcessor {
     }
 
     override fun keyDown(keycode: Int): Boolean {
-        inputEvent.put(Input.Keys.toString(keycode).toUpperCase().replace(" ", "_"), PressType.PRESSED)
+        inputEvent.put(getKeyName(keycode), PressType.PRESSED)
         return true
     }
 
@@ -243,7 +243,7 @@ object InputManager : InputProcessor {
     }
 
     override fun keyUp(keycode: Int): Boolean {
-        inputEvent.put(Input.Keys.toString(keycode).toUpperCase().replace(" ", "_"), PressType.RELEASED)
+        inputEvent.put(getKeyName(keycode), PressType.RELEASED)
         return true
     }
 
@@ -271,7 +271,9 @@ object InputManager : InputProcessor {
         return false
     }
 
-    private fun getButtonName(i: Int) = when (i) {
+    private fun getKeyName(keycode: Int) = Input.Keys.toString(keycode).toUpperCase().replace(" ", "_").removePrefix("L-").removePrefix("R-")
+
+    private fun getButtonName(button: Int) = when (button) {
         Input.Buttons.LEFT -> "LEFT"
         Input.Buttons.BACK -> "BACK"
         Input.Buttons.FORWARD -> "FORWARD"

@@ -1,5 +1,6 @@
 package screen.elements
 
+import com.badlogic.gdx.Input
 import graphics.Image
 import graphics.Renderer
 import io.PressType
@@ -89,7 +90,7 @@ class GUIItemSlot(parent: RootGUIElement, name: String, xPixel: Int, yPixel: Int
                 }
             } else {
                 val cI = currentItem
-                if (button == 1) {
+                if (button == Input.Buttons.LEFT) {
                     Mouse.heldItemType = cI?.type
                 }
             }

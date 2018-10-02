@@ -14,8 +14,8 @@ class GUITexturePane(parent: RootGUIElement,
                      layer: Int = parent.layer + 1,
                      var keepAspect: Boolean = false) :
         GUIElement(parent, name, xAlignment, yAlignment, widthAlignment, heightAlignment, open, layer) {
-    var updateDimensionAlignmentOnTextureChange = true
 
+    var updateDimensionAlignmentOnTextureChange = true
 
     var texture = texture
         set(value) {

@@ -1,5 +1,6 @@
 package screen.mouse
 
+import com.badlogic.gdx.Input
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import graphics.Image
 import graphics.Renderer
@@ -26,11 +27,9 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
     const val ICON_SIZE = 8
 
     /**
-     * 1: left mouse button
-     * 2: middle mouse button
-     * 3: right mouse button
+     * Use Input.Buttons.<button name> from libgdx to check against this
      */
-    var button = 0
+    var button = Input.Buttons.LEFT
 
     var xPixel = 0
     var yPixel = 0
@@ -81,8 +80,8 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
             val i = heldItemType!!
             val q = Game.mainInv.getQuantity(i)
             val t = i.icon
-            Renderer.renderTextureKeepAspect(t, xPixel + 4, yPixel, GUIItemSlot.WIDTH, GUIItemSlot.HEIGHT)
-            Renderer.renderText(q, xPixel + 4, yPixel)
+            Renderer.renderTextureKeepAspect(t, xPixel + 4, yPixel - 4, GUIItemSlot.WIDTH, GUIItemSlot.HEIGHT)
+            Renderer.renderText(q, xPixel + 4, yPixel - 4)
         }
         when (Game.currentDebugCode) {
             DebugCode.TUBE_INFO -> {
@@ -128,6 +127,7 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
                         "  ${ScreenManager.getHighestElement(xPixel, yPixel, predicate = { !it.transparentToInteraction })}\n" +
                         "Window on mouse:\n" +
                         "  ${ScreenManager.getHighestWindow(xPixel, yPixel, { !it.transparentToInteraction })}", xPixel, yPixel)
+                Renderer.renderFilledRectangle(xPixel, yPixel, 1, 1)
             }
             DebugCode.POSITION_INFO -> {
                 Renderer.renderText("Screen:\n" +

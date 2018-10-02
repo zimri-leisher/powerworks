@@ -44,7 +44,9 @@ object Image {
         val VIEW_SELECTOR_OPEN_BUTTON = ResourceManager.getTextureFromAtlas("gui/view_selector_open")
         val VIEW_SELECTOR_OPEN_BUTTON_HIGHLIGHT = ResourceManager.getTextureFromAtlas("gui/view_selector_open_highlight")
         val CLOSE_BUTTON = ResourceManager.getTextureFromAtlas("gui/close_button")
+        val CLOSE_BUTTON_HIGHLIGHT = ResourceManager.getTextureFromAtlas("gui/close_button_highlight")
         val DRAG_GRIP = ResourceManager.getTextureFromAtlas("gui/drag_grip")
+        val DRAG_GRIP_HIGHLIGHT = ResourceManager.getTextureFromAtlas("gui/drag_grip_highlight")
         val DIMENSION_DRAG_GRIP = ResourceManager.getTextureFromAtlas("gui/dimension_drag_grip")
         val SCROLL_BAR_TOP = ResourceManager.getTextureFromAtlas("gui/scroll_bar_top")
         val SCROLL_BAR_MIDDLE = ResourceManager.getTextureFromAtlas("gui/scroll_bar_middle")
@@ -72,6 +74,7 @@ object Image {
         val MAIN_MENU_BACKGROUND = ResourceManager.getTextureFromAtlas("gui/main_menu_bg")
         val GREY_FILLER = ResourceManager.getTextureFromAtlas("gui/grey_filler")
         val WHITE_FILLER = ResourceManager.getTextureFromAtlas("gui/white_filler")
+        val BLACK_FILLER = ResourceManager.getTextureFromAtlas("gui/black_filler")
         val HOTBAR_SELECTED_SLOT = ResourceManager.getTextureFromAtlas("gui/selected_slot")
         val CRAFTING_ARROW = ResourceManager.getTextureFromAtlas("gui/crafting_arrow")
     }

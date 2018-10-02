@@ -9,7 +9,6 @@ import com.badlogic.gdx.graphics.g2d.TextureAtlas
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import mod.Mod
 import mod.ModManager
-import java.io.File
 import java.io.InputStream
 import java.net.URL
 
@@ -35,16 +34,17 @@ object ResourceManager {
 
     /**
      * Gets a texture from one of the loaded texture atlases
+     * @param index the index of the texture (the number after the last underscore if there is one). -1 if no index
      */
-    fun getTextureFromAtlas(identifier: String): TextureRegion {
+    fun getTextureFromAtlas(identifier: String, index: Int = -1): TextureRegion {
         var region: TextureRegion? = null
         for(atlas in textureAtlases) {
-            region = atlas.findRegion(identifier)
+            region = if(index == -1) atlas.findRegion(identifier) else atlas.findRegion(identifier, index)
             if(region != null)
                 break
         }
         if(region == null) {
-            throw ResourceNotFoundException("Resource with identifier $identifier not found in an atlas")
+            throw ResourceNotFoundException("Resource with identifier $identifier ${if(index !=-1) "and index $index" else ""} not found in an atlas")
         }
         return region
     }
