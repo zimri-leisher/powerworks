@@ -13,9 +13,10 @@ typealias Alignment = () -> Int
 
 private var nextId = 0
 
-sealed class RootGUIElement(var name: String, xAlignment: Alignment, yAlignment: Alignment, widthAlignment: Alignment, heightAlignment: Alignment, open: Boolean, var layer: Int) {
+sealed class RootGUIElement(name: String, xAlignment: Alignment, yAlignment: Alignment, widthAlignment: Alignment, heightAlignment: Alignment, open: Boolean, var layer: Int) {
 
     val id = nextId++
+    var name = name
 
     var open: Boolean = open
         set(value) {
@@ -98,8 +99,9 @@ sealed class RootGUIElement(var name: String, xAlignment: Alignment, yAlignment:
                 }
             }
         }
+
     /**
-     * This will be calculated and assigned to the width pixels every time a dimension or position of this or a parent changes,
+     * This is updated every time a dimension or position of this or a parent changes,
      * or the updateAlignment() function is called
      */
     var widthPixels = alignments.width()
@@ -107,6 +109,9 @@ sealed class RootGUIElement(var name: String, xAlignment: Alignment, yAlignment:
             if (field != value) {
                 val old = field
                 field = value
+                if(this is GUIElement) {
+                    parent.onChildDimensionChange(this)
+                }
                 onDimensionChange(old, heightPixels)
                 children.forEach {
                     it.alignments.update()
@@ -116,7 +121,7 @@ sealed class RootGUIElement(var name: String, xAlignment: Alignment, yAlignment:
         }
 
     /**
-     * This will be calculated and assigned to the height pixels every time a dimension or position of this or a parent changes,
+     * This is updated every time a dimension or position of this or a parent changes,
      * or the updateAlignment() function is called
      */
     var heightPixels = alignments.height()
@@ -124,6 +129,9 @@ sealed class RootGUIElement(var name: String, xAlignment: Alignment, yAlignment:
             if (field != value) {
                 val old = field
                 field = value
+                if(this is GUIElement) {
+                    parent.onChildDimensionChange(this)
+                }
                 onDimensionChange(widthPixels, old)
                 children.forEach {
                     it.alignments.update()
@@ -211,9 +219,9 @@ sealed class RootGUIElement(var name: String, xAlignment: Alignment, yAlignment:
         return r
     }
 
-    fun anyChild(predicate: (RootGUIElement) -> Boolean): Boolean {
+    fun anyChild(predicate: (GUIElement) -> Boolean): Boolean {
 
-        fun recursivelyFind(predicate: (RootGUIElement) -> Boolean, e: RootGUIElement): Boolean {
+        fun recursivelyFind(predicate: (GUIElement) -> Boolean, e: RootGUIElement): Boolean {
             e.children.forEach {
                 if (predicate(it))
                     return true
@@ -243,7 +251,7 @@ sealed class RootGUIElement(var name: String, xAlignment: Alignment, yAlignment:
     var matchParentClosing = true
     /** Send interactions to the parent */
     var transparentToInteraction = false
-    /** Modify dimensions automatically when the parent's dimensions change */
+    /** When this gets a new parent, change this's layer to one above the parent */
     var matchParentLayer = true
 
     /**
@@ -441,6 +449,7 @@ open class GUIElement(parent: RootGUIElement, name: String, xAlignment: Alignmen
                 val v = field
                 field = value
                 value.children.add(this)
+                alignments.update()
                 onParentChange(v)
             }
         }
@@ -466,7 +475,7 @@ open class GUIElement(parent: RootGUIElement, name: String, xAlignment: Alignmen
     open fun onParentPositionChange(pXPixel: Int, pYPixel: Int) {
     }
 
-    override fun toString() = "${javaClass.simpleName}: $name at $xPixel, $yPixel absolute, ${alignments.x()}, ${alignments.y()} relative, w: $widthPixels, h: $heightPixels"
+    override fun toString() = "${javaClass.simpleName}: $name at $xPixel, $yPixel absolute, ${alignments.x()}, ${alignments.y()} relative, w: $widthPixels, h: $heightPixels, l: $layer"
 }
 
 open class GUIWindow(name: String, xAlignment: Alignment, yAlignment: Alignment, widthAlignment: Alignment, heightAlignment: Alignment, windowGroup: WindowGroup, open: Boolean = false, layer: Int = 0) :
@@ -493,10 +502,10 @@ open class GUIWindow(name: String, xAlignment: Alignment, yAlignment: Alignment,
             field = value
         }
 
-    var topLeftGroup = AutoFormatGUIGroup(this, name + " top left group", { 1 }, { this.heightPixels - 5 }, open = open, xPixelSeparation = 5)
-    var topRightGroup = AutoFormatGUIGroup(this, name + " top right group", { this.widthPixels - 5 }, { this.heightPixels - 5 }, open = open, xPixelSeparation = -5)
-    var bottomRightGroup = AutoFormatGUIGroup(this, name + " bottom right group", { this.widthPixels - 5 }, { 1 }, open = open, xPixelSeparation = -5)
-    var bottomLeftGroup = AutoFormatGUIGroup(this, name + " bottom left group", { 1 }, { 1 }, open = open, xPixelSeparation = 5)
+    var topLeftGroup = AutoFormatGUIGroup(this, name + " top left group", { 1 }, { this.heightPixels - 6 }, open = open, xPixelSeparation = 6)
+    var topRightGroup = AutoFormatGUIGroup(this, name + " top right group", { this.widthPixels - 6 }, { this.heightPixels - 6 }, open = open, xPixelSeparation = -6)
+    var bottomRightGroup = AutoFormatGUIGroup(this, name + " bottom right group", { this.widthPixels - 6 }, { 1 }, open = open, xPixelSeparation = -6)
+    var bottomLeftGroup = AutoFormatGUIGroup(this, name + " bottom left group", { 1 }, { 1 }, open = open, xPixelSeparation = 6)
 
     /* Settings */
 
@@ -560,5 +569,5 @@ open class GUIWindow(name: String, xAlignment: Alignment, yAlignment: Alignment,
         updateChild(this)
     }
 
-    override fun toString() = "$name window at $xPixel, $yPixel absolute, ${alignments.x()}, ${alignments.y()} relative"
+    override fun toString() = "$name window at $xPixel, $yPixel absolute, ${alignments.x()}, ${alignments.y()} relative, w: ${widthPixels}, h: ${heightPixels}, l: $layer"
 }

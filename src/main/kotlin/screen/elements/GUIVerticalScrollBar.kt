@@ -5,7 +5,7 @@ import graphics.Renderer
 import io.PressType
 import main.heightPixels
 import main.widthPixels
-import misc.GeometryHelper
+import misc.Geometry
 import screen.mouse.Mouse
 
 interface VerticalScrollable {
@@ -32,8 +32,10 @@ class GUIVerticalScrollBar(parent: RootGUIElement,
     // the top of the scroll bar thingy itself
     var currentPos = 0
         set(value) {
-            field = Math.min(Math.max(value, 0), maxPos)
-            s.onScroll()
+            if (field != value) {
+                field = Math.min(Math.max(value, 0), maxPos)
+                s.onScroll()
+            }
         }
     var dragging = false
     var mYPixelPrev = 0
@@ -77,7 +79,7 @@ class GUIVerticalScrollBar(parent: RootGUIElement,
     }
 
     private fun intersectsScrollBar(xPixel: Int, yPixel: Int) =
-            GeometryHelper.intersects(xPixel, yPixel, 1, 1, this.xPixel + 1, this.yPixel + heightPixels - currentPos - 1 - currentScrollBarHeight, 4, currentScrollBarHeight)
+            Geometry.intersects(xPixel, yPixel, 1, 1, this.xPixel + 1, this.yPixel + heightPixels - currentPos - 1 - currentScrollBarHeight, 4, currentScrollBarHeight)
 
     override fun onScroll(dir: Int) {
         currentPos += dir * GUIElementList.SCROLL_SENSITIVITY

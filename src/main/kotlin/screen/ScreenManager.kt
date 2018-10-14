@@ -4,7 +4,9 @@ import data.ConcurrentlyModifiableMutableList
 import data.ConcurrentlyModifiableWeakMutableList
 import data.WeakMutableList
 import io.*
-import misc.GeometryHelper
+import main.DebugCode
+import main.Game
+import misc.Geometry
 import screen.animations.GUIAnimation
 import screen.elements.GUIElement
 import screen.elements.GUIWindow
@@ -51,7 +53,7 @@ object ScreenManager : ControlPressHandler {
         val VIEW = WindowGroup(1, "GUIViews")
         val INVENTORY = WindowGroup(2, "Inventories")
         val PLAYER_UTIL = WindowGroup(3, "Player utilities")
-        val HOTBAR = WindowGroup(4, "Hotbar")
+        val HUD = WindowGroup(4, "Hotbar")
         val MOUSE = WindowGroup(9999, "Mouse")
     }
 
@@ -61,7 +63,8 @@ object ScreenManager : ControlPressHandler {
 
     fun render() {
         _backwardsWindowGroups.forEach {
-            it.windows.sortedBy { -it.layer }.forEach {
+            it.windows.filter { it.open }.forEach {
+                it.render()
                 it.openChildren.forEach {
                     if (it.autoRender)
                         it.render()
@@ -75,6 +78,9 @@ object ScreenManager : ControlPressHandler {
         playingAnimations.forEach { it.update() }
         forEachElement(func = { it.update() })
         openWindows.forEach { it.update() }
+        if (Game.currentDebugCode == DebugCode.SCREEN_INFO) {
+            printHierarchy()
+        }
     }
 
     fun updateMouseOn() {
@@ -86,11 +92,11 @@ object ScreenManager : ControlPressHandler {
     }
 
     fun intersectsElement(xPixel: Int, yPixel: Int, e: RootGUIElement): Boolean {
-        return GeometryHelper.contains(e.xPixel, e.yPixel, e.widthPixels, e.heightPixels, xPixel, yPixel, 0, 0)
+        return Geometry.contains(e.xPixel, e.yPixel, e.widthPixels, e.heightPixels, xPixel, yPixel, 0, 0)
     }
 
     fun intersectsElement(xPixel: Int, yPixel: Int, e: GUIWindow): Boolean {
-        return GeometryHelper.contains(e.xPixel, e.yPixel, e.widthPixels, e.heightPixels, xPixel, yPixel, 0, 0)
+        return Geometry.contains(e.xPixel, e.yPixel, e.widthPixels, e.heightPixels, xPixel, yPixel, 0, 0)
     }
 
     /** @return the highest window, layer-wise, that intersects the given x and y coordinates and matches the predicate */
@@ -186,23 +192,24 @@ object ScreenManager : ControlPressHandler {
         }
     }
 
-    private fun printDebug() {
-        fun GUIElement.print(spaces: String = ""): String {
-            var v = spaces + toString()
-            for (g in children)
-                v += "\n" + g.print(spaces + "   ")
-            return v
+    private fun printHierarchy() {
+
+        fun print(el: GUIElement, prefix: String): String {
+            val s = StringBuilder()
+            s.appendln(prefix + el.toString())
+            s.append(el.children.joinToString(separator = "", transform = { print(it, prefix + "  ") }))
+            return s.toString()
         }
-        for (group in windowGroups) {
-            println(group.name + ":")
-            println("windows: ${group.windows.size}, ${group.windows.joinToString()}")
-            for (window in group.windows) {
-                println("windows in ${group.name}: $window")
-                if (window.open) {
-                    println("   $window:")
-                    println(window.children.forEach { it.print("      ") })
-                }
+
+        for (g in windowGroups) {
+            println(g.name + ": (${g.windows.size})")
+            for (window in g.windows) {
+                println("  $window")
+                //for(child in window.children.sortedBy { it.layer }) {
+                //    println(print(child, "    "))
+                //}
             }
         }
+
     }
 }

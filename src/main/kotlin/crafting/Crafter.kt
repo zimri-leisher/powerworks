@@ -6,11 +6,11 @@ package crafting
  */
 interface Crafter {
 
-    val crafterType: Int
+    val crafterType: Type
 
-    companion object {
-        val PLAYER = 1
-        val ITEM_CRAFTER = 2
-        val ROBOT_CRAFTER = 3
+    enum class Type {
+        DEFAULT,
+        ITEM,
+        ROBOT
     }
 }

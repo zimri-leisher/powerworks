@@ -6,9 +6,9 @@ import level.moving.MovingObject
 import screen.elements.*
 
 /**
- * A pre-built GUIWindow for interaction with the level.
+ * A window for interaction with the level.
  * Has a GUILevelView, a GUIOutline around it, some miscellaneous controls for movement, resizing, etc.
- * By default, the IngameGUI has 4 of these. Control.TOGGLE_VIEW_CONTROLS goes through that to toggle the controls mentioned above, meaning by default these are not toggleable
+ * By default, the IngameGUI has 4 of these. Control.TOGGLE_VIEW_CONTROLS goes through that to toggle the controls mentioned above
  */
 class LevelViewWindow(name: String,
                       xPixel: Int, yPixel: Int,
@@ -29,31 +29,34 @@ class LevelViewWindow(name: String,
             camera, zoomLevel, open)
     val outline = GUIOutline(view, name + " outline", open = open)
     val nameText = GUIText(view, name, 1, 1, name, layer = 1)
-    val controls = mutableListOf<GUIElement>()
+    private val controls = mutableListOf<GUIElement>()
 
     init {
-        InputManager.registerControlPressHandler(this, ControlPressHandlerType.SCREEN_THIS, Control.UP, Control.DOWN, Control.LEFT, Control.RIGHT)
+        InputManager.registerControlPressHandler(this, ControlPressHandlerType.SCREEN_THIS, Control.CAMERA_UP, Control.CAMERA_DOWN, Control.CAMERA_LEFT, Control.CAMERA_RIGHT)
         nameText.transparentToInteraction = true
-        controls.add(generateDimensionDragGrip(2, 2))
+        controls.add(generateDimensionDragGrip(2))
         controls.add(generateDragGrip(2))
         controls.add(generateCloseButton(2))
         controls.add(nameText)
+        controls.forEach { it.matchParentOpening = false; it.open = false }
         partOfLevel = true
     }
 
     override fun handleControlPress(p: ControlPress) {
-        if (p.pressType == PressType.RELEASED || camera !is MovingObject)
-            return
-        val c = p.control
-        val m = camera as MovingObject
-        if (c == Control.UP) {
-            m.yVel += CAMERA_SPEED
-        } else if (c == Control.DOWN) {
-            m.yVel -= CAMERA_SPEED
-        } else if (c == Control.RIGHT) {
-            m.xVel += CAMERA_SPEED
-        } else if (c == Control.LEFT) {
-            m.xVel -= CAMERA_SPEED
+        if (p.control in Control.Group.CAMERA && p.pressType != PressType.RELEASED && camera is MovingObject) {
+            val c = p.control
+            val m = camera as MovingObject
+            if (c == Control.CAMERA_UP) {
+                m.yVel += CAMERA_SPEED
+            } else if (c == Control.CAMERA_DOWN) {
+                m.yVel -= CAMERA_SPEED
+            } else if (c == Control.CAMERA_RIGHT) {
+                m.xVel += CAMERA_SPEED
+            } else if (c == Control.CAMERA_LEFT) {
+                m.xVel -= CAMERA_SPEED
+            }
+        } else if(p.control == Control.TOGGLE_VIEW_CONTROLS && p.pressType == PressType.PRESSED) {
+            controls.forEach { it.open = !it.open }
         }
     }
 }

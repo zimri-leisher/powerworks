@@ -22,7 +22,7 @@ import level.tile.Tile
 import level.tube.TubeBlockGroup
 import main.DebugCode
 import main.Game
-import misc.GeometryHelper
+import misc.Geometry
 import misc.Numbers
 import resource.ResourceCategory
 import resource.ResourceNode
@@ -61,9 +61,6 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
     val particles = ConcurrentlyModifiableMutableList<Particle>()
     val chunks: Array<Chunk>
     val loadedChunks = CopyOnWriteArrayList<Chunk>()
-
-    var ghostBlock: GhostBlock? = null
-    var ghostBlockRotation = 0
 
     val oreNoises = mutableMapOf<OreTileType, Noise>()
 
@@ -164,10 +161,11 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
                 count++
             }
         }
+        Tool.renderBelow()
         particles.forEach {
             it.render()
         }
-        for (y in minY until maxY) {
+        for (y in (maxY - 1) downTo minY) {
             val yChunk = y shr CHUNK_TILE_EXP
             // Render the line of blocks
             for (x in minX until maxX) {
@@ -188,7 +186,7 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
         }
 
         TubeBlockGroup.render()
-        Tool.render()
+        Tool.renderAbove()
 
         val chunksInTileRectangle = Chunks.getFromTileRectangle(minX, minY, maxX - minX - 1, maxY - minY - 1)
         for (c in chunksInTileRectangle) {
@@ -228,13 +226,13 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
 
     // Most of these functions below are messy but they are only used here and only for simplifying boilerplate
     private fun renderNodeDebug(n: ResourceNode<*>) {
-        val xSign = GeometryHelper.getXSign(n.dir)
-        val ySign = GeometryHelper.getYSign(n.dir)
+        val xSign = Geometry.getXSign(n.dir)
+        val ySign = Geometry.getYSign(n.dir)
         if (n.allowOut) {
             Renderer.renderTexture(Image.Misc.THIN_ARROW, (n.xTile shl 4) + 4 + 8 * xSign, (n.yTile shl 4) + 4 + 8 * ySign, TextureRenderParams(rotation = 90f * n.dir))
         }
         if (n.allowIn) {
-            Renderer.renderTexture(Image.Misc.THIN_ARROW, (n.xTile shl 4) + 4 + 8 * xSign, (n.yTile shl 4) + 4 + 8 * ySign, TextureRenderParams(rotation = 90f * GeometryHelper.getOppositeAngle(n.dir)))
+            Renderer.renderTexture(Image.Misc.THIN_ARROW, (n.xTile shl 4) + 4 + 8 * xSign, (n.yTile shl 4) + 4 + 8 * ySign, TextureRenderParams(rotation = 90f * Geometry.getOppositeAngle(n.dir)))
         }
     }
 
@@ -385,11 +383,23 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
             return null
         }
 
+        fun getFromPixelRectangle(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int): List<MovingObject> {
+            val l = mutableListOf<MovingObject>()
+            for (c in Chunks.getFromPixelRectangle(xPixel, yPixel, widthPixels, heightPixels)) {
+                for (d in c.moving!!) {
+                    if (Geometry.intersects(xPixel, yPixel, widthPixels, heightPixels, d.xPixel - d.hitbox.xStart, d.yPixel - d.hitbox.yStart, d.hitbox.width, d.hitbox.height)) {
+                        l.add(d)
+                    }
+                }
+            }
+            return l
+        }
+
         fun getInRadius(xPixel: Int, yPixel: Int, radius: Int, predicate: (MovingObject) -> Boolean = { true }): List<MovingObject> {
             val l = mutableListOf<MovingObject>()
             for (c in Chunks.getFromPixelRectangle(xPixel - radius, yPixel - radius, radius * 2, radius * 2)) {
                 for (d in c.moving!!) {
-                    if (predicate(d) && GeometryHelper.intersects(xPixel - radius, yPixel - radius, radius * 2, radius * 2, d.xPixel - d.hitbox.xStart, d.yPixel - d.hitbox.yStart, d.hitbox.width, d.hitbox.height)) {
+                    if (predicate(d) && Geometry.intersects(xPixel - radius, yPixel - radius, radius * 2, radius * 2, d.xPixel - d.hitbox.xStart, d.yPixel - d.hitbox.yStart, d.hitbox.width, d.hitbox.height)) {
                         l.add(d)
                     }
                 }
@@ -399,9 +409,9 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
 
         fun get(xPixel: Int, yPixel: Int): List<MovingObject> {
             val chunk = Chunks.getFromPixel(xPixel, yPixel)
-            var ret = chunk.moving!!.filter { GeometryHelper.contains(it.xPixel + it.hitbox.xStart, it.yPixel + it.hitbox.yStart, it.hitbox.width, it.hitbox.height, xPixel, yPixel, 0, 0) }
+            var ret = chunk.moving!!.filter { Geometry.contains(it.xPixel + it.hitbox.xStart, it.yPixel + it.hitbox.yStart, it.hitbox.width, it.hitbox.height, xPixel, yPixel, 0, 0) }
             if (ret.isEmpty())
-                ret = chunk.movingOnBoundary!!.filter { GeometryHelper.contains(it.xPixel + it.hitbox.xStart, it.yPixel + it.hitbox.yStart, it.hitbox.width, it.hitbox.height, xPixel, yPixel, 0, 0) }
+                ret = chunk.movingOnBoundary!!.filter { Geometry.contains(it.xPixel + it.hitbox.xStart, it.yPixel + it.hitbox.yStart, it.hitbox.width, it.hitbox.height, xPixel, yPixel, 0, 0) }
             return ret
         }
     }
@@ -478,7 +488,7 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
 
     object ResourceNodes {
         fun <R : ResourceType> updateAttachments(o: ResourceNode<R>) {
-            val attached = get<R>(o.xTile + GeometryHelper.getXSign(o.dir), o.yTile + GeometryHelper.getYSign(o.dir), o.resourceCategory).filter { it.dir == GeometryHelper.getOppositeAngle(o.dir) }
+            val attached = get<R>(o.xTile + Geometry.getXSign(o.dir), o.yTile + Geometry.getYSign(o.dir), o.resourceCategory).filter { it.dir == Geometry.getOppositeAngle(o.dir) }
             if (o.allowOut && o.allowIn) {
                 o.attachedNode = attached.firstOrNull { it.allowIn && it.allowOut }
             } else if (o.allowOut) {
@@ -534,7 +544,7 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
             val l = mutableListOf<DroppedItem>()
             for (c in Chunks.getFromPixelRectangle(xPixel - radius, yPixel - radius, radius * 2, radius * 2)) {
                 for (d in c.droppedItems!!) {
-                    if (predicate(d) && GeometryHelper.intersects(xPixel - radius, yPixel - radius, radius * 2, radius * 2, d.xPixel - d.hitbox.xStart, d.yPixel - d.hitbox.yStart, d.hitbox.width, d.hitbox.height)) {
+                    if (predicate(d) && Geometry.intersects(xPixel - radius, yPixel - radius, radius * 2, radius * 2, d.xPixel - d.hitbox.xStart, d.yPixel - d.hitbox.yStart, d.hitbox.width, d.hitbox.height)) {
                         l.add(d)
                     }
                 }
@@ -605,7 +615,7 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
 
         // TODO use async for stuff like this?
         fun doesPairCollide(l: LevelObject, xPixel: Int = l.xPixel, yPixel: Int = l.yPixel, l2: LevelObject, xPixel2: Int = l2.xPixel, yPixel2: Int = l2.yPixel): Boolean {
-            return GeometryHelper.intersects(xPixel + l.hitbox.xStart, yPixel + l.hitbox.yStart, l.hitbox.width, l.hitbox.height, xPixel2 + l2.hitbox.xStart, yPixel2 + l2.hitbox.yStart, l2.hitbox.width, l2.hitbox.height)
+            return Geometry.intersects(xPixel + l.hitbox.xStart, yPixel + l.hitbox.yStart, l.hitbox.width, l.hitbox.height, xPixel2 + l2.hitbox.xStart, yPixel2 + l2.hitbox.yStart, l2.hitbox.width, l2.hitbox.height)
         }
 
         /**

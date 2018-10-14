@@ -1,10 +1,9 @@
 package level.particle
 
-import data.ConcurrentlyModifiableMutableList
 import graphics.TextureRenderParams
 import graphics.Renderer
 import level.Level
-import misc.GeometryHelper
+import misc.Geometry
 
 class Particle(val type: ParticleType, var xPixel: Int, var yPixel: Int, var rotation: Int = 0) {
 
@@ -26,7 +25,7 @@ class Particle(val type: ParticleType, var xPixel: Int, var yPixel: Int, var rot
         if (type.ticksToRotate != -1) {
             if (ticksLeftBeforeRotation == 0) {
                 ticksLeftBeforeRotation = type.ticksToRotate
-                rotation = GeometryHelper.addAngles(1, rotation)
+                rotation = Geometry.addAngles(1, rotation)
             } else {
                 ticksLeftBeforeRotation--
             }

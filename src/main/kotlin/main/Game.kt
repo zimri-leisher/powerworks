@@ -4,24 +4,20 @@ import audio.AudioManager
 import com.badlogic.gdx.ApplicationAdapter
 import com.badlogic.gdx.Game
 import com.badlogic.gdx.Gdx
-import com.badlogic.gdx.backends.lwjgl.LwjglApplication
-import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration
-import com.badlogic.gdx.files.FileHandle
+import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application
+import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration
 import com.badlogic.gdx.graphics.Color
-import com.badlogic.gdx.graphics.Cursor
 import com.badlogic.gdx.graphics.GL20
-import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import data.FileManager
 import data.FileSystem
 import data.ResourceManager
-import graphics.*
+import graphics.Animation
+import graphics.Image
+import graphics.Renderer
 import graphics.text.TextManager
 import io.*
-import item.IngotItemType
-import item.Inventory
-import item.ItemType
-import item.OreItemType
+import item.*
 import level.Level
 import level.block.BlockType
 import level.block.ChestBlockType
@@ -29,7 +25,6 @@ import level.block.CrafterBlockType
 import level.block.MachineBlockType
 import mod.ModManager
 import mod.ModPermissionsPolicy
-import org.lwjgl.openal.AL
 import screen.IngameGUI
 import screen.MainMenuGUI
 import screen.ScreenManager
@@ -37,33 +32,36 @@ import screen.elements.GUICloseButton
 import screen.mouse.Mouse
 import screen.mouse.Tool
 import screen.mouse.Tooltips
-import java.io.File
 import java.net.URL
 import java.security.Policy
 
 /* Utility extensions */
 fun URL.toFileHandle() = Gdx.files.internal(path)
+
 val TextureRegion.widthPixels: Int
     get() = regionWidth
 val TextureRegion.heightPixels: Int
     get() = regionHeight
+
 fun toColor(r: Int = 255, g: Int = 255, b: Int = 255, a: Int = 255) = Color(r / 255f, g / 255f, b / 255f, a / 255f)
 fun toColor(r: Float = 1f, g: Float = 1f, b: Float = 1f, a: Float = 1f) = Color(r, g, b, a)
 fun toColor(color: Int = 0xFFFFFF, alpha: Float = 1f): Color {
-    val c = Color(color)
+    val c = Color()
     c.a = alpha
+    c.r = (color and 0x00ff0000).ushr(16) / 255f
+    c.g = (color and 0x0000ff00).ushr(8) / 255f
+    c.b = (color and 0x000000ff) / 255f
     return c
 }
+
 fun Color.toWhite() = this.set(1f, 1f, 1f, 1f)
 
 fun main(args: Array<String>) {
-    val config = LwjglApplicationConfiguration()
-    config.title = "Powerworks Industries"
-    config.width = main.Game.WIDTH * main.Game.SCALE
-    config.height = main.Game.HEIGHT * main.Game.SCALE
-    config.foregroundFPS = main.Game.FRAMES_PER_SECOND
-    config.backgroundFPS = main.Game.FRAMES_PER_SECOND
-    LwjglApplication(Game, config)
+    val config = Lwjgl3ApplicationConfiguration()
+    config.setWindowedMode(main.Game.WIDTH * main.Game.SCALE, main.Game.HEIGHT * main.Game.SCALE)
+    config.setIdleFPS(main.Game.FRAMES_PER_SECOND / 5)
+    config.setTitle("Powerworks Industries")
+    Lwjgl3Application(Game, config)
 }
 
 object Game : ApplicationAdapter(), ControlPressHandler {
@@ -93,8 +91,6 @@ object Game : ApplicationAdapter(), ControlPressHandler {
      */
     var secondsCount = 0
 
-    private lateinit var defaultGameCursor: Cursor
-
     val JAR_PATH = Game::class.java.protectionDomain.codeSource.location.toURI().path.drop(1)
 
     /**
@@ -122,8 +118,7 @@ object Game : ApplicationAdapter(), ControlPressHandler {
 
     override fun create() {
         // order matters with some of these!
-        ResourceManager.registerAtlas("textures/atlas/all.atlas")
-        defaultGameCursor = Gdx.graphics.newCursor(Pixmap(Gdx.files.internal("textures/cursor/cursor_default.png")), 0, 0)
+        ResourceManager.registerAtlas("textures/all.atlas")
         Image.Misc
         Image.GUI
         Image.Block
@@ -137,7 +132,6 @@ object Game : ApplicationAdapter(), ControlPressHandler {
         Tooltips
         AudioManager.load()
         Gdx.input.inputProcessor = InputManager
-        Gdx.graphics.setCursor(defaultGameCursor)
         InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.PIPE_INFO, Control.ESCAPE, Control.TURN_OFF_DEBUG_INFO, Control.TAKE_SCREENSHOT, Control.POSITION_INFO, Control.RESOURCE_NODES_INFO, Control.RENDER_HITBOXES, Control.SCREEN_INFO, Control.CHUNK_INFO, Control.TOGGLE_INVENTORY, Control.TUBE_INFO)
         // the main menu GUI is by default open, but it won't get initialized till we call it somewhere
         MainMenuGUI
@@ -145,6 +139,7 @@ object Game : ApplicationAdapter(), ControlPressHandler {
         ItemType
         IngotItemType
         OreItemType
+        BlockItemType
         BlockType
         MachineBlockType
         CrafterBlockType
@@ -214,19 +209,15 @@ object Game : ApplicationAdapter(), ControlPressHandler {
         Renderer.batch.dispose()
         ResourceManager.dispose()
         TextManager.dispose()
-        defaultGameCursor.dispose()
-        AL.destroy()
         AudioManager.close()
         ModManager.shutdown()
         System.exit(0)
     }
 
     fun resetMouseIcon() {
-        Gdx.graphics.setCursor(defaultGameCursor)
     }
 
     fun clearMouseIcon() {
-        Gdx.graphics.setSystemCursor(com.badlogic.gdx.graphics.Cursor.SystemCursor.Arrow)
     }
 
     override fun handleControlPress(p: ControlPress) {
@@ -251,6 +242,7 @@ object Game : ApplicationAdapter(), ControlPressHandler {
                     if (State.CURRENT_STATE != State.INGAME)
                         return
                     IngameGUI.mainInvGUI.toggle()
+                    IngameGUI.mainInvGUI.windowGroup.bringToTop(IngameGUI.mainInvGUI)
                 }
             }
     }

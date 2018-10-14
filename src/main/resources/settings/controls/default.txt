@@ -1,9 +1,9 @@
 //<initial code>[! (if you want it to be activated only when this key is NOT down)][:<secondary code 1> ... :<secondary code n> [:ONLY (if you want this to activate ONLY when these keys are down, no more, no less)]]:<control name>
-W:UP
+W:CAMERA_UP
 // ^ will always activate when W is pressed, regardless of any other keys down
-A:LEFT
-S:DOWN
-D:RIGHT
+A:CAMERA_LEFT
+S:CAMERA_DOWN
+D:CAMERA_RIGHT
 
 ESCAPE:ESCAPE
 

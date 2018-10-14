@@ -18,12 +18,7 @@ open class ItemType(initializer: ItemType.() -> Unit = {}) : ResourceType() {
 
     override val category
         get() = ResourceCategory.ITEM
-    // we do this because if we call the block type itself there will be a recursive error (both need each other to be initialized)
-    var placedBlockID = BlockType.ERROR.id
     var maxStack = 10
-
-    val placedBlock: BlockType<*>
-        get() = BlockType.ALL.first { it.id == placedBlockID }
 
     init {
         initializer()
@@ -45,64 +40,6 @@ open class ItemType(initializer: ItemType.() -> Unit = {}) : ResourceType() {
 
         val ERROR = ItemType()
 
-        val MINER = ItemType {
-            name = "Miner"
-            icon = Animation.MINER[0]
-            placedBlockID = MachineBlockType.MINER.id
-        }
-
-        val CRAFTER = ItemType {
-            name = "Crafter"
-            icon = Image.Block.CRAFTER
-            placedBlockID = CrafterBlockType.ITEM_CRAFTER.id
-        }
-
-        val TUBE = ItemType {
-            name = "Item Transport Tube"
-            icon = Image.Item.TUBE
-            placedBlockID = BlockType.TUBE.id
-            maxStack = 50
-        }
-
-        val CHEST_SMALL = ItemType {
-            name = "Small Chest"
-            icon = Image.Block.CHEST_SMALL
-            placedBlockID = ChestBlockType.SMALL.id
-            maxStack = 20
-        }
-
-        val CHEST_LARGE = ItemType {
-            name = "Large Chest"
-            icon = Image.Block.CHEST_LARGE
-            placedBlockID = ChestBlockType.LARGE.id
-            maxStack = 20
-        }
-
-        val FURNACE = ItemType {
-            name = "Furnace"
-            icon = Image.Block.FURNACE
-            placedBlockID = MachineBlockType.FURNACE.id
-            maxStack = 10
-        }
-
-        val SMALL_FLUID_TANK = ItemType {
-            name = "Small Tank"
-            placedBlockID = FluidTankBlockType.SMALL.id
-        }
-
-        val PIPE = ItemType {
-            name = "Fluid Transport Pipe"
-            icon = Image.Item.PIPE
-            placedBlockID = BlockType.PIPE.id
-            maxStack = 50
-        }
-
-        val SOLIDIFIER = ItemType {
-            name = "Molten Ore Solidifier"
-            icon = Animation.SOLIDIFIER[0]
-            placedBlockID = MachineBlockType.SOLIDIFIER.id
-        }
-
         val CIRCUIT = ItemType {
             name = "Circuit"
             maxStack = 100
@@ -113,6 +50,80 @@ open class ItemType(initializer: ItemType.() -> Unit = {}) : ResourceType() {
             name = "Cable"
             maxStack = 100
             icon = Image.Item.CABLE
+        }
+    }
+}
+
+class BlockItemType(initializer: BlockItemType.() -> Unit): ItemType() {
+    var placedBlock: BlockType<*> = BlockType.ERROR
+
+    init {
+        initializer()
+    }
+
+    companion object {
+        val MINER = BlockItemType {
+            name = "Miner"
+            icon = Animation.MINER[0]
+            placedBlock = MachineBlockType.MINER
+        }
+
+        val CRAFTER = BlockItemType {
+            name = "Crafter"
+            icon = Image.Block.CRAFTER
+            placedBlock = CrafterBlockType.ITEM_CRAFTER
+        }
+
+        val ROBOT_FACTORY = BlockItemType {
+            name = "Robot Factory"
+            icon = Image.Misc.ERROR
+            placedBlock = CrafterBlockType.ROBOT_FACTORY
+        }
+
+        val TUBE = BlockItemType {
+            name = "Item Transport Tube"
+            icon = Image.Item.TUBE
+            placedBlock = BlockType.TUBE
+            maxStack = 50
+        }
+
+        val CHEST_SMALL = BlockItemType {
+            name = "Small Chest"
+            icon = Image.Block.CHEST_SMALL
+            placedBlock = ChestBlockType.SMALL
+            maxStack = 20
+        }
+
+        val CHEST_LARGE = BlockItemType {
+            name = "Large Chest"
+            icon = Image.Block.CHEST_LARGE
+            placedBlock = ChestBlockType.LARGE
+            maxStack = 20
+        }
+
+        val FURNACE = BlockItemType {
+            name = "Furnace"
+            icon = Image.Block.FURNACE
+            placedBlock = MachineBlockType.FURNACE
+            maxStack = 10
+        }
+
+        val SMALL_FLUID_TANK = BlockItemType {
+            name = "Small Tank"
+            placedBlock = FluidTankBlockType.SMALL
+        }
+
+        val PIPE = BlockItemType {
+            name = "Fluid Transport Pipe"
+            icon = Image.Item.PIPE
+            placedBlock = BlockType.PIPE
+            maxStack = 50
+        }
+
+        val SOLIDIFIER = BlockItemType {
+            name = "Molten Ore Solidifier"
+            icon = Animation.SOLIDIFIER[0]
+            placedBlock = MachineBlockType.SOLIDIFIER
         }
     }
 }

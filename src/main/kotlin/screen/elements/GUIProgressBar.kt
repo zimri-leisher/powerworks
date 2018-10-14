@@ -10,7 +10,7 @@ class GUIProgressBar(parent: RootGUIElement, name: String, xAlignment: Alignment
     override fun render() {
         Renderer.renderDefaultRectangle(xPixel, yPixel, widthPixels, heightPixels, localRenderParams)
         val color = localRenderParams.color
-        localRenderParams.color.mul(toColor(0x00BC06))
+        localRenderParams.color = toColor(0x00BC06)
         Renderer.renderFilledRectangle(xPixel + 1, yPixel + 1, ((widthPixels - 2) * (currentProgress.toDouble() / maxProgress)).toInt(), heightPixels - 2, params = localRenderParams)
         localRenderParams.color = color
     }

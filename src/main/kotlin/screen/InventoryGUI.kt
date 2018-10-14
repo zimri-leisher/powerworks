@@ -19,7 +19,7 @@ class InventoryGUI(name: String,
                    layer: Int = 1) :
         GUIWindow(name, xPixel, yPixel,
                 inv.width * (GUIItemSlot.WIDTH + ITEM_SLOT_PADDING) + ITEM_SLOT_PADDING + 2,
-                inv.height * (GUIItemSlot.HEIGHT + ITEM_SLOT_PADDING) + ITEM_SLOT_PADDING + 7,
+                inv.height * (GUIItemSlot.HEIGHT + ITEM_SLOT_PADDING) + ITEM_SLOT_PADDING + 8,
                 ScreenManager.Groups.INVENTORY,
                 open,
                 layer) {
@@ -38,7 +38,7 @@ class InventoryGUI(name: String,
                 arr[x + y * inv.width] = GUIItemSlot(background, name + " item slot ${x + y * inv.width}", ITEM_SLOT_PADDING + x * (GUIItemSlot.WIDTH + ITEM_SLOT_PADDING) + 1, ITEM_SLOT_PADDING + (inv.height - y - 1) * (GUIItemSlot.HEIGHT + ITEM_SLOT_PADDING) + 1, x + y * inv.width, inv)
             }
         }
-        GUIText(background, "Inventory GUI name text", 0, heightPixels - TextManager.getStringHeight(displayName), displayName, allowTags = true)
+        GUIText(background, "Inventory GUI name text", 1, heightPixels - TextManager.getStringHeight(displayName) - 2, displayName, allowTags = true)
         itemSlots = arr as Array<GUIItemSlot>
         // You want to be able to move and edit inventories at the same time
         partOfLevel = true

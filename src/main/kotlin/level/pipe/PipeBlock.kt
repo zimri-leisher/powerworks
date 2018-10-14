@@ -10,11 +10,11 @@ import main.DebugCode
 import main.Game
 import main.heightPixels
 import main.widthPixels
-import misc.GeometryHelper
-import misc.GeometryHelper.getOppositeAngle
-import misc.GeometryHelper.getXSign
-import misc.GeometryHelper.getYSign
-import misc.GeometryHelper.isOppositeAngle
+import misc.Geometry
+import misc.Geometry.getOppositeAngle
+import misc.Geometry.getXSign
+import misc.Geometry.getYSign
+import misc.Geometry.isOppositeAngle
 import resource.ResourceCategory
 import resource.ResourceNode
 
@@ -44,7 +44,7 @@ class PipeBlock(xTile: Int, yTile: Int) : Block(BlockType.PIPE, xTile, yTile) {
         // If it is a pipe block, its onAddToLevel() event will call updateConnections() which will do the connecting for us,
         // so no need to worry about us doing it for them
         if (b !is PipeBlock) {
-            val dir = GeometryHelper.getDir(b.xTile - xTile, b.yTile - yTile)
+            val dir = Geometry.getDir(b.xTile - xTile, b.yTile - yTile)
             if (dir != -1) {
                 updateNodeConnections(dir)
             } else {
@@ -138,15 +138,15 @@ class PipeBlock(xTile: Int, yTile: Int) : Block(BlockType.PIPE, xTile, yTile) {
     }
 
     override fun render() {
-        Renderer.renderTexture(state.texture, xPixel, yPixel + 18)
+        Renderer.renderTexture(state.texture, xPixel, yPixel + 1)
         if (closedEnds[0])
-            Renderer.renderTexture(Image.Block.PIPE_UP_CLOSE, xPixel + 4, yPixel + 18)
+            Renderer.renderTexture(Image.Block.PIPE_UP_CLOSE, xPixel + 4, yPixel + 17)
         if (closedEnds[1])
-            Renderer.renderTexture(Image.Block.PIPE_RIGHT_CLOSE, xPixel + 16, yPixel + (16 - Image.Block.PIPE_RIGHT_CLOSE.heightPixels) / 2)
+            Renderer.renderTexture(Image.Block.PIPE_RIGHT_CLOSE, xPixel + 16, yPixel + (18 - Image.Block.PIPE_RIGHT_CLOSE.heightPixels) / 2)
         if (closedEnds[2])
-            Renderer.renderTexture(Image.Block.PIPE_DOWN_CLOSE, xPixel + 4, yPixel - (6 - Image.Block.PIPE_DOWN_CLOSE.heightPixels))
+            Renderer.renderTexture(Image.Block.PIPE_DOWN_CLOSE, xPixel + 4, yPixel - 5)
         if (closedEnds[3])
-            Renderer.renderTexture(Image.Block.PIPE_LEFT_CLOSE, xPixel - Image.Block.PIPE_LEFT_CLOSE.widthPixels, yPixel + (16 - Image.Block.PIPE_LEFT_CLOSE.heightPixels) / 2)
+            Renderer.renderTexture(Image.Block.PIPE_LEFT_CLOSE, xPixel - Image.Block.PIPE_LEFT_CLOSE.widthPixels, yPixel + (18 - Image.Block.PIPE_LEFT_CLOSE.heightPixels) / 2)
         if (nodeConnections[0].isNotEmpty())
             Renderer.renderTexture(Image.Block.PIPE_UP_CONNECT, xPixel + 4, yPixel + 17)
         if (Game.currentDebugCode == DebugCode.RENDER_HITBOXES)

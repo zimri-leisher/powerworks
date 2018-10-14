@@ -2,7 +2,8 @@ package screen.animations
 
 import screen.elements.RootGUIElement
 
-class MoveToAnimation(subject: RootGUIElement, val xDest: Int, val yDest: Int, val ticksToDest: Int = 7) : GUIAnimation<RootGUIElement>(subject) {
+class MoveToAnimation(subject: RootGUIElement, val xDest: Int, val yDest: Int, val ticksToDest: Int = 7, onStart: () -> Unit = {}, onStop: () -> Unit = {}) :
+        GUIAnimation<RootGUIElement>(subject, onStart, onStop) {
 
     var xVel = 0f
     var yVel = 0f
@@ -24,7 +25,7 @@ class MoveToAnimation(subject: RootGUIElement, val xDest: Int, val yDest: Int, v
     }
 
     override fun update() {
-        if(ticks == ticksToDest) {
+        if (ticks == ticksToDest) {
             playing = false
             return
         }

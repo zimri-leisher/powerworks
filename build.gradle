@@ -30,7 +30,7 @@ dependencies {
     compile 'org.jetbrains.kotlinx:kotlinx-coroutines-core:0.22.5'
     compile 'com.github.philfrei:AudioCue:-SNAPSHOT'
     compile "com.badlogicgames.gdx:gdx:$gdxVersion"
-    compile "com.badlogicgames.gdx:gdx-backend-lwjgl:$gdxVersion"
+    compile "com.badlogicgames.gdx:gdx-backend-lwjgl3:$gdxVersion"
     compile "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
     //compile "com.badlogicgames.gdx:gdx-tools:$gdxVersion"
     compile "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"

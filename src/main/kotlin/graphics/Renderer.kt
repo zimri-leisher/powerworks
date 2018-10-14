@@ -13,15 +13,19 @@ import main.heightPixels
 import main.widthPixels
 
 /**
+ * Custom SpriteBatch draw method that takes in a texture render parameter object and uses its values appropriately
+ */
+fun SpriteBatch.draw(texture: TextureRegion, x: Float, y: Float, originX: Float, originY: Float, width: Float, height: Float, params: TextureRenderParams) {
+    draw(texture, x, y, originX, originY, width, height, params.scaleX, params.scaleY, 360f - params.rotation)
+}
+
+/**
  * The main render helper.
  * This should be called directly in the render() methods of appropriate level objects/screen elements.
  * If the object is being rendered inside of a GUILevelView, the coordinates are automatically converted from level coordinates
  * to screen coordinates. If it is a separate gui element, it will remain unconverted.
  * This means there is no need to specify at any time whether you mean level or screen pixel coordinates, as long as you're keeping
- * render methods in their appropriate places. It's not magical, of course, the reason it works is that just before
- * the Level.render method is called from the GUILevelView's render method, the xPixelOffset and yPixelOffset are set to the
- * camera position. These are then subtracted from the coordinates being passed in, thus adequately converting from the level
- * to the screen
+ * render methods in their appropriate places
  */
 object Renderer {
 
@@ -29,12 +33,14 @@ object Renderer {
      * The x pixel that is added to render calls
      */
     var xPixelOffset = 0
+
     /**
      * The y pixel that is added to render calls
      */
     var yPixelOffset = 0
 
-    val batch = SpriteBatch()
+    // 6000 is a good number, a bit more than the requirements for 1 batch to hold max tiles at max zoom on a fairly large monitor
+    val batch = SpriteBatch(6000)
 
     private val defaultParams = TextureRenderParams()
 
@@ -42,6 +48,7 @@ object Renderer {
      * Will not render outside of this clip
      */
     fun setClip(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int) {
+        batch.flush()
         ScissorStack.pushScissors(Rectangle((xPixel * Game.SCALE).toFloat(), (yPixel * Game.SCALE).toFloat(), (widthPixels * Game.SCALE).toFloat(), (heightPixels * Game.SCALE).toFloat()))
     }
 
@@ -49,6 +56,7 @@ object Renderer {
      * Removes the clip
      */
     fun resetClip() {
+        batch.flush()
         ScissorStack.popScissors()
     }
 
@@ -61,28 +69,37 @@ object Renderer {
         val absoluteYPixel = ((yPixel + yPixelOffset) * Game.SCALE).toFloat()
         val absoluteWidthPixels = (widthPixels * Game.SCALE).toFloat()
         val absoluteHeightPixels = (heightPixels * Game.SCALE).toFloat()
-        val color = batch.color
+        val oldColor = batch.color
         batch.color = params.color
-        val originX = Math.ceil(absoluteWidthPixels / 2.0).toFloat()
-        val originY = Math.ceil(absoluteHeightPixels / 2.0).toFloat()
-        batch.draw(Image.GUI.DEFAULT_BACKGROUND, absoluteXPixel, absoluteYPixel, originX, originY, absoluteWidthPixels, absoluteHeightPixels, params.scaleX, params.scaleY, params.rotation)
-        with(Image.GUI.DEFAULT_EDGE_RIGHT) {
-            batch.draw(this, absoluteXPixel + absoluteWidthPixels - (this.widthPixels * Game.SCALE), absoluteYPixel, originX, originY,
-                    (this.widthPixels * Game.SCALE).toFloat(), absoluteHeightPixels, params.scaleX, params.scaleY, params.rotation)
-        }
+        val originX = absoluteWidthPixels / 2
+        val originY = absoluteHeightPixels / 2
+        batch.draw(Image.GUI.DEFAULT_BACKGROUND, absoluteXPixel, absoluteYPixel, originX, originY,
+                absoluteWidthPixels, absoluteHeightPixels, params)
         with(Image.GUI.DEFAULT_EDGE_BOTTOM) {
             batch.draw(this, absoluteXPixel, absoluteYPixel, originX, originY,
-                    absoluteWidthPixels, (this.heightPixels * Game.SCALE).toFloat(), params.scaleX, params.scaleY, params.rotation)
+                    absoluteWidthPixels, (this.heightPixels * Game.SCALE).toFloat(), params)
         }
         with(Image.GUI.DEFAULT_EDGE_LEFT) {
             batch.draw(this, absoluteXPixel, absoluteYPixel, originX, originY,
-                    (this.widthPixels * Game.SCALE).toFloat(), absoluteHeightPixels, params.scaleX, params.scaleY, params.rotation)
+                    (this.widthPixels * Game.SCALE).toFloat(), absoluteHeightPixels, params)
+        }
+        // origins need adjusting to keep them relative to the center of the rectangle not the texture
+        with(Image.GUI.DEFAULT_EDGE_RIGHT) {
+            val imgWidth = (this.widthPixels * Game.SCALE).toFloat()
+            batch.draw(this, absoluteXPixel + absoluteWidthPixels - imgWidth, absoluteYPixel, -(absoluteWidthPixels / 2) + imgWidth, originY,
+                    imgWidth, absoluteHeightPixels, params)
         }
         with(Image.GUI.DEFAULT_EDGE_TOP) {
-            batch.draw(this, absoluteXPixel, absoluteYPixel + absoluteHeightPixels - (this.heightPixels * Game.SCALE), originX, originY,
-                    absoluteWidthPixels, (this.heightPixels * Game.SCALE).toFloat(), params.scaleX, params.scaleY, params.rotation)
+            val imgHeight = (this.heightPixels * Game.SCALE).toFloat()
+            batch.draw(this, absoluteXPixel, absoluteYPixel + absoluteHeightPixels - imgHeight, originX, -(absoluteHeightPixels / 2) + imgHeight,
+                    absoluteWidthPixels, imgHeight, params)
         }
-        batch.color = color
+        batch.color = oldColor
+        if (params.brightness > 1f) {
+            brightPatch(absoluteXPixel, absoluteYPixel, originX, originY, absoluteWidthPixels, absoluteHeightPixels, params)
+        } else if (params.brightness < 1f) {
+            darkPatch(absoluteXPixel, absoluteYPixel, originX, originY, absoluteWidthPixels, absoluteHeightPixels, params)
+        }
     }
 
     /**
@@ -120,12 +137,12 @@ object Renderer {
         val absoluteYPixel = ((yPixel + yPixelOffset) * Game.SCALE).toFloat()
         val absoluteWidthPixels = (widthPixels * Game.SCALE).toFloat()
         val absoluteHeightPixels = (heightPixels * Game.SCALE).toFloat()
-        val colorBatch = batch.color
-        val originX = Math.ceil(absoluteWidthPixels / 2.0).toFloat()
-        val originY = Math.ceil(absoluteHeightPixels / 2.0).toFloat()
+        val originX = absoluteWidthPixels / 2
+        val originY = absoluteHeightPixels / 2
+        val oldColor = batch.color
         batch.color = params.color
-        batch.draw(Image.GUI.WHITE_FILLER, absoluteXPixel, absoluteYPixel, originX, originY, absoluteWidthPixels, absoluteHeightPixels, params.scaleX, params.scaleY, params.rotation)
-        batch.color = colorBatch
+        batch.draw(Image.GUI.WHITE_FILLER, absoluteXPixel, absoluteYPixel, originX, originY, absoluteWidthPixels, absoluteHeightPixels, params)
+        batch.color = oldColor
     }
 
     fun renderFilledRectangle(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int) {
@@ -136,24 +153,46 @@ object Renderer {
         batch.draw(Image.GUI.WHITE_FILLER, absoluteXPixel, absoluteYPixel, absoluteWidthPixels, absoluteHeightPixels)
     }
 
+    private fun brightPatch(absoluteXPixel: Float, absoluteYPixel: Float, originX: Float, originY: Float, absoluteWidthPixels: Float, absoluteHeightPixels: Float, params: TextureRenderParams) {
+        val oldColor = batch.color
+        val oldSrcFunc = batch.blendSrcFunc
+        val oldDestFunc = batch.blendDstFunc
+        batch.setColor(1f, 1f, 1f, params.brightness - 1f)
+        batch.draw(Image.GUI.WHITE_FILLER, absoluteXPixel, absoluteYPixel, originX, originY, absoluteWidthPixels, absoluteHeightPixels, params)
+        batch.color = oldColor
+    }
+
+    private fun darkPatch(absoluteXPixel: Float, absoluteYPixel: Float, originX: Float, originY: Float, absoluteWidthPixels: Float, absoluteHeightPixels: Float, params: TextureRenderParams) {
+        val oldColor = batch.color
+        val oldSrcFunc = batch.blendSrcFunc
+        val oldDestFunc = batch.blendDstFunc
+        batch.setColor(1f, 1f, 1f, 1f - params.brightness)
+        batch.draw(Image.GUI.BLACK_FILLER, absoluteXPixel, absoluteYPixel, originX, originY, absoluteWidthPixels, absoluteHeightPixels, params)
+        batch.color = oldColor
+    }
+
     /**
      * @param borderThickness how thicc to make the lines
      */
     fun renderEmptyRectangle(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int, borderThickness: Float = 1f, params: TextureRenderParams) {
-        val absoluteXPixel = ((xPixel + xPixelOffset) * Game.SCALE + if (widthPixels < 0) (widthPixels * Game.SCALE) else 0).toFloat()
-        val absoluteYPixel = ((yPixel + yPixelOffset) * Game.SCALE + if (heightPixels < 0) (heightPixels * Game.SCALE) else 0).toFloat()
-        val absoluteWidthPixels = (Math.abs(widthPixels) * Game.SCALE).toFloat()
-        val absoluteHeightPixels = (Math.abs(heightPixels) * Game.SCALE).toFloat()
+        val absoluteXPixel = ((xPixel + xPixelOffset) * Game.SCALE).toFloat()
+        val absoluteYPixel = ((yPixel + yPixelOffset) * Game.SCALE).toFloat()
+        val absoluteWidthPixels = (widthPixels * Game.SCALE).toFloat()
+        val absoluteHeightPixels = (heightPixels * Game.SCALE).toFloat()
         val absBorderThickness = borderThickness * Game.SCALE
-        val colorBatch = batch.color
+        val oldColor = batch.color
         batch.color = params.color
-        val originX = Math.ceil(absoluteWidthPixels / 2.0).toFloat()
-        val originY = Math.ceil(absoluteHeightPixels / 2.0).toFloat()
-        batch.draw(Image.GUI.WHITE_FILLER, absoluteXPixel, absoluteYPixel, originX, originY, absoluteWidthPixels, absBorderThickness, params.scaleX, params.scaleY, params.rotation)
-        batch.draw(Image.GUI.WHITE_FILLER, absoluteXPixel + absoluteWidthPixels, absoluteYPixel, originX, originY, absBorderThickness, absoluteHeightPixels, params.scaleX, params.scaleY, params.rotation)
-        batch.draw(Image.GUI.WHITE_FILLER, absoluteXPixel, absoluteYPixel, originX, originY, absBorderThickness, absoluteHeightPixels, params.scaleX, params.scaleY, params.rotation)
-        batch.draw(Image.GUI.WHITE_FILLER, absoluteXPixel, absoluteYPixel + absoluteHeightPixels, originX, originY, absoluteWidthPixels + 4, absBorderThickness, params.scaleX, params.scaleY, params.rotation)
-        batch.color = colorBatch
+        val originX = absoluteWidthPixels / 2
+        val originY = absoluteHeightPixels / 2
+        // bottom
+        batch.draw(Image.GUI.WHITE_FILLER, absoluteXPixel, absoluteYPixel, originX, originY, absoluteWidthPixels, absBorderThickness, params)
+        // left
+        batch.draw(Image.GUI.WHITE_FILLER, absoluteXPixel, absoluteYPixel, originX, originY, absBorderThickness, absoluteHeightPixels, params)
+        // right
+        batch.draw(Image.GUI.WHITE_FILLER, absoluteXPixel + absoluteWidthPixels - absBorderThickness, absoluteYPixel, originX, originY, absBorderThickness, absoluteHeightPixels, params)
+        // top
+        batch.draw(Image.GUI.WHITE_FILLER, absoluteXPixel, absoluteYPixel + absoluteHeightPixels - absBorderThickness, originX, originY, absoluteWidthPixels, absBorderThickness, params)
+        batch.color = oldColor
     }
 
     /**
@@ -165,10 +204,14 @@ object Renderer {
         val absoluteWidthPixels = (Math.abs(widthPixels) * Game.SCALE).toFloat()
         val absoluteHeightPixels = (Math.abs(heightPixels) * Game.SCALE).toFloat()
         val absBorderThickness = borderThickness * Game.SCALE
+        // bottom
         batch.draw(Image.GUI.WHITE_FILLER, absoluteXPixel, absoluteYPixel, absoluteWidthPixels, absBorderThickness)
-        batch.draw(Image.GUI.WHITE_FILLER, absoluteXPixel + absoluteWidthPixels, absoluteYPixel, absBorderThickness, absoluteHeightPixels)
+        // left
         batch.draw(Image.GUI.WHITE_FILLER, absoluteXPixel, absoluteYPixel, absBorderThickness, absoluteHeightPixels)
-        batch.draw(Image.GUI.WHITE_FILLER, absoluteXPixel, absoluteYPixel + absoluteHeightPixels, absoluteWidthPixels + 4, absBorderThickness)
+        // right
+        batch.draw(Image.GUI.WHITE_FILLER, absoluteXPixel + absoluteWidthPixels - absBorderThickness, absoluteYPixel, absBorderThickness, absoluteHeightPixels)
+        // top
+        batch.draw(Image.GUI.WHITE_FILLER, absoluteXPixel, absoluteYPixel + absoluteHeightPixels - absBorderThickness, absoluteWidthPixels, absBorderThickness)
     }
 
     /**
@@ -187,12 +230,12 @@ object Renderer {
         val absoluteYPixel = ((yPixel + yPixelOffset) * Game.SCALE).toFloat()
         val absoluteWidthPixels = (t.widthPixels * Game.SCALE).toFloat()
         val absoluteHeightPixels = (t.heightPixels * Game.SCALE).toFloat()
-        val originX = Math.ceil(absoluteWidthPixels / 2.0).toFloat()
-        val originY = Math.ceil(absoluteHeightPixels / 2.0).toFloat()
-        val color = batch.color
+        val originX = absoluteWidthPixels / 2
+        val originY = absoluteHeightPixels / 2
+        val oldColor = batch.color
         batch.color = params.color
-        batch.draw(t, absoluteXPixel, absoluteYPixel, originX, originY, absoluteWidthPixels, absoluteHeightPixels, params.scaleX, params.scaleY, params.rotation)
-        batch.color = color
+        batch.draw(t, absoluteXPixel, absoluteYPixel, originX, originY, absoluteWidthPixels, absoluteHeightPixels, params)
+        batch.color = oldColor
     }
 
     /**
@@ -258,12 +301,12 @@ object Renderer {
         val absoluteYPixel = ((yPixel + yPixelOffset) * Game.SCALE).toFloat()
         val absoluteWidthPixels = (widthPixels * Game.SCALE).toFloat()
         val absoluteHeightPixels = (heightPixels * Game.SCALE).toFloat()
-        val originX = Math.ceil(absoluteWidthPixels / 2.0).toFloat()
-        val originY = Math.ceil(absoluteHeightPixels / 2.0).toFloat()
-        val color = batch.color
+        val originX = absoluteWidthPixels / 2
+        val originY = absoluteHeightPixels / 2
+        val oldColor = batch.color
         batch.color = params.color
-        batch.draw(t, absoluteXPixel, absoluteYPixel, originX, originY, absoluteWidthPixels, absoluteHeightPixels, params.scaleX, params.scaleY, params.rotation)
-        batch.color = color
+        batch.draw(t, absoluteXPixel, absoluteYPixel, originX, originY, absoluteWidthPixels, absoluteHeightPixels, params)
+        batch.color = oldColor
     }
 
     /**
@@ -273,14 +316,14 @@ object Renderer {
     fun renderText(text: Any?, xPixel: Int, yPixel: Int, ignoreLines: Boolean = false) {
         val f = TextManager.getFont()
         val font = f.font
-        font.setColor(0f, 0f, 0f, 1f)
         val s = text.toString()
         if (!ignoreLines && s.contains("\n")) {
-            s.split("\n").forEachIndexed { index, string ->
-                font.draw(batch, string, ((xPixel + xPixelOffset) * Game.SCALE).toFloat(), ((yPixel + yPixelOffset + f.charHeight * index) * Game.SCALE).toFloat())
+            val lines = s.split("\n")
+            lines.forEachIndexed { index, string ->
+                font.draw(batch, string, ((xPixel + xPixelOffset) * Game.SCALE).toFloat(), ((yPixel + f.charHeight + yPixelOffset + ((f.charHeight + 1) * (lines.lastIndex - index))) * Game.SCALE))
             }
         } else {
-            font.draw(batch, s, ((xPixel + xPixelOffset) * Game.SCALE).toFloat(), ((yPixel + yPixelOffset + f.charHeight) * Game.SCALE).toFloat())
+            font.draw(batch, s, ((xPixel + xPixelOffset) * Game.SCALE).toFloat(), ((yPixel + f.charHeight + yPixelOffset) * Game.SCALE))
         }
     }
 
@@ -292,18 +335,18 @@ object Renderer {
     fun renderText(text: Any?, xPixel: Int, yPixel: Int, params: TextRenderParams, ignoreLines: Boolean = false) {
         val f = TextManager.getFont(params.size, params.style)
         val font = f.font
-        val color = font.color
+        val oldColor = font.color
         font.color = params.color
         val s = text.toString()
         if (!ignoreLines && s.contains("\n")) {
             val lines = s.split("\n")
             lines.forEachIndexed { index, string ->
-                font.draw(batch, string, ((xPixel + xPixelOffset) * Game.SCALE).toFloat(), ((yPixel + f.charHeight + yPixelOffset + (f.charHeight * (lines.lastIndex - index))) * Game.SCALE).toFloat())
+                font.draw(batch, string, ((xPixel + xPixelOffset) * Game.SCALE).toFloat(), ((yPixel + f.charHeight + yPixelOffset + ((f.charHeight + 1) * (lines.lastIndex - index))) * Game.SCALE))
             }
         } else {
-            font.draw(batch, s, ((xPixel + xPixelOffset) * Game.SCALE).toFloat(), ((yPixel + f.charHeight + yPixelOffset) * Game.SCALE).toFloat())
+            font.draw(batch, s, ((xPixel + xPixelOffset) * Game.SCALE).toFloat(), ((yPixel + f.charHeight + yPixelOffset) * Game.SCALE))
         }
-        font.color = color
+        font.color = oldColor
     }
 
     /**
@@ -320,7 +363,7 @@ object Renderer {
             val bounds = TextManager.getStringBounds(substring, context.currentRenderParams.size, context.currentRenderParams.style)
             context.currentBounds.width += bounds.width
             context.currentBounds.height = Math.max(context.currentBounds.height, bounds.height)
-            tag.forEach { it.type.execute(context, it.argument) }
+            tag.forEach { it.type.execute(context, it.argument, false) }
             lastTagIndex = thisTagIndex
         }
         renderText(taggedText.text.substring(lastTagIndex), context.currentBounds.width + context.currentBounds.x, context.currentBounds.y, context.currentRenderParams)

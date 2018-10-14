@@ -21,7 +21,7 @@ object TextManager {
     lateinit var defaultFont: BitmapFont
     val glyphLayout = GlyphLayout()
     const val DEFAULT_SIZE = 20
-    const val DEFAULT_CHARS = "1234567890qwertyuiopasdfghjklzxcvbnm`=[]\\;',./QWERTYUIOPASDFGHJLZXCVBNM{}|:\"<>?"
+    const val DEFAULT_CHARS = """1234567890qwertyuiopasdfghjklzxcvbnm`[]\;',./QWERTYUIOPASDFGHJKLZXCVBNM{}|:"<>?!@#$%^&*()_-+="""
 
     init {
         try {
@@ -160,7 +160,7 @@ object TextManager {
             val substringBounds = getStringBounds(previousText, context.currentRenderParams.size, context.currentRenderParams.style)
             context.currentBounds.width += substringBounds.width
             context.currentBounds.height = Math.max(context.currentBounds.height, substringBounds.height)
-            tags.forEach { it.type.execute(context, it.argument) }
+            tags.forEach { it.type.execute(context, it.argument, true) }
             lastIndex = index
         }
         val lastSubstringBounds = getStringBounds(t.text.substring(lastIndex), context.currentRenderParams.size, context.currentRenderParams.style)

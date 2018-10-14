@@ -8,8 +8,13 @@ import screen.RecipeSelectorGUI
 class GUIRecipeButton(parent: RootGUIElement,
                       name: String,
                       xAlignment: Alignment, yAlignment: Alignment,
-                      recipe: Recipe?, val onRecipeChange: (Recipe?) -> Unit = {}) : GUIElement(
-        parent, name, xAlignment, yAlignment, { WIDTH }, { HEIGHT }) {
+                      recipe: Recipe?,
+                      /**
+                       * Called when the selected recipe is switched. The parameter is
+                       * the new recipe
+                       */
+                      val onRecipeChange: (Recipe?) -> Unit = {}) :
+        GUIElement(parent, name, xAlignment, yAlignment, { WIDTH }, { HEIGHT }) {
 
     var recipe = recipe
         set(value) {
@@ -20,12 +25,8 @@ class GUIRecipeButton(parent: RootGUIElement,
             }
         }
 
-    val display: GUIRecipeDisplay
+    val display: GUIRecipeDisplay = GUIRecipeDisplay(this, "Recipe button's recipe display", { 0 }, { 0 }, recipe).apply { transparentToInteraction = true }
     var waitingForRecipeSelection = false
-
-    init {
-        display = GUIRecipeDisplay(this, "Recipe button's recipe display", { 0 }, { 0 }, recipe).apply { transparentToInteraction = true }
-    }
 
     override fun update() {
         if (waitingForRecipeSelection) {

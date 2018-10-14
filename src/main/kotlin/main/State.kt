@@ -26,7 +26,6 @@ class State(val activate: (State) -> (Unit), val deactivate: (State) -> (Unit)) 
                 Game.mainInv.add(i, i.maxStack)
             }
             AudioManager.ears = IngameGUI.cameras[0]
-            IngameGUI.open = true
             RecipeSelectorGUI
             HUD
             MovementToolsGUI

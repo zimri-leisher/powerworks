@@ -2,12 +2,11 @@ package resource
 
 import level.Hitbox
 import level.Level
-import misc.GeometryHelper
+import misc.Geometry
 import routing.ResourceRoutingNetwork
 
 /**
- * A node that allows for movement of resources between places on the level. While it exists in the level, it is not rendered
- * by default and is not a subclass of LevelObject.
+ * A node that allows for movement of resources between places on the level. This is not a subclass of LevelObject.
  *
  * An example of a place where they appear is the MinerBlock, which uses one with allowOut = true to produce the ore it mines
  * from the ground and either put it into the connected inventory or place it on the ground.
@@ -23,6 +22,7 @@ class ResourceNode<R : ResourceType>(
      * If this node is in the level, meaning it is able to interact with other nodes in the level
      */
     var inLevel = false
+
     /**
      * An adjacent node facing towards this node which can receive input (if this can output) and can output (if this can receive inputs)
      * This is where resources will get sent to when outputting
@@ -36,7 +36,7 @@ class ResourceNode<R : ResourceType>(
     var outputToLevel = true
 
     /**
-     * The resource routing network to which this is part of
+     * The resource routing network which this is part of
      */
     var network: ResourceRoutingNetwork<R> = ResourceRoutingNetwork()
 
@@ -136,8 +136,8 @@ class ResourceNode<R : ResourceType>(
             attachedNode!!.input(resource, quantity, false)
         } else if (outputToLevel) {
             // TODO make this better some time, have it actually spawn in the center
-            val xSign = GeometryHelper.getXSign(dir)
-            val ySign = GeometryHelper.getYSign(dir)
+            val xSign = Geometry.getXSign(dir)
+            val ySign = Geometry.getYSign(dir)
             Level.add(((xTile shl 4) + 7) + (8 + Hitbox.DROPPED_ITEM.width) * xSign, ((yTile shl 4) + 7) + (8 + Hitbox.DROPPED_ITEM.height) * ySign, resource, quantity) == quantity
         }
         return true
@@ -206,7 +206,7 @@ class ResourceNode<R : ResourceType>(
 
     companion object {
         fun <R : ResourceType> createCorresponding(n: ResourceNode<R>, attachedContainer: ResourceContainer<R>) =
-                ResourceNode(n.xTile + GeometryHelper.getXSign(n.dir), n.yTile + GeometryHelper.getYSign(n.dir), GeometryHelper.getOppositeAngle(n.dir), n.resourceCategory, n.allowOut, n.allowIn, attachedContainer)
+                ResourceNode(n.xTile + Geometry.getXSign(n.dir), n.yTile + Geometry.getYSign(n.dir), Geometry.getOppositeAngle(n.dir), n.resourceCategory, n.allowOut, n.allowIn, attachedContainer)
     }
 
 }

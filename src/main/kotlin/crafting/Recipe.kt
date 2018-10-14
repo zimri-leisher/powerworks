@@ -1,5 +1,6 @@
 package crafting
 
+import item.BlockItemType
 import item.IngotItemType
 import item.ItemType
 import resource.ResourceList
@@ -17,7 +18,7 @@ class Recipe(
         /**
          * The resource to display this recipe as
          */
-        val icon: ResourceType,
+        val iconType: ResourceType,
         /**
         * Whichever crafter types are able to make this recipe. For example, Crafters#PLAYER
         * Null means any
@@ -34,7 +35,7 @@ class Recipe(
 
         val ERROR = Recipe(ResourceList(ItemType.ERROR to 1), ResourceList(ItemType.ERROR to 1), ItemType.ERROR)
 
-        val CHEST_SMALL = Recipe(ResourceList(IngotItemType.IRON_INGOT to 2), ResourceList(ItemType.CHEST_SMALL to 1), ItemType.CHEST_SMALL)
+        val CHEST_SMALL = Recipe(ResourceList(IngotItemType.IRON_INGOT to 2), ResourceList(BlockItemType.CHEST_SMALL to 1), BlockItemType.CHEST_SMALL)
 
         val CABLE = Recipe(ResourceList(IngotItemType.COPPER_INGOT to 1), ResourceList(ItemType.CABLE to 8), ItemType.CABLE, category = RecipeCategory.MACHINE_PARTS)
 
@@ -42,6 +43,6 @@ class Recipe(
 
         //val ROBOT = Recipe(ResourceList(IngotItemType.IRON_INGOT to 8, ItemType.CIRCUIT to 8, ItemType.CABLE to 16), ResourceList())
 
-        val CRAFTER = Recipe(ResourceList(IngotItemType.IRON_INGOT to 4, ItemType.CIRCUIT to 8, ItemType.CABLE to 8), ResourceList(ItemType.CRAFTER to 1), ItemType.CRAFTER, category = RecipeCategory.MACHINE)
+        val CRAFTER = Recipe(ResourceList(IngotItemType.IRON_INGOT to 4, ItemType.CIRCUIT to 8, ItemType.CABLE to 8), ResourceList(BlockItemType.CRAFTER to 1), BlockItemType.CRAFTER, category = RecipeCategory.MACHINE)
     }
 }

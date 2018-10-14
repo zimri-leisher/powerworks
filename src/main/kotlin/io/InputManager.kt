@@ -176,7 +176,9 @@ object InputManager : InputProcessor {
                 Mouse.xPixel = actualMouseXPixel
                 Mouse.yPixel = actualMouseYPixel
             }
-            if (org.lwjgl.input.Mouse.isInsideWindow() && mouseOutside) {
+            /*
+            // TODO find out how to do this
+            if (Mouse.isInsideWindow() && mouseOutside) {
                 mouseOutside = false
                 Game.clearMouseIcon()
             } else if (!org.lwjgl.input.Mouse.isInsideWindow() && !mouseOutside) {
@@ -185,6 +187,7 @@ object InputManager : InputProcessor {
                 for (i in 0..4)
                     inputEvent.put("MOUSE_${getButtonName(i)}", PressType.RELEASED)
             }
+            */
         }
 
         // this is here so that interaction controls get sent first because they can occasionally determine where other controls get sent

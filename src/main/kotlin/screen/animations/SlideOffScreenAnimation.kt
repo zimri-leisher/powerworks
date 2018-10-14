@@ -3,13 +3,12 @@ package screen.animations
 import main.Game
 import screen.elements.GUIWindow
 
-class SlideOpenAnimation(subject: GUIWindow, val closeOnFinish: GUIWindow) : GUIAnimation<GUIWindow>(subject) {
-
-    private val move = MoveToAnimation(subject, 0, 0)
+class SlideOffScreenAnimation(subject: GUIWindow, onStart: () -> Unit = {}, onStop: () -> Unit = {}) : GUIAnimation<GUIWindow>(subject, onStart, onStop) {
+    private val move = MoveToAnimation(subject, 0, Game.HEIGHT)
 
     override fun onStart() {
         with(subject.alignments) {
-            x = { Game.WIDTH }
+            x = { 0 }
             y = { 0 }
         }
         move.playing = true
@@ -22,6 +21,5 @@ class SlideOpenAnimation(subject: GUIWindow, val closeOnFinish: GUIWindow) : GUI
     }
 
     override fun onStop() {
-        closeOnFinish.open = false
     }
 }

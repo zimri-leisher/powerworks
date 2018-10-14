@@ -1,44 +1,39 @@
 package screen
 
-import graphics.text.TextManager
 import level.block.CrafterBlock
 import screen.elements.*
-import kotlin.math.roundToInt
 
 /**
  * The GUI opened when a CrafterBlock gets clicked on
  */
-class CrafterBlockGUI(val craftingBlock: CrafterBlock) :
-        GUIWindow("Window of crafting block at ${craftingBlock.xTile}, ${craftingBlock.yTile}",
-                50, 30,
-                WIDTH,
-                TextManager.getFont().charHeight.roundToInt() + GUIRecipeButton.HEIGHT + (craftingBlock.containers.size * GUIResourceDisplaySlot.HEIGHT + 14 + GUIProgressBar.HEIGHT),
+class CrafterBlockGUI(val block: CrafterBlock) :
+        AutoFormatGUIWindow("Window of crafting block at ${block.xTile}, ${block.yTile}",
+                { 0 }, { 0 },
                 ScreenManager.Groups.INVENTORY) {
 
-    lateinit var progressBar: GUIProgressBar
+    val progressBar: GUIProgressBar
 
     init {
         openAtMouse = true
         partOfLevel = true
-        GUIDefaultTextureRectangle(this, "Crafting block at ${craftingBlock.xTile}, ${craftingBlock.yTile}'s window background", 0, 0).apply {
-            GUIText(this, "Recipe text", 3, heightPixels - 3, "Recipe:")
-            val recipeButton = GUIRecipeButton(this, "Recipe choice button", { 3 }, { heightPixels - 9 }, craftingBlock.recipe, { craftingBlock.recipe = it })
-            val storageGroups = AutoFormatGUIGroup(this, "Crafting block container view group", 1, recipeButton.alignments.y() - 20, initializerList = {
-                for (container in craftingBlock.containers) {
-                    GUIResourceContainerDisplay(this, this@CrafterBlockGUI.name + " resource list display", container, { 0 }, { 0 }, craftingBlock.type.internalStorageSize, 1)
-                }
-            }, accountForChildHeight = true, yPixelSeparation = 1)
-            progressBar = GUIProgressBar(this, "Crafting block container progress bar", { 2 }, { 4 }, { this.widthPixels - 4 }, { 6 }, craftingBlock.type.maxWork)
-            generateDragGrip(this.layer + 2)
-            generateCloseButton(this.layer + 2)
+
+        GUIText(group, "Recipe text", 0, 0, "Recipe:")
+
+        GUIRecipeButton(group, "Recipe choice button", { 0 }, { 0 }, block.recipe, { block.recipe = it }).apply {
+            GUIOutline(this, "Test")
         }
+
+        for (container in block.containers) {
+            GUIResourceContainerDisplay(group, this@CrafterBlockGUI.name + " resource list display", { 0 }, { 0 }, block.type.internalStorageSize, 1, container)
+        }
+
+        progressBar = GUIProgressBar(group, "Crafting block container progress bar", { 0 }, { 0 }, { this.widthPixels - 4 }, { 6 }, block.type.maxWork)
+
+        generateCloseButton(group.layer + 2)
+        generateDragGrip(group.layer + 2)
     }
 
     override fun update() {
-        progressBar.currentProgress = craftingBlock.currentWork
-    }
-
-    companion object {
-        const val WIDTH = 80
+        progressBar.currentProgress = block.currentWork
     }
 }

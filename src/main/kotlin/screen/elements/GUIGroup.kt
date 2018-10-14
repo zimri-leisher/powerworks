@@ -2,6 +2,10 @@ package screen.elements
 
 import java.awt.Rectangle
 
+/**
+ * A group of GUIElements. When a child is added, removed or has a dimension change, the dimensions of this get updated
+ * to be the minimum-sized rectangle that can contain all children
+ */
 open class GUIGroup(parent: RootGUIElement,
                     name: String,
                     xAlignment: Alignment, yAlignment: Alignment,

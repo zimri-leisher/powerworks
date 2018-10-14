@@ -1,6 +1,5 @@
 package item
 
-import main.Game
 import resource.*
 
 class Inventory(val width: Int, val height: Int, rule: ResourceContainer<ItemType>.(ResourceType) -> Boolean = { true }, private val items: Array<Item?> = arrayOfNulls(width * height)) : ResourceContainer<ItemType>(ResourceCategory.ITEM, rule) {
@@ -14,6 +13,7 @@ class Inventory(val width: Int, val height: Int, rule: ResourceContainer<ItemTyp
         }
 
     override var totalQuantity = 0
+        private set
 
     override fun add(resource: ResourceType, quantity: Int, from: ResourceNode<*>?, checkIfAble: Boolean): Boolean {
         if (checkIfAble)
@@ -24,7 +24,7 @@ class Inventory(val width: Int, val height: Int, rule: ResourceContainer<ItemTyp
         // fill out unmaxed stacks
         for (item in items) {
             if (item != null && item.type == resource && item.quantity < resource.maxStack) {
-                if(amountLeftToAdd + item.quantity > resource.maxStack) {
+                if (amountLeftToAdd + item.quantity > resource.maxStack) {
                     amountLeftToAdd -= resource.maxStack - item.quantity
                     item.quantity = resource.maxStack
                 } else {
@@ -51,14 +51,7 @@ class Inventory(val width: Int, val height: Int, rule: ResourceContainer<ItemTyp
         return true
     }
 
-    override fun getQuantity(resource: ResourceType): Int {
-        var q = 0
-        for (i in items) {
-            if (i != null && i.type == resource)
-                q += i.quantity
-        }
-        return q
-    }
+    override fun getQuantity(resource: ResourceType) = items.filter { it?.type == resource }.sumBy { it?.quantity ?: 0 }
 
     fun indexOf(resource: ItemType): Int {
         for (i in items.indices.reversed()) {
@@ -132,9 +125,9 @@ class Inventory(val width: Int, val height: Int, rule: ResourceContainer<ItemTyp
 
     override fun toList(): ResourceList {
         val map = mutableMapOf<ResourceType, Int>()
-        for(item in items) {
-            if(item != null) {
-                if(item.type in map) {
+        for (item in items) {
+            if (item != null) {
+                if (item.type in map) {
                     val newQ = map.get(item.type)!! + item.quantity
                     map.replace(item.type, newQ)
                 } else {
@@ -193,16 +186,12 @@ class Inventory(val width: Int, val height: Int, rule: ResourceContainer<ItemTyp
 
     override fun copy() = Inventory(width, height, typeRule, items.copyOf()).apply { this@apply.additionRule = this@Inventory.additionRule; this@apply.removalRule = this@Inventory.removalRule }
 
-    operator fun iterator(): Iterator<Item?> {
-        return items.iterator()
-    }
+    operator fun iterator() = items.iterator()
 
-    operator fun get(i: Int): Item? {
-        return items[i]
-    }
+    operator fun get(i: Int) = items[i]
 
     operator fun set(i: Int, v: Item?) {
-        if(items[i] != null)
+        if (items[i] != null)
             totalQuantity -= items[i]!!.quantity
         items[i] = v
         totalQuantity += v?.quantity ?: 0

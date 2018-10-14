@@ -76,6 +76,8 @@ object Image {
         val WHITE_FILLER = ResourceManager.getTextureFromAtlas("gui/white_filler")
         val BLACK_FILLER = ResourceManager.getTextureFromAtlas("gui/black_filler")
         val HOTBAR_SELECTED_SLOT = ResourceManager.getTextureFromAtlas("gui/selected_slot")
+        val WARNING_STRIPES = ResourceManager.getTextureFromAtlas("gui/warning_stripes")
+        val LEVEL_SELECTOR_BUTTON_HIGHLIGHT = ResourceManager.getTextureFromAtlas("gui/level_selector_button_highlight")
         val CRAFTING_ARROW = ResourceManager.getTextureFromAtlas("gui/crafting_arrow")
     }
 

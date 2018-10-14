@@ -7,7 +7,7 @@ import item.ItemType
 import level.Level
 import main.DebugCode
 import main.Game
-import misc.GeometryHelper
+import misc.Geometry
 import misc.PixelCoord
 import resource.*
 import java.io.DataOutputStream
@@ -117,7 +117,7 @@ class TubeBlockGroup {
             }
             if (currentTube != tube.tubeBlock && currentTube != null) {
                 arr[i] = TubeAndDist(convertToIntersection(currentTube)!!.apply {
-                    connectedTo[GeometryHelper.getOppositeAngle(i)] = TubeAndDist(tube, dist)
+                    connectedTo[Geometry.getOppositeAngle(i)] = TubeAndDist(tube, dist)
                 }, dist)
             } else {
             }
@@ -215,8 +215,8 @@ class TubeBlockGroup {
         if (finalNode != null) {
             val instructions = mutableListOf<Step>()
             val finalIntersection = finalNode.intersection
-            val endXTile = output.xTile + GeometryHelper.getXSign(output.dir)
-            val endYTile = output.yTile + GeometryHelper.getYSign(output.dir)
+            val endXTile = output.xTile + Geometry.getXSign(output.dir)
+            val endYTile = output.yTile + Geometry.getYSign(output.dir)
             instructions.add(Step(PixelCoord(endXTile shl 4, endYTile shl 4), -1))
             instructions.add(Step(PixelCoord(finalIntersection.tubeBlock.xPixel, finalIntersection.tubeBlock.yPixel), output.dir))
             while (finalNode!!.parent != null) {
@@ -262,7 +262,7 @@ class TubeBlockGroup {
     }
 
     private fun getNearestTube(item: ItemPackage) = tubes.firstOrNull { it.xTile == item.xPixel shr 4 && it.yTile == item.yPixel shr 4 }
-            ?: tubes.first { GeometryHelper.isAdjacentOrIntersecting((item.xPixel shr 4) - GeometryHelper.getXSign(item.dir), (item.yPixel shr 4) - GeometryHelper.getYSign(item.dir), it.xTile, it.yTile) }
+            ?: tubes.first { Geometry.isAdjacentOrIntersecting((item.xPixel shr 4) - Geometry.getXSign(item.dir), (item.yPixel shr 4) - Geometry.getYSign(item.dir), it.xTile, it.yTile) }
 
     private data class ItemPackage(var item: Item, var start: ResourceNode<ItemType>, var goal: ResourceNode<ItemType>, var currentIndex: Int, var path: ItemPath, var xPixel: Int, var yPixel: Int, var dir: Int = 0)
 
@@ -287,7 +287,7 @@ class TubeBlockGroup {
                 if (output != null) {
                     val t = parent.route(from, output)
                     if (t != null) {
-                        val p = ItemPackage(Item(resource, quantity), from, output, 0, t, from.attachedNode!!.xTile shl 4, from.attachedNode!!.yTile shl 4, GeometryHelper.getOppositeAngle(from.dir))
+                        val p = ItemPackage(Item(resource, quantity), from, output, 0, t, from.attachedNode!!.xTile shl 4, from.attachedNode!!.yTile shl 4, Geometry.getOppositeAngle(from.dir))
                         itemsBeingMoved.add(p)
                         return true
                     }
@@ -309,7 +309,7 @@ class TubeBlockGroup {
                         val path = parent.route(nearestTubeToItem.xTile, nearestTubeToItem.yTile, item.start)
                         if (path != null) {
                             item.path = path
-                            val dir = GeometryHelper.getDir((item.xPixel shr 4) - (item.path[0].coord.xPixel shr 4), (item.yPixel shr 4) - (item.path[0].coord.yPixel shr 4))
+                            val dir = Geometry.getDir((item.xPixel shr 4) - (item.path[0].coord.xPixel shr 4), (item.yPixel shr 4) - (item.path[0].coord.yPixel shr 4))
                             item.dir = dir
                             val goal = item.start
                             item.start = item.goal
@@ -338,16 +338,16 @@ class TubeBlockGroup {
                         iterator.remove()
                     }
                 } else {
-                    item.xPixel += ITEM_TRANSPORT_SPEED * GeometryHelper.getXSign(item.dir)
-                    item.yPixel += ITEM_TRANSPORT_SPEED * GeometryHelper.getYSign(item.dir)
+                    item.xPixel += ITEM_TRANSPORT_SPEED * Geometry.getXSign(item.dir)
+                    item.yPixel += ITEM_TRANSPORT_SPEED * Geometry.getYSign(item.dir)
                 }
             }
         }
 
         fun render() {
             for (item in itemsBeingMoved) {
-                Renderer.renderTextureKeepAspect(item.item.type.icon, item.xPixel + 4, item.yPixel, 8, 8)
-                Renderer.renderText(item.item.quantity, item.xPixel + 4, item.yPixel)
+                Renderer.renderTextureKeepAspect(item.item.type.icon, item.xPixel + 4, item.yPixel + 4, 8, 8)
+                Renderer.renderText(item.item.quantity, item.xPixel + 4, item.yPixel + 4)
                 if (Game.currentDebugCode == DebugCode.TUBE_INFO)
                     renderPath(item)
             }

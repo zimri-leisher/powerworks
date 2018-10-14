@@ -5,8 +5,6 @@ import screen.elements.*
 
 class FluidTankGUI(val tank: FluidTank) : GUIWindow("Fluid tank GUI of $tank", 0, 0, WIDTH, HEIGHT, ScreenManager.Groups.INVENTORY) {
 
-    lateinit var infoText: GUIText
-
     init {
         partOfLevel = true
         openAtMouse = true

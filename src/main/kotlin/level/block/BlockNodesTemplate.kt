@@ -1,6 +1,6 @@
 package level.block
 
-import misc.GeometryHelper
+import misc.Geometry
 import misc.TileCoord
 import resource.ResourceContainer
 import resource.ResourceNode
@@ -35,7 +35,7 @@ class BlockNodesTemplate(val widthTiles: Int, val heightTiles: Int,
             val coord = rotate(node.xTile, node.yTile, widthTiles, heightTiles, dir)
             val newContainer = containers.filter { it.key === node.attachedContainer }.entries.first().value
             // we know that the container is the same type as the node because they were originally together
-            ret.add(node.copy(coord.xTile + xTile, coord.yTile + yTile, GeometryHelper.addAngles(node.dir, dir), attachedContainer = newContainer))
+            ret.add(node.copy(coord.xTile + xTile, coord.yTile + yTile, Geometry.addAngles(node.dir, dir), attachedContainer = newContainer))
         }
         return ret
     }
@@ -46,7 +46,7 @@ class BlockNodesTemplate(val widthTiles: Int, val heightTiles: Int,
                 1 -> TileCoord(widthTiles - yTile - 1, heightTiles - xTile)
                 2 -> TileCoord(widthTiles - xTile - 1, yTile + 1)
                 3 -> TileCoord(yTile, xTile + 1)
-                else -> TileCoord(xTile, heightTiles - yTile)
+                else -> TileCoord(xTile, yTile)
             }
         }
 

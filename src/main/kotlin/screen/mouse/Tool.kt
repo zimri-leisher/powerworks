@@ -4,12 +4,17 @@ import com.badlogic.gdx.graphics.Color
 import graphics.Renderer
 import graphics.TextureRenderParams
 import io.*
+import item.BlockItemType
+import item.ItemType
+import level.Hitbox
 import level.Level
+import level.LevelObject
 import level.block.Block
 import level.block.BlockType
 import level.block.GhostBlock
 import level.moving.MovingObject
 import main.Game
+import main.toColor
 
 /**
  * A tool is an object that is used by the client to interact with the level through the mouse
@@ -55,9 +60,16 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
     abstract fun updateCurrentlyActive()
 
     /**
+     * Whatever is drawn here is drawn above all level objects
      * This is only called if the tool is active
      */
-    open fun render() {}
+    open fun renderAbove() {}
+
+    /**
+     * Whatever is drawn here is drawn below all level objects
+     * This is only called if the tool is active
+     */
+    open fun renderBelow() {}
 
     /**
      * This is only called if the tool is active
@@ -70,7 +82,16 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
 
         val ALL_ACTIVE = mutableListOf<Tool>()
 
-        val INTERACTOR = object : Tool(Control.Group.INTERACTION) {
+        init {
+            Interactor
+            BlockRemover
+            BlockPlacer
+            Teleporter
+            Selector
+            Debug
+        }
+
+        object Interactor : Tool(Control.Group.INTERACTION) {
             override fun onUse(control: Control, type: PressType, mouseLevelXPixel: Int, mouseLevelYPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
                 if (currentlyActive) {
                     if (control in Control.Group.SCROLL)
@@ -84,7 +105,7 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
                 currentlyActive = Game.currentLevel.selectedLevelObject?.isInteractable == true
             }
 
-            override fun render() {
+            override fun renderBelow() {
                 val s = Game.currentLevel.selectedLevelObject!!
                 if (s is Block)
                     Renderer.renderEmptyRectangle(s.xPixel, s.yPixel, s.type.widthTiles shl 4, s.type.heightTiles shl 4, params = TextureRenderParams(color = Color(0x1A6AF472)))
@@ -93,7 +114,7 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
             }
         }
 
-        val BLOCK_REMOVER = object : Tool(Control.REMOVE_BLOCK) {
+        object BlockRemover : Tool(Control.REMOVE_BLOCK) {
             override fun updateCurrentlyActive() {
                 currentlyActive = Game.currentLevel.selectedLevelObject != null
             }
@@ -103,26 +124,35 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
                     if (type == PressType.PRESSED) {
                         val o = Game.currentLevel.selectedLevelObject!!
                         Level.remove(o)
+                        if (o is Block) {
+                            val item = ItemType.ALL.firstOrNull { it is BlockItemType && it.placedBlock == o.type }
+                            if (item != null) {
+                                Game.mainInv.add(item)
+                            }
+                        }
                     }
                 }
             }
         }
 
-        val BLOCK_PLACER: Tool = object : Tool(Control.PLACE_BLOCK, Control.ROTATE_BLOCK), ControlPressHandler {
+        object BlockPlacer : Tool(Control.PLACE_BLOCK, Control.ROTATE_BLOCK), ControlPressHandler {
+
+            var ghostBlock: GhostBlock? = null
+            var ghostBlockRotation = 0
 
             override fun onUse(control: Control, type: PressType, mouseLevelXPixel: Int, mouseLevelYPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
                 if (currentlyActive) {
                     if (type == PressType.PRESSED) {
                         if (control == Control.ROTATE_BLOCK) {
-                            Game.currentLevel.ghostBlockRotation = (Game.currentLevel.ghostBlockRotation + 1) % 4
+                            ghostBlockRotation = (ghostBlockRotation + 1) % 4
                         }
                     }
                     if (type == PressType.RELEASED) {
                         if (control == Control.PLACE_BLOCK) {
                             val block = Game.currentLevel.selectedLevelObject
                             if (block == null) {
-                                if (Game.currentLevel.ghostBlock != null) {
-                                    val gBlock = Game.currentLevel.ghostBlock!!
+                                if (ghostBlock != null) {
+                                    val gBlock = ghostBlock!!
                                     if (Level.add(gBlock.type.instantiate(gBlock.xPixel, gBlock.yPixel, gBlock.rotation))) {
                                         val h = Mouse.heldItemType!!
                                         Game.mainInv.remove(h, 1)
@@ -135,32 +165,32 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
             }
 
             override fun updateCurrentlyActive() {
-                currentlyActive = Game.currentLevel.selectedLevelObject == null
+                currentlyActive = Game.currentLevel.selectedLevelObject == null && Mouse.heldItemType is BlockItemType && !Selector.dragging
             }
 
             override fun update() {
                 val currentItem = Mouse.heldItemType
-                if (currentItem == null || currentItem.placedBlock == BlockType.ERROR || (Game.mainInv.getQuantity(currentItem) == 0)) {
-                    if (Game.currentLevel.ghostBlock != null)
-                        Level.remove(Game.currentLevel.ghostBlock!!)
-                    Game.currentLevel.ghostBlock = null
-                } else if (currentItem.placedBlock != BlockType.ERROR) {
-                    val placedType = currentItem.placedBlock
-                    val xTile = ((Game.currentLevel.mouseLevelXPixel) shr 4) - placedType.widthTiles / 2
-                    val yTile = ((Game.currentLevel.mouseLevelYPixel) shr 4) - placedType.heightTiles / 2
-                    Game.currentLevel.ghostBlock = GhostBlock(placedType, xTile, yTile, Game.currentLevel.ghostBlockRotation)
+                if (currentItem is BlockItemType) {
+                    if (currentItem.placedBlock == BlockType.ERROR || Game.mainInv.getQuantity(currentItem) == 0) {
+                        ghostBlock = null
+                    } else if (currentItem.placedBlock != BlockType.ERROR) {
+                        val placedType = currentItem.placedBlock
+                        val xTile = ((Game.currentLevel.mouseLevelXPixel) shr 4) - placedType.widthTiles / 2
+                        val yTile = ((Game.currentLevel.mouseLevelYPixel) shr 4) - placedType.heightTiles / 2
+                        ghostBlock = GhostBlock(placedType, xTile, yTile, ghostBlockRotation)
+                    }
                 }
             }
 
-            override fun render() {
-                if (Game.currentLevel.ghostBlock != null) {
-                    val g = Game.currentLevel.ghostBlock!!
+            override fun renderAbove() {
+                if (ghostBlock != null) {
+                    val g = ghostBlock!!
                     g.render()
                 }
             }
         }
 
-        val TELEPORTER = object : Tool(Control.TELEPORT) {
+        object Teleporter : Tool(Control.TELEPORT) {
 
             override fun onUse(control: Control, type: PressType, mouseLevelXPixel: Int, mouseLevelYPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
                 if (currentlyActive) {
@@ -180,7 +210,9 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
             ALL, BLOCKS_ONLY, MOVING_ONLY
         }
 
-        val SELECTOR = object : Tool(Control.Group.SELECTOR_TOOLS) {
+        const val SELECTION_START_THRESHOLD = 2
+
+        object Selector : Tool(Control.Group.SELECTOR_TOOLS) {
 
             var dragging = false
             var dragStartXPixel = 0
@@ -188,18 +220,25 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
             var currentDragXPixel = 0
             var currentDragYPixel = 0
 
-            var mode = SelectorMode.ALL
+            private var mode = SelectorMode.ALL
+
+            var selected = listOf<LevelObject>()
 
             override fun update() {
-
             }
 
             override fun updateCurrentlyActive() {
-                currentlyActive = dragging
+                currentlyActive = dragging || selected.isNotEmpty()
             }
 
             override fun onUse(control: Control, type: PressType, mouseLevelXPixel: Int, mouseLevelYPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+                when (control) {
+                    Control.START_SELECTION_ALL_OBJECTS -> mode = SelectorMode.ALL
+                    Control.START_SELECTION_BLOCKS_ONLY -> mode = SelectorMode.BLOCKS_ONLY
+                    Control.START_SELECTION_MOVING_ONLY -> mode = SelectorMode.MOVING_ONLY
+                }
                 if (type == PressType.PRESSED) {
+                    selected = listOf()
                     dragStartXPixel = mouseLevelXPixel
                     dragStartYPixel = mouseLevelYPixel
                     currentDragXPixel = mouseLevelXPixel
@@ -207,26 +246,58 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
                 } else if (type == PressType.REPEAT) {
                     currentDragXPixel = mouseLevelXPixel
                     currentDragYPixel = mouseLevelYPixel
-                    if (Math.abs(dragStartXPixel - currentDragXPixel) > 2 || Math.abs(dragStartYPixel - currentDragYPixel) > 2) {
+                    if (Math.abs(dragStartXPixel - currentDragXPixel) > SELECTION_START_THRESHOLD || Math.abs(dragStartYPixel - currentDragYPixel) > SELECTION_START_THRESHOLD) {
                         dragging = true
+                        updateSelected()
                     }
                 } else if (type == PressType.RELEASED) {
-                    dragging = false
+                    if (dragging) {
+                        updateSelected()
+                        dragging = false
+                    }
                 }
             }
 
-            override fun render() {
-                Renderer.renderEmptyRectangle(dragStartXPixel, dragStartYPixel, (currentDragXPixel - dragStartXPixel), (currentDragYPixel - dragStartYPixel), params = TextureRenderParams(color = Color(0xBBBBBB)))
+            private fun updateSelected() {
+                if (dragging) {
+                    val xChange = currentDragXPixel - dragStartXPixel
+                    val yChange = currentDragYPixel - dragStartYPixel
+                    val x = if (xChange < 0) currentDragXPixel else dragStartXPixel
+                    val y = if (yChange < 0) currentDragYPixel else dragStartYPixel
+                    val w = Math.abs(xChange)
+                    val h = Math.abs(yChange)
+                    selected = when (mode) {
+                        SelectorMode.ALL ->
+                            Level.Blocks.getIntersectingFromPixelRectangle(x, y, w, h).toList() +
+                                    Level.MovingObjects.getFromPixelRectangle(x, y, w, h)
+                        SelectorMode.BLOCKS_ONLY ->
+                            Level.Blocks.getIntersectingFromPixelRectangle(x, y, w, h).toList()
+                        SelectorMode.MOVING_ONLY ->
+                            Level.MovingObjects.getFromPixelRectangle(x, y, w, h)
+                    }
+                }
+            }
+
+            override fun renderBelow() {
+                if (dragging) {
+                    Renderer.renderEmptyRectangle(dragStartXPixel, dragStartYPixel, (currentDragXPixel - dragStartXPixel), (currentDragYPixel - dragStartYPixel), params = TextureRenderParams(color = toColor(0.8f, 0.8f, 0.8f)))
+                }
+                for (l in selected) {
+                    if (l is Block) {
+                        Renderer.renderEmptyRectangle(l.xPixel - 1, l.yPixel - 1, (l.type.widthTiles shl 4) + 2, (l.type.heightTiles shl 4) + 2, params = TextureRenderParams(color = toColor(alpha = 0.2f)))
+                    } else if (l is MovingObject && l.hitbox != Hitbox.NONE) {
+                        Renderer.renderEmptyRectangle(l.xPixel + l.hitbox.xStart - 1, l.yPixel + l.hitbox.yStart - 1, l.hitbox.width + 2, l.hitbox.height + 2, params = TextureRenderParams(color = toColor(alpha = 0.2f)))
+                    }
+                }
             }
         }
 
-        val DEBUG = object : Tool(Control.Group.INTERACTION) {
+        object Debug : Tool(Control.Group.INTERACTION) {
 
             override fun onUse(control: Control, type: PressType, mouseLevelXPixel: Int, mouseLevelYPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
                 if (currentlyActive) {
                     if (type == PressType.PRESSED) {
                         Level.Tiles.get(mouseLevelXPixel shr 4, mouseLevelYPixel shr 4).apply {
-                            println("Test")
                             rotation = (rotation + 1) % 4
                         }
                     }
@@ -237,14 +308,18 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
                 currentlyActive = false
             }
 
-            override fun render() {
+            override fun renderAbove() {
                 Renderer.renderText(Level.Tiles.get(Game.currentLevel.mouseLevelXPixel shr 4, Game.currentLevel.mouseLevelYPixel shr 4).rotation, ((Game.currentLevel.mouseLevelXPixel shr 4) shl 4) + 4, ((Game.currentLevel.mouseLevelYPixel shr 4) shl 4) + 4)
             }
 
         }
 
-        fun render() {
-            ALL_ACTIVE.forEach { it.render() }
+        fun renderBelow() {
+            ALL_ACTIVE.forEach { it.renderBelow() }
+        }
+
+        fun renderAbove() {
+            ALL_ACTIVE.forEach { it.renderAbove() }
         }
 
         fun update() {

@@ -6,11 +6,8 @@ import io.PressType
 import main.Game
 import main.heightPixels
 import main.widthPixels
-import screen.animations.SlideOpenAnimation
-import screen.elements.GUIElement
-import screen.elements.GUIText
-import screen.elements.GUITexturePane
-import screen.elements.GUIWindow
+import screen.animations.SlideOnScreenAnimation
+import screen.elements.*
 
 object MainMenuGUI : GUIWindow("Main menu", { 0 }, { 0 }, { Game.WIDTH }, { Game.HEIGHT }, ScreenManager.Groups.BACKGROUND, true, 0) {
 
@@ -49,7 +46,7 @@ object MainMenuGUI : GUIWindow("Main menu", { 0 }, { 0 }, { Game.WIDTH }, { Game
             override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
                 if (type == PressType.RELEASED) {
                     LevelSelectorGUI.open = true
-                    SlideOpenAnimation(LevelSelectorGUI, this@MainMenuGUI).playing = true
+                    SlideOnScreenAnimation(LevelSelectorGUI, onStop = { this@MainMenuGUI.open = false }).playing = true
                 }
             }
 

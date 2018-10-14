@@ -5,12 +5,9 @@ import graphics.Renderer
 import io.*
 import level.Level
 import main.Game
-import misc.GeometryHelper
+import misc.Geometry
 import screen.IngameGUI.views
-import screen.elements.GUIElement
-import screen.elements.GUITexturePane
-import screen.elements.GUIWindow
-import screen.elements.RootGUIElement
+import screen.elements.*
 import screen.mouse.Mouse
 
 private var viewCount = 0
@@ -21,7 +18,7 @@ private var viewControlsOpen = false
  * The set of 4 little buttons allowing you to open up new ViewWindows
  * Opened on pressing Control.TOGGLE_VIEW_CONTROLS
  */
-object ViewControlGUI : GUIWindow("In game view selector window", { Game.WIDTH - 30 }, { Game.HEIGHT - 7 }, { 28 }, { 5 }, windowGroup = ScreenManager.Groups.HOTBAR) {
+object ViewControlGUI : GUIWindow("In game view selector window", { Game.WIDTH - 30 }, { 7 }, { 28 }, { 5 }, windowGroup = ScreenManager.Groups.HUD) {
 
     private const val VIEW_SELECTOR_BUTTON_WIDTH = 5
     private var viewHighlighted = -1
@@ -43,13 +40,13 @@ object ViewControlGUI : GUIWindow("In game view selector window", { Game.WIDTH -
                             view.toggle()
                             if (view.open) {
                                 view.windowGroup.bringToTop(view)
-                                view.controls.filter { viewControls.contains(it) }.forEach { it.open = true }
+                                //view.controls.filter { viewControls.contains(it) }.forEach { it.open = true }
                             }
                         }
                     }
 
                     override fun update() {
-                        if (GeometryHelper.intersects(Mouse.xPixel, Mouse.yPixel, 0, 0, ViewControlGUI.xPixel, ViewControlGUI.yPixel, ViewControlGUI.widthPixels, ViewControlGUI.heightPixels)) {
+                        if (Geometry.intersects(Mouse.xPixel, Mouse.yPixel, 0, 0, ViewControlGUI.xPixel, ViewControlGUI.yPixel, ViewControlGUI.widthPixels, ViewControlGUI.heightPixels)) {
                             if ((Mouse.xPixel - this.xPixel) % (VIEW_SELECTOR_BUTTON_WIDTH + 2) > 5) {
                                 viewHighlighted = -1; return
                             }
@@ -113,11 +110,6 @@ object IngameGUI : GUIWindow("In game gui",
                     windowGroup = ScreenManager.Groups.VIEW).run {
                 if (open)
                     Game.currentLevel.openViews.add(view)
-                controls.forEach {
-                    it.matchParentOpening = false
-                    it.open = viewControlsOpen
-                    viewControls.add(it)
-                }
                 return@run this
             }
         }
@@ -145,5 +137,35 @@ object IngameGUI : GUIWindow("In game gui",
             viewControlsOpen = !viewControlsOpen
             viewControls.filter { it !is GUIElement || it.parentWindow.open }.forEach { it.toggle() }
         }
+    }
+}
+
+object NewViewSelectorGUI : GUIWindow("in game view controls", { 0 }, { 0 }, { 0 }, { 0 }, ScreenManager.Groups.HUD), ControlPressHandler {
+    init {
+        InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.TOGGLE_VIEW_CONTROLS)
+        val tabs = GUITabList(this, "view tab list", { 0 }, { 0 },
+                arrayOf(Tab("1"), Tab("2"), Tab("3"), Tab("4")),
+                { println("selected $it") }
+        )
+        alignments.x = { Game.WIDTH - tabs.widthPixels }
+        alignments.width = { tabs.widthPixels }
+    }
+
+    override fun handleControlPress(p: ControlPress) {
+        if(p.control == Control.TOGGLE_VIEW_CONTROLS && p.pressType == PressType.RELEASED) {
+            open = !open
+        }
+    }
+}
+
+object NewIngameGUI : GUIWindow("in game window", { 0 }, { 0 }, { Game.WIDTH }, { Game.HEIGHT }, ScreenManager.Groups.BACKGROUND) {
+    init {
+        GUITexturePane(this, "In game gui background", { 0 }, { 0 }, Image.GUI.GREY_FILLER, { Game.WIDTH }, { Game.HEIGHT })
+        GUIGroup(this, "view controls", { 0 }, { 0 }, {
+            GUITabList(this, "view tab list", { 0 }, { 0 },
+                    arrayOf(Tab("1"), Tab("2"), Tab("3"), Tab("4")),
+                    { }
+            )
+        })
     }
 }

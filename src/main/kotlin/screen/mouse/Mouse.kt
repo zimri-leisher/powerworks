@@ -39,7 +39,7 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
      */
     var heldItemType: ItemType? = null
 
-    internal var window = GUIWindow("Mouse", { xPixel + 4 }, { yPixel }, { 0 }, { 0 }, ScreenManager.Groups.MOUSE, true, 0).apply {
+    internal var window = GUIWindow("Mouse", { 0 }, { 0 }, { 0 }, { 0 }, ScreenManager.Groups.MOUSE, true, 0).apply {
         transparentToInteraction = true
     }
     private var group = GUIGroup(window, "Mouse info group", { 0 }, { 0 }, open = true).apply {
@@ -60,6 +60,22 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
     }
 
     init {
+        with(window.alignments) {
+            x = {
+                when {
+                    xPixel + 4 + background.widthPixels > Game.WIDTH -> Game.WIDTH - background.widthPixels
+                    xPixel + 4 < 0 -> 0
+                    else -> xPixel + 4
+                }
+            }
+            y = {
+                when {
+                    yPixel + background.heightPixels > Game.HEIGHT -> Game.HEIGHT - background.heightPixels
+                    yPixel < 0 -> 0
+                    else -> yPixel
+                }
+            }
+        }
         InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.DROP_HELD_ITEM, Control.PICK_UP_DROPPED_ITEMS)
     }
 
@@ -126,7 +142,7 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
                 Renderer.renderText("Element on mouse:\n" +
                         "  ${ScreenManager.getHighestElement(xPixel, yPixel, predicate = { !it.transparentToInteraction })}\n" +
                         "Window on mouse:\n" +
-                        "  ${ScreenManager.getHighestWindow(xPixel, yPixel, { !it.transparentToInteraction })}", xPixel, yPixel)
+                        "  ${ScreenManager.getHighestWindow(xPixel, yPixel, { !it.transparentToInteraction })}", xPixel + 3, yPixel + 3)
                 Renderer.renderFilledRectangle(xPixel, yPixel, 1, 1)
             }
             DebugCode.POSITION_INFO -> {

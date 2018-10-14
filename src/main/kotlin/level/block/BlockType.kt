@@ -92,20 +92,6 @@ open class MachineBlockType<T : MachineBlock>(initializer: MachineBlockType<T>.(
             }
         }
 
-        val ROBOT_FACTORY = MachineBlockType<RobotFactoryBlock> {
-            name = "Robot Factory"
-            instantiate = { xPixel, yPixel, rotation -> RobotFactoryBlock(xPixel shr 4, yPixel shr 4, rotation) }
-            widthTiles = 3
-            heightTiles = 3
-            hitbox = Hitbox.TILE2X2
-            nodesTemplate = template {
-                val internalInventory = Inventory(1, 1)
-                listOf(
-                        ResourceNode(0, 0, 0, ResourceCategory.ITEM, true, false, internalInventory)
-                )
-            }
-        }
-
         val FURNACE = MachineBlockType<FurnaceBlock> {
             name = "Furnace"
             instantiate = { xPixel, yPixel, rotation -> FurnaceBlock(this, xPixel shr 4, yPixel shr 4, rotation) }
@@ -146,7 +132,7 @@ open class MachineBlockType<T : MachineBlock>(initializer: MachineBlockType<T>.(
 }
 
 class CrafterBlockType(initializer: CrafterBlockType.() -> Unit) : MachineBlockType<CrafterBlock>() {
-    var craftingType = Crafter.ITEM_CRAFTER
+    var craftingType = Crafter.Type.ITEM
 
     var internalStorageSize = 2
 
@@ -167,6 +153,21 @@ class CrafterBlockType(initializer: CrafterBlockType.() -> Unit) : MachineBlockT
                 listOf(
                         ResourceNode(0, 1, 0, ResourceCategory.ITEM, true, false, internalInventory),
                         ResourceNode(1, 0, 2, ResourceCategory.ITEM, false, true, internalInventory)
+                )
+            }
+        }
+
+        val ROBOT_FACTORY = CrafterBlockType {
+            name = "Robot Factory"
+            craftingType = Crafter.Type.ROBOT
+            instantiate = { xPixel, yPixel, rotation -> CrafterBlock(this, xPixel shr 4, yPixel shr 4, rotation) }
+            widthTiles = 3
+            heightTiles = 3
+            hitbox = Hitbox.TILE2X2
+            nodesTemplate = template {
+                val internalInventory = Inventory(1, 1)
+                listOf(
+                        ResourceNode(0, 0, 0, ResourceCategory.ITEM, true, false, internalInventory)
                 )
             }
         }

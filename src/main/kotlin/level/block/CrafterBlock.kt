@@ -1,5 +1,6 @@
 package level.block
 
+import com.badlogic.gdx.Input
 import crafting.Crafter
 import crafting.Recipe
 import io.*
@@ -9,9 +10,9 @@ import resource.ResourceList
 import resource.ResourceType
 import screen.CrafterBlockGUI
 
-class CrafterBlock(override val type: CrafterBlockType, xTile: Int, yTile: Int, rotation: Int) : MachineBlock(type, xTile, yTile, rotation), ResourceContainerChangeListener, Crafter {
+open class CrafterBlock(override val type: CrafterBlockType, xTile: Int, yTile: Int, rotation: Int) : MachineBlock(type, xTile, yTile, rotation), ResourceContainerChangeListener, Crafter {
 
-    override val crafterType: Int
+    override val crafterType: Crafter.Type
         get() = type.craftingType
 
     val crafterGUI = CrafterBlockGUI(this)
@@ -60,7 +61,7 @@ class CrafterBlock(override val type: CrafterBlockType, xTile: Int, yTile: Int, 
     }
 
     override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
-        if (type == PressType.PRESSED) {
+        if (type == PressType.PRESSED && button == Input.Buttons.LEFT) {
             crafterGUI.toggle()
         }
     }
