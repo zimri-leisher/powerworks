@@ -20,10 +20,10 @@ class Recipe(
          */
         val iconType: ResourceType,
         /**
-        * Whichever crafter types are able to make this recipe. For example, Crafters#PLAYER
+        * Whichever crafter types are able to make this recipe. For example, Crafters#PLAYER.
         * Null means any
         */
-        val validCrafters: List<Crafter>? = null,
+        val validCrafterTypes: List<Crafter.Type>? = null,
         val category: RecipeCategory = RecipeCategory.MISC) {
 
     init {
@@ -33,16 +33,39 @@ class Recipe(
     companion object {
         val ALL = mutableListOf<Recipe>()
 
-        val ERROR = Recipe(ResourceList(ItemType.ERROR to 1), ResourceList(ItemType.ERROR to 1), ItemType.ERROR)
+        val ERROR = Recipe(
+                ResourceList(ItemType.ERROR to 1),
+                ResourceList(ItemType.ERROR to 1),
+                ItemType.ERROR,
+                listOf(Crafter.Type.DEFAULT))
 
-        val CHEST_SMALL = Recipe(ResourceList(IngotItemType.IRON_INGOT to 2), ResourceList(BlockItemType.CHEST_SMALL to 1), BlockItemType.CHEST_SMALL)
+        val CHEST_SMALL = Recipe(
+                ResourceList(IngotItemType.IRON_INGOT to 2),
+                ResourceList(BlockItemType.CHEST_SMALL to 1),
+                BlockItemType.CHEST_SMALL,
+                listOf(Crafter.Type.DEFAULT, Crafter.Type.ITEM))
 
-        val CABLE = Recipe(ResourceList(IngotItemType.COPPER_INGOT to 1), ResourceList(ItemType.CABLE to 8), ItemType.CABLE, category = RecipeCategory.MACHINE_PARTS)
+        val CABLE = Recipe(
+                ResourceList(IngotItemType.COPPER_INGOT to 1),
+                ResourceList(ItemType.CABLE to 8),
+                ItemType.CABLE,
+                listOf(Crafter.Type.ITEM),
+                RecipeCategory.MACHINE_PARTS)
 
-        val CIRCUIT = Recipe(ResourceList(IngotItemType.COPPER_INGOT to 1), ResourceList(ItemType.CIRCUIT to 4), ItemType.CIRCUIT, category = RecipeCategory.MACHINE_PARTS)
+        val CIRCUIT = Recipe(
+                ResourceList(IngotItemType.COPPER_INGOT to 1),
+                ResourceList(ItemType.CIRCUIT to 4),
+                ItemType.CIRCUIT,
+                listOf(Crafter.Type.ITEM),
+                RecipeCategory.MACHINE_PARTS)
 
         //val ROBOT = Recipe(ResourceList(IngotItemType.IRON_INGOT to 8, ItemType.CIRCUIT to 8, ItemType.CABLE to 16), ResourceList())
 
-        val CRAFTER = Recipe(ResourceList(IngotItemType.IRON_INGOT to 4, ItemType.CIRCUIT to 8, ItemType.CABLE to 8), ResourceList(BlockItemType.CRAFTER to 1), BlockItemType.CRAFTER, category = RecipeCategory.MACHINE)
+        val CRAFTER = Recipe(
+                ResourceList(IngotItemType.IRON_INGOT to 4, ItemType.CIRCUIT to 8, ItemType.CABLE to 8),
+                ResourceList(BlockItemType.CRAFTER to 1),
+                BlockItemType.CRAFTER,
+                listOf(Crafter.Type.DEFAULT, Crafter.Type.ITEM),
+                RecipeCategory.MACHINE)
     }
 }

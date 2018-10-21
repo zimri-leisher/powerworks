@@ -83,7 +83,7 @@ object ScreenManager : ControlPressHandler {
         }
     }
 
-    fun updateMouseOn() {
+    private fun updateMouseOn() {
         forEachElement({ it.mouseOn = isMouseOn(it) }, { it.open })
     }
 
@@ -92,10 +92,6 @@ object ScreenManager : ControlPressHandler {
     }
 
     fun intersectsElement(xPixel: Int, yPixel: Int, e: RootGUIElement): Boolean {
-        return Geometry.contains(e.xPixel, e.yPixel, e.widthPixels, e.heightPixels, xPixel, yPixel, 0, 0)
-    }
-
-    fun intersectsElement(xPixel: Int, yPixel: Int, e: GUIWindow): Boolean {
         return Geometry.contains(e.xPixel, e.yPixel, e.widthPixels, e.heightPixels, xPixel, yPixel, 0, 0)
     }
 
@@ -123,7 +119,7 @@ object ScreenManager : ControlPressHandler {
         }
     }
 
-    fun updateSelected() {
+    private fun updateSelected() {
         val x = Mouse.xPixel
         val y = Mouse.yPixel
         selectedWindow = getHighestWindow(x, y, { !it.transparentToInteraction })
@@ -135,7 +131,7 @@ object ScreenManager : ControlPressHandler {
         updateControlHandlers()
     }
 
-    fun updateControlHandlers() {
+    private fun updateControlHandlers() {
         InputManager.currentScreenHandlers.clear()
         val x = Mouse.xPixel
         val y = Mouse.yPixel
@@ -178,17 +174,15 @@ object ScreenManager : ControlPressHandler {
             // without worrying that it will click on something else
             if (t == PressType.PRESSED)
                 updateSelected()
-            if (Control.Group.SCROLL.contains(c))
+            if (Control.Group.SCROLL.contains(c)) {
                 selectedElement?.onScroll(if (c == Control.SCROLL_UP) 1 else -1)
-            else {
+            } else {
                 val shift = InputManager.inputsBeingPressed.contains("SHIFT")
                 val control = InputManager.inputsBeingPressed.contains("CONTROL")
                 val alt = InputManager.inputsBeingPressed.contains("ALT")
                 selectedElement?.onInteractOn(t, x, y, b, shift, control, alt)
                 forEachElement({ it.onInteractOff(t, x, y, b, shift, control, alt) }, { it != selectedElement && it.open })
             }
-            if (t == PressType.RELEASED)
-                updateSelected()
         }
     }
 

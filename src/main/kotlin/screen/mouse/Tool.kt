@@ -108,13 +108,13 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
             override fun renderBelow() {
                 val s = Game.currentLevel.selectedLevelObject!!
                 if (s is Block)
-                    Renderer.renderEmptyRectangle(s.xPixel, s.yPixel, s.type.widthTiles shl 4, s.type.heightTiles shl 4, params = TextureRenderParams(color = Color(0x1A6AF472)))
+                    Renderer.renderEmptyRectangle(s.xPixel - 1, s.yPixel - 1, (s.type.widthTiles shl 4) + 2, (s.type.heightTiles shl 4) + 2, params = TextureRenderParams(color = Color(0x1A6AF472)))
                 else if (s is MovingObject)
-                    Renderer.renderEmptyRectangle(s.xPixel, s.yPixel, s.hitbox.width, s.hitbox.height, params = TextureRenderParams(color = Color(0x1A6AF472)))
+                    Renderer.renderEmptyRectangle(s.xPixel + s.hitbox.xStart - 1, s.yPixel + s.hitbox.yStart - 1, s.hitbox.width + 2, s.hitbox.height + 2, params = TextureRenderParams(color = Color(0x1A6AF472)))
             }
         }
 
-        object BlockRemover : Tool(Control.REMOVE_BLOCK) {
+        object BlockRemover : Tool(Control.REMOVE_SELECTED_BLOCKS) {
             override fun updateCurrentlyActive() {
                 currentlyActive = Game.currentLevel.selectedLevelObject != null
             }
@@ -122,12 +122,26 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
             override fun onUse(control: Control, type: PressType, mouseLevelXPixel: Int, mouseLevelYPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
                 if (currentlyActive) {
                     if (type == PressType.PRESSED) {
-                        val o = Game.currentLevel.selectedLevelObject!!
-                        Level.remove(o)
-                        if (o is Block) {
-                            val item = ItemType.ALL.firstOrNull { it is BlockItemType && it.placedBlock == o.type }
-                            if (item != null) {
-                                Game.mainInv.add(item)
+                        if (control == Control.REMOVE_SELECTED_BLOCKS) {
+                            if(Selector.selected.isNotEmpty()) {
+                                Selector.selected.filter { it is Block }.forEach {
+                                    it as Block
+                                    Level.remove(it)
+                                    Selector.selected.remove(it)
+                                    val item = ItemType.ALL.firstOrNull { item -> item is BlockItemType && item.placedBlock == it.type }
+                                    if (item != null) {
+                                        Game.mainInv.add(item)
+                                    }
+                                }
+                            } else {
+                                val o = Game.currentLevel.selectedLevelObject!!
+                                if (o is Block) {
+                                    Level.remove(o)
+                                    val item = ItemType.ALL.firstOrNull { it is BlockItemType && it.placedBlock == o.type }
+                                    if (item != null) {
+                                        Game.mainInv.add(item)
+                                    }
+                                }
                             }
                         }
                     }
@@ -154,7 +168,7 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
                                 if (ghostBlock != null) {
                                     val gBlock = ghostBlock!!
                                     if (Level.add(gBlock.type.instantiate(gBlock.xPixel, gBlock.yPixel, gBlock.rotation))) {
-                                        val h = Mouse.heldItemType!!
+                                        val h = Mouse.heldItemType!! // todo why is this crashing occasionally
                                         Game.mainInv.remove(h, 1)
                                     }
                                 }
@@ -179,6 +193,8 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
                         val yTile = ((Game.currentLevel.mouseLevelYPixel) shr 4) - placedType.heightTiles / 2
                         ghostBlock = GhostBlock(placedType, xTile, yTile, ghostBlockRotation)
                     }
+                } else {
+                    ghostBlock = null
                 }
             }
 
@@ -222,9 +238,10 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
 
             private var mode = SelectorMode.ALL
 
-            var selected = listOf<LevelObject>()
+            var selected = mutableListOf<LevelObject>()
 
             override fun update() {
+                selected.removeIf { !it.inLevel }
             }
 
             override fun updateCurrentlyActive() {
@@ -238,7 +255,7 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
                     Control.START_SELECTION_MOVING_ONLY -> mode = SelectorMode.MOVING_ONLY
                 }
                 if (type == PressType.PRESSED) {
-                    selected = listOf()
+                    selected = mutableListOf()
                     dragStartXPixel = mouseLevelXPixel
                     dragStartYPixel = mouseLevelYPixel
                     currentDragXPixel = mouseLevelXPixel
@@ -268,12 +285,12 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
                     val h = Math.abs(yChange)
                     selected = when (mode) {
                         SelectorMode.ALL ->
-                            Level.Blocks.getIntersectingFromPixelRectangle(x, y, w, h).toList() +
-                                    Level.MovingObjects.getFromPixelRectangle(x, y, w, h)
+                            (Level.Blocks.getIntersectingFromPixelRectangle(x, y, w, h).toList() +
+                                    Level.MovingObjects.getFromPixelRectangle(x, y, w, h)).toMutableList()
                         SelectorMode.BLOCKS_ONLY ->
-                            Level.Blocks.getIntersectingFromPixelRectangle(x, y, w, h).toList()
+                            Level.Blocks.getIntersectingFromPixelRectangle(x, y, w, h).toMutableList()
                         SelectorMode.MOVING_ONLY ->
-                            Level.MovingObjects.getFromPixelRectangle(x, y, w, h)
+                            Level.MovingObjects.getFromPixelRectangle(x, y, w, h).toMutableList()
                     }
                 }
             }

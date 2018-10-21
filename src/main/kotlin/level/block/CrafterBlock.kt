@@ -3,7 +3,7 @@ package level.block
 import com.badlogic.gdx.Input
 import crafting.Crafter
 import crafting.Recipe
-import io.*
+import io.PressType
 import resource.ResourceContainer
 import resource.ResourceContainerChangeListener
 import resource.ResourceList
@@ -13,7 +13,7 @@ import screen.CrafterBlockGUI
 open class CrafterBlock(override val type: CrafterBlockType, xTile: Int, yTile: Int, rotation: Int) : MachineBlock(type, xTile, yTile, rotation), ResourceContainerChangeListener, Crafter {
 
     override val crafterType: Crafter.Type
-        get() = type.craftingType
+        get() = type.crafterType
 
     val crafterGUI = CrafterBlockGUI(this)
     var recipe: Recipe? = null
@@ -26,7 +26,9 @@ open class CrafterBlock(override val type: CrafterBlockType, xTile: Int, yTile: 
             // only allow input if there is a recipe
             container.typeRule = { recipe != null }
             // only allow addition if there are less ingredients than required
-            container.additionRule = { resource, quantity -> recipe != null && resource in recipe!!.consume && container.getQuantity(resource) + quantity <= recipe!!.consume.getQuantity(resource) }
+            container.additionRule = { resource, quantity ->
+                resource in recipe!!.consume && container.getQuantity(resource) + quantity <= recipe!!.consume.getQuantity(resource)
+            }
         }
     }
 
@@ -42,19 +44,20 @@ open class CrafterBlock(override val type: CrafterBlockType, xTile: Int, yTile: 
         } else if (quantity > 0) {
             currentResources.add(resource, quantity)
         }
-        val canCraft = canCraft()
+        val canCraft = enoughToCraft()
         if (on && !canCraft) {
             currentWork = 0
         }
         on = canCraft
     }
 
-    fun canCraft() = recipe?.consume?.enoughIn(currentResources) == true
+    private fun enoughToCraft() = recipe?.consume?.enoughIn(currentResources) == true
 
     override fun onFinishWork() {
-        if (nodes.canOutput(recipe!!.produce)) {
-            if (containers.remove(recipe!!.consume))
+        if (nodes.canOutput(recipe!!.produce, mustContainEnough = false)) {
+            if (containers.remove(recipe!!.consume)) {
                 nodes.output(recipe!!.produce, mustContainEnough = false)
+            }
         } else {
             currentWork = type.maxWork
         }

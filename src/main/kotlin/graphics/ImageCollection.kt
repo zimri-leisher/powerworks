@@ -29,7 +29,7 @@ class ImageCollection(identifier: String, numberOfFrames: Int) {
     init {
         val list = mutableListOf<TextureRegion>()
         for(i in 1..numberOfFrames) {
-            list.add(ResourceManager.getTextureFromAtlas(identifier, i))
+            list.add(ResourceManager.getAtlasTexture(identifier, i))
         }
         width = list[0].widthPixels
         height = list[1].heightPixels

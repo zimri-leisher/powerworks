@@ -18,12 +18,13 @@ object ResourceManager {
 
     private val images = mutableMapOf<String, Texture>()
 
-    val libgdxTextureManager = AssetManager(PowerworksTextureFileHandleResolver())
-    val libgdxSoundManager = AssetManager(PowerworksSoundFileHandleResolver())
+    private val libgdxTextureManager = AssetManager(PowerworksTextureFileHandleResolver())
+    private val libgdxSoundManager = AssetManager(PowerworksSoundFileHandleResolver())
 
-    val textureAtlases = mutableListOf<TextureAtlas>()
+    private val textureAtlases = mutableListOf<TextureAtlas>()
+    private val textureRegions = mutableMapOf<String, TextureRegion>()
 
-    val defaultTextureFile: FileHandle = Gdx.files.internal("textures/misc/error.png")
+    private val defaultTextureFile: FileHandle = Gdx.files.internal("textures/misc/error.png")
 
     var currentModContext: Mod? = null
 
@@ -33,10 +34,20 @@ object ResourceManager {
     fun registerAtlas(path: String) = TextureAtlas(path).apply { textureAtlases.add(this) }
 
     /**
+     * Gets an identifier from a texture region
+     */
+    fun getIdentifier(textureRegion: TextureRegion) =
+            textureRegions.filter { it.value == textureRegion }.values.firstOrNull()
+
+    /**
      * Gets a texture from one of the loaded texture atlases
      * @param index the index of the texture (the number after the last underscore if there is one). -1 if no index
      */
-    fun getTextureFromAtlas(identifier: String, index: Int = -1): TextureRegion {
+    fun getAtlasTexture(identifier: String, index: Int = -1): TextureRegion {
+        val fullId = identifier + if(index != -1) "_$index" else ""
+        val r = textureRegions[fullId]
+        if(r != null)
+            return r
         var region: TextureRegion? = null
         for(atlas in textureAtlases) {
             region = if(index == -1) atlas.findRegion(identifier) else atlas.findRegion(identifier, index)
@@ -46,6 +57,7 @@ object ResourceManager {
         if(region == null) {
             throw ResourceNotFoundException("Resource with identifier $identifier ${if(index !=-1) "and index $index" else ""} not found in an atlas")
         }
+        textureRegions.put(fullId, region)
         return region
     }
 
@@ -79,7 +91,7 @@ object ResourceManager {
      * Adds a texture to the internal map
      * @param identifier the identifier to store it under
      * @param texture the texture to store
-     * @return the texture - this is handy for loading it by saying i: Image = registerTexture("some_identifier", Utils.modify(...))
+     * @return the texture parameter (for chaining)
      */
     fun registerTexture(identifier: String, texture: Texture): Texture {
         if (identifier in images) {

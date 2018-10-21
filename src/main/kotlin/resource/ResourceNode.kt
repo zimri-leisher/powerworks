@@ -30,7 +30,7 @@ class ResourceNode<R : ResourceType>(
     var attachedNode: ResourceNode<R>? = null
 
     /**
-     * Whether or not this node should be allowed to output resources directly to the level, using the Level.add(ResourceType, Quantity) method.
+     * Whether or not this node should be allowed to output resources directly to the level, using the Level.add(ResourceType, Int) method.
      * If false, calls to can/couldOutput will return false if there is no attached node, regardless of whether there is space in the level
      */
     var outputToLevel = true
@@ -41,17 +41,20 @@ class ResourceNode<R : ResourceType>(
     var network: ResourceRoutingNetwork<R> = ResourceRoutingNetwork()
 
     /**
+     * @param mustContainEnough whether or not to check if the attached container has enough resources. Set to false if
+     * you know it does or don't care if it doesn't
      * @return if the resource is the right type and this node allows output and the attached container is able to remove the resources.
      * Additionally, if there is an attached node, it must be able to input the resources
      */
-    fun canOutput(resource: ResourceType, quantity: Int): Boolean {
+    fun canOutput(resource: ResourceType, quantity: Int, mustContainEnough: Boolean = true): Boolean {
         if (!isRightType(resource))
             return false
         resource as R
         if (!allowOut)
             return false
-        if (!attachedContainer.canRemove(resource, quantity))
-            return false
+        if (mustContainEnough)
+            if (!attachedContainer.canRemove(resource, quantity))
+                return false
         if (attachedNode != null) {
             if (!attachedNode!!.canInput(resource, quantity))
                 return false
@@ -61,51 +64,20 @@ class ResourceNode<R : ResourceType>(
     }
 
     /**
+     * @param mustHaveSpace whether or not to check if the attached container has enough space. Set to false if you know
+     * it does or don't care if it doesn't
      * @return if the resource is the right type and this node allows input and the attached container can add the resources
      */
-    fun canInput(resource: ResourceType, quantity: Int): Boolean {
+    fun canInput(resource: ResourceType, quantity: Int, mustHaveSpace: Boolean = true): Boolean {
         if (!isRightType(resource))
             return false
         resource as R
         if (!allowIn)
             return false
-        if (!attachedContainer.canAdd(resource, quantity))
-            return false
-        return true
-    }
-
-    /**
-     * If this node could output the resources assuming its attached container has enough.
-     * To summarize, the difference between this and canOutput is this doesn't check if the attached container can remove the resources
-     *
-     * @return if the resource is the right type and this node allows output and the attached node can input the resources
-     */
-    fun couldOuput(resource: ResourceType, quantity: Int): Boolean {
-        if (!isRightType(resource))
-            return false
-        resource as R
-        if (!allowOut)
-            return false
-        if (attachedNode != null) {
-            if (!attachedNode!!.canInput(resource, quantity))
+        if (mustHaveSpace) {
+            if (!attachedContainer.canAdd(resource, quantity))
                 return false
-        } else if (attachedNode == null && !outputToLevel)
-            return false
-        return true
-    }
-
-    /**
-     * If this node could input the resources assuming its attached container has space.
-     * To summzrize, the difference between this and canInput is this doesn't check if the attached container can add the resources
-     *
-     * @return if the resource is the right type and this node allows input
-     */
-    fun couldInput(resource: ResourceType, quantity: Int): Boolean {
-        if (!isRightType(resource))
-            return false
-        resource as R
-        if (!allowIn)
-            return false
+        }
         return true
     }
 
@@ -122,13 +94,8 @@ class ResourceNode<R : ResourceType>(
      */
     fun output(resource: ResourceType, quantity: Int, checkIfAble: Boolean = true, mustContainEnough: Boolean = true): Boolean {
         if (checkIfAble) {
-            if (mustContainEnough) {
-                if (!canOutput(resource, quantity))
-                    return false
-            } else {
-                if (!couldOuput(resource, quantity))
-                    return false
-            }
+            if (!canOutput(resource, quantity, mustContainEnough))
+                return false
         }
         attachedContainer.remove(resource, quantity, this, false)
         if (attachedNode != null) {
@@ -155,13 +122,8 @@ class ResourceNode<R : ResourceType>(
      */
     fun input(resource: ResourceType, quantity: Int, checkIfAble: Boolean = true, mustHaveSpace: Boolean = true): Boolean {
         if (checkIfAble) {
-            if (mustHaveSpace) {
-                if (!canInput(resource, quantity))
-                    return false
-            } else {
-                if (!couldInput(resource, quantity))
-                    return false
-            }
+            if (!canInput(resource, quantity, mustHaveSpace))
+                return false
         }
         attachedContainer.add(resource, quantity, this, false)
         return true

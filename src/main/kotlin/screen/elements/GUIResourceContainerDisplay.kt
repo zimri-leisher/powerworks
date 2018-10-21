@@ -8,7 +8,7 @@ class GUIResourceContainerDisplay(parent: RootGUIElement, name: String,
                                   xAlignment: Alignment, yAlignment: Alignment, val width: Int, val height: Int,
                                   val container: ResourceContainer<*>,
                                   open: Boolean = false, layer: Int = parent.layer + 1) :
-        GUIElement(parent, name, xAlignment, yAlignment, { width * 16 + 4 }, { height * 16 + 4 }, open, layer), ResourceContainerChangeListener {
+        GUIElement(parent, name, xAlignment, yAlignment, { width * 16 }, { height * 16 }, open, layer), ResourceContainerChangeListener {
 
     val listDisplay = GUIResourceListDisplay(this, name + " list display", container.toList(), { 0 }, { 0 }, width, height)
 

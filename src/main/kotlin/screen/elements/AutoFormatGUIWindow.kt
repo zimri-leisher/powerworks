@@ -5,7 +5,9 @@ import screen.WindowGroup
 
 /**
  * A handy window that automatically puts elements in the order (y-down) that they are created, and adjusts the dimensions
- * accordingly. This is great for quickly creating GUIs that you want to have a 'top-down' flow. For example, the class
+ * accordingly. This is great for quickly creating GUIs that you want to have a 'top-down' flow.
+ *
+ * For example, the class
  * FurnaceBlockGUI extends this one. Inside of its initializer, it creates multiple elements in sequential order. To add
  * an element to this so that it will be formatted, you must either create the element with 'group' as its parent, which
  * gives it directly to the auto format group that underlies this, or you can use the add(GUIElement) method this class
@@ -20,7 +22,7 @@ open class AutoFormatGUIWindow(name: String,
     val group = AutoFormatGUIGroup(this, name + " element group", { WIDTH_PADDING }, { 0 }, open, flipY = true, yPixelSeparation = 2, accountForChildHeight = true)
 
     init {
-        group.alignments.y = { group.alignments.height() - HEIGHT_PADDING }
+        group.alignments.y = { group.alignments.height() + HEIGHT_PADDING }
         alignments.width = { group.alignments.width() + 2 * WIDTH_PADDING }
         alignments.height = { group.alignments.height() + 2 * HEIGHT_PADDING }
     }
@@ -41,7 +43,7 @@ open class AutoFormatGUIWindow(name: String,
     }
 
     companion object {
-        val WIDTH_PADDING = 2
-        val HEIGHT_PADDING = 2
+        const val WIDTH_PADDING = 2
+        const val HEIGHT_PADDING = 2
     }
 }

@@ -11,7 +11,7 @@ class CrafterBlockGUI(val block: CrafterBlock) :
                 { 0 }, { 0 },
                 ScreenManager.Groups.INVENTORY) {
 
-    val progressBar: GUIProgressBar
+    private val progressBar: GUIProgressBar
 
     init {
         openAtMouse = true
@@ -19,9 +19,9 @@ class CrafterBlockGUI(val block: CrafterBlock) :
 
         GUIText(group, "Recipe text", 0, 0, "Recipe:")
 
-        GUIRecipeButton(group, "Recipe choice button", { 0 }, { 0 }, block.recipe, { block.recipe = it }).apply {
-            GUIOutline(this, "Test")
-        }
+        GUIRecipeButton(group, "Recipe choice button", { 0 }, { 0 }, block.recipe,
+                { block.recipe = it },
+                { it.validCrafterTypes != null && it.validCrafterTypes.any { type -> type == block.type.crafterType } && it.consume.size <= block.type.internalStorageSize})
 
         for (container in block.containers) {
             GUIResourceContainerDisplay(group, this@CrafterBlockGUI.name + " resource list display", { 0 }, { 0 }, block.type.internalStorageSize, 1, container)

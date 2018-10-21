@@ -76,7 +76,7 @@ class BlockItemType(initializer: BlockItemType.() -> Unit): ItemType() {
 
         val ROBOT_FACTORY = BlockItemType {
             name = "Robot Factory"
-            icon = Image.Misc.ERROR
+            icon = Image.Block.ROBOT_CRAFTER
             placedBlock = CrafterBlockType.ROBOT_FACTORY
         }
 
@@ -172,8 +172,4 @@ class IngotItemType(initializer: IngotItemType.() -> Unit) : ItemType() {
             icon = Image.Item.COPPER_INGOT
         }
     }
-}
-
-class SpawnerItemType(initializer: SpawnerItemType.() -> Unit) : ItemType() {
-    var spawnType: LevelObjectType<*> = LevelObjectType.ERROR
 }

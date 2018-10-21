@@ -4,7 +4,19 @@ import item.BlockItemType
 import item.ItemType
 import resource.ResourceType
 
-enum class RecipeCategory(val icon: ResourceType) {
-    /* SHOULD REMAIN ONLY 5 OF THESE. TODO figure out why I said this */
-    MACHINE(BlockItemType.MINER), MISC(ItemType.ERROR), MACHINE_PARTS(ItemType.CIRCUIT), WIP2(ItemType.ERROR), WIP3(ItemType.ERROR)
+/**
+ * Purely organizational categories for recipes. These will become tabs on the RecipeSelectorGUI
+ */
+enum class RecipeCategory(val iconType: ResourceType, val categoryName: String) {
+    MACHINE(BlockItemType.MINER, "Machine"),
+    MISC(ItemType.ERROR,"Miscellaneous"),
+    MACHINE_PARTS(ItemType.CIRCUIT, "Machine Parts"),
+    WIP2(ItemType.ERROR, "WIP2"),
+    WIP3(ItemType.ERROR, "WIP3");
+
+    operator fun iterator() = Recipe.ALL.filter { it.category == this }.iterator()
+
+    companion object {
+        operator fun iterator() = values().iterator()
+    }
 }

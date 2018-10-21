@@ -56,8 +56,11 @@ object Renderer {
      * Removes the clip
      */
     fun resetClip() {
-        batch.flush()
-        ScissorStack.popScissors()
+        // don't crash if there aren't any
+        if (ScissorStack.peekScissors() != null) {
+            batch.flush()
+            ScissorStack.popScissors()
+        }
     }
 
     /**

@@ -2,12 +2,11 @@ package screen.elements
 
 import data.WeakMutableList
 import graphics.TextureRenderParams
-
 import io.PressType
 import main.Game
-import screen.mouse.Mouse
 import screen.ScreenManager
 import screen.WindowGroup
+import screen.mouse.Mouse
 
 typealias Alignment = () -> Int
 
@@ -25,14 +24,8 @@ sealed class RootGUIElement(name: String, xAlignment: Alignment, yAlignment: Ali
                 mouseOn = false
                 if (this is GUIElement) {
                     parentWindow.openChildren.remove(this)
-                    if (ScreenManager.selectedElement == this) {
-                        ScreenManager.selectedElement = ScreenManager.getHighestElement(Mouse.xPixel, Mouse.yPixel)
-                    }
                 } else if (this is GUIWindow) {
                     ScreenManager.openWindows.remove(this)
-                    if (ScreenManager.selectedWindow == this) {
-                        ScreenManager.selectedWindow = ScreenManager.getHighestWindow(Mouse.xPixel, Mouse.yPixel)
-                    }
                 }
                 onClose()
                 children.forEach { if (it.matchParentClosing) it.open = false }
@@ -109,7 +102,7 @@ sealed class RootGUIElement(name: String, xAlignment: Alignment, yAlignment: Ali
             if (field != value) {
                 val old = field
                 field = value
-                if(this is GUIElement) {
+                if (this is GUIElement) {
                     parent.onChildDimensionChange(this)
                 }
                 onDimensionChange(old, heightPixels)
@@ -129,7 +122,7 @@ sealed class RootGUIElement(name: String, xAlignment: Alignment, yAlignment: Ali
             if (field != value) {
                 val old = field
                 field = value
-                if(this is GUIElement) {
+                if (this is GUIElement) {
                     parent.onChildDimensionChange(this)
                 }
                 onDimensionChange(widthPixels, old)
@@ -359,7 +352,7 @@ sealed class RootGUIElement(name: String, xAlignment: Alignment, yAlignment: Ali
     class ElementAlignments(parent: RootGUIElement, x: Alignment, y: Alignment, width: Alignment, height: Alignment) {
         var parent = parent
             set(value) {
-                if(field != value) {
+                if (field != value) {
                     field = value
                     update()
                 }

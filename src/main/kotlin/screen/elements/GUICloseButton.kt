@@ -21,7 +21,7 @@ class GUICloseButton(parent: RootGUIElement,
     }
 
     override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
-        if (type == PressType.PRESSED)
+        if (type == PressType.RELEASED)
             actOn.open = false
     }
 

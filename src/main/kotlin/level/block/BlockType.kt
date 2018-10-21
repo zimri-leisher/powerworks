@@ -132,9 +132,9 @@ open class MachineBlockType<T : MachineBlock>(initializer: MachineBlockType<T>.(
 }
 
 class CrafterBlockType(initializer: CrafterBlockType.() -> Unit) : MachineBlockType<CrafterBlock>() {
-    var craftingType = Crafter.Type.ITEM
+    var crafterType = Crafter.Type.DEFAULT
 
-    var internalStorageSize = 2
+    var internalStorageSize = 3
 
     init {
         widthTiles = 2
@@ -145,6 +145,7 @@ class CrafterBlockType(initializer: CrafterBlockType.() -> Unit) : MachineBlockT
     companion object {
         val ITEM_CRAFTER = CrafterBlockType {
             name = "Crafter"
+            crafterType = Crafter.Type.ITEM
             hitbox = Hitbox.TILE2X2
             instantiate = { xPixel, yPixel, rotation -> CrafterBlock(this, xPixel shr 4, yPixel shr 4, rotation) }
             textures = LevelObjectTextures(LevelObjectTexture(Image.Block.CRAFTER))
@@ -159,15 +160,17 @@ class CrafterBlockType(initializer: CrafterBlockType.() -> Unit) : MachineBlockT
 
         val ROBOT_FACTORY = CrafterBlockType {
             name = "Robot Factory"
-            craftingType = Crafter.Type.ROBOT
+            crafterType = Crafter.Type.ROBOT
             instantiate = { xPixel, yPixel, rotation -> CrafterBlock(this, xPixel shr 4, yPixel shr 4, rotation) }
             widthTiles = 3
             heightTiles = 3
-            hitbox = Hitbox.TILE2X2
+            textures = LevelObjectTextures(LevelObjectTexture(Image.Block.ROBOT_CRAFTER))
+            hitbox = Hitbox.TILE3X3
             nodesTemplate = template {
                 val internalInventory = Inventory(1, 1)
                 listOf(
-                        ResourceNode(0, 0, 0, ResourceCategory.ITEM, true, false, internalInventory)
+                        ResourceNode(1, 2, 0, ResourceCategory.ITEM, true, false, internalInventory),
+                        ResourceNode(1, 0, 2, ResourceCategory.ITEM, false, true, internalInventory)
                 )
             }
         }
@@ -181,7 +184,6 @@ class FluidTankBlockType(initializer: FluidTankBlockType.() -> Unit) : BlockType
 
     init {
         instantiate = { xPixel, yPixel, rotation -> FluidTankBlock(this, xPixel shr 4, yPixel shr 4, rotation) }
-        initializer()
         val storage = FluidTank(maxAmount)
         nodesTemplate = template {
             listOf(
@@ -190,6 +192,7 @@ class FluidTankBlockType(initializer: FluidTankBlockType.() -> Unit) : BlockType
                     ResourceNode(0, 0, 2, ResourceCategory.FLUID, true, true, storage),
                     ResourceNode(0, 0, 3, ResourceCategory.FLUID, true, true, storage))
         }
+        initializer()
     }
 
     companion object {

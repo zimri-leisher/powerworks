@@ -5,7 +5,7 @@ import resource.ResourceList
 class GUIResourceListDisplay(parent: RootGUIElement, name: String, currentResources: ResourceList,
                              xAlignment: Alignment, yAlignment: Alignment, width: Int, height: Int,
                              open: Boolean = false, layer: Int = parent.layer + 1) :
-        GUIElement(parent, name, xAlignment, yAlignment, { width * 16 + 4 }, { height * 16 + 4 }, open, layer) {
+        GUIElement(parent, name, xAlignment, yAlignment, { width * 16 }, { height * 16 }, open, layer) {
 
     var width = width
         set(value) {
@@ -37,8 +37,8 @@ class GUIResourceListDisplay(parent: RootGUIElement, name: String, currentResour
     private val slots = mutableListOf<GUIResourceDisplaySlot>()
 
     init {
-        alignments.width = { this.width * 16 + 4 }
-        alignments.height = { this.height * 16 + 4 }
+        alignments.width = { this.width * 16 }
+        alignments.height = { this.height * 16 }
         createSlots()
     }
 

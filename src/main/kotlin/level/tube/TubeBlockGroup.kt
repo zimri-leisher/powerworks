@@ -299,11 +299,8 @@ class TubeBlockGroup {
         fun update() {
             val iterator = itemsBeingMoved.iterator()
             for (item in iterator) {
-                if (!item.goal.couldOuput(item.item.type, item.item.quantity)) {
-
-                }
-                // already know it contains the resources so no need to use canOutput
-                if (!item.goal.couldOuput(item.item.type, item.item.quantity)) {
+                // already know it contains the resources
+                if (!item.goal.canOutput(item.item.type, item.item.quantity, false)) {
                     if (item.start.canInput(item.item.type, item.item.quantity)) {
                         val nearestTubeToItem = parent.getNearestTube(item)
                         val path = parent.route(nearestTubeToItem.xTile, nearestTubeToItem.yTile, item.start)
@@ -346,8 +343,8 @@ class TubeBlockGroup {
 
         fun render() {
             for (item in itemsBeingMoved) {
-                Renderer.renderTextureKeepAspect(item.item.type.icon, item.xPixel + 4, item.yPixel + 4, 8, 8)
-                Renderer.renderText(item.item.quantity, item.xPixel + 4, item.yPixel + 4)
+                Renderer.renderTextureKeepAspect(item.item.type.icon, item.xPixel + 4, item.yPixel + 8, 8, 8)
+                Renderer.renderText(item.item.quantity, item.xPixel + 4, item.yPixel + 8)
                 if (Game.currentDebugCode == DebugCode.TUBE_INFO)
                     renderPath(item)
             }

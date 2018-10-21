@@ -60,18 +60,12 @@ object InputManager : InputProcessor {
     var mouseOutside = false
 
     /**
-     * The characters that will be sent to text handler
-     * The String is the name of the key (e.g. ESCAPE or A or UP)
-     * The Char is the character that should appear (e.g., if SHIFT and A are pressed, it is 'A', if there is no SHIFT, it is 'a')
+     * The characters that will be sent to the text handler
      */
-    val charsInTextQueue = mutableListOf<Pair<String, Char>>()
-
     val charsTyped = mutableListOf<Char>()
 
     /**
      * The object that should be sent key type (the word 'type' as in related to pressing, not category) events.
-     * If the character typed is one of the SpecialChars, it will be sent through the handleSpecialChar method,
-     * otherwise it will be send through handleChar
      */
     var textHandler: TextHandler? = null
 
@@ -105,6 +99,13 @@ object InputManager : InputProcessor {
         registerControlPressHandler(h, type, *controls.toTypedArray())
     }
 
+    /**
+     * Registers a control press handler
+     * @param type one of GLOBAL, LEVEL_ANY, LEVEL_THIS and SCREEN_THIS
+     * @param map the map for which controls should be sent to the handler. If the map is any other, even if the controls
+     * match, this will not receive them
+     * @param controls the list of controls to send to this
+     */
     fun registerControlPressHandler(h: ControlPressHandler, type: ControlPressHandlerType, map: ControlMap, vararg controls: Control) {
         registerControlPressHandler(h, type, mapOf(map to controls))
     }
@@ -156,7 +157,7 @@ object InputManager : InputProcessor {
 
         for ((k, v) in inputEvent) {
             if ((v == PressType.PRESSED && !inputsBeingPressed.contains(k)) || (v == PressType.RELEASED && inputsBeingPressed.contains(k))) {
-                map.translate(k, inputsBeingPressed.filter { it != k }.toMutableSet()).forEach { queue.add(ControlPress(it, v)) }
+                map.translate(k, inputsBeingPressed.filter { it != k }.toMutableSet()).forEach { queue.add(ControlPress(it, v)); if (v == PressType.RELEASED) queue.remove(ControlPress(it, PressType.REPEAT)) }
                 if (v == PressType.PRESSED &&
                         /* Wheels are not able to be held down, so you shouldn't add them to the repeat */
                         !k.contains("WHEEL")) {
@@ -202,9 +203,7 @@ object InputManager : InputProcessor {
         handlers.forEach { k, v ->
             if (k.second == ControlPressHandlerType.GLOBAL ||
                     (k.second == ControlPressHandlerType.SCREEN_THIS && currentScreenHandlers.contains(k.first)) ||
-                    // the second part of this is here so that even if the level view hasn't been selected yet but it is about to
-                    (k.second == ControlPressHandlerType.LEVEL_ANY && (ScreenManager.selectedElement is GUILevelView ||
-                            (ScreenManager.getHighestElement(Mouse.xPixel, Mouse.yPixel) is GUILevelView && (p.control in Control.Group.INTERACTION || p.control in Control.Group.SCROLL)))) ||
+                    (k.second == ControlPressHandlerType.LEVEL_ANY && ScreenManager.selectedElement is GUILevelView) ||
                     (k.second == ControlPressHandlerType.LEVEL_THIS &&
                             // we want the part below because otherwise the level controls will trigger even when we
                             // press on a gui element that is higher. They stop the controls from being sent to the level object
@@ -216,8 +215,9 @@ object InputManager : InputProcessor {
                     if (v.containsKey(map)) {
                         val controls = v.get(map)
                         if (controls != null) {
-                            if (controls.contains(p.control))
+                            if (controls.contains(p.control)) {
                                 k.first.handleControlPress(p)
+                            }
                         } else {
                             k.first.handleControlPress(p)
                         }

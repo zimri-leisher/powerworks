@@ -50,7 +50,7 @@ enum class TextTagType(val identifier: String,
         context.currentRenderParams.style = FontStyle.valueOf(arg.toUpperCase().replace(' ', '_'))
     }),
     IMAGE("image", { context, arg, dontRender ->
-        val image = ResourceManager.getTextureFromAtlas(arg)
+        val image = ResourceManager.getAtlasTexture(arg)
         val info = graphics.text.TextManager.getFont(context.currentRenderParams.size, context.currentRenderParams.style)
         val size = (Math.max(info.charHeight, info.charWidth)).roundToInt()
         // we're rendering this at the end of the string, thus we use the width plus the x for the x of the render, and same for the height

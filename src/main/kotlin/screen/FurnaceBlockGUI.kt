@@ -27,8 +27,8 @@ class FurnaceBlockGUI(val block: FurnaceBlock) : AutoFormatGUIWindow("Furnace bl
         GUIFluidTankMeter(group, this.name + " tank meter", 0, 0, group.widthPixels, GUIFluidTankMeter.HEIGHT,
                 block.tank)
 
-        generateDragGrip(this.layer + 1)
         generateCloseButton(this.layer + 1)
+        generateDragGrip(this.layer + 1)
     }
 
     override fun update() {

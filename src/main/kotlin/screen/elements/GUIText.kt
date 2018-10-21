@@ -1,19 +1,31 @@
 package screen.elements
 
-import graphics.text.TextManager
 import graphics.Renderer
 import graphics.text.TaggedText
+import graphics.text.TextManager
 import graphics.text.TextRenderParams
 
 class GUIText(parent: RootGUIElement,
               name: String,
               xAlignment: Alignment, yAlignment: Alignment,
               text: Any?,
-              val renderParams: TextRenderParams = TextRenderParams(),
+              val textRenderParams: TextRenderParams = TextRenderParams(),
               allowTags: Boolean = false,
               open: Boolean = false,
               layer: Int = parent.layer + 1) :
-        GUIElement(parent, name, xAlignment, yAlignment, { 0 }, { 0 }, open, layer) {
+        GUIElement(parent, name, xAlignment, yAlignment, {
+            if (allowTags) {
+                TextManager.getStringWidth(TextManager.parseTags(text.toString()), textRenderParams.size, textRenderParams.style)
+            } else {
+                TextManager.getStringWidth(text.toString(), textRenderParams.size, textRenderParams.style)
+            }
+        }, {
+            if (allowTags) {
+                TextManager.getStringHeight(TextManager.parseTags(text.toString()), textRenderParams.size, textRenderParams.style)
+            } else {
+                TextManager.getStringHeight(text.toString(), textRenderParams.size, textRenderParams.style)
+            }
+        }, open, layer) {
 
     constructor(parent: RootGUIElement,
                 name: String,
@@ -54,9 +66,9 @@ class GUIText(parent: RootGUIElement,
 
     fun updateText() {
         val r = if (allowTags) {
-            TextManager.getStringBounds(tags, renderParams.size, renderParams.style)
+            TextManager.getStringBounds(tags, textRenderParams.size, textRenderParams.style)
         } else {
-            TextManager.getStringBounds(text.toString(), renderParams.size, renderParams.style)
+            TextManager.getStringBounds(text.toString(), textRenderParams.size, textRenderParams.style)
         }
         alignments.width = { r.width }
         alignments.height = { r.height }
@@ -64,8 +76,8 @@ class GUIText(parent: RootGUIElement,
 
     override fun render() {
         if (!allowTags)
-            Renderer.renderText(text, xPixel, yPixel, renderParams)
+            Renderer.renderText(text, xPixel, yPixel, textRenderParams)
         else
-            Renderer.renderTaggedText(tags, xPixel, yPixel, renderParams)
+            Renderer.renderTaggedText(tags, xPixel, yPixel, textRenderParams)
     }
 }

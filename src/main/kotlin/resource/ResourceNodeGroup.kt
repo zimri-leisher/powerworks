@@ -6,9 +6,9 @@ package resource
  * Instead of keeping track of individual nodes, you can just add them to this and depend on this to send resources to
  * and from the correct places
  *
- * For example, every block instance has an instance of this which is where the node templates are put into. To give an
- * example, instead of the MinerBlock having an outputNode attribute which is manually set to the correct one, it simply
- * calls nodes.output(resource, quantity) which finds the available node and outputs the resources.
+ * For example, every block instance has an instance of this which is where the node templates are put into. In the case of
+ * the MinerBlock, instead of the it having an outputNode attribute which is manually set to the correct one, it simply
+ * calls nodes.output(resource, quantity) which finds the available node and outputs the resources
  *
  * @param name the name of the group, useful for debugging purposes
  */
@@ -37,7 +37,7 @@ class ResourceNodeGroup(val name: String, nodes: List<ResourceNode<*>> = listOf(
      */
     fun <R : ResourceType> getOutputters(resourceType: R, quantity: Int = 1, mustContainEnough: Boolean = true): List<ResourceNode<R>> {
         val ret = mutableListOf<ResourceNode<R>>()
-        nodes.filter { if (mustContainEnough) it.canOutput(resourceType, quantity) else it.couldOuput(resourceType, quantity) }.forEach { ret.add(it as ResourceNode<R>) }
+        nodes.filter { it.canOutput(resourceType, quantity, mustContainEnough) }.forEach { ret.add(it as ResourceNode<R>) }
         return ret
     }
 
@@ -48,7 +48,7 @@ class ResourceNodeGroup(val name: String, nodes: List<ResourceNode<*>> = listOf(
      */
     fun <R : ResourceType> getInputters(resourceType: R, quantity: Int = 1, mustHaveSpace: Boolean = true): List<ResourceNode<R>> {
         val ret = mutableListOf<ResourceNode<R>>()
-        nodes.filter { if (mustHaveSpace) it.canInput(resourceType, quantity) else it.couldInput(resourceType, quantity) }.forEach { ret.add(it as ResourceNode<R>) }
+        nodes.filter { it.canInput(resourceType, quantity, mustHaveSpace) }.forEach { ret.add(it as ResourceNode<R>) }
         return ret
     }
 
@@ -60,10 +60,7 @@ class ResourceNodeGroup(val name: String, nodes: List<ResourceNode<*>> = listOf(
      */
     fun <R : ResourceType> getOutputter(resourceType: R, quantity: Int = 1, onlyTo: (ResourceNode<*>) -> Boolean = { true }, mustContainEnough: Boolean = true) =
             nodes.firstOrNull {
-                if (mustContainEnough)
-                    onlyTo(it) && it.canOutput(resourceType, quantity)
-                else
-                    onlyTo(it) && it.couldOuput(resourceType, quantity)
+                onlyTo(it) && it.canOutput(resourceType, quantity, mustContainEnough)
             } as ResourceNode<R>?
 
     /**
@@ -74,10 +71,7 @@ class ResourceNodeGroup(val name: String, nodes: List<ResourceNode<*>> = listOf(
      */
     fun <R : ResourceType> getInputter(resourceType: R, quantity: Int = 1, onlyTo: (ResourceNode<*>) -> Boolean = { true }, mustHaveSpace: Boolean = true) =
             nodes.firstOrNull {
-                if (mustHaveSpace)
-                    onlyTo(it) && it.canInput(resourceType, quantity)
-                else
-                    onlyTo(it) && it.couldInput(resourceType, quantity)
+                onlyTo(it) && it.canInput(resourceType, quantity, mustHaveSpace)
             } as ResourceNode<R>?
 
     /**
@@ -100,8 +94,19 @@ class ResourceNodeGroup(val name: String, nodes: List<ResourceNode<*>> = listOf(
         return !list.any { !output(it.key, it.value, onlyTo, mustContainEnough) }
     }
 
+    /**
+     * Whether or not this node group is able to output the resources with the given quantity
+     * @param onlyTo only consider for outputting nodes that match this predicate
+     * @param mustContainEnough whether the attached containers of the nodes must contain enough of the given resources
+     */
     fun canOutput(resourceType: ResourceType, quantity: Int, onlyTo: (ResourceNode<*>) -> Boolean = { true }, mustContainEnough: Boolean = true) = getOutputter(resourceType, quantity, onlyTo, mustContainEnough) != null
 
+    /**
+     * Whether or not this node group is able to output the resources with the given quantity
+     * @param onlyTo only consider for outputting nodes that match this predicate
+     * @param mustContainEnough whether the attached containers of the nodes must contain enough of the given resources
+     * @return true if every (resource, quantity) pair was outputted successfully
+     */
     fun canOutput(list: ResourceList, onlyTo: (ResourceNode<*>) -> Boolean = { true }, mustContainEnough: Boolean = true): Boolean {
         return list.all { (r, q) -> canOutput(r, q, onlyTo, mustContainEnough) }
     }

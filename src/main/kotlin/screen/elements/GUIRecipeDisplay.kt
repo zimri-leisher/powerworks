@@ -1,6 +1,7 @@
 package screen.elements
 
 import crafting.Recipe
+import graphics.Renderer
 
 class GUIRecipeDisplay(parent: RootGUIElement, name: String, xAlignment: Alignment, yAlignment: Alignment, recipe: Recipe? = null, open: Boolean = false, layer: Int = parent.layer + 1) :
         GUIElement(parent, name, xAlignment, yAlignment, { WIDTH }, { HEIGHT }, open, layer) {
@@ -37,16 +38,16 @@ class GUIRecipeDisplay(parent: RootGUIElement, name: String, xAlignment: Alignme
     private lateinit var mouseOverAreaOpenGroup: GUIGroup
     private lateinit var mouseOverArea: GUIMouseOverPopupArea
     private lateinit var popupBackground: GUIDefaultTextureRectangle
-    private val background: GUIDefaultTextureRectangle
+    val background: GUIDefaultTextureRectangle
 
     init {
         val fakeRecipe = recipe ?: Recipe.ERROR
 
-        background = GUIDefaultTextureRectangle(this, name + " background", 0, 0, GUIRecipeButton.WIDTH, GUIRecipeButton.HEIGHT).apply {
+        background = GUIDefaultTextureRectangle(this, name + " background", 0, 0, GUIRecipeButton.WIDTH, GUIRecipeButton.HEIGHT, open).apply {
 
             transparentToInteraction = true
 
-            icon = GUITexturePane(this, name + " icon", 0, heightPixels - 16, fakeRecipe.iconType.icon, 16, 16, keepAspect = true).apply {
+            icon = GUITexturePane(this, name + " icon", 0, heightPixels - 16, fakeRecipe.iconType.icon, 16, 16, keepAspect = true, open = open).apply {
 
                 updateDimensionAlignmentOnTextureChange = false
                 transparentToInteraction = true
@@ -65,15 +66,19 @@ class GUIRecipeDisplay(parent: RootGUIElement, name: String, xAlignment: Alignme
 
                         consumeList = GUIResourceListDisplay(this, "consume list display", fakeRecipe.consume, { produceList.alignments.x() }, { produceText.alignments.y() + produceText.heightPixels + 1 }, fakeRecipe.consume.size, 1)
 
-                        val consumeText = GUIText(this, "consume text", produceList.alignments.x(), consumeList.alignments.y() + consumeList.heightPixels - 4, "Consume:", layer = this.layer + 2)
+                        GUIText(this, "consume text", produceList.alignments.x(), consumeList.alignments.y() + consumeList.heightPixels - 4, "Consume:", layer = this.layer + 2)
 
                     })
 
                     popupBackground = GUIDefaultTextureRectangle(mouseOver, this@GUIRecipeDisplay.name + " background", { this@apply.widthPixels + 1 }, { -1 }, { mouseOverAreaOpenGroup.widthPixels }, { mouseOverAreaOpenGroup.heightPixels })
 
-                }).apply { transparentToInteraction = true }
+                }, open).apply { transparentToInteraction = true }
             }
         }
+    }
+
+    override fun render() {
+        Renderer.renderText("test", xPixel, yPixel)
     }
 
     override fun onOpen() {

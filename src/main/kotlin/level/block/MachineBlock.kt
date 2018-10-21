@@ -7,7 +7,6 @@ abstract class MachineBlock(override val type: MachineBlockType<out MachineBlock
 
     var on = on
         set(value) {
-            val texture = type.textures[rotation]
             if (!value && field) {
                 onTurnOff()
                 if(currentSound != null)

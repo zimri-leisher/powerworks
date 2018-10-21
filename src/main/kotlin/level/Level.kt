@@ -720,6 +720,9 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
                         }
                     }
                     l.inLevel = false
+                    if(l == Game.currentLevel.selectedLevelObject) {
+                        Game.currentLevel.updateSelectedLevelObject()
+                    }
                     return true
                 } else if (l is MovingObject) {
                     if (l is DroppedItem) {
@@ -729,6 +732,9 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
                         l.intersectingChunks.forEach { it.movingOnBoundary!!.remove(l) }
                     l.currentChunk.removeMoving(l)
                     l.inLevel = false
+                }
+                if(l == Game.currentLevel.selectedLevelObject) {
+                    Game.currentLevel.updateSelectedLevelObject()
                 }
                 return true
             }
