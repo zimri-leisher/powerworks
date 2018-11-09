@@ -1,19 +1,20 @@
 package data
 
-import main.Game
-import java.io.File
-import java.nio.file.*
-import java.util.*
-import javax.imageio.ImageIO
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.files.FileHandle
-import com.badlogic.gdx.graphics.PixmapIO
 import com.badlogic.gdx.graphics.Pixmap
+import com.badlogic.gdx.graphics.PixmapIO
 import com.badlogic.gdx.utils.BufferUtils
 import com.badlogic.gdx.utils.ScreenUtils
+import main.Game
+import java.io.File
+import java.nio.file.Paths
+import java.util.*
 
-
-
+/**
+ * An object with various utility methods for interaction with files. Use the [FileManager.fileSystem] property to get
+ * paths, create directories and so on
+ */
 object FileManager {
 
     val fileSystem = FileSystem(Paths.get(Game.JAR_PATH.substring(0 until Game.JAR_PATH.lastIndexOf("/"))), GameDirectoryIdentifier.ENCLOSING) {

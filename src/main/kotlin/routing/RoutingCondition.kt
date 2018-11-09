@@ -1,3 +1,0 @@
-package routing
-
-class RoutingCondition()

@@ -64,6 +64,7 @@ sealed class RootGUIElement(name: String, xAlignment: Alignment, yAlignment: Ali
             if (field != value) {
                 field = value
                 value.update()
+                onAlignmentChange(true, true, true, true)
             }
         }
 
@@ -321,6 +322,10 @@ sealed class RootGUIElement(name: String, xAlignment: Alignment, yAlignment: Ali
     open fun onPositionChange(pXPixel: Int, pYPixel: Int) {
     }
 
+    /** When one of the ElementAlignments changes */
+    open fun onAlignmentChange(x: Boolean = false, y: Boolean = false, width: Boolean = false, height: Boolean = false) {
+    }
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
@@ -350,6 +355,7 @@ sealed class RootGUIElement(name: String, xAlignment: Alignment, yAlignment: Ali
     }
 
     class ElementAlignments(parent: RootGUIElement, x: Alignment, y: Alignment, width: Alignment, height: Alignment) {
+
         var parent = parent
             set(value) {
                 if (field != value) {
@@ -363,6 +369,7 @@ sealed class RootGUIElement(name: String, xAlignment: Alignment, yAlignment: Ali
                 if (field !== value) {
                     field = value
                     parent.xPixel = value() + ((parent as? GUIElement)?.parent?.xPixel ?: 0)
+                    parent.onAlignmentChange(x = true)
                 }
             }
         var y = y
@@ -370,6 +377,7 @@ sealed class RootGUIElement(name: String, xAlignment: Alignment, yAlignment: Ali
                 if (field !== value) {
                     field = value
                     parent.yPixel = value() + ((parent as? GUIElement)?.parent?.yPixel ?: 0)
+                    parent.onAlignmentChange(y = true)
                 }
             }
         var width = width
@@ -377,6 +385,7 @@ sealed class RootGUIElement(name: String, xAlignment: Alignment, yAlignment: Ali
                 if (field !== value) {
                     field = value
                     parent.widthPixels = value()
+                    parent.onAlignmentChange(width = true)
                 }
             }
         var height = height
@@ -384,6 +393,7 @@ sealed class RootGUIElement(name: String, xAlignment: Alignment, yAlignment: Ali
                 if (field !== value) {
                     field = value
                     parent.heightPixels = value()
+                    parent.onAlignmentChange(height = true)
                 }
             }
 

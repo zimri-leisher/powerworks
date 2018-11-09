@@ -8,26 +8,27 @@ import routing.ResourceRoutingNetwork
 /**
  * A node that allows for movement of resources between places on the level. This is not a subclass of LevelObject.
  *
- * An example of a place where they appear is the MinerBlock, which uses one with allowOut = true to produce the ore it mines
+ * An example of a place where they appear is the MinerBlock, which uses one to produce the ore it mines
  * from the ground and either put it into the connected inventory or place it on the ground.
  */
 class ResourceNode<R : ResourceType>(
         val xTile: Int, val yTile: Int,
         val dir: Int,
         val resourceCategory: ResourceCategory,
-        var allowIn: Boolean = false, var allowOut: Boolean = false,
         var attachedContainer: ResourceContainer<R>) {
 
+    var allowIn = false
+    var allowOut = false
     /**
      * If this node is in the level, meaning it is able to interact with other nodes in the level
      */
     var inLevel = false
 
     /**
-     * An adjacent node facing towards this node which can receive input (if this can output) and can output (if this can receive inputs)
+     * Adjacent nodes facing towards this node.
      * This is where resources will get sent to when outputting
      */
-    var attachedNode: ResourceNode<R>? = null
+    var attachedNodes: List<ResourceNode<R>> = listOf()
 
     /**
      * Whether or not this node should be allowed to output resources directly to the level, using the Level.add(ResourceType, Int) method.
@@ -39,6 +40,11 @@ class ResourceNode<R : ResourceType>(
      * The resource routing network which this is part of
      */
     var network: ResourceRoutingNetwork<R> = ResourceRoutingNetwork()
+    /**
+     * The input and output behavior of this node. This is where routing language gets put into and evaluated
+     */
+    var behavior = ResourceNodeBehavior(this)
+        private set
 
     /**
      * @param mustContainEnough whether or not to check if the attached container has enough resources. Set to false if
@@ -50,16 +56,18 @@ class ResourceNode<R : ResourceType>(
         if (!isRightType(resource))
             return false
         resource as R
-        if (!allowOut)
+        if (!behavior.allowOut.check(resource)) {
             return false
+        }
         if (mustContainEnough)
             if (!attachedContainer.canRemove(resource, quantity))
                 return false
-        if (attachedNode != null) {
-            if (!attachedNode!!.canInput(resource, quantity))
+        if (attachedNodes.isNotEmpty()) {
+            if (attachedNodes.all { !it.canInput(resource, quantity) })
                 return false
-        } else if (attachedNode == null && !outputToLevel)
+        } else if (attachedNodes.isEmpty() && !outputToLevel) {
             return false
+        }
         return true
     }
 
@@ -72,8 +80,9 @@ class ResourceNode<R : ResourceType>(
         if (!isRightType(resource))
             return false
         resource as R
-        if (!allowIn)
+        if (!behavior.allowIn.check(resource)) {
             return false
+        }
         if (mustHaveSpace) {
             if (!attachedContainer.canAdd(resource, quantity))
                 return false
@@ -98,14 +107,18 @@ class ResourceNode<R : ResourceType>(
                 return false
         }
         attachedContainer.remove(resource, quantity, this, false)
-        if (attachedNode != null) {
+        if (attachedNodes.isNotEmpty()) {
             // we already checked if we were able to, everything here is under the assumption it is successful
-            attachedNode!!.input(resource, quantity, false)
+            for (attachedNode in attachedNodes) {
+                if (attachedNode.input(resource, quantity, false)) {
+                    break
+                }
+            }
         } else if (outputToLevel) {
             // TODO make this better some time, have it actually spawn in the center
             val xSign = Geometry.getXSign(dir)
             val ySign = Geometry.getYSign(dir)
-            Level.add(((xTile shl 4) + 7) + (8 + Hitbox.DROPPED_ITEM.width) * xSign, ((yTile shl 4) + 7) + (8 + Hitbox.DROPPED_ITEM.height) * ySign, resource, quantity) == quantity
+            Level.add(((xTile shl 4) + 7) + (8 + Hitbox.DROPPED_ITEM.width) * xSign, ((yTile shl 4) + 7) + (8 + Hitbox.DROPPED_ITEM.height) * ySign, resource, quantity)
         }
         return true
     }
@@ -134,10 +147,13 @@ class ResourceNode<R : ResourceType>(
      */
     fun isRightType(resource: ResourceType) = resource.category == resourceCategory
 
-    fun copy(xTile: Int = this.xTile, yTile: Int = this.yTile, dir: Int = this.dir, allowIn: Boolean = this.allowIn, allowOut: Boolean = this.allowOut, attachedContainer: ResourceContainer<*> = this.attachedContainer, outputToLevel: Boolean = this.outputToLevel) =
-            ResourceNode(xTile, yTile, dir, resourceCategory, allowIn, allowOut, attachedContainer).apply { this.outputToLevel = outputToLevel }
+    fun copy(xTile: Int = this.xTile, yTile: Int = this.yTile, dir: Int = this.dir, attachedContainer: ResourceContainer<*> = this.attachedContainer, outputToLevel: Boolean = this.outputToLevel) =
+            ResourceNode(xTile, yTile, dir, resourceCategory, attachedContainer).apply {
+                this.behavior = this@ResourceNode.behavior.copy(this)
+                this.outputToLevel = outputToLevel
+            }
 
-    override fun toString() = "Resource node at $xTile, $yTile, out: $allowOut, in: $allowIn, dir: $dir"
+    override fun toString() = "Resource node at $xTile, $yTile, dir: $dir, behavior: \n$behavior"
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -149,8 +165,7 @@ class ResourceNode<R : ResourceType>(
         if (resourceCategory != other.resourceCategory) return false
         if (attachedContainer != other.attachedContainer) return false
         if (inLevel != other.inLevel) return false
-        if (allowOut != other.allowOut) return false
-        if (allowIn != other.allowIn) return false
+        if(behavior != other.behavior) return false
         return true
     }
 
@@ -167,8 +182,10 @@ class ResourceNode<R : ResourceType>(
     }
 
     companion object {
-        fun <R : ResourceType> createCorresponding(n: ResourceNode<R>, attachedContainer: ResourceContainer<R>) =
-                ResourceNode(n.xTile + Geometry.getXSign(n.dir), n.yTile + Geometry.getYSign(n.dir), Geometry.getOppositeAngle(n.dir), n.resourceCategory, n.allowOut, n.allowIn, attachedContainer)
+        fun <R : ResourceType> createCorresponding(n: ResourceNode<R>, attachedContainer: ResourceContainer<R>, behavior: ResourceNodeBehavior) =
+                ResourceNode(n.xTile + Geometry.getXSign(n.dir), n.yTile + Geometry.getYSign(n.dir), Geometry.getOppositeAngle(n.dir), n.resourceCategory, attachedContainer).apply {
+                    this.behavior = behavior
+                }
     }
 
 }

@@ -46,4 +46,13 @@ object Geometry {
             return 2
         return 0
     }
+
+    fun rotate(xTile: Int, yTile: Int, widthTiles: Int, heightTiles: Int, dir: Int): TileCoord {
+        return when (dir % 4) {
+            1 -> TileCoord(widthTiles - yTile - 1, heightTiles - xTile)
+            2 -> TileCoord(widthTiles - xTile - 1, yTile + 1)
+            3 -> TileCoord(yTile, xTile + 1)
+            else -> TileCoord(xTile, yTile)
+        }
+    }
 }

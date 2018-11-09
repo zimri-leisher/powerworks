@@ -12,9 +12,8 @@ interface DirectoryChangeWatcher {
  * Creates a file system at the given base path
  *
  * Useful for maintaining specific file structures determined at runtime.
- * @see FileManager
  *
- * @param closure executes inside of the directory at the base path, allowing you to immediately specify directories
+ * @param closure executes inside of the directory at the base path, allowing you to specify directories in a DSL-style
  */
 class FileSystem(basePath: Path, baseIdentifier: DirectoryIdentifier? = null, closure: Directory.() -> Unit = {}) {
 
@@ -23,7 +22,7 @@ class FileSystem(basePath: Path, baseIdentifier: DirectoryIdentifier? = null, cl
 
     private val directoryIdentifiers = mutableMapOf<DirectoryIdentifier, Path>()
 
-    val baseDir = Directory(basePath, baseIdentifier, this)
+    private val baseDir = Directory(basePath, baseIdentifier, this)
 
     init {
         ALL.add(this)
@@ -40,7 +39,7 @@ class FileSystem(basePath: Path, baseIdentifier: DirectoryIdentifier? = null, cl
     }
 
     /**
-     * Goes through and creates all directories in this FileSystem as necessary. Used in combination with the create parameter on the directory function
+     * Goes through and creates all directories in this FileSystem which do not exist on the drive yet
      */
     fun createAllDirectories() {
 
@@ -55,31 +54,63 @@ class FileSystem(basePath: Path, baseIdentifier: DirectoryIdentifier? = null, cl
 
     /**
      * Creates a directory inside of the base directory of this FileSystem
-     * @param directoryPath the relative path (the path from the base directory to the new directory). Multiple length paths, like 'foo/bar/test', are allowed. If the directoryIdentifier parameter is not null, only the last folder will be given the identifier. Closure will only be called on the last folder
-     * @param directoryIdentifier the DirectoryIdentifier of this directory. If null, it has none. If not null, you can get the path to this directory by calling FileSystem.getPath with the relevant DirectoryIdentifier
-     * @param create whether or not to immediately create the directories as they are declared. If false, you can use FileSystem.createAllDirectories or ensureDirectoryExists to do this later
+     * @param directoryPath the relative [Path] (the path from the base directory to the new directory). Multiple length paths, like `"foo/bar/test"`, are allowed. If the [directoryIdentifier] parameter is not `null`, only the last folder will be given the identifier. [closure] will only be called on the last folder
+     * @param directoryIdentifier the [DirectoryIdentifier] of this directory. If `null`, it has none. If not `null`, you can get the path to this directory by calling [FileSystem.getPath] with the relevant [DirectoryIdentifier]
+     * @param create whether or not to immediately create the directories as they are declared. If false, you can use [createAllDirectories] or [ensureDirectoryExists] to do this later
      * @param closure a lambda allowing multiple directories to be chained together. For example,
+     *
+     *
+     * `
      *                directory("test") {
      *                  directory("foo")
      *                }
-     *                creates a directory named test with another inside of it named foo
+     * `
+     *
+     * creates a directory named test with another inside of it named foo
+     *
      */
+    @Suppress("MemberVisibilityCanBePrivate")
     fun directory(directoryPath: Path, directoryIdentifier: DirectoryIdentifier? = null, create: Boolean = true, closure: Directory.() -> Unit = {}) {
         baseDir.directory(directoryPath, directoryIdentifier, create, closure)
     }
 
     /**
-     * If the given directory defined by the identifier exists, does nothing, otherwise, it creates the relevant directories
+     * Creates a directory inside of the base directory of this FileSystem
+     * @param directoryName the relative path (the path from the base directory to the new directory) resolved using [Paths.get]. Multiple length paths, like `"foo/bar/test"`, are allowed. If the [directoryIdentifier] parameter is not `null`, only the last folder will be given the identifier. [closure] will only be called on the last folder
+     * @param directoryIdentifier the [DirectoryIdentifier] of this directory. If `null`, it has none. If not `null`, you can get the path to this directory by calling [FileSystem.getPath] with the relevant [DirectoryIdentifier]
+     * @param create whether or not to immediately create the directories as they are declared. If false, you can use [createAllDirectories] or [ensureDirectoryExists] to do this later
+     * @param closure a lambda allowing multiple directories to be chained together. For example,
+     *
+     *
+     * `
+     *                directory("test") {
+     *                  directory("foo")
+     *                }
+     * `
+     *
+     * creates a directory named test with another inside of it named foo
+     *
      */
-    fun ensureDirectoryExists(id: DirectoryIdentifier) {
-        val path = getPath(id)
+    @Suppress("MemberVisibilityCanBePrivate")
+    fun directory(directoryName: String, directoryIdentifier: DirectoryIdentifier? = null, create: Boolean = true, closure: Directory.() -> Unit = {}) {
+        baseDir.directory(directoryName, directoryIdentifier, create, closure)
+    }
+
+    /**
+     * If a directory with the [identifier] exists, does nothing, otherwise, it creates the relevant directories
+     */
+    fun ensureDirectoryExists(identifier: DirectoryIdentifier) {
+        val path = getPath(identifier)
         if (Files.notExists(path))
             Files.createDirectories(path)
     }
 
-    fun getPath(id: DirectoryIdentifier): Path {
-        return directoryIdentifiers[id]
-                ?: throw Exception("Please add the directory $id to the directory tree when specifying directory identifiers, it was searched for and not found")
+    /**
+     * @return the full [Path] of the [Directory] associated with the [identifier]
+     */
+    fun getPath(identifier: DirectoryIdentifier): Path {
+        return directoryIdentifiers[identifier]
+                ?: throw Exception("Directory $identifier was searched for and not found")
     }
 
     private fun update() {
@@ -106,13 +137,14 @@ class FileSystem(basePath: Path, baseIdentifier: DirectoryIdentifier? = null, cl
     }
 
     /**
-     * Represents a directory in the FileSystem.
+     * Represents a directory in the FileSystem. This doesn't necessarily exist on the hard drive. Creating more of these
+     * is the job of the [directory] method
      */
     class Directory(val fullPath: Path, name: DirectoryIdentifier? = null, val parentFileSystem: FileSystem) {
 
         val children = mutableListOf<Directory>()
 
-        val files = mutableListOf<File>()
+        private val files = mutableListOf<File>()
 
         init {
             if (name != null)
@@ -121,14 +153,20 @@ class FileSystem(basePath: Path, baseIdentifier: DirectoryIdentifier? = null, cl
 
         /**
          * Creates a directory inside of this one
-         * @param directoryPath the relative path (the path from this directory to the new directory). Multiple length paths, like 'foo/bar/test', are allowed. If the directoryIdentifier parameter is not null, only the last folder will be given the identifier. Closure will only be called on the last folder
-         * @param directoryIdentifier the DirectoryIdentifier of this directory. If null, it has none. If not null, you can get the path to this directory by calling FileSystem.getPath with the relevant DirectoryIdentifier
-         * @param create whether or not to immediately create the directories as they are declared. If false, you can use FileSystem.create to do this later
+         * @param directoryPath the relative [Path] (the path from the base directory to the new directory). Multiple length paths, like `"foo/bar/test"`, are allowed. If the [directoryIdentifier] parameter is not `null`, only the last folder will be given the identifier. [closure] will only be called on the last folder
+         * @param directoryIdentifier the [DirectoryIdentifier] of this directory. If `null`, it has none. If not `null`, you can get the path to this directory by calling [FileSystem.getPath] with the relevant [DirectoryIdentifier]
+         * @param create whether or not to immediately create the directories as they are declared. If false, you can use [createAllDirectories] or [ensureDirectoryExists] to do this later
          * @param closure a lambda allowing multiple directories to be chained together. For example,
+         *
+         *
+         * `
          *                directory("test") {
          *                  directory("foo")
          *                }
-         *                creates a directory named test with another inside of it named foo
+         * `
+         *
+         * creates a directory named test with another inside of it named foo
+         *
          */
         fun directory(directoryPath: Path, directoryIdentifier: DirectoryIdentifier? = null, create: Boolean = true, closure: Directory.() -> Unit = {}) {
             // if the path is skipping over a directory, for example, it is textures/block/miners
@@ -158,24 +196,30 @@ class FileSystem(basePath: Path, baseIdentifier: DirectoryIdentifier? = null, cl
 
         /**
          * Creates a directory inside of this one
-         * @param directoryName the relative name (the path from this directory to the new directory). Multiple length names, like 'foo/bar/test', are allowed. If the directoryIdentifier parameter is not null, only the last folder will be given the identifier. Closure will only be called on the last folder
-         * @param directoryIdentifier the DirectoryIdentifier of this directory. If null, it has none. If not null, you can get the path to this directory by calling FileSystem.getPath with the relevant DirectoryIdentifier
-         * @param create whether or not to immediately create the directories as they are declared. If false, you can use FileSystem.create to do this later
+         * @param directoryName the relative path (the path from the base directory to the new directory) resolved using [Paths.get]. Multiple length paths, like `"foo/bar/test"`, are allowed. If the [directoryIdentifier] parameter is not `null`, only the last folder will be given the identifier. [closure] will only be called on the last folder
+         * @param directoryIdentifier the [DirectoryIdentifier] of this directory. If `null`, it has none. If not `null`, you can get the path to this directory by calling [FileSystem.getPath] with the relevant [DirectoryIdentifier]
+         * @param create whether or not to immediately create the directories as they are declared. If false, you can use [createAllDirectories] or [ensureDirectoryExists] to do this later
          * @param closure a lambda allowing multiple directories to be chained together. For example,
+         *
+         *
+         * `
          *                directory("test") {
          *                  directory("foo")
          *                }
-         *                creates a directory named test with another inside of it named foo
+         * `
+         *
+         * creates a directory named test with another inside of it named foo
+         *
          */
         fun directory(directoryName: String, directoryIdentifier: DirectoryIdentifier? = null, create: Boolean = true, closure: Directory.() -> Unit = {}) =
                 directory(Paths.get(directoryName), directoryIdentifier, create, closure)
 
         /**
-         * Copies a file from one directory, presumably in the game resources folder, to the specified directory. It will create all parent directories as necessary
-         * @param originalLocation the full URL to the file
+         * Copies a file from one directory (possibly a resources folder), to the specified directory relative to the directory it is called in. It will create all parent directories as necessary.
+         * @param internalLocation the full [URL] to the file
          * @param newName the name of the file, including the file type
          */
-        fun copyOfFile(originalLocation: URL, newName: String = Paths.get(originalLocation.path).last().toString()) {
+        fun copyOfFile(internalLocation: URL, newName: String = Paths.get(internalLocation.path).last().toString()) {
             val actualFile = fullPath.resolve(newName)
             val f = actualFile.toFile()
             files.add(f)
@@ -185,21 +229,23 @@ class FileSystem(basePath: Path, baseIdentifier: DirectoryIdentifier? = null, cl
             if (Files.notExists(actualFile)) {
                 Files.createFile(actualFile)
             }
-            f.writeBytes(originalLocation.readBytes())
+            f.writeBytes(internalLocation.readBytes())
         }
 
         /**
-         * @param originalLocation the location relative to the resources folder
+         * Copies a file from one directory (possibly a resources folder), to the specified directory relative to the directory it is called in. It will create all parent directories as necessary.
+         * @param internalLocation the location relative to the resources folder. This is resolved by calling [ResourceManager.getRawResource]
          * @param newName the name of the file, including the file type
          */
-        fun copyOfFile(originalLocation: String, newName: String = Paths.get(originalLocation).last().toString()) {
-            copyOfFile(ResourceManager.getRawResource(originalLocation), newName)
+        fun copyOfFile(internalLocation: String, newName: String = Paths.get(internalLocation).last().toString()) {
+            copyOfFile(ResourceManager.getRawResource(internalLocation), newName)
         }
     }
 }
 
 /**
- * Just a quality of life identifier for directories. Used with getPath method of FileSystem to return the path of a directory based just on this
+ * Just a quality of life identifier for directories. Used with [FileSystem.getPath] to return the path of a directory
+ * which was created using [FileSystem.directory] with the directoryIdentifier parameter set to this
  *
  * @see GameDirectoryIdentifier
  */

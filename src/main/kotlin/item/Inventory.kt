@@ -184,7 +184,12 @@ class Inventory(val width: Int, val height: Int, rule: ResourceContainer<ItemTyp
         listeners.forEach { it.onContainerClear(this) }
     }
 
-    override fun copy() = Inventory(width, height, typeRule, items.copyOf()).apply { this@apply.additionRule = this@Inventory.additionRule; this@apply.removalRule = this@Inventory.removalRule }
+    override fun copy(): Inventory {
+        val inv = Inventory(width, height, typeRule, items.copyOf())
+        inv.additionRule = this.additionRule
+        inv.removalRule = this.removalRule
+        return inv
+    }
 
     operator fun iterator() = items.iterator()
 

@@ -17,7 +17,12 @@ data class TextureRenderParams(
          * Degrees rotation
          */
         var rotation: Float = 0f) {
+
     fun combine(other: TextureRenderParams): TextureRenderParams {
-        return TextureRenderParams(scaleX * other.scaleX, scaleY * other.scaleY, color.mul(other.color), brightness * other.brightness, (rotation + other.rotation) % 360)
+        return TextureRenderParams(scaleX * other.scaleX, scaleY * other.scaleY, color.cpy().mul(other.color), brightness * other.brightness, (rotation + other.rotation) % 360)
+    }
+
+    companion object {
+        val DEFAULT = TextureRenderParams()
     }
 }

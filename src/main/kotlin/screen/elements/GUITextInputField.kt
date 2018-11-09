@@ -29,6 +29,7 @@ class GUITextInputField(parent: RootGUIElement, name: String,
                         var onPressEnter: GUITextInputField.(currentText: String) -> Unit = {},
                         var onEnterText: GUITextInputField.(currentText: String, newText: String) -> Unit = { _, _ -> },
                         var charRule: GUITextInputField.(Char) -> Boolean = { true },
+                        val allowTextScrolling: Boolean = false,
                         open: Boolean = false,
                         layer: Int = parent.layer + 1) :
         GUIElement(parent, name, xAlignment, yAlignment, { (widthChars * TextManager.getFont().charWidth).toInt() }, { Numbers.ceil(heightChars * (TextManager.getFont().charHeight + 1)) + 1 }, open, layer), TextHandler, ControlPressHandler {
@@ -144,11 +145,13 @@ class GUITextInputField(parent: RootGUIElement, name: String,
 
     fun insert(s: String): Boolean {
         var cutString = s
-        // trim to fit
-        if (text.length == maxChars) {
-            return false
-        } else if (text.length + s.length > maxChars) {
-            cutString = s.substring(0, maxChars - text.length)
+        if(!allowTextScrolling) {
+            // trim to fit
+            if (text.length == maxChars) {
+                return false
+            } else if (text.length + s.length > maxChars) {
+                cutString = s.substring(0, maxChars - text.length)
+            }
         }
         // filter to rule
         cutString = cutString.filter { charRule(it) }
@@ -173,12 +176,12 @@ class GUITextInputField(parent: RootGUIElement, name: String,
         return true
     }
 
-    private fun negativeFlashOutline() {
+    fun negativeFlashOutline() {
         positiveFlash = false
         outlineFlashTicks = OUTLINE_FLASH_TICKS
     }
 
-    private fun positiveFlashOutline() {
+    fun positiveFlashOutline() {
         positiveFlash = true
         outlineFlashTicks = OUTLINE_FLASH_TICKS
     }
@@ -201,20 +204,20 @@ class GUITextInputField(parent: RootGUIElement, name: String,
         val charWidth = TextManager.getFont().charWidth
         val charHeight = TextManager.getFont().charHeight
         val oldColor = localRenderParams.color
-        localRenderParams.color.mul(toColor(if (outlineFlashTicks == -1) OUTLINE_COLOR else if (positiveFlash) OUTLINE_POS_FLASH_COLOR else OUTLINE_NEG_FLASH_COLOR))
+        localRenderParams.color = toColor(if (outlineFlashTicks == -1) OUTLINE_COLOR else if (positiveFlash) OUTLINE_POS_FLASH_COLOR else OUTLINE_NEG_FLASH_COLOR)
         Renderer.renderEmptyRectangle(xPixel - 1, yPixel - 1, widthPixels + 2, heightPixels + 2, params = localRenderParams)
-        localRenderParams.color = oldColor.cpy().mul(toColor(BOX_COLOR))
+        localRenderParams.color = toColor(BOX_COLOR)
         Renderer.renderFilledRectangle(xPixel, yPixel, widthPixels, heightPixels, localRenderParams)
         // asssume that this will be ok
         if (text.isEmpty()) {
-            Renderer.renderText(prompt, xPixel + 1, yPixel + 1, TextRenderParams(color = oldColor.cpy().mul(toColor(PROMPT_COLOR))), true)
+            Renderer.renderText(prompt, xPixel + 1, yPixel + 1, TextRenderParams(color = toColor(PROMPT_COLOR)), true)
         } else {
             for ((index, line) in lines.withIndex()) {
                 Renderer.renderText(line, xPixel + 1, yPixel + 1 + Numbers.ceil((charHeight + LINE_SPACING) * index), TextRenderParams(color = oldColor.cpy().mul(toColor(TEXT_COLOR))), true)
             }
         }
         if (selected && cursorFlash) {
-            Renderer.renderFilledRectangle(xPixel + Numbers.ceil(charWidth * (currentIndex % widthChars)), yPixel + Numbers.ceil((currentIndex / widthChars) * (charHeight + 1)), 1, Numbers.ceil(charHeight) + 2, TextureRenderParams(color = oldColor.cpy().mul(toColor(TEXT_COLOR))))
+            Renderer.renderFilledRectangle(xPixel + Numbers.ceil(charWidth * (currentIndex % widthChars)), yPixel + Numbers.ceil((currentIndex / widthChars) * (charHeight + 1)), 1, Numbers.ceil(charHeight) + 2, TextureRenderParams(color = toColor(TEXT_COLOR)))
         }
     }
 

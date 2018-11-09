@@ -13,7 +13,6 @@ import io.InputManager
 import io.MouseMovementListener
 import item.ItemType
 import level.block.Block
-import level.block.GhostBlock
 import level.moving.MovingObject
 import level.particle.Particle
 import level.pipe.PipeBlockGroup
@@ -228,10 +227,10 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
     private fun renderNodeDebug(n: ResourceNode<*>) {
         val xSign = Geometry.getXSign(n.dir)
         val ySign = Geometry.getYSign(n.dir)
-        if (n.allowOut) {
+        if (n.behavior.allowOut.possible() == null) {
             Renderer.renderTexture(Image.Misc.THIN_ARROW, (n.xTile shl 4) + 4 + 8 * xSign, (n.yTile shl 4) + 4 + 8 * ySign, TextureRenderParams(rotation = 90f * n.dir))
         }
-        if (n.allowIn) {
+        if (n.behavior.allowIn.possible() == null) {
             Renderer.renderTexture(Image.Misc.THIN_ARROW, (n.xTile shl 4) + 4 + 8 * xSign, (n.yTile shl 4) + 4 + 8 * ySign, TextureRenderParams(rotation = 90f * Geometry.getOppositeAngle(n.dir)))
         }
     }
@@ -489,15 +488,7 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
     object ResourceNodes {
         fun <R : ResourceType> updateAttachments(o: ResourceNode<R>) {
             val attached = get<R>(o.xTile + Geometry.getXSign(o.dir), o.yTile + Geometry.getYSign(o.dir), o.resourceCategory).filter { it.dir == Geometry.getOppositeAngle(o.dir) }
-            if (o.allowOut && o.allowIn) {
-                o.attachedNode = attached.firstOrNull { it.allowIn && it.allowOut }
-            } else if (o.allowOut) {
-                o.attachedNode = attached.firstOrNull { it.allowIn }
-            } else if (o.allowIn) {
-                o.attachedNode = attached.firstOrNull { it.allowOut }
-            } else {
-                o.attachedNode = null
-            }
+            o.attachedNodes = attached
         }
 
         fun get(xTile: Int, yTile: Int): List<ResourceNode<*>> {
@@ -645,7 +636,7 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
                             return true
                         } else {
                             // if we won't be able to finish off the rest of the stack
-                            if(l.getCollision(l.xPixel, l.yPixel) != null) {
+                            if (l.getCollision(l.xPixel, l.yPixel) != null) {
                                 return false
                             }
                             l.quantity -= (l.itemType.maxStack - d.quantity)
@@ -690,6 +681,11 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
             return 0
         }
 
+        /**
+         * Tries to add a resource node to the level.
+         * If there was already a node at the same position with the same direction, attached container and resource
+         * category, it will remove the previous one before finishing addition
+         */
         fun add(resourceNode: ResourceNode<*>) {
             if (resourceNode.inLevel)
                 return
@@ -720,7 +716,7 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
                         }
                     }
                     l.inLevel = false
-                    if(l == Game.currentLevel.selectedLevelObject) {
+                    if (l == Game.currentLevel.selectedLevelObject) {
                         Game.currentLevel.updateSelectedLevelObject()
                     }
                     return true
@@ -733,7 +729,7 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
                     l.currentChunk.removeMoving(l)
                     l.inLevel = false
                 }
-                if(l == Game.currentLevel.selectedLevelObject) {
+                if (l == Game.currentLevel.selectedLevelObject) {
                     Game.currentLevel.updateSelectedLevelObject()
                 }
                 return true

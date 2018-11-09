@@ -122,10 +122,9 @@ object HUD {
                 }
                 return ResourceList(map)
             }
-
         }
 
-        private val selectOverlay = GUITexturePane(this, "Hotbar slot selected overlay", { selected * GUIItemSlot.WIDTH }, { 0 }, texture = Image.GUI.HOTBAR_SELECTED_SLOT, layer = layer + 2)
+        private val selectOverlay = GUITexturePane(this, "Hotbar slot selected overlay", { selected * GUIItemSlot.WIDTH }, { 0 }, textureRegion = Image.GUI.HOTBAR_SELECTED_SLOT, layer = layer + 2)
 
         init {
             partOfLevel = true

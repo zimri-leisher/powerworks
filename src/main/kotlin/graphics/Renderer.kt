@@ -42,8 +42,6 @@ object Renderer {
     // 6000 is a good number, a bit more than the requirements for 1 batch to hold max tiles at max zoom on a fairly large monitor
     val batch = SpriteBatch(6000)
 
-    private val defaultParams = TextureRenderParams()
-
     /**
      * Will not render outside of this clip
      */
@@ -56,10 +54,14 @@ object Renderer {
      * Removes the clip
      */
     fun resetClip() {
-        // don't crash if there aren't any
-        if (ScissorStack.peekScissors() != null) {
+        try {
             batch.flush()
             ScissorStack.popScissors()
+        } catch (e: IllegalStateException) {
+            // there is apparently no way to check if there are no scissors on the stack. feelsbad
+            if (e.message != "Array is empty.") {
+                throw e
+            }
         }
     }
 
@@ -158,8 +160,6 @@ object Renderer {
 
     private fun brightPatch(absoluteXPixel: Float, absoluteYPixel: Float, originX: Float, originY: Float, absoluteWidthPixels: Float, absoluteHeightPixels: Float, params: TextureRenderParams) {
         val oldColor = batch.color
-        val oldSrcFunc = batch.blendSrcFunc
-        val oldDestFunc = batch.blendDstFunc
         batch.setColor(1f, 1f, 1f, params.brightness - 1f)
         batch.draw(Image.GUI.WHITE_FILLER, absoluteXPixel, absoluteYPixel, originX, originY, absoluteWidthPixels, absoluteHeightPixels, params)
         batch.color = oldColor
@@ -167,8 +167,6 @@ object Renderer {
 
     private fun darkPatch(absoluteXPixel: Float, absoluteYPixel: Float, originX: Float, originY: Float, absoluteWidthPixels: Float, absoluteHeightPixels: Float, params: TextureRenderParams) {
         val oldColor = batch.color
-        val oldSrcFunc = batch.blendSrcFunc
-        val oldDestFunc = batch.blendDstFunc
         batch.setColor(1f, 1f, 1f, 1f - params.brightness)
         batch.draw(Image.GUI.BLACK_FILLER, absoluteXPixel, absoluteYPixel, originX, originY, absoluteWidthPixels, absoluteHeightPixels, params)
         batch.color = oldColor

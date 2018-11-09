@@ -8,6 +8,7 @@ import main.Game
 import screen.ScreenManager
 import screen.elements.GUILevelView
 import screen.mouse.Mouse
+import java.awt.event.KeyEvent
 
 interface ControlPressHandler {
     fun handleControlPress(p: ControlPress)
@@ -148,8 +149,8 @@ object InputManager : InputProcessor {
             charsTyped.forEach {
                 textHandler!!.handleChar(it)
             }
-            charsTyped.clear()
         }
+        charsTyped.clear()
 
         for (i in inputsBeingPressed) {
             map.translate(i, inputsBeingPressed.filter { it != i }.toMutableSet()).forEach { queue.add(ControlPress(it, PressType.REPEAT)) }
@@ -241,8 +242,17 @@ object InputManager : InputProcessor {
     }
 
     override fun keyTyped(character: Char): Boolean {
-        charsTyped.add(character)
+        if (isPrintableChar(character))
+            charsTyped.add(character)
         return true
+    }
+
+    private fun isPrintableChar(c: Char): Boolean {
+        val block = Character.UnicodeBlock.of(c)
+        return !Character.isISOControl(c) &&
+                c != KeyEvent.CHAR_UNDEFINED &&
+                block != null &&
+                block !== Character.UnicodeBlock.SPECIALS
     }
 
     override fun keyUp(keycode: Int): Boolean {

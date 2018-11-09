@@ -1,16 +1,19 @@
 package level.living
 
-import level.Hitbox
+import graphics.Image
 import level.LevelObjectTextures
 import level.LevelObjectType
 import level.moving.MovingObject
 
-open class LivingType<T : LivingObject>(initializer: () -> Unit) : LevelObjectType<T>() {
+open class LivingType<T : LivingObject>(initializer: () -> Unit = {}) : LevelObjectType<T>() {
     var maxHealth = 100
-    var textures = LevelObjectTextures()
 
     init {
         initializer()
+    }
+
+    companion object {
+        val ERROR = LivingType<LivingObject>()
     }
 }
 

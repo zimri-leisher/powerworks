@@ -11,7 +11,7 @@ class ImageCollection(identifier: String, numberOfFrames: Int) {
         val GRASS_TILE = ImageCollection("tile/grass", 4)
         val GRASS_IRON_ORE_TILE = ImageCollection("tile/grass_iron_ore", 3)
         val GRASS_COPPER_ORE_TILE = ImageCollection("tile/grass_copper_ore", 4)
-        val PLAYER = ImageCollection("robot/robot", 4)
+        val ROBOT = ImageCollection("robot/robot", 4)
         val TUBE_CORNER = ImageCollection("block/tube/corner", 4)
         val TUBE_3_WAY = ImageCollection("block/tube/3_way", 4)
         val PIPE_CORNER = ImageCollection("block/pipe/corner", 4)

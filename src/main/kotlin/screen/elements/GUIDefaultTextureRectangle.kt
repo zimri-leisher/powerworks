@@ -3,7 +3,7 @@ package screen.elements
 import graphics.Renderer
 
 class GUIDefaultTextureRectangle(parent: RootGUIElement, name: String,
-                                 xAlignment: Alignment, yAlignment: Alignment,
+                                 xAlignment: Alignment = { 0 }, yAlignment: Alignment = { 0 },
                                  widthAlignment: Alignment = parent.alignments.width, heightAlignment: Alignment = parent.alignments.height,
                                  open: Boolean = false, layer: Int = parent.layer + 1) :
         GUIElement(parent, name, xAlignment, yAlignment, widthAlignment, heightAlignment, open, layer) {

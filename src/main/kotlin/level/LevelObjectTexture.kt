@@ -1,10 +1,15 @@
 package level
 
 import com.badlogic.gdx.graphics.g2d.TextureRegion
+import graphics.*
 
-data class LevelObjectTexture(val texture: TextureRegion, val xPixelOffset: Int = 0, val yPixelOffset: Int = 0)
+class LevelObjectTextures(vararg val textures: Renderable) {
 
-class LevelObjectTextures(private vararg val textures: LevelObjectTexture) {
-    operator fun get(i: Int) = textures[Math.min(i, textures.lastIndex)]
-    operator fun iterator() = textures.iterator()
+    constructor(vararg textures: TextureRegion) : this(*textures.map { Texture(it) }.toTypedArray())
+    constructor(col: ImageCollection) : this(*col.textures)
+
+    fun render(l: LevelObject, params: TextureRenderParams = TextureRenderParams.DEFAULT) {
+        val texture = textures[Math.min(l.rotation, textures.lastIndex)]
+        texture.render(l.xPixel, l.yPixel, params = params)
+    }
 }

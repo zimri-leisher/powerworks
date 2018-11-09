@@ -5,6 +5,7 @@ import io.*
 import item.Item
 import item.ItemType
 import level.moving.MovingObject
+import main.DebugCode
 import main.Game
 import screen.HUD
 import screen.mouse.Mouse
@@ -32,9 +33,11 @@ class DroppedItem(xPixel: Int, yPixel: Int, val itemType: ItemType, quantity: In
     }
 
     override fun render() {
-        Renderer.renderTextureKeepAspect(itemType.icon, xPixel, yPixel, Hitbox.DROPPED_ITEM.width, Hitbox.DROPPED_ITEM.height)
+        itemType.icon.render(xPixel, yPixel, Hitbox.DROPPED_ITEM.width, Hitbox.DROPPED_ITEM.height, true)
         Renderer.renderText(quantity, xPixel, yPixel)
-        super.render()
+        if(Game.currentDebugCode == DebugCode.RENDER_HITBOXES) {
+            renderHitbox()
+        }
     }
 
     override fun toString() = "Dropped item at $xPixel, $yPixel, type: $type, quantity: $quantity"

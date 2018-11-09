@@ -29,18 +29,18 @@ object ResourceManager {
     var currentModContext: Mod? = null
 
     /**
-     * Loads a texture atlas and adds it to the internal list
+     * Loads a [TextureAtlas] and adds it to the internal list
      */
     fun registerAtlas(path: String) = TextureAtlas(path).apply { textureAtlases.add(this) }
 
     /**
-     * Gets an identifier from a texture region
+     * Gets an identifier from a [TextureRegion]
      */
     fun getIdentifier(textureRegion: TextureRegion) =
             textureRegions.filter { it.value == textureRegion }.values.firstOrNull()
 
     /**
-     * Gets a texture from one of the loaded texture atlases
+     * Gets a texture from one of the loaded [TextureAtlas]
      * @param index the index of the texture (the number after the last underscore if there is one). -1 if no index
      */
     fun getAtlasTexture(identifier: String, index: Int = -1): TextureRegion {
@@ -64,10 +64,10 @@ object ResourceManager {
     /**
      * Adds a texture to the internal map
      * @param identifier the identifier to store it under
-     * @param path the path to send to the PowerworksTextureFileHandlerResolver. This path may not be exact, as the
+     * @param path the path to send to the [PowerworksTextureFileHandleResolver]. This path need not be exact, as the
      * resolver will check multiple possibilities
      * @param asynchronous whether to block until the texture is loaded or return a texture which will have its
-     * TextureData filled when it is loaded. The temporary texture will be the misc/error.png texture
+     * texture data filled when it is loaded. The temporary texture will be the [graphics.Image.Misc.ERROR] texture
      */
     fun registerTexture(identifier: String, path: String = identifier, asynchronous: Boolean = true): Texture {
         if (identifier in images) {
@@ -88,10 +88,10 @@ object ResourceManager {
     }
 
     /**
-     * Adds a texture to the internal map
+     * Adds a [Texture] to the internal map
      * @param identifier the identifier to store it under
      * @param texture the texture to store
-     * @return the texture parameter (for chaining)
+     * @return the [texture] parameter (for chaining)
      */
     fun registerTexture(identifier: String, texture: Texture): Texture {
         if (identifier in images) {
@@ -107,7 +107,7 @@ object ResourceManager {
     }
 
     /**
-     * @return a texture that matches the identifier.
+     * @return a [Texture] that matches the identifier.
      * @throws ResourceNotFoundException if there is no matching
      */
     fun getTexture(identifier: String): Texture {
@@ -119,9 +119,9 @@ object ResourceManager {
     }
 
     /**
-     * @param path the path relative to the compiled jar. If this is called in a mod, it will be relative to the compiled
+     * @param path the path relative to the compiled jar. If this is called in a [Mod], it will be relative to the compiled
      * jar of the mod.
-     * @return an absolute URL to the path
+     * @return an absolute [URL] to the path
      */
     fun getRawResource(path: String): URL {
         if (currentModContext != null) {
@@ -140,9 +140,9 @@ object ResourceManager {
     }
 
     /**
-     * @param path the path relative to the compiled jar. If this is called in a mod, it will be relative to the compiled
+     * @param path the path relative to the compiled jar. If this is called in a [Mod], it will be relative to the compiled
      * jar of the mod.
-     * @return an InputStream to the resource
+     * @return an [InputStream] to the resource
      */
     fun getRawResourceAsStream(path: String): InputStream {
         if (currentModContext != null)
@@ -159,7 +159,12 @@ object ResourceManager {
             }
     }
 
+    /**
+     * Disposes of resources loaded with this
+     */
     fun dispose() {
         textureAtlases.forEach { it.dispose() }
+        libgdxSoundManager.dispose()
+        libgdxTextureManager.dispose()
     }
 }

@@ -21,7 +21,7 @@ class ChestBlock(override val type: ChestBlockType, xTile: Int, yTile: Int, rota
             if(button == Input.Buttons.LEFT) {
                 if(shift) {
                     val item = inv[0]!!
-                    nodes.output(item.type, item.quantity, onlyTo = { it.attachedNode != null })
+                    nodes.output(item.type, item.quantity, onlyTo = { it.attachedNodes.isNotEmpty() })
                 } else {
                     invGUI.toggle()
                 }

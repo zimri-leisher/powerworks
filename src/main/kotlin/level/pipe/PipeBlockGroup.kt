@@ -1,11 +1,9 @@
 package level.pipe
 
 import fluid.FluidType
-import item.ItemType
 import level.Level
 import resource.*
-
-var nextId = 0
+import routing.RoutingLanguageStatement
 
 class PipeBlockGroup {
     private val pipes = mutableListOf<PipeBlock>()
@@ -21,9 +19,18 @@ class PipeBlockGroup {
     }
 
     fun createCorrespondingNodes(nodes: List<ResourceNode<FluidType>>) {
-        val new = nodes.map { ResourceNode.createCorresponding(it, storage) }
-        new.forEach { Level.add(it) }
-        this.nodes.addAll(new)
+        val new = nodes.map {
+            val behavior = ResourceNodeBehavior(it)
+            behavior.allowOut.setStatement(RoutingLanguageStatement.TRUE, null)
+            behavior.allowIn.setStatement(RoutingLanguageStatement.TRUE, null)
+            ResourceNode.createCorresponding(it, storage, behavior)
+        }
+        for (newNode in new) {
+            if (newNode !in this.nodes) {
+                this.nodes.add(newNode)
+                Level.add(newNode)
+            }
+        }
     }
 
     /**
@@ -144,6 +151,9 @@ class PipeBlockGroup {
     }
 
     companion object {
+
+        private var nextId = 0
+
         val STORAGE_PER_PIPE = 5
 
         val ALL = mutableListOf<PipeBlockGroup>()

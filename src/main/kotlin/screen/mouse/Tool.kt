@@ -6,6 +6,7 @@ import graphics.TextureRenderParams
 import io.*
 import item.BlockItemType
 import item.ItemType
+import item.LivingItemType
 import level.Hitbox
 import level.Level
 import level.LevelObject
@@ -15,6 +16,8 @@ import level.block.GhostBlock
 import level.moving.MovingObject
 import main.Game
 import main.toColor
+import resource.ResourceNode
+import screen.RoutingLanguageEditor
 
 /**
  * A tool is an object that is used by the client to interact with the level through the mouse
@@ -88,6 +91,8 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
             BlockPlacer
             Teleporter
             Selector
+            ResourceNodeEditor
+            LivingPlacer
             Debug
         }
 
@@ -111,6 +116,43 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
                     Renderer.renderEmptyRectangle(s.xPixel - 1, s.yPixel - 1, (s.type.widthTiles shl 4) + 2, (s.type.heightTiles shl 4) + 2, params = TextureRenderParams(color = Color(0x1A6AF472)))
                 else if (s is MovingObject)
                     Renderer.renderEmptyRectangle(s.xPixel + s.hitbox.xStart - 1, s.yPixel + s.hitbox.yStart - 1, s.hitbox.width + 2, s.hitbox.height + 2, params = TextureRenderParams(color = Color(0x1A6AF472)))
+            }
+        }
+
+        object ResourceNodeEditor : Tool(Control.EDIT_RESOURCE_NODE) {
+
+            var selectedNodes = listOf<ResourceNode<*>>()
+
+            override fun onUse(control: Control, type: PressType, mouseLevelXPixel: Int, mouseLevelYPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+                if(currentlyActive) {
+                    if(type == PressType.RELEASED) {
+                        RoutingLanguageEditor.node = selectedNodes.first()
+                        RoutingLanguageEditor.open = true
+                    }
+                }
+            }
+
+            override fun renderAbove() {
+            }
+
+            override fun updateCurrentlyActive() {
+                selectedNodes = Level.ResourceNodes.get(Game.currentLevel.mouseLevelXPixel shr 4, Game.currentLevel.mouseLevelYPixel shr 4)
+                currentlyActive = selectedNodes.isNotEmpty()
+            }
+        }
+
+        object LivingPlacer : Tool(Control.SECONDARY_INTERACT) {
+            override fun onUse(control: Control, type: PressType, mouseLevelXPixel: Int, mouseLevelYPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+            }
+
+            override fun updateCurrentlyActive() {
+            }
+
+            override fun update() {
+                val item = Mouse.heldItemType
+                if(item != null && item is LivingItemType) {
+                    // TODO make this
+                }
             }
         }
 
@@ -168,8 +210,10 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
                                 if (ghostBlock != null) {
                                     val gBlock = ghostBlock!!
                                     if (Level.add(gBlock.type.instantiate(gBlock.xPixel, gBlock.yPixel, gBlock.rotation))) {
-                                        val h = Mouse.heldItemType!! // todo why is this crashing occasionally
-                                        Game.mainInv.remove(h, 1)
+                                        if(Mouse.heldItemType != null) {
+                                            val h = Mouse.heldItemType!! // todo why is this crashing occasionally
+                                            Game.mainInv.remove(h, 1)
+                                        }
                                     }
                                 }
                             }

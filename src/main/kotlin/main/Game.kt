@@ -25,6 +25,7 @@ import level.block.CrafterBlockType
 import level.block.MachineBlockType
 import mod.ModManager
 import mod.ModPermissionsPolicy
+import routing.RoutingLanguage
 import screen.IngameGUI
 import screen.MainMenuGUI
 import screen.ScreenManager
@@ -53,8 +54,9 @@ fun toColor(color: Int = 0xFFFFFF, alpha: Float = 1f): Color {
     c.b = (color and 0x000000ff) / 255f
     return c
 }
-
 fun Color.toWhite() = this.set(1f, 1f, 1f, 1f)
+
+fun <K, V> Map<K, V>.joinToString() = toList().joinToString()
 
 fun main(args: Array<String>) {
     val config = Lwjgl3ApplicationConfiguration()
@@ -140,6 +142,7 @@ object Game : ApplicationAdapter(), ControlPressHandler {
         IngotItemType
         OreItemType
         BlockItemType
+        RobotItemType
         BlockType
         MachineBlockType
         CrafterBlockType

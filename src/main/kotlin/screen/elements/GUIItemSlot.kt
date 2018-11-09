@@ -42,7 +42,7 @@ class GUIItemSlot(parent: RootGUIElement, name: String, xPixel: Int, yPixel: Int
         Renderer.renderTexture(currentTexture, xPixel, yPixel)
         if (currentItem != null) {
             val i = currentItem!!
-            Renderer.renderTextureKeepAspect(i.type.icon, xPixel, yPixel, WIDTH, HEIGHT)
+            i.type.icon.render(xPixel, yPixel, WIDTH, HEIGHT, true)
             Renderer.renderText(i.quantity, xPixel, yPixel)
         }
     }

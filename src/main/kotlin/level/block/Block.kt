@@ -80,12 +80,6 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotatio
         adjacent.forEach { it.onAdjacentBlockRemove(this) }
     }
 
-    override fun render() {
-        val texture = textures[rotation]
-        Renderer.renderTexture(texture.texture, xPixel - texture.xPixelOffset, yPixel - texture.yPixelOffset)
-        super.render()
-    }
-
     /**
      * When an adjacent block is removed from the level
      */

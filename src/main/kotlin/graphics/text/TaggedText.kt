@@ -3,6 +3,9 @@ package graphics.text
 import data.ResourceManager
 import kotlin.math.roundToInt
 
+/**
+ * An object that stores text with [tags][TextTagType]. Use [TextManager.parseTags] to obtain an instance
+ */
 data class TaggedText(val text: String, val tags: Map<Int, List<TextTag>>) {
     companion object {
         val TAG_BEGIN_CHAR = '<'

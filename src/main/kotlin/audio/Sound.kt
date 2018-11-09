@@ -7,6 +7,10 @@ enum class Sound(path: String, maxConcurrent: Int) {
     GRASS_FOOTSTEP("/sounds/footstep/grass.wav", 6),
     MOTHERLODE_SPARK("/sounds/misc/motherlode_spark.wav", 2);
 
+    // potential music:
+    // the galloping redeemer: bourgeoisie
+    // constructing androids: irving force
+
     /**
      * API related instance
      */

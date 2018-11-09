@@ -10,6 +10,8 @@ import main.Game
 import misc.Geometry
 import misc.PixelCoord
 import resource.*
+import routing.RoutingLanguage
+import routing.RoutingLanguageStatement
 import java.io.DataOutputStream
 
 class TubeBlockGroup {
@@ -58,7 +60,12 @@ class TubeBlockGroup {
      * Creates transfer nodes corresponding the inputted nodes
      */
     fun createCorrespondingNodes(nodes: List<ResourceNode<ItemType>>) {
-        val new = nodes.map { ResourceNode.createCorresponding(it, storage) }
+        val new = nodes.map {
+            val behavior = ResourceNodeBehavior(it)
+            behavior.allowOut.setStatement(RoutingLanguageStatement.TRUE, null)
+            behavior.allowIn.setStatement(RoutingLanguageStatement.TRUE, null)
+            ResourceNode.createCorresponding(it, storage, behavior)
+        }
         for (newNode in new) {
             if (newNode !in this.nodes) {
                 this.nodes.add(newNode)
@@ -170,7 +177,8 @@ class TubeBlockGroup {
         if (startXTile == output.xTile && startYTile == output.yTile) {
             val instructions = mutableListOf<Step>()
             instructions.add(Step(PixelCoord(startXTile shl 4, startYTile shl 4), output.dir))
-            instructions.add(Step(PixelCoord(output.attachedNode!!.xTile shl 4, output.attachedNode!!.yTile shl 4), -1))
+            val attachedToOutput = output.attachedNodes.first()
+            instructions.add(Step(PixelCoord(attachedToOutput.xTile shl 4, attachedToOutput.yTile shl 4), -1))
             return ItemPath(instructions.toTypedArray())
         }
         // temporary means that this node is only an intersection for routing purposes
@@ -287,7 +295,7 @@ class TubeBlockGroup {
                 if (output != null) {
                     val t = parent.route(from, output)
                     if (t != null) {
-                        val p = ItemPackage(Item(resource, quantity), from, output, 0, t, from.attachedNode!!.xTile shl 4, from.attachedNode!!.yTile shl 4, Geometry.getOppositeAngle(from.dir))
+                        val p = ItemPackage(Item(resource, quantity), from, output, 0, t, from.attachedNodes.first().xTile shl 4, from.attachedNodes.first().yTile shl 4, Geometry.getOppositeAngle(from.dir))
                         itemsBeingMoved.add(p)
                         return true
                     }
@@ -343,7 +351,7 @@ class TubeBlockGroup {
 
         fun render() {
             for (item in itemsBeingMoved) {
-                Renderer.renderTextureKeepAspect(item.item.type.icon, item.xPixel + 4, item.yPixel + 8, 8, 8)
+                item.item.type.icon.render(item.xPixel + 4, item.yPixel + 4, 8, 8, true)
                 Renderer.renderText(item.item.quantity, item.xPixel + 4, item.yPixel + 8)
                 if (Game.currentDebugCode == DebugCode.TUBE_INFO)
                     renderPath(item)

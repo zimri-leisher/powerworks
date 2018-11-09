@@ -76,8 +76,11 @@ abstract class LevelObject protected constructor(
         }
 
     open fun render() {
-        if (Game.currentDebugCode == DebugCode.RENDER_HITBOXES)
-            renderHitbox()
+        if(type.requiresRender) {
+            type.textures.render(this)
+            if (Game.currentDebugCode == DebugCode.RENDER_HITBOXES)
+                renderHitbox()
+        }
     }
 
     /**

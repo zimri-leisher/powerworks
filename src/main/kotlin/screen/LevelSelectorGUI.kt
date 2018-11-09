@@ -19,9 +19,9 @@ import java.time.LocalDateTime
 
 object LevelSelectorGUI : GUIWindow("Level selector window", { 0 }, { 0 }, { Game.WIDTH }, { Game.HEIGHT }, ScreenManager.Groups.BACKGROUND, layer = 3) {
 
-    lateinit var selectionList: GUIElementList
+    var selectionList: GUIElementList
 
-    lateinit var playButton: GUIButton
+    var playButton: GUIButton
 
     val selectionHighlight = GUITexturePane(this, "level selector button highlight",
             0, 0, Image.GUI.LEVEL_SELECTOR_BUTTON_HIGHLIGHT).apply { matchParentOpening = false }
@@ -103,7 +103,7 @@ object LevelSelectorGUI : GUIWindow("Level selector window", { 0 }, { 0 }, { Gam
     }
 
     init {
-        GUITexturePane(this, "background texture", { 0 }, { 0 }, Image.GUI.GREY_FILLER, { widthPixels }, { heightPixels }).apply {
+        GUITexturePane(this, "background renderable", { 0 }, { 0 }, Image.GUI.GREY_FILLER, { widthPixels }, { heightPixels }).apply {
             val returnButton = GUIButton(this, "main menu return button", { 2 }, { 2 }, "<size=40>B\nA\nC\nK", true, { (19 * (Game.WIDTH.toFloat() / 300)).toInt() }, { Game.HEIGHT - 4 }, onRelease = {
                 this@LevelSelectorGUI.open = false
                 MainMenuGUI.open = true

@@ -13,6 +13,10 @@ import java.util.regex.Pattern
 
 data class FontInfo(val font: BitmapFont, val charWidth: Float, val charHeight: Float)
 
+/**
+ * An object with various utility methods related to text. This is where you can create [TaggedText] objects and get
+ * the dimensions of strings
+ */
 object TextManager {
 
     private val fonts = mutableMapOf<Pair<Int, FontStyle>, FontInfo>()
@@ -41,8 +45,8 @@ object TextManager {
     }
 
     /**
-     * Goes through a string containing text tags (see the TextTagType enum) and returns a pre-generated TaggedText
-     * object that can be passed into the Renderer.renderTaggedText method
+     * Goes through a string containing [text tags][TextTagType] and returns a pre-generated [TaggedText]
+     * object that can be passed into the [graphics.Renderer.renderTaggedText] method
      */
     fun parseTags(text: String): TaggedText {
         val tags = mutableMapOf<Int, MutableList<TextTag>>()
@@ -91,8 +95,8 @@ object TextManager {
     }
 
     /**
-     * @return a FontInfo object with information pertinent to the dimensions of each character in the font,
-     * along with the Font object itself
+     * @return a [FontInfo] object with information about the dimensions of characters in the font,
+     * along with the [BitmapFont] object itself
      */
     fun getFont(size: Int = DEFAULT_SIZE, style: FontStyle = FontStyle.PLAIN): FontInfo {
         var font = fonts.get(Pair(size, style))
@@ -103,7 +107,6 @@ object TextManager {
         return font
     }
 
-    // TODO style doesn't work right now. Could create a default java font, then load it to bitmap?
     private fun genFont(size: Int, style: FontStyle): FontInfo {
         println("Generating new font")
         val param = FreeTypeFontGenerator.FreeTypeFontParameter()
@@ -183,6 +186,9 @@ object TextManager {
         return getStringBounds(t, size, style).height
     }
 
+    /**
+     * Disposes of resources loaded through this
+     */
     fun dispose() {
         fontGenerator.dispose()
         fonts.forEach { _, u -> u.font.dispose() }

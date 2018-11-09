@@ -3,6 +3,7 @@ package crafting
 import item.BlockItemType
 import item.IngotItemType
 import item.ItemType
+import item.RobotItemType
 import resource.ResourceList
 import resource.ResourceType
 
@@ -20,7 +21,7 @@ class Recipe(
          */
         val iconType: ResourceType,
         /**
-        * Whichever crafter types are able to make this recipe. For example, Crafters#PLAYER.
+        * Whichever crafter types are able to make this recipe. For example, [Crafter.Type.DEFAULT].
         * Null means any
         */
         val validCrafterTypes: List<Crafter.Type>? = null,
@@ -59,7 +60,12 @@ class Recipe(
                 listOf(Crafter.Type.ITEM),
                 RecipeCategory.MACHINE_PARTS)
 
-        //val ROBOT = Recipe(ResourceList(IngotItemType.IRON_INGOT to 8, ItemType.CIRCUIT to 8, ItemType.CABLE to 16), ResourceList())
+        val ROBOT = Recipe(
+                ResourceList(IngotItemType.IRON_INGOT to 8, ItemType.CIRCUIT to 8, ItemType.CABLE to 16),
+                ResourceList(RobotItemType.STANDARD to 1),
+                RobotItemType.STANDARD,
+                listOf(Crafter.Type.ROBOT),
+                RecipeCategory.BOT)
 
         val CRAFTER = Recipe(
                 ResourceList(IngotItemType.IRON_INGOT to 4, ItemType.CIRCUIT to 8, ItemType.CABLE to 8),

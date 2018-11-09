@@ -4,6 +4,7 @@ import com.badlogic.gdx.Input
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import graphics.Image
 import graphics.Renderer
+import graphics.Texture
 import io.*
 import item.ItemType
 import level.CHUNK_PIXEL_EXP
@@ -83,7 +84,7 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
      * An icon that renders under the cursor, for example, the teleportation icon
      */
     fun setSecondaryIcon(texture: TextureRegion) {
-        icon.texture = texture
+        icon.renderable = Texture(texture)
         icon.open = true
     }
 
@@ -96,7 +97,7 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
             val i = heldItemType!!
             val q = Game.mainInv.getQuantity(i)
             val t = i.icon
-            Renderer.renderTextureKeepAspect(t, xPixel + 4, yPixel - 4, GUIItemSlot.WIDTH, GUIItemSlot.HEIGHT)
+            t.render(xPixel, yPixel, GUIItemSlot.WIDTH, GUIItemSlot.HEIGHT, true)
             Renderer.renderText(q, xPixel + 4, yPixel - 4)
         }
         when (Game.currentDebugCode) {

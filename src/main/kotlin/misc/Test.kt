@@ -1,28 +1,69 @@
 package misc
 
-import graphics.text.TaggedText
-import graphics.text.TextManager
 import item.Inventory
 import item.ItemType
-import kotlinx.coroutines.experimental.Deferred
-import kotlinx.coroutines.experimental.async
-import kotlinx.coroutines.experimental.launch
-import kotlinx.coroutines.experimental.runBlocking
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.system.measureNanoTime
 import kotlin.system.measureTimeMillis
 
-fun main(args: Array<String>) {
-    println(numWays(4))
+fun main() {
+    // create data
+    val controls = createData(100)
+    val cases = createData(2)
+    // find possible matches
+    val casesWithPossibleControls = cases
+            .associateWith { case ->
+                controls.filter { control -> matches(case, control) }
+            }
+    val usedControls = mutableListOf<DataPoint>()
+    val finalPairs = mutableMapOf<DataPoint, DataPoint>()
+    val unpairedCases = mutableListOf<DataPoint>()
+    for (caseWithPossibleControl in casesWithPossibleControls) {
+        val case = caseWithPossibleControl.key
+        val possibleControls = caseWithPossibleControl.value
+        val notUsedControls = possibleControls.filterNot { it in usedControls }
+        if (notUsedControls.isNotEmpty()) {
+            val finalControl = notUsedControls.random()
+            finalPairs.put(case, finalControl)
+        } else {
+            unpairedCases.add(case)
+        }
+    }
+    println("cases generated: ${cases.joinToString()}")
+    println("controls generated: ${controls.joinToString()}")
+    println("final pairs: ${finalPairs.entries.joinToString(separator = "\n") { "[case: ${it.key}, control: ${it.value}" }}")
+    println("cases that were unable to be paired: ${unpairedCases.joinToString()}")
 }
 
+fun matches(case: DataPoint, control: DataPoint): Boolean {
+    return case.site == control.site && case.color == control.color && case.gender == control.gender
+}
+
+fun createData(range: Int): List<DataPoint> {
+    val possibleSites = arrayOf("Site 1", "Site 2", "Site 3", "Site 4")
+    val possibleGenders = arrayOf("Male", "Female", "Other")
+    val possibleColors = arrayOf("Blue", "Red", "Green")
+    val list = mutableListOf<DataPoint>()
+    for (i in 1..range) {
+        list.add(DataPoint(possibleSites.random(), possibleGenders.random(), possibleColors.random()))
+    }
+    return list
+}
+
+private var nextID = 0
+
+data class DataPoint(val site: String, val gender: String, val color: String) {
+    val id = nextID++
+}
+
+
 fun numWays(totalSteps: Int, possibleSteps: List<Int> = listOf(1, 2)): Int {
-    if(totalSteps == 0)
+    if (totalSteps == 0)
         return 1
     var total = 0
-    for(possibleStep in possibleSteps) {
-        if(possibleStep <= totalSteps) {
+    for (possibleStep in possibleSteps) {
+        if (possibleStep <= totalSteps) {
             total += numWays(totalSteps - possibleStep, possibleSteps)
         }
     }
@@ -33,12 +74,7 @@ fun asyncTest() {
     val c = AtomicInteger()
     val time = measureTimeMillis {
 
-        for(i in 0..1_000_000) {
-            launch {
-                // this is a launched coroutine, will execute simultaneously
-                //random operation for testing purposes
-                c.addAndGet(i)
-            }
+        for (i in 0..1_000_000) {
         }
     }
     println("time taken: $time, resulting value: ${c.get()}")
@@ -68,15 +104,14 @@ fun testAsyncStuff() {
 fun testAsyncStuff2() {
     val g = AtomicLong()
     val time = measureNanoTime {
-        for(i in 0.toLong()..100_000_000) {
+        for (i in 0.toLong()..100_000_000) {
             g.addAndGet(i)
         }
     }
     println("non async took $time, result: ${g.get()}")
     val b = AtomicLong()
     val time2 = measureNanoTime {
-        for(i in 0.toLong()..100_000_000) {
-            launch { b.addAndGet(i) }
+        for (i in 0.toLong()..100_000_000) {
         }
     }
     println("async took $time2, result: ${b.get()}")
@@ -86,27 +121,7 @@ fun <T> List<T>.filterAsync(f: (T) -> Boolean): List<T> {
     val threadsToGenerate = Math.ceil(size.toDouble() / 100).toInt()
     println("generating $threadsToGenerate coroutines")
     val ret = mutableListOf<T>()
-    val jobs = mutableListOf<Deferred<List<T>>>()
-    for (i in 0 until threadsToGenerate) {
-        jobs.add(filterAsyncSectioned(i * 100, Math.min(size, i * 100 + 100), f))
-    }
-    for(job in jobs) {
-        runBlocking {
-            ret.addAll(job.await())
-        }
-    }
     return ret
-}
-
-private fun <T> List<T>.filterAsyncSectioned(from: Int, to: Int, f: (T) -> Boolean): Deferred<List<T>> {
-    return async {
-        val ret = mutableListOf<T>()
-        for (i in this@filterAsyncSectioned.subList(from, to)) {
-            if (f(i))
-                ret.add(i)
-        }
-        ret
-    }
 }
 
 fun testInventory() {

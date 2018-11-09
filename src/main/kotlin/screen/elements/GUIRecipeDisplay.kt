@@ -2,6 +2,7 @@ package screen.elements
 
 import crafting.Recipe
 import graphics.Renderer
+import graphics.Texture
 
 class GUIRecipeDisplay(parent: RootGUIElement, name: String, xAlignment: Alignment, yAlignment: Alignment, recipe: Recipe? = null, open: Boolean = false, layer: Int = parent.layer + 1) :
         GUIElement(parent, name, xAlignment, yAlignment, { WIDTH }, { HEIGHT }, open, layer) {
@@ -12,7 +13,7 @@ class GUIRecipeDisplay(parent: RootGUIElement, name: String, xAlignment: Alignme
                 icon.open = false
             } else if (field == null && value != null) {
                 icon.open = true
-                icon.texture = value.iconType.icon
+                icon.renderable = value.iconType.icon
                 consumeList.currentResources = value.consume
                 consumeList.width = value.consume.size
                 produceList.currentResources = value.produce
@@ -21,7 +22,7 @@ class GUIRecipeDisplay(parent: RootGUIElement, name: String, xAlignment: Alignme
                 popupBackground.alignments.updateDimension()
             } else if (field != value) {
                 value!! // must not be null because null == null
-                icon.texture = value.iconType.icon
+                icon.renderable = value.iconType.icon
                 consumeList.currentResources = value.consume
                 consumeList.width = value.consume.size
                 produceList.currentResources = value.produce
@@ -32,11 +33,11 @@ class GUIRecipeDisplay(parent: RootGUIElement, name: String, xAlignment: Alignme
             field = value
         }
 
-    private lateinit var icon: GUITexturePane
+    private var icon: GUITexturePane
     private lateinit var consumeList: GUIResourceListDisplay
     private lateinit var produceList: GUIResourceListDisplay
     private lateinit var mouseOverAreaOpenGroup: GUIGroup
-    private lateinit var mouseOverArea: GUIMouseOverPopupArea
+    private var mouseOverArea: GUIMouseOverPopupArea
     private lateinit var popupBackground: GUIDefaultTextureRectangle
     val background: GUIDefaultTextureRectangle
 
@@ -62,11 +63,11 @@ class GUIRecipeDisplay(parent: RootGUIElement, name: String, xAlignment: Alignme
 
                         produceList = GUIResourceListDisplay(this, "produce list icons", fakeRecipe.produce, { this@apply.widthPixels + 3 }, { 1 }, fakeRecipe.produce.size, 1)
 
-                        val produceText = GUIText(this, "produce text", produceList.alignments.x(), produceList.alignments.y() + produceList.heightPixels - 4, "Produce:", layer = this.layer + 2)
+                        val produceText = GUIText(this, "produce text", produceList.alignments.x(), produceList.alignments.y() + produceList.heightPixels + 2, "Produce:", layer = this.layer + 2)
 
                         consumeList = GUIResourceListDisplay(this, "consume list display", fakeRecipe.consume, { produceList.alignments.x() }, { produceText.alignments.y() + produceText.heightPixels + 1 }, fakeRecipe.consume.size, 1)
 
-                        GUIText(this, "consume text", produceList.alignments.x(), consumeList.alignments.y() + consumeList.heightPixels - 4, "Consume:", layer = this.layer + 2)
+                        GUIText(this, "consume text", produceList.alignments.x(), consumeList.alignments.y() + consumeList.heightPixels + 2, "Consume:", layer = this.layer + 2)
 
                     })
 

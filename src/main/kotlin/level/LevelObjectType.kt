@@ -1,5 +1,6 @@
 package level
 
+import graphics.Image
 import screen.Camera
 
 private var nextId = 0
@@ -14,6 +15,12 @@ open class LevelObjectType<T : LevelObject>(initializer: LevelObjectType<T>.() -
     var instantiate: (Int, Int, Int) -> T = { _, _, _ -> throw Exception("Level object type failed to specify an adequate instantiator function") }
     var hitbox = Hitbox.NONE
     var requiresUpdate = false
+    var requiresRender = false
+    var textures = LevelObjectTextures(Image.Misc.ERROR)
+        set(value) {
+            field = value
+            requiresRender = true
+        }
 
     init {
         initializer()

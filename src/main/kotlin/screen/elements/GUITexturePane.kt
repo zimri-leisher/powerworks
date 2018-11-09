@@ -1,15 +1,16 @@
 package screen.elements
 
 import com.badlogic.gdx.graphics.g2d.TextureRegion
-import graphics.Renderer
+import graphics.Renderable
+import graphics.Texture
 import main.heightPixels
 import main.widthPixels
 
 class GUITexturePane(parent: RootGUIElement,
                      name: String,
                      xAlignment: Alignment, yAlignment: Alignment,
-                     texture: TextureRegion,
-                     widthAlignment: Alignment = { texture.widthPixels }, heightAlignment: Alignment = { texture.heightPixels },
+                     renderable: Renderable,
+                     widthAlignment: Alignment = { renderable.widthPixels }, heightAlignment: Alignment = { renderable.heightPixels },
                      open: Boolean = false,
                      layer: Int = parent.layer + 1,
                      var keepAspect: Boolean = false) :
@@ -17,7 +18,7 @@ class GUITexturePane(parent: RootGUIElement,
 
     var updateDimensionAlignmentOnTextureChange = true
 
-    var texture = texture
+    var renderable = renderable
         set(value) {
             if (field != value) {
                 if (widthPixels == field.widthPixels && heightPixels == field.heightPixels && updateDimensionAlignmentOnTextureChange) {
@@ -31,17 +32,33 @@ class GUITexturePane(parent: RootGUIElement,
     constructor(parent: RootGUIElement,
                 name: String,
                 relXPixel: Int, relYPixel: Int,
-                texture: TextureRegion,
-                widthPixels: Int = texture.widthPixels, heightPixels: Int = texture.heightPixels,
+                renderable: Renderable,
+                widthPixels: Int = renderable.widthPixels, heightPixels: Int = renderable.heightPixels,
                 open: Boolean = false,
                 layer: Int = parent.layer + 1,
                 keepAspect: Boolean = false) :
-            this(parent, name, { relXPixel }, { relYPixel }, texture, { widthPixels }, { heightPixels }, open, layer, keepAspect)
+            this(parent, name, { relXPixel }, { relYPixel }, renderable, { widthPixels }, { heightPixels }, open, layer, keepAspect)
+
+    constructor(parent: RootGUIElement,
+                name: String,
+                relXPixel: Int, relYPixel: Int,
+                textureRegion: TextureRegion,
+                widthPixels: Int = textureRegion.widthPixels, heightPixels: Int = textureRegion.heightPixels,
+                open: Boolean = false,
+                layer: Int = parent.layer + 1,
+                keepAspect: Boolean = false) :
+            this(parent, name, { relXPixel }, { relYPixel }, Texture(textureRegion), { widthPixels }, { heightPixels }, open, layer, keepAspect)
+
+    constructor(parent: RootGUIElement,
+                name: String,
+                xAlignment: Alignment, yAlignment: Alignment,
+                textureRegion: TextureRegion,
+                widthAlignment: Alignment = { textureRegion.widthPixels }, heightAlignment: Alignment = { textureRegion.heightPixels },
+                open: Boolean = false,
+                layer: Int = parent.layer + 1,
+                keepAspect: Boolean = false) : this(parent, name, xAlignment, yAlignment, Texture(textureRegion), widthAlignment, heightAlignment, open, layer, keepAspect)
 
     override fun render() {
-        if (keepAspect)
-            Renderer.renderTextureKeepAspect(texture, xPixel, yPixel, widthPixels, heightPixels, localRenderParams)
-        else
-            Renderer.renderTexture(texture, xPixel, yPixel, widthPixels, heightPixels, localRenderParams)
+        renderable.render(xPixel, yPixel, widthPixels, heightPixels, keepAspect, localRenderParams)
     }
 }
