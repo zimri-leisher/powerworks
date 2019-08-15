@@ -212,7 +212,7 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
         PipeBlockGroup.update()
         updateChunksBeingRendered()
         for (c in loadedChunks) {
-            if (c.updatesRequired!!.size == 0 && !c.beingRendered && c.resourceNodes!!.all { it.isEmpty() }) {
+            if (c.updatesRequired!!.size == 0 && c.movingOnBoundary!!.isEmpty() && !c.beingRendered && c.resourceNodes!!.all { it.isEmpty() }) {
                 c.unload()
             } else {
                 c.update()
@@ -336,6 +336,17 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
             return null
         }
 
+        /** @return whether or not this collides with a block */
+        fun getCollision(type: LevelObjectType<*>, xPixel: Int, yPixel: Int, predicate: ((LevelObject) -> Boolean)? = null): LevelObject? {
+            // Blocks won't have a hitbox bigger than their width/height tiles
+            val blocks = getIntersectingFromPixelRectangle(type.hitbox.xStart + xPixel, type.hitbox.yStart + yPixel, type.hitbox.width, type.hitbox.height)
+            for (b in blocks) {
+                if ((predicate != null && predicate(b) && doesPairCollide(type, xPixel, yPixel, b)) || doesPairCollide(type, xPixel, yPixel, b))
+                    return b
+            }
+            return null
+        }
+
         /**
          * Will load the chunk if necessary
          */
@@ -363,18 +374,39 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
     object MovingObjects {
         /** Whether or not this collides with a moving object */
         fun getCollision(l: LevelObject, xPixel: Int = l.xPixel, yPixel: Int = l.yPixel, predicate: ((MovingObject) -> Boolean)? = null): LevelObject? {
-            val c = Chunks.get(l.xChunk, l.yChunk)
-            for (m in c.moving!!) {
-                if (m != l) {
-                    if (m.hitbox != Hitbox.NONE && ((predicate != null && predicate(m) && doesPairCollide(l, xPixel, yPixel, m)) || doesPairCollide(l, xPixel, yPixel, m))) {
-                        return m
+            val chunks = Chunks.getFromPixelRectangle(xPixel + l.hitbox.xStart, yPixel + l.hitbox.yStart, l.hitbox.width, l.hitbox.height)
+            for (chunk in chunks) {
+                for (m in chunk.moving!!) {
+                    if (m != l) {
+                        if (m.hitbox != Hitbox.NONE && ((predicate != null && predicate(m) && doesPairCollide(l, xPixel, yPixel, m)) || doesPairCollide(l, xPixel, yPixel, m))) {
+                            return m
+                        }
+                    }
+                }
+                // In the future, use async?
+                for (m in chunk.movingOnBoundary!!) {
+                    if (m != l) {
+                        if (m.hitbox != Hitbox.NONE && ((predicate != null && predicate(m) && doesPairCollide(l, xPixel, yPixel, m)) || doesPairCollide(l, xPixel, yPixel, m))) {
+                            return m
+                        }
                     }
                 }
             }
-            // In the future, use async?
-            for (m in c.movingOnBoundary!!) {
-                if (m != l) {
-                    if (m.hitbox != Hitbox.NONE && ((predicate != null && predicate(m) && doesPairCollide(l, xPixel, yPixel, m)) || doesPairCollide(l, xPixel, yPixel, m))) {
+            return null
+        }
+
+        /** Whether or not this collides with a moving object */
+        fun getCollision(type: LevelObjectType<*>, xPixel: Int, yPixel: Int, predicate: ((MovingObject) -> Boolean)? = null): LevelObject? {
+            val chunks = Chunks.getFromPixelRectangle(xPixel + type.hitbox.xStart, yPixel + type.hitbox.yStart, type.hitbox.width, type.hitbox.height)
+            for (chunk in chunks) {
+                for (m in chunk.moving!!) {
+                    if (m.hitbox != Hitbox.NONE && ((predicate != null && predicate(m) && doesPairCollide(type, xPixel, yPixel, m)) || doesPairCollide(type, xPixel, yPixel, m))) {
+                        return m
+                    }
+                }
+                // In the future, use async?
+                for (m in chunk.movingOnBoundary!!) {
+                    if (m.hitbox != Hitbox.NONE && ((predicate != null && predicate(m) && doesPairCollide(type, xPixel, yPixel, m)) || doesPairCollide(type, xPixel, yPixel, m))) {
                         return m
                     }
                 }
@@ -382,11 +414,16 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
             return null
         }
 
-        fun getFromPixelRectangle(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int): List<MovingObject> {
-            val l = mutableListOf<MovingObject>()
+        fun getIntersectingFromPixelRectangle(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int): Set<MovingObject> {
+            val l = mutableSetOf<MovingObject>()
             for (c in Chunks.getFromPixelRectangle(xPixel, yPixel, widthPixels, heightPixels)) {
                 for (d in c.moving!!) {
-                    if (Geometry.intersects(xPixel, yPixel, widthPixels, heightPixels, d.xPixel - d.hitbox.xStart, d.yPixel - d.hitbox.yStart, d.hitbox.width, d.hitbox.height)) {
+                    if (Geometry.intersects(xPixel, yPixel, widthPixels, heightPixels, d.xPixel + d.hitbox.xStart, d.yPixel + d.hitbox.yStart, d.hitbox.width, d.hitbox.height)) {
+                        l.add(d)
+                    }
+                }
+                for (d in c.movingOnBoundary!!) {
+                    if (Geometry.intersects(xPixel, yPixel, widthPixels, heightPixels, d.xPixel + d.hitbox.xStart, d.yPixel + d.hitbox.yStart, d.hitbox.width, d.hitbox.height)) {
                         l.add(d)
                     }
                 }
@@ -394,8 +431,8 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
             return l
         }
 
-        fun getInRadius(xPixel: Int, yPixel: Int, radius: Int, predicate: (MovingObject) -> Boolean = { true }): List<MovingObject> {
-            val l = mutableListOf<MovingObject>()
+        fun getInRadius(xPixel: Int, yPixel: Int, radius: Int, predicate: (MovingObject) -> Boolean = { true }): Set<MovingObject> {
+            val l = mutableSetOf<MovingObject>()
             for (c in Chunks.getFromPixelRectangle(xPixel - radius, yPixel - radius, radius * 2, radius * 2)) {
                 for (d in c.moving!!) {
                     if (predicate(d) && Geometry.intersects(xPixel - radius, yPixel - radius, radius * 2, radius * 2, d.xPixel - d.hitbox.xStart, d.yPixel - d.hitbox.yStart, d.hitbox.width, d.hitbox.height)) {
@@ -406,11 +443,11 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
             return l
         }
 
-        fun get(xPixel: Int, yPixel: Int): List<MovingObject> {
+        fun get(xPixel: Int, yPixel: Int): Set<MovingObject> {
             val chunk = Chunks.getFromPixel(xPixel, yPixel)
-            var ret = chunk.moving!!.filter { Geometry.contains(it.xPixel + it.hitbox.xStart, it.yPixel + it.hitbox.yStart, it.hitbox.width, it.hitbox.height, xPixel, yPixel, 0, 0) }
+            var ret = chunk.moving!!.filter { Geometry.contains(it.xPixel + it.hitbox.xStart, it.yPixel + it.hitbox.yStart, it.hitbox.width, it.hitbox.height, xPixel, yPixel, 0, 0) }.toMutableSet()
             if (ret.isEmpty())
-                ret = chunk.movingOnBoundary!!.filter { Geometry.contains(it.xPixel + it.hitbox.xStart, it.yPixel + it.hitbox.yStart, it.hitbox.width, it.hitbox.height, xPixel, yPixel, 0, 0) }
+                ret = chunk.movingOnBoundary!!.filter { Geometry.contains(it.xPixel + it.hitbox.xStart, it.yPixel + it.hitbox.yStart, it.hitbox.width, it.hitbox.height, xPixel, yPixel, 0, 0) }.toMutableSet()
             return ret
         }
     }
@@ -466,8 +503,8 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
             return getFromTile(xPixel shr 4, yPixel shr 4, load)
         }
 
-        fun getFromRectangle(xChunk: Int, yChunk: Int, xChunk2: Int, yChunk2: Int): List<Chunk> {
-            val l = mutableListOf<Chunk>()
+        fun getFromRectangle(xChunk: Int, yChunk: Int, xChunk2: Int, yChunk2: Int): Set<Chunk> {
+            val l = mutableSetOf<Chunk>()
             for (x in xChunk..xChunk2) {
                 for (y in yChunk..yChunk2) {
                     l.add(get(x, y))
@@ -476,11 +513,11 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
             return l
         }
 
-        fun getFromTileRectangle(xTile: Int, yTile: Int, widthTiles: Int, heightTiles: Int): List<Chunk> {
+        fun getFromTileRectangle(xTile: Int, yTile: Int, widthTiles: Int, heightTiles: Int): Set<Chunk> {
             return getFromRectangle(xTile shr CHUNK_TILE_EXP, yTile shr CHUNK_TILE_EXP, (xTile + widthTiles) shr CHUNK_TILE_EXP, (yTile + heightTiles) shr CHUNK_TILE_EXP)
         }
 
-        fun getFromPixelRectangle(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int): List<Chunk> {
+        fun getFromPixelRectangle(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int): Set<Chunk> {
             return getFromRectangle(xPixel shr CHUNK_PIXEL_EXP, yPixel shr CHUNK_PIXEL_EXP, (xPixel + widthPixels) shr CHUNK_PIXEL_EXP, (yPixel + heightPixels) shr CHUNK_PIXEL_EXP)
         }
     }
@@ -604,9 +641,25 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
             return null
         }
 
+        // TODO add rotation as an argument to all of these.
+        // sorry this is for the time that you finally get around to doing hitbox rotation
+        fun getCollision(type: LevelObjectType<*>, xPixel: Int, yPixel: Int, predicate: ((LevelObject) -> Boolean)? = null): LevelObject? {
+            val m = MovingObjects.getCollision(type, xPixel, yPixel, predicate)
+            if (m != null)
+                return m
+            val b = Blocks.getCollision(type, xPixel, yPixel, predicate)
+            if (b != null)
+                return b
+            return null
+        }
+
         // TODO use async for stuff like this?
         fun doesPairCollide(l: LevelObject, xPixel: Int = l.xPixel, yPixel: Int = l.yPixel, l2: LevelObject, xPixel2: Int = l2.xPixel, yPixel2: Int = l2.yPixel): Boolean {
             return Geometry.intersects(xPixel + l.hitbox.xStart, yPixel + l.hitbox.yStart, l.hitbox.width, l.hitbox.height, xPixel2 + l2.hitbox.xStart, yPixel2 + l2.hitbox.yStart, l2.hitbox.width, l2.hitbox.height)
+        }
+
+        fun doesPairCollide(type: LevelObjectType<*>, xPixel: Int, yPixel: Int, l2: LevelObject, xPixel2: Int = l2.xPixel, yPixel2: Int = l2.yPixel): Boolean {
+            return Geometry.intersects(xPixel + type.hitbox.xStart, yPixel + type.hitbox.yStart, type.hitbox.width, type.hitbox.height, xPixel2 + l2.hitbox.xStart, yPixel2 + l2.hitbox.yStart, l2.hitbox.width, l2.hitbox.height)
         }
 
         /**

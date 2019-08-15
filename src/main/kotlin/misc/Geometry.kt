@@ -8,7 +8,7 @@ object Geometry {
     }
 
     fun contains(xPixel: Int, yPixel: Int, width: Int, height: Int, xPixelIn: Int, yPixelIn: Int, widthIn: Int, heightIn: Int): Boolean {
-        if (xPixelIn >= xPixel && yPixelIn >= yPixel && xPixelIn + widthIn < xPixel + width && yPixelIn + heightIn < yPixel + height)
+        if (xPixelIn >= xPixel && yPixelIn >= yPixel && xPixelIn + widthIn <= xPixel + width && yPixelIn + heightIn <= yPixel + height)
             return true
         return false
     }
@@ -55,4 +55,6 @@ object Geometry {
             else -> TileCoord(xTile, yTile)
         }
     }
+
+    fun distance(x: Int, y: Int, x2: Int, y2: Int) = Numbers.sqrt(Numbers.square(x - x2) + Numbers.square(y - y2))
 }

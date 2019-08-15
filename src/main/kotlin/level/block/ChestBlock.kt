@@ -12,7 +12,6 @@ import screen.InventoryGUI
 class ChestBlock(override val type: ChestBlockType, xTile: Int, yTile: Int, rotation: Int) : Block(type, xTile, yTile, rotation) {
 
     val inv = containers.first { it is Inventory } as Inventory
-    val invGUI = InventoryGUI("Chest at ${this.xTile}, ${this.yTile}'s inventory gui", type.invName, inv, Game.WIDTH / 2, Game.HEIGHT / 2)
 
     var typeRuleB = true
 
@@ -23,7 +22,7 @@ class ChestBlock(override val type: ChestBlockType, xTile: Int, yTile: Int, rota
                     val item = inv[0]!!
                     nodes.output(item.type, item.quantity, onlyTo = { it.attachedNodes.isNotEmpty() })
                 } else {
-                    invGUI.toggle()
+                    this.type.guiPool!!.toggle(this)
                 }
             } else if(shift) {
                 typeRuleB = !typeRuleB
@@ -31,6 +30,5 @@ class ChestBlock(override val type: ChestBlockType, xTile: Int, yTile: Int, rota
                 inv.typeRule = { !b }
             }
         }
-
     }
 }

@@ -159,6 +159,7 @@ object InputManager : InputProcessor {
         for ((k, v) in inputEvent) {
             if ((v == PressType.PRESSED && !inputsBeingPressed.contains(k)) || (v == PressType.RELEASED && inputsBeingPressed.contains(k))) {
                 map.translate(k, inputsBeingPressed.filter { it != k }.toMutableSet()).forEach { queue.add(ControlPress(it, v)); if (v == PressType.RELEASED) queue.remove(ControlPress(it, PressType.REPEAT)) }
+                //println(k + ", " + inputsBeingPressed.filter { it != k }.toMutableSet())
                 if (v == PressType.PRESSED &&
                         /* Wheels are not able to be held down, so you shouldn't add them to the repeat */
                         !k.contains("WHEEL")) {

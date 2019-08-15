@@ -1,6 +1,7 @@
 package main
 
 import audio.AudioManager
+import audio.Sound
 import com.badlogic.gdx.ApplicationAdapter
 import com.badlogic.gdx.Game
 import com.badlogic.gdx.Gdx
@@ -35,6 +36,7 @@ import screen.mouse.Tool
 import screen.mouse.Tooltips
 import java.net.URL
 import java.security.Policy
+import java.util.*
 
 /* Utility extensions */
 fun URL.toFileHandle() = Gdx.files.internal(path)
@@ -58,7 +60,7 @@ fun Color.toWhite() = this.set(1f, 1f, 1f, 1f)
 
 fun <K, V> Map<K, V>.joinToString() = toList().joinToString()
 
-fun main(args: Array<String>) {
+fun main() {
     val config = Lwjgl3ApplicationConfiguration()
     config.setWindowedMode(main.Game.WIDTH * main.Game.SCALE, main.Game.HEIGHT * main.Game.SCALE)
     config.setIdleFPS(main.Game.FRAMES_PER_SECOND / 5)
@@ -174,7 +176,7 @@ object Game : ApplicationAdapter(), ControlPressHandler {
         if (thisSecond > lastSecondTime) {
             lastSecondTime = thisSecond
             secondsCount++
-            println("$frameCount FPS, $updateCount UPS")
+            //println("$frameCount FPS, $updateCount UPS")
             frameCount = 0
             updateCount = 0
         }

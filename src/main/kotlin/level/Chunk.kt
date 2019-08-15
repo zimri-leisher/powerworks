@@ -4,12 +4,10 @@ import level.block.Block
 import level.moving.MovingObject
 import level.tile.Tile
 import data.ConcurrentlyModifiableMutableList
-import level.block.GhostBlock
-import level.block.MinerBlock
 import resource.ResourceNode
 
 /**
- * A very low level class, basically for data storage. Interaction with the level should be done through the Level object and not any of these
+ * This is just for holding data. Interaction with the level should be done through the Level object and not any of these
  */
 class Chunk(val parent: Level, val xChunk: Int, val yChunk: Int) {
 

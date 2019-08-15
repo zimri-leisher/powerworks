@@ -5,10 +5,34 @@ import resource.ResourceContainerChangeListener
 import resource.ResourceType
 
 class GUIResourceContainerDisplay(parent: RootGUIElement, name: String,
-                                  xAlignment: Alignment, yAlignment: Alignment, val width: Int, val height: Int,
-                                  val container: ResourceContainer<*>,
+                                  xAlignment: Alignment, yAlignment: Alignment, width: Int, height: Int,
+                                  container: ResourceContainer<*>,
                                   open: Boolean = false, layer: Int = parent.layer + 1) :
         GUIElement(parent, name, xAlignment, yAlignment, { width * 16 }, { height * 16 }, open, layer), ResourceContainerChangeListener {
+
+    var container = container
+        set(value) {
+            if(field != value) {
+                field.listeners.remove(this)
+                field = value
+                value.listeners.add(this)
+                listDisplay.currentResources = value.toList()
+            }
+        }
+    var width = width
+        set(value) {
+            if (field != value) {
+                field = value
+                listDisplay.width = value
+            }
+        }
+    var height = height
+        set(value) {
+            if (field != value) {
+                field = value
+                listDisplay.height = value
+            }
+        }
 
     val listDisplay = GUIResourceListDisplay(this, name + " list display", container.toList(), { 0 }, { 0 }, width, height)
 

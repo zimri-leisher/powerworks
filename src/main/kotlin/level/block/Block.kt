@@ -78,6 +78,7 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotatio
             }
         }
         adjacent.forEach { it.onAdjacentBlockRemove(this) }
+        type.guiPool?.close(this)
     }
 
     /**

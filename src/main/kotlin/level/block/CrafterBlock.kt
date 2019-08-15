@@ -15,7 +15,6 @@ open class CrafterBlock(override val type: CrafterBlockType, xTile: Int, yTile: 
     override val crafterType: Crafter.Type
         get() = type.crafterType
 
-    val crafterGUI = CrafterBlockGUI(this)
     var recipe: Recipe? = null
 
     private var currentResources = ResourceList()
@@ -65,7 +64,7 @@ open class CrafterBlock(override val type: CrafterBlockType, xTile: Int, yTile: 
 
     override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
         if (type == PressType.PRESSED && button == Input.Buttons.LEFT) {
-            crafterGUI.toggle()
+            this.type.guiPool!!.toggle(this)
         }
     }
 }

@@ -2,16 +2,14 @@ package screen
 
 import graphics.text.TextManager
 import item.Inventory
-import screen.elements.GUIDefaultTextureRectangle
-import screen.elements.GUIItemSlot
-import screen.elements.GUIText
-import screen.elements.GUIWindow
+import level.block.ChestBlock
+import screen.elements.*
 
 /**
  * A GUIWindow that you can instantiate for any inventory
  * It will display the current contents in GUIItemSlots, and it has a drag grip and a close button
  */
-class InventoryGUI(name: String,
+open class InventoryGUI(name: String,
                    displayName: String,
                    val inv: Inventory,
                    xPixel: Int, yPixel: Int,
@@ -24,8 +22,7 @@ class InventoryGUI(name: String,
                 open,
                 layer) {
 
-
-    private val itemSlots: Array<GUIItemSlot>
+    protected val itemSlots: Array<GUIItemSlot>
     private val background = GUIDefaultTextureRectangle(this, name + " background", 0, 0)
 
     init {

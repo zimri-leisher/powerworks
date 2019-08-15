@@ -6,7 +6,11 @@ object Numbers {
     }
     fun max(vararg nums: Int) = nums.max()!!
 
-    fun sign(num: Int) = if(num < 0) -1 else 1
+    fun sign(num: Int) = if(num < 0) -1 else if(num == 0) 0 else 1
 
     fun ceil(f: Float) = f.toInt() + 1
+
+    fun square(i: Int) = i * i
+
+    fun sqrt(i: Int) = Math.sqrt(i.toDouble())
 }

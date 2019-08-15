@@ -47,7 +47,7 @@ abstract class LevelObject protected constructor(
         set(value) {
             if (field != value) {
                 field = value
-                hitbox = Hitbox.rotate(type.hitbox, value)
+                //hitbox = Hitbox.rotate(type.hitbox, value)
             }
         }
 
@@ -69,10 +69,13 @@ abstract class LevelObject protected constructor(
         set(value) {
             val c = Level.Chunks.get(xChunk, yChunk)
             if (field && !value) {
+                field = value
                 c.removeUpdateRequired(this)
             } else if (!field && value) {
+                field = value
                 c.addUpdateRequired(this)
             }
+
         }
 
     open fun render() {

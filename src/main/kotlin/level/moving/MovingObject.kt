@@ -5,7 +5,7 @@ import misc.Numbers
 import java.io.DataOutputStream
 
 const val DEFAULT_MAX_SPEED = 20
-const val DEFAULT_DRAG = 4
+const val DEFAULT_DRAG = 2
 
 abstract class MovingObject(type: LevelObjectType<out MovingObject>, xPixel: Int, yPixel: Int, rotation: Int = 0, hitbox: Hitbox) : LevelObject(type, xPixel, yPixel, rotation, hitbox, true) {
 
@@ -66,8 +66,7 @@ abstract class MovingObject(type: LevelObjectType<out MovingObject>, xPixel: Int
             if (hitbox == Hitbox.NONE)
                 mutableListOf()
             else
-                Level.Chunks.getFromPixelRectangle(hitbox.xStart + xPixel, hitbox.yStart + yPixel, hitbox.width, hitbox.height).toMutableList().
-                        apply { remove(currentChunk) }
+                Level.Chunks.getFromPixelRectangle(hitbox.xStart + xPixel, hitbox.yStart + yPixel, hitbox.width, hitbox.height).toMutableList().apply { remove(currentChunk) }
     val moveListeners = mutableListOf<MovementListener>()
 
     init {
@@ -92,20 +91,20 @@ abstract class MovingObject(type: LevelObjectType<out MovingObject>, xPixel: Int
     }
 
     open fun move() {
-        if (xVel > 0)
-            rotation = 1
-        if (xVel < 0)
-            rotation = 3
-        if (yVel > 0)
-            rotation = 2
-        if (yVel < 0)
-            rotation = 0
-        val pXPixel = xPixel
-        val pYPixel = yPixel
-        val nXPixel = xPixel + xVel
-        val nYPixel = yPixel + yVel
-        var collisions: MutableSet<LevelObject>? = null
         if (xVel != 0 || yVel != 0) {
+            if (xVel > 0)
+                rotation = 1
+            if (xVel < 0)
+                rotation = 3
+            if (yVel > 0)
+                rotation = 2
+            if (yVel < 0)
+                rotation = 0
+            val pXPixel = xPixel
+            val pYPixel = yPixel
+            val nXPixel = xPixel + xVel
+            val nYPixel = yPixel + yVel
+            var collisions: MutableSet<LevelObject>? = null
             val g = getCollision(nXPixel, nYPixel)
             if (g == null) {
                 xPixel = nXPixel

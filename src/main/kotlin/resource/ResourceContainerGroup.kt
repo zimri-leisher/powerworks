@@ -84,7 +84,8 @@ class ResourceContainerGroup(private val containers: List<ResourceContainer<*>>)
 
     fun forEach(f: (ResourceContainer<*>) -> Unit) = containers.forEach(f)
 
-    operator fun iterator() = containers.iterator()
+    operator fun get(index: Int) = containers[index]
 
+    operator fun iterator() = containers.iterator()
     override fun toString() = "Resource container group: ${containers.joinToString()}"
 }
