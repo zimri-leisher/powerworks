@@ -20,11 +20,6 @@ class FurnaceBlock(type: MachineBlockType<FurnaceBlock>, xTile: Int, yTile: Int,
         containers.forEach { it.listeners.add(this) }
     }
 
-    override fun onRemoveFromLevel() {
-        super.onRemoveFromLevel()
-        gui.open = false
-    }
-
     override fun onContainerClear(container: ResourceContainer) {
         if (container == queue) {
             currentlySmelting = null

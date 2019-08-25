@@ -20,11 +20,6 @@ class SolidifierBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(Mach
         containers.forEach { it.listeners.add(this) }
     }
 
-    override fun onRemoveFromLevel() {
-        super.onRemoveFromLevel()
-        gui.open = false
-    }
-
     override fun onContainerChange(container: ResourceContainer, resource: ResourceType, quantity: Int) {
         if (container == tank) {
             if (tank.currentAmount > 0) {

@@ -34,7 +34,7 @@ class GUIResourceContainerDisplay(parent: RootGUIElement, name: String,
             }
         }
 
-    val listDisplay = GUIResourceListDisplay(this, name + " list display", container.toList(), { 0 }, { 0 }, width, height)
+    val listDisplay = GUIResourceListDisplay(this, name + " list display", container.resourceList(), { 0 }, { 0 }, width, height)
 
     init {
         container.listeners.add(this)

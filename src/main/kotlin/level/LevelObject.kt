@@ -4,8 +4,6 @@ import com.badlogic.gdx.graphics.Color
 import graphics.Renderer
 import graphics.TextureRenderParams
 import io.PressType
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.Serializer
 import main.DebugCode
 import main.Game
 import java.io.DataOutputStream

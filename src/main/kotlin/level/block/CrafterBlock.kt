@@ -31,7 +31,7 @@ open class CrafterBlock(override val type: CrafterBlockType, xTile: Int, yTile: 
         }
     }
 
-    override fun onContainerClear(container: ResourceContainer<*>) {
+    override fun onContainerClear(container: ResourceContainer) {
         // basically, refresh the current resource list
         currentResources.clear()
         currentResources = containers.toList()
