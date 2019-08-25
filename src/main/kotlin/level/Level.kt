@@ -1,6 +1,7 @@
 package level
 
 import audio.AudioManager
+import behavior.leaves.FindPath
 import data.ConcurrentlyModifiableMutableList
 import data.DirectoryChangeWatcher
 import data.FileManager
@@ -13,6 +14,8 @@ import io.InputManager
 import io.MouseMovementListener
 import item.ItemType
 import level.block.Block
+import level.entity.robot.Robot
+import level.entity.robot.RobotType
 import level.moving.MovingObject
 import level.particle.Particle
 import level.pipe.PipeBlockGroup
@@ -38,6 +41,8 @@ import java.nio.file.Path
 import java.time.LocalDateTime
 import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.streams.toList
 
 const val CHUNK_SIZE_TILES = 8
@@ -53,6 +58,7 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
     val widthPixels = widthTiles shl 4
     val heightChunks = heightTiles shr CHUNK_TILE_EXP
     val widthChunks = widthTiles shr CHUNK_TILE_EXP
+    val diagonalLengthPixels = Numbers.sqrt(Numbers.square(widthPixels) + Numbers.square(heightPixels))
 
     val seed: Long
     val rand: Random
@@ -62,6 +68,8 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
     val loadedChunks = CopyOnWriteArrayList<Chunk>()
 
     val oreNoises = mutableMapOf<OreTileType, Noise>()
+
+    val mouseMovementListeners = mutableListOf<MouseLevelMovementListener>()
 
     var viewBeingInteractedWith: GUILevelView? = null
     private var lastViewInteractedWith: GUILevelView? = null
@@ -84,7 +92,7 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
 
     /**
      * The level object which the mouse is over, if two are on top of each other, it picks the first moving object, then the block.
-     * Note tha, unlike ScreenManager.selectedElement, this isn't the last element clicked on.
+     * Note that, unlike ScreenManager.selectedElement, this isn't the last element clicked on
      */
     var selectedLevelObject: LevelObject? = null
 
@@ -175,7 +183,7 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
                 }
             }
             // Render the moving objects in sorted order
-            for (xChunk in (minX shr CHUNK_TILE_EXP) until (maxX shr CHUNK_TILE_EXP)) {
+            for (xChunk in (minX shr CHUNK_TILE_EXP)..(maxX shr CHUNK_TILE_EXP)) {
                 val c = Chunks.get(xChunk, yChunk)
                 if (c.moving!!.size > 0)
                     c.moving!!.filter { it.yTile >= y && it.yTile < y + 1 }.forEach {
@@ -205,11 +213,14 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
                         c.xTile shl 4, c.yTile shl 4)
             }
         }
+        FindPath.render()
     }
 
     fun update() {
         TubeBlockGroup.update()
         PipeBlockGroup.update()
+        if (InputManager.inputsBeingPressed.contains("SPACE"))
+            add(Robot(RobotType.STANDARD, mouseLevelXPixel, mouseLevelYPixel))
         updateChunksBeingRendered()
         for (c in loadedChunks) {
             if (c.updatesRequired!!.size == 0 && c.movingOnBoundary!!.isEmpty() && !c.beingRendered && c.resourceNodes!!.all { it.isEmpty() }) {
@@ -281,8 +292,8 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
      * Updates the control press handlers that get controls sent to them, if any exist
      */
     private fun updateSelectedLevelObject() {
-        val block = Blocks.get(mouseLevelXPixel shr 4, mouseLevelYPixel shr 4)
-        val moving = MovingObjects.get(mouseLevelXPixel, mouseLevelYPixel).firstOrNull()
+        val block = Blocks.get(mouseLevelXPixel shr 4, mouseLevelYPixel shr 4)?.run { if (type.ghost) null else this }
+        val moving = MovingObjects.get(mouseLevelXPixel, mouseLevelYPixel).firstOrNull { !it.type.ghost }
         val nextSelected = moving ?: block
         if (nextSelected != selectedLevelObject || nextSelected?.mouseOn == false) {
             selectedLevelObject?.mouseOn = false
@@ -312,8 +323,13 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
         if (viewBeingInteractedWith != null) {
             val zoom = viewBeingInteractedWith!!.zoomMultiplier
             val viewRectangle = viewBeingInteractedWith!!.viewRectangle
+            val pXPixel = mouseLevelXPixel
+            val pYPixel = mouseLevelYPixel
             mouseLevelXPixel = ((Mouse.xPixel - viewBeingInteractedWith!!.xPixel) / zoom).toInt() + viewRectangle.x
             mouseLevelYPixel = ((Mouse.yPixel - viewBeingInteractedWith!!.yPixel) / zoom).toInt() + viewRectangle.y
+            if (pXPixel != mouseLevelXPixel || pYPixel != mouseLevelYPixel) {
+                mouseMovementListeners.forEach { it.onMouseMoveRelativeToLevel(pXPixel, pYPixel) }
+            }
         }
     }
 
@@ -330,7 +346,7 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
             // Blocks won't have a hitbox bigger than their width/height tiles
             val blocks = getIntersectingFromPixelRectangle(l.hitbox.xStart + xPixel, l.hitbox.yStart + yPixel, l.hitbox.width, l.hitbox.height)
             for (b in blocks) {
-                if ((predicate != null && predicate(b) && doesPairCollide(l, xPixel, yPixel, b)) || doesPairCollide(l, xPixel, yPixel, b))
+                if (!b.type.ghost && (predicate != null && predicate(b) && doesPairCollide(l, xPixel, yPixel, b)) || doesPairCollide(l, xPixel, yPixel, b))
                     return b
             }
             return null
@@ -341,7 +357,7 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
             // Blocks won't have a hitbox bigger than their width/height tiles
             val blocks = getIntersectingFromPixelRectangle(type.hitbox.xStart + xPixel, type.hitbox.yStart + yPixel, type.hitbox.width, type.hitbox.height)
             for (b in blocks) {
-                if ((predicate != null && predicate(b) && doesPairCollide(type, xPixel, yPixel, b)) || doesPairCollide(type, xPixel, yPixel, b))
+                if (!b.type.ghost && (predicate != null && predicate(b) && doesPairCollide(type, xPixel, yPixel, b)) || doesPairCollide(type, xPixel, yPixel, b))
                     return b
             }
             return null
@@ -369,6 +385,22 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
         fun getIntersectingFromPixelRectangle(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int): Set<Block> {
             return getIntersectingFromRectangle(xPixel shr 4, yPixel shr 4, widthPixels shr 4, heightPixels shr 4)
         }
+
+        /**
+         * @return a set of [Block]s whose [Hitbox] intersects the circle centered at [xPixel], [yPixel] with the given [radius],
+         * and which match the [predicate]
+         */
+        fun getInRadius(xPixel: Int, yPixel: Int, radius: Int, predicate: (Block) -> Boolean = { true }): Set<Block> {
+            val l = mutableSetOf<Block>()
+            for (c in Chunks.getFromPixelRectangle(xPixel - radius, yPixel - radius, radius * 2, radius * 2)) {
+                for (d in c.blocks!!) {
+                    if (d != null && predicate(d) && Geometry.intersects(xPixel - radius, yPixel - radius, radius * 2, radius * 2, d.xPixel - d.hitbox.xStart, d.yPixel - d.hitbox.yStart, d.hitbox.width, d.hitbox.height)) {
+                        l.add(d)
+                    }
+                }
+            }
+            return l
+        }
     }
 
     object MovingObjects {
@@ -377,17 +409,21 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
             val chunks = Chunks.getFromPixelRectangle(xPixel + l.hitbox.xStart, yPixel + l.hitbox.yStart, l.hitbox.width, l.hitbox.height)
             for (chunk in chunks) {
                 for (m in chunk.moving!!) {
-                    if (m != l) {
-                        if (m.hitbox != Hitbox.NONE && ((predicate != null && predicate(m) && doesPairCollide(l, xPixel, yPixel, m)) || doesPairCollide(l, xPixel, yPixel, m))) {
-                            return m
+                    if (m != l && !m.type.ghost) {
+                        if (m.hitbox != Hitbox.NONE) {
+                            if (((predicate != null && predicate(m)) || predicate == null) && doesPairCollide(l, xPixel, yPixel, m)) {
+                                return m
+                            }
                         }
                     }
                 }
                 // In the future, use async?
                 for (m in chunk.movingOnBoundary!!) {
-                    if (m != l) {
-                        if (m.hitbox != Hitbox.NONE && ((predicate != null && predicate(m) && doesPairCollide(l, xPixel, yPixel, m)) || doesPairCollide(l, xPixel, yPixel, m))) {
-                            return m
+                    if (m != l && !m.type.ghost) {
+                        if (m.hitbox != Hitbox.NONE) {
+                            if (((predicate != null && predicate(m)) || predicate == null) && doesPairCollide(l, xPixel, yPixel, m)) {
+                                return m
+                            }
                         }
                     }
                 }
@@ -400,13 +436,13 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
             val chunks = Chunks.getFromPixelRectangle(xPixel + type.hitbox.xStart, yPixel + type.hitbox.yStart, type.hitbox.width, type.hitbox.height)
             for (chunk in chunks) {
                 for (m in chunk.moving!!) {
-                    if (m.hitbox != Hitbox.NONE && ((predicate != null && predicate(m) && doesPairCollide(type, xPixel, yPixel, m)) || doesPairCollide(type, xPixel, yPixel, m))) {
+                    if (m.hitbox != Hitbox.NONE && !m.type.ghost && ((predicate != null && predicate(m) && doesPairCollide(type, xPixel, yPixel, m)) || doesPairCollide(type, xPixel, yPixel, m))) {
                         return m
                     }
                 }
                 // In the future, use async?
                 for (m in chunk.movingOnBoundary!!) {
-                    if (m.hitbox != Hitbox.NONE && ((predicate != null && predicate(m) && doesPairCollide(type, xPixel, yPixel, m)) || doesPairCollide(type, xPixel, yPixel, m))) {
+                    if (m.hitbox != Hitbox.NONE && !m.type.ghost && ((predicate != null && predicate(m) && doesPairCollide(type, xPixel, yPixel, m)) || doesPairCollide(type, xPixel, yPixel, m))) {
                         return m
                     }
                 }
@@ -505,8 +541,12 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
 
         fun getFromRectangle(xChunk: Int, yChunk: Int, xChunk2: Int, yChunk2: Int): Set<Chunk> {
             val l = mutableSetOf<Chunk>()
-            for (x in xChunk..xChunk2) {
-                for (y in yChunk..yChunk2) {
+            val nXChunk = max(0, xChunk)
+            val nYChunk = max(0, yChunk)
+            val nXChunk2 = min(Game.currentLevel.widthChunks - 1, xChunk2)
+            val nYChunk2 = min(Game.currentLevel.heightChunks - 1, yChunk2)
+            for (x in nXChunk..nXChunk2) {
+                for (y in nYChunk..nYChunk2) {
                     l.add(get(x, y))
                 }
             }
@@ -707,7 +747,7 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
                     }
                     return false
                 } else {
-                    if (l.getCollision(l.xPixel, l.yPixel) != null)
+                    if (!l.type.ghost && l.getCollision(l.xPixel, l.yPixel) != null)
                         return false
                     if (l.hitbox != Hitbox.NONE) {
                         l.intersectingChunks.forEach { it.movingOnBoundary!!.add(l) }

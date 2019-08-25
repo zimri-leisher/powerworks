@@ -3,12 +3,14 @@ package io
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputProcessor
 import data.ConcurrentlyModifiableMutableMap
+import data.ConcurrentlyModifiableWeakMutableMap
 import data.WeakMutableList
 import main.Game
 import screen.ScreenManager
 import screen.elements.GUILevelView
 import screen.mouse.Mouse
 import java.awt.event.KeyEvent
+import java.lang.ref.WeakReference
 
 interface ControlPressHandler {
     fun handleControlPress(p: ControlPress)
@@ -37,7 +39,7 @@ object InputManager : InputProcessor {
     val handlers = ConcurrentlyModifiableMutableMap<
             // the handler itself and the handler type (GLOBAL, LEVEL_ANY, etc.)
             Pair<
-                    ControlPressHandler,
+                    WeakReference<ControlPressHandler>,
                     ControlPressHandlerType>,
             // the control maps and the controls themselves
             // each pair in this map specifies the control map and the controls that the handler wants to receive when that map is active
@@ -88,7 +90,7 @@ object InputManager : InputProcessor {
      * @param controls the first element is the control map that these controls are active on, the second is the list of controls to send to this
      */
     fun registerControlPressHandler(h: ControlPressHandler, type: ControlPressHandlerType, controls: Map<ControlMap, Array<out Control>>? = null) {
-        handlers.put(Pair(h, type), controls)
+        handlers.put(Pair(WeakReference(h), type), controls)
     }
 
     /**
@@ -121,7 +123,7 @@ object InputManager : InputProcessor {
         for (map in ControlMap.values()) {
             m.put(map, controls)
         }
-        handlers.put(Pair(h, type), m)
+        handlers.put(Pair(WeakReference(h), type), m)
     }
 
     /**
@@ -130,21 +132,24 @@ object InputManager : InputProcessor {
      * @param map whenever this map is active, all controls will be sent to this
      */
     fun registerControlPressHandler(h: ControlPressHandler, type: ControlPressHandlerType, map: ControlMap) {
-        handlers.put(Pair(h, type), mapOf<ControlMap, Array<Control>?>(Pair(map, null)))
+        handlers.put(Pair(WeakReference(h), type), mapOf<ControlMap, Array<Control>?>(Pair(map, null)))
     }
 
     /**
      * Removes the entry corresponding with the handler
      */
     fun removeControlPressHandler(handler: ControlPressHandler) {
-        for ((k, _) in handlers) {
-            if (k.first == handler) {
+        handlers.forEach { k, _ ->
+            if (k.first.get() == handler) {
                 handlers.remove(k)
             }
         }
     }
 
+
     fun update() {
+
+
         if (textHandler != null) {
             charsTyped.forEach {
                 textHandler!!.handleChar(it)
@@ -203,29 +208,34 @@ object InputManager : InputProcessor {
 
     private fun sendPress(p: ControlPress) {
         handlers.forEach { k, v ->
-            if (k.second == ControlPressHandlerType.GLOBAL ||
-                    (k.second == ControlPressHandlerType.SCREEN_THIS && currentScreenHandlers.contains(k.first)) ||
-                    (k.second == ControlPressHandlerType.LEVEL_ANY && ScreenManager.selectedElement is GUILevelView) ||
-                    (k.second == ControlPressHandlerType.LEVEL_THIS &&
-                            // we want the part below because otherwise the level controls will trigger even when we
-                            // press on a gui element that is higher. They stop the controls from being sent to the level object
-                            // if there is an element in front of it, basically
-                            // However, we don't care if it is a gui view because that's how we're supposed to interact
-                            (ScreenManager.selectedWindow == null || ScreenManager.selectedElement is GUILevelView)
-                            && currentLevelHandlers.contains(k.first))) {
-                if (v != null) {
-                    if (v.containsKey(map)) {
-                        val controls = v.get(map)
-                        if (controls != null) {
-                            if (controls.contains(p.control)) {
-                                k.first.handleControlPress(p)
+            if(k.first.get() == null) {
+                handlers.remove(k)
+            } else {
+                val handler = k.first.get()!!
+                if (k.second == ControlPressHandlerType.GLOBAL ||
+                        (k.second == ControlPressHandlerType.SCREEN_THIS && currentScreenHandlers.contains(handler)) ||
+                        (k.second == ControlPressHandlerType.LEVEL_ANY && ScreenManager.selectedElement is GUILevelView) ||
+                        (k.second == ControlPressHandlerType.LEVEL_THIS &&
+                                // we want the part below because otherwise the level controls will trigger even when we
+                                // press on a gui element that is higher. They stop the controls from being sent to the level object
+                                // if there is an element in front of it, basically
+                                // However, we don't care if it is a gui view because that's how we're supposed to interact
+                                (ScreenManager.selectedWindow == null || ScreenManager.selectedElement is GUILevelView)
+                                && currentLevelHandlers.contains(handler))) {
+                    if (v != null) {
+                        if (v.containsKey(map)) {
+                            val controls = v.get(map)
+                            if (controls != null) {
+                                if (controls.contains(p.control)) {
+                                    handler.handleControlPress(p)
+                                }
+                            } else {
+                                handler.handleControlPress(p)
                             }
-                        } else {
-                            k.first.handleControlPress(p)
                         }
+                    } else {
+                        handler.handleControlPress(p)
                     }
-                } else {
-                    k.first.handleControlPress(p)
                 }
             }
         }

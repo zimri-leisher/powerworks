@@ -1,11 +1,11 @@
-package level.living.robot
+package level.entity.robot
 
 import graphics.ImageCollection
 import level.Hitbox
 import level.LevelObjectTextures
-import level.living.LivingType
+import level.entity.EntityType
 
-class RobotType<T : Robot>(initializer: RobotType<T>.() -> Unit) : LivingType<T>() {
+class RobotType<T : Robot>(initializer: RobotType<T>.() -> Unit) : EntityType<T>() {
 
     init {
         initializer()

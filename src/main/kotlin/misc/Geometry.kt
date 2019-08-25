@@ -47,6 +47,31 @@ object Geometry {
         return 0
     }
 
+    fun distance(x1: Int, y1: Int, x1b: Int, y1b: Int, x2: Int, y2: Int, x2b: Int, y2b: Int): Double { // credit to Maxim on SO im a lazy fuck
+        val left = x2b < x1
+        val right = x1b < x2
+        val bottom = y2b < y1
+        val top = y1b < y2
+        if(top && left)
+            return distance(x1, y1b, x2b, y2)
+        else if( left && bottom)
+            return distance(x1, y1, x2b, y2b)
+        else if( bottom && right)
+            return distance(x1b, y1, x2, y2b)
+        else if(right && top)
+            return distance(x1b, y1b, x2, y2)
+        else if( left)
+            return (x1 - x2b).toDouble()
+        else if( right)
+            return (x2 - x1b).toDouble()
+        else if( bottom)
+            return (y1 - y2b).toDouble()
+        else if( top)
+            return (y2 - y1b).toDouble()
+        else
+            return 0.0
+    }
+
     fun rotate(xTile: Int, yTile: Int, widthTiles: Int, heightTiles: Int, dir: Int): TileCoord {
         return when (dir % 4) {
             1 -> TileCoord(widthTiles - yTile - 1, heightTiles - xTile)

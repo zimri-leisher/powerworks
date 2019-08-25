@@ -44,9 +44,11 @@ class WeakMutableList<T> {
             val o = it.get()
             try {
                 o!!
-                f(o)
             } catch (e: KotlinNullPointerException) {
                 println("GC'd 1")
+            }
+            if (o != null) {
+                f(o)
             }
         }
     }
@@ -120,7 +122,7 @@ class WeakMutableList<T> {
 
     fun stream(): Stream<T> {
         check()
-        return list.map { it.get()!! }.stream()
+        return list.map { it.get()!! }.stream() as Stream<T>
     }
 
     fun filter(f: (T) -> Boolean) = list.filter { if (it.get() == null) false else f(it.get()!!) }.map { it.get()!! }
@@ -135,5 +137,8 @@ class WeakMutableList<T> {
         return list.filter { it.get() != null }.map { it.get()!! }.sortedBy(f)
     }
 
-    fun joinToString() = list.joinToString { it.get().toString() + ", " }
+    fun joinToString(): String {
+        check()
+        return list.joinToString { it.get().toString() + ", " }
+    }
 }

@@ -10,6 +10,8 @@ import main.DebugCode
 import main.Game
 import java.io.DataOutputStream
 
+private var nextId = 0
+
 abstract class LevelObject protected constructor(
         open val type: LevelObjectType<out LevelObject>,
         open val xPixel: Int, open val yPixel: Int,
@@ -23,6 +25,8 @@ abstract class LevelObject protected constructor(
          * Whether or not the INTERACTOR tool should allow clicking on this
          */
         var isInteractable: Boolean = true) {
+
+    val id = nextId++
 
     open val xTile = xPixel shr 4
     open val yTile = yPixel shr 4

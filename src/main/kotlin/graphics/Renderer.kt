@@ -16,7 +16,7 @@ import main.widthPixels
  * Custom SpriteBatch draw method that takes in a texture render parameter object and uses its values appropriately
  */
 fun SpriteBatch.draw(texture: TextureRegion, x: Float, y: Float, originX: Float, originY: Float, width: Float, height: Float, params: TextureRenderParams) {
-    draw(texture, x, y, originX, originY, width, height, params.scaleX, params.scaleY, 360f - params.rotation)
+    draw(texture, x, y, originX, originY, width, height, params.scaleX, params.scaleY, params.rotation)
 }
 
 /**

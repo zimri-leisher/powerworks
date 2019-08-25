@@ -1,23 +1,23 @@
 package data
 
-class ConcurrentlyModifiableMutableMap<T, K> {
+class ConcurrentlyModifiableMutableMap<K, V> {
 
     var beingTraversed = false
 
-    val elements = mutableMapOf<T, K>()
+    val elements = mutableMapOf<K, V>()
 
-    val toAdd = mutableMapOf<T, K>()
+    val toAdd = mutableMapOf<K, V>()
 
-    val toRemove = mutableListOf<T>()
+    val toRemove = mutableListOf<K>()
 
-    fun put(l: T, o: K) {
+    fun put(l: K, o: V) {
         if (beingTraversed)
             toAdd.put(l, o)
         else
             elements.put(l, o)
     }
 
-    fun remove(l: T) {
+    fun remove(l: K) {
         if (beingTraversed)
             toRemove.add(l)
         else
@@ -25,9 +25,15 @@ class ConcurrentlyModifiableMutableMap<T, K> {
     }
 
     val size
-    get() = elements.size + toAdd.size - toRemove.size
+        get() = elements.size + toAdd.size - toRemove.size
 
-    fun forEach(f: (T, K) -> Unit) {
+    fun get(key: K): V? {
+        if(key in toRemove)
+            return null
+        return elements[key] ?: toAdd[key]
+    }
+
+    fun forEach(f: (K, V) -> Unit) {
         beingTraversed = true
         elements.forEach(f)
         beingTraversed = false

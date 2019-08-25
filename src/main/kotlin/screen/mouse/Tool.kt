@@ -1,5 +1,7 @@
 package screen.mouse
 
+import behavior.Behavior
+import behavior.BehaviorTree
 import com.badlogic.gdx.graphics.Color
 import graphics.Image
 import graphics.Renderer
@@ -7,22 +9,24 @@ import graphics.TextureRenderParams
 import io.*
 import item.BlockItemType
 import item.ItemType
-import item.LivingItemType
+import item.EntityItemType
 import level.Hitbox
 import level.Level
 import level.LevelObject
 import level.block.Block
 import level.block.BlockType
-import level.living.LivingObject
-import level.living.behavior.BehaviorCommand
+import level.entity.Entity
 import level.moving.MovingObject
 import main.Game
 import main.toColor
 import misc.Geometry
+import misc.PixelCoord
 import resource.ResourceNode
 import screen.RoutingLanguageEditor
 import screen.ScreenManager
-import screen.elements.*
+import screen.elements.GUIMouseOverRegion
+import screen.elements.GUIOutline
+import screen.elements.GUIWindow
 
 /**
  * A tool is an object that is used by the client to interact with the level through the mouse
@@ -97,8 +101,8 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
             Teleporter
             Selector
             ResourceNodeEditor
-            LivingPlacer
-            LivingController
+            EntityPlacer
+            EntityController
             Debug
         }
 
@@ -147,16 +151,16 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
             }
         }
 
-        object LivingPlacer : Tool(Control.SPAWN_LIVING_OBJECT) {
+        object EntityPlacer : Tool(Control.SPAWN_ENTITY) {
 
-            var type: LivingItemType? = null
+            var type: EntityItemType? = null
             var canSpawn = false
 
             override fun onUse(control: Control, type: PressType, mouseLevelXPixel: Int, mouseLevelYPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
                 if (currentlyActive) {
-                    if (type == PressType.RELEASED && control == Control.SPAWN_LIVING_OBJECT) {
+                    if (type == PressType.RELEASED && control == Control.SPAWN_ENTITY) {
                         if (canSpawn) {
-                            if (Level.add(this.type!!.spawnedLivingObject.instantiate(mouseLevelXPixel, mouseLevelYPixel, 0))) {
+                            if (Level.add(this.type!!.spawnedEntity.instantiate(mouseLevelXPixel, mouseLevelYPixel, 0))) {
                                 Game.mainInv.remove(this.type!!)
                             }
                         }
@@ -165,64 +169,65 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
             }
 
             override fun renderAbove() {
-                val livingObject = type!!.spawnedLivingObject
-                val texture = livingObject.textures[0]
+                val entity = type!!.spawnedEntity
+                val texture = entity.textures[0]
                 texture.render(Game.currentLevel.mouseLevelXPixel, Game.currentLevel.mouseLevelYPixel, params = TextureRenderParams(color = toColor(alpha = 0.4f)))
-                Renderer.renderEmptyRectangle(Game.currentLevel.mouseLevelXPixel + livingObject.hitbox.xStart, Game.currentLevel.mouseLevelYPixel + livingObject.hitbox.yStart, livingObject.hitbox.width, livingObject.hitbox.height,
+                Renderer.renderEmptyRectangle(Game.currentLevel.mouseLevelXPixel + entity.hitbox.xStart, Game.currentLevel.mouseLevelYPixel + entity.hitbox.yStart, entity.hitbox.width, entity.hitbox.height,
                         params = TextureRenderParams(color = toColor(
                                 if (canSpawn) 0f else 1f, if (canSpawn) 1f else 0f, 0f, 0.4f)))
             }
 
             override fun update() {
-                canSpawn = Game.currentLevel.selectedLevelObject == null && Level.getCollision(type!!.spawnedLivingObject, Game.currentLevel.mouseLevelXPixel, Game.currentLevel.mouseLevelYPixel) == null
+                canSpawn = Game.currentLevel.selectedLevelObject == null && Level.getCollision(type!!.spawnedEntity, Game.currentLevel.mouseLevelXPixel, Game.currentLevel.mouseLevelYPixel) == null
             }
 
             override fun updateCurrentlyActive() {
                 val item = Mouse.heldItemType
-                currentlyActive = Game.currentLevel.selectedLevelObject == null && item != null && item is LivingItemType && !Selector.dragging
+                currentlyActive = Game.currentLevel.selectedLevelObject == null && item != null && item is EntityItemType && !Selector.dragging
                 if (currentlyActive) {
-                    type = item as LivingItemType
+                    type = item as EntityItemType
                 }
             }
         }
 
-        object LivingController : Tool(Control.SELECT_LIVING_OBJECT_COMMAND, Control.USE_LIVING_OBJECT_COMMAND) {
+        object EntityController : Tool(Control.SELECT_ENTITY_COMMAND, Control.USE_ENTITY_COMMAND) {
 
             const val DRAG_DISTANCE_BEFORE_MENU_OPEN = 8
 
             var startXPixel = 0
             var startYPixel = 0
 
-            var currentlyHoveringCommand: BehaviorCommand? = null
-            var selectedCommand: BehaviorCommand? = null
+
+            var currentlyHoveringCommand: BehaviorTree? = null
+            var selectedCommand: BehaviorTree? = null
 
             object ControllerMenu : GUIWindow("Living object moving controller window",
                     0, 0, 55, 55, ScreenManager.Groups.HUD) {
                 init {
                     transparentToInteraction = true
                     GUIMouseOverRegion(this, "move command mouse region", { 20 }, { 38 }, { 14 }, { 14 }, onEnter = {
-                        currentlyHoveringCommand = BehaviorCommand.MOVE
+                        currentlyHoveringCommand = Behavior.Movement.TO_MOUSE
                     }, onLeave = {
                         currentlyHoveringCommand = null
                     }).apply {
                         GUIOutline(this, "")
                     }
                     GUIMouseOverRegion(this, "attack command mouse region", { 20 }, { 3 }, { 14 }, { 14 }, onEnter = {
-                        currentlyHoveringCommand = BehaviorCommand.ATTACK
+                        currentlyHoveringCommand = Behavior.Offense.ATTACK_ARGUMENT // ATK
                     }, onLeave = {
                         currentlyHoveringCommand = null
                     }).apply {
                         GUIOutline(this, "")
                     }
                     GUIMouseOverRegion(this, "defend command mouse region", { 3 }, { 20 }, { 14 }, { 14 }, onEnter = {
-                        currentlyHoveringCommand = BehaviorCommand.DEFEND
+                        currentlyHoveringCommand = null // DEF
                     }, onLeave = {
                         currentlyHoveringCommand = null
                     }).apply {
                         GUIOutline(this, "")
                     }
                     GUIMouseOverRegion(this, "stop command mouse region", { 37 }, { 20 }, { 14 }, { 14 }, onEnter = {
-                        currentlyHoveringCommand = BehaviorCommand.STOP
+                        currentlyHoveringCommand = null // STP
                     }, onLeave = {
                         currentlyHoveringCommand = null
                     }).apply {
@@ -233,7 +238,7 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
 
             override fun onUse(control: Control, type: PressType, mouseLevelXPixel: Int, mouseLevelYPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
                 if (currentlyActive) {
-                    if (control == Control.SELECT_LIVING_OBJECT_COMMAND) {
+                    if (control == Control.SELECT_ENTITY_COMMAND) {
                         if (type == PressType.PRESSED) {
                             startXPixel = Mouse.xPixel
                             startYPixel = Mouse.yPixel
@@ -248,17 +253,19 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
                         } else {
                             if (ControllerMenu.open) {
                                 selectedCommand = currentlyHoveringCommand
-                                if (selectedCommand == BehaviorCommand.STOP) {
-                                    selectedCommand!!.execute(Selector.selected.filterIsInstance<LivingObject>())
+                                /*
+                                if (selectedCommand == // STOP) {
+                                    selectedCommand!!.execute(Selector.selected.filterIsInstance<Entity>())
                                     selectedCommand = null
                                 }
+                                 */
                                 ControllerMenu.open = false
                             }
                         }
-                    } else if (control == Control.USE_LIVING_OBJECT_COMMAND) {
+                    } else if (control == Control.USE_ENTITY_COMMAND) {
                         if (type == PressType.PRESSED) {
                             if (selectedCommand != null && !ControllerMenu.open) {
-                                selectedCommand!!.execute(Selector.selected.filterIsInstance<LivingObject>())
+                                Selector.selected.filterIsInstance<Entity>().forEach { it.runBehavior(selectedCommand!!) }
                             }
                         }
                     }
@@ -446,7 +453,6 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
                         SelectorMode.BLOCKS_ONLY -> {
                             Level.Blocks.getIntersectingFromPixelRectangle(x, y, w, h).toMutableSet()
                         }
-
                     }
                 }
             }

@@ -1,7 +1,6 @@
 package main
 
 import audio.AudioManager
-import audio.Sound
 import com.badlogic.gdx.ApplicationAdapter
 import com.badlogic.gdx.Game
 import com.badlogic.gdx.Gdx
@@ -36,10 +35,25 @@ import screen.mouse.Tool
 import screen.mouse.Tooltips
 import java.net.URL
 import java.security.Policy
-import java.util.*
 
 /* Utility extensions */
 fun URL.toFileHandle() = Gdx.files.internal(path)
+
+fun String.fromSnakeCaseToCamelCase(): String {
+    val builder = StringBuilder()
+    var nextIsCap = false
+    for(char in this.toLowerCase()) {
+        if(char == '_') {
+            nextIsCap = true
+        } else if(nextIsCap) {
+            builder.append(char.toUpperCase())
+            nextIsCap = false
+        } else {
+            builder.append(char)
+        }
+    }
+    return builder.toString()
+}
 
 val TextureRegion.widthPixels: Int
     get() = regionWidth
@@ -56,6 +70,7 @@ fun toColor(color: Int = 0xFFFFFF, alpha: Float = 1f): Color {
     c.b = (color and 0x000000ff) / 255f
     return c
 }
+
 fun Color.toWhite() = this.set(1f, 1f, 1f, 1f)
 
 fun <K, V> Map<K, V>.joinToString() = toList().joinToString()
@@ -65,6 +80,7 @@ fun main() {
     config.setWindowedMode(main.Game.WIDTH * main.Game.SCALE, main.Game.HEIGHT * main.Game.SCALE)
     config.setIdleFPS(main.Game.FRAMES_PER_SECOND / 5)
     config.setTitle("Powerworks Industries")
+    config.setWindowIcon("textures/icon_windows.png")
     Lwjgl3Application(Game, config)
 }
 
@@ -152,6 +168,7 @@ object Game : ApplicationAdapter(), ControlPressHandler {
         State.setState(State.MAIN_MENU)
         Policy.setPolicy(ModPermissionsPolicy())
         System.setSecurityManager(SecurityManager())
+        Test
         ModManager.initialize()
     }
 

@@ -153,4 +153,10 @@ object LevelSelectorGUI : GUIWindow("Level selector window", { 0 }, { 0 }, { Gam
             }, accountForChildHeight = true, yPixelSeparation = 2, flipY = true)
         }
     }
+
+    override fun onOpen() {
+        if(selectedLevelInfo != null) {
+            selectionHighlight.open = true
+        }
+    }
 }
