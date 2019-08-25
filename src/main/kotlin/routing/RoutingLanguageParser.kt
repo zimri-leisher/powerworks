@@ -38,12 +38,16 @@ private enum class TokenType(val regex: Regex, val category: TokenCategory = Tok
             TokenCategory.RIGHT_OPERATOR, TokenPrecedence.MEDIUM),
     NETWORK_QUANTITY(Regex("""network_quantity"""),
             TokenCategory.RIGHT_OPERATOR, TokenPrecedence.MEDIUM),
+    TOTAL_QUANTITY(Regex("""total_quantity"""),
+            TokenCategory.STATEMENT, TokenPrecedence.MEDIUM),
+    NETWORK_TOTAL_QUANTITY(Regex("""network_total_quantity"""),
+            TokenCategory.STATEMENT, TokenPrecedence.MEDIUM),
     OF(Regex("""of""")),
     LEFT_PARENTHESIS(Regex("""\(""")),
     RIGHT_PARENTHESIS(Regex("""\)"""));
 }
 
-private enum class BinaryOperator(val tokenType: TokenType, private val evaluate: (left: String, right: String, context: ResourceNode<*>) -> Any?) {
+private enum class BinaryOperator(val tokenType: TokenType, private val evaluate: (left: String, right: String, context: ResourceNode) -> Any?) {
     PLUS(TokenType.PLUS, { left, right, _ -> left.toInt() + right.toInt() }),
     MINUS(TokenType.MINUS, { left, right, _ -> left.toInt() - right.toInt() }),
     MULTIPLY(TokenType.MULTIPLY, { left, right, _ -> left.toInt() * right.toInt() }),
@@ -54,12 +58,12 @@ private enum class BinaryOperator(val tokenType: TokenType, private val evaluate
     LESS_THAN_OR_EQUAL_TO(TokenType.LESS_THAN_OR_EQUAL_TO, { left, right, _ -> left.toInt() <= right.toInt() }),
     EQUALS(TokenType.EQUALS, { left, right, _ -> left == right });
 
-    fun evaluate(left: String, right: String, context: ResourceNode<*>): String {
+    fun evaluate(left: String, right: String, context: ResourceNode): String {
         return evaluate.invoke(left, right, context).toString()
     }
 }
 
-private enum class SingleOperator(val tokenType: TokenType, private val evaluate: (arg: String, context: ResourceNode<*>) -> Any?) {
+private enum class SingleOperator(val tokenType: TokenType, private val evaluate: (arg: String, context: ResourceNode) -> Any?) {
     CONTAINS(TokenType.CONTAINS, { arg, context -> ResourceType.getType(arg.replace("_", " "))?.let { context.attachedContainer.getQuantity(it) >= 1 } }),
     NETWORK_CONTAINS(TokenType.NETWORK_CONTAINS, { arg, context -> ResourceType.getType(arg.replace("_", " "))?.let { context.network.getQuantity(it) >= 1 } }),
     QUANTITY(TokenType.QUANTITY, { arg, context ->
@@ -71,13 +75,24 @@ private enum class SingleOperator(val tokenType: TokenType, private val evaluate
     }),
     NETWORK_QUANTITY(TokenType.NETWORK_QUANTITY, { arg, context -> ResourceType.getType(arg.replace("_", " "))?.let { context.network.getQuantity(it) } });
 
-    fun evaluate(arg: String, context: ResourceNode<*>): String {
+    fun evaluate(arg: String, context: ResourceNode): String {
         return evaluate.invoke(arg, context).toString()
     }
 }
 
+private enum class Statements(val tokenType: TokenType, private val evaluate: (context: ResourceNode) -> Any?) {
+    TOTAL_QUANTITY(TokenType.TOTAL_QUANTITY, {
+        println("evaluating total quantity for context: $it")
+        it.attachedContainer.totalQuantity }),
+    NETWORK_TOTAL_QUANTITY(TokenType.NETWORK_TOTAL_QUANTITY, { it.network.totalQuantity });
+
+    fun evaluate(context: ResourceNode): String {
+        return evaluate.invoke(context).toString()
+    }
+}
+
 private enum class TokenCategory {
-    LITERAL, BINARY_OPERATOR, RIGHT_OPERATOR, LEFT_OPERATOR, OTHER
+    LITERAL, BINARY_OPERATOR, RIGHT_OPERATOR, LEFT_OPERATOR, STATEMENT, OTHER
 }
 
 private enum class TokenPrecedence {
@@ -92,7 +107,7 @@ private data class Token(val type: TokenType, val value: String) {
 }
 
 sealed class Node(val token: Token) {
-    fun visit(context: ResourceNode<*>): String {
+    fun visit(context: ResourceNode): String {
         when (token.type.category) {
             TokenCategory.LITERAL -> return token.value
             TokenCategory.BINARY_OPERATOR -> {
@@ -109,12 +124,21 @@ sealed class Node(val token: Token) {
                 println("function: $func, eval ($arg): ${func.evaluate(arg, context)}")
                 return func.evaluate(arg, context)
             }
+            TokenCategory.STATEMENT -> {
+                this as Statement
+                val func = Statements.values().first { it.tokenType == token.type }
+                return func.evaluate(context)
+            }
             else -> return ""
         }
     }
 }
 
 private class Literal(token: Token) : Node(token) {
+    override fun toString() = token.value
+}
+
+private class Statement(token: Token) : Node(token) {
     override fun toString() = token.value
 }
 
@@ -144,6 +168,7 @@ private class RoutingLanguageParse(val text: String) {
         editedText = editedText.replace("*", " * ").replace("/", " / ").replace("+", " + ").replace("-", " - ")
         // syntax sugar
         editedText = editedText.replace("network contains", "network_contains").replace("network quantity", "network_quantity")
+        editedText = editedText.replace("total quantity", "total_quantity").replace("network total quantity", "network_total_quantity")
         for (word in editedText.split(" ").mapNotNull { if (it.all { char -> char == ' ' }) null else it.trim() }) {
             val matchingToken = TokenType.values().firstOrNull { it.regex.matchEntire(word) != null }
             if (matchingToken != null) {
@@ -201,11 +226,14 @@ private class RoutingLanguageParse(val text: String) {
     }
 
     private fun nextFactor(): Node {
-        // a factor is an expression that could begin an expression
+        // a factor is an part that could begin an expression
         val token = currentToken
         if (token.type.category == TokenCategory.LITERAL) {
             eat(token.type)
             return Literal(token)
+        } else if (token.type.category == TokenCategory.STATEMENT) {
+            eat(token.type)
+            return Statement(token)
         } else if (token.type.category == TokenCategory.RIGHT_OPERATOR) {
             if (currentIndex != tokens.lastIndex) {
                 eat(token.type)
@@ -229,7 +257,7 @@ private class RoutingLanguageParse(val text: String) {
 
 class RoutingLanguageStatement(private val node: Node) {
 
-    fun evaluate(context: ResourceNode<*>) = node.visit(context).toBoolean()
+    fun evaluate(context: ResourceNode) = node.visit(context).toBoolean()
 
     override fun toString() = node.toString()
 
@@ -241,8 +269,7 @@ class RoutingLanguageStatement(private val node: Node) {
 
 object RoutingLanguage {
 
-
-
+    // TODO add specifying for destination nodes in routing language
     fun parse(text: String): RoutingLanguageStatement {
         if (text.toLowerCase() == "true")
             return RoutingLanguageStatement.TRUE

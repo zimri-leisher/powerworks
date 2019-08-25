@@ -1,6 +1,6 @@
 package resource
 
-abstract class ResourceContainer<R : ResourceType>(val resourceCategory: ResourceCategory, var typeRule: ResourceContainer<R>.(ResourceType) -> Boolean = { true }) {
+abstract class ResourceContainer(val resourceCategory: ResourceCategory, var typeRule: ResourceContainer.(ResourceType) -> Boolean = { true }) {
 
     // TODO worried about forgetting checkIfAble and thus skipping add/remove rule checks, how2fix?? thoughts from later - still dont know.
 
@@ -8,12 +8,12 @@ abstract class ResourceContainer<R : ResourceType>(val resourceCategory: Resourc
      * Should be checked in the addition method of all resource containers. If false, and the checkIfAble arg of the add method is true, no addition operation will be done
      * This is not checked in the spaceFor method
      */
-    var additionRule: ResourceContainer<R>.(ResourceType, Int) -> Boolean = { _, _ -> true }
+    var additionRule: ResourceContainer.(ResourceType, Int) -> Boolean = { _, _ -> true }
     /**
      * Should be checked in the removal method of all resource containers. If false, and the checkIfAble arg of the remove method is true, no removal operation will be done
      * This is not checked in the contains method
      */
-    var removalRule: ResourceContainer<R>.(ResourceType, Int) -> Boolean = { _, _ -> true }
+    var removalRule: ResourceContainer.(ResourceType, Int) -> Boolean = { _, _ -> true }
 
     /**
      * Mutator methods should send appropriate calls to these
@@ -30,12 +30,19 @@ abstract class ResourceContainer<R : ResourceType>(val resourceCategory: Resourc
      * @param from the node that is adding to this, null if none
      * @return true on successful addition
      */
-    abstract fun add(resource: ResourceType, quantity: Int = 1, from: ResourceNode<*>? = null, checkIfAble: Boolean = true): Boolean
+    abstract fun add(resource: ResourceType, quantity: Int = 1, from: ResourceNode? = null, checkIfAble: Boolean = true): Boolean
 
     /**
-     * If this is able to accept the specified resource in the specified quantity
+     * If this is able to accept the specified resource in the specified quantity. Doesn't take into account expected resources because
+     * they aren't yet present
      */
-    abstract fun spaceFor(resource: R, quantity: Int = 1): Boolean
+    open fun spaceFor(resource: ResourceType, quantity: Int = 1) = spaceFor(ResourceList(resource to quantity))
+
+    /**
+     * If this is able to accept the specified resources. Doesn't take into account expected resources because
+     * they aren't yet present
+     */
+    abstract fun spaceFor(list: ResourceList): Boolean
 
     /**
      * Removes the specified resource with the specified quantity from this node, and notifies listeners of this event
@@ -45,21 +52,44 @@ abstract class ResourceContainer<R : ResourceType>(val resourceCategory: Resourc
      * @param to the node that is removing from this, null if none
      * @return true on successful removal
      */
-    abstract fun remove(resource: ResourceType, quantity: Int = 1, to: ResourceNode<*>? = null, checkIfAble: Boolean = true): Boolean
+    abstract fun remove(resource: ResourceType, quantity: Int = 1, to: ResourceNode? = null, checkIfAble: Boolean = true): Boolean
 
     /**
-     * If this has the specified resource in the specified quantity
+     * Tells the container to expect some resources to be added later. These are not able to be used by the player.
+     * When the next resource with the same type is [add]ed, a corresponding quantity will be removed
+     * from expectations.
+     * @return true if the container will be able to fit these resources (in addition to other expected resources)
      */
-    abstract fun contains(resource: R, quantity: Int = 1): Boolean
+    abstract fun expect(resource: ResourceType, quantity: Int = 1): Boolean
 
     /**
-     * Removes all resources from this node, and notifies listeners of this event
+     * Removes from the expected resources (which are added with [expect]). Expected resources but are not able
+     * to be used by the player. When the next resource with the same type is [add]ed, a corresponding quantity will
+     * be removed from expectations.
+     * @return true if the resources were expected (and are no longer)
+     */
+    abstract fun cancelExpectation(resource: ResourceType, quantity: Int = 1): Boolean
+
+    /**
+     * If this has the specified resource in the specified quantity. Doesn't take into account expected resources because
+     * they aren't yet present
+     */
+    open fun contains(resource: ResourceType, quantity: Int = 1) = contains(ResourceList(resource to quantity))
+
+    /**
+     * If this has the specified resource in the specified quantity. Doesn't take into account expected resources because
+     * they aren't yet present
+     */
+    abstract fun contains(list: ResourceList): Boolean
+
+    /**
+     * Removes all resources from this container
      */
     abstract fun clear()
 
-    fun canAdd(resource: ResourceType, quantity: Int = 1) = isRightType(resource) && additionRule(resource, quantity) && spaceFor(resource as R, quantity)
+    fun canAdd(resource: ResourceType, quantity: Int = 1) = isRightType(resource) && additionRule(resource, quantity) && spaceFor(resource, quantity)
 
-    fun canRemove(resource: ResourceType, quantity: Int = 1) = isRightType(resource) && removalRule(resource, quantity) && contains(resource as R, quantity)
+    fun canRemove(resource: ResourceType, quantity: Int = 1) = isRightType(resource) && removalRule(resource, quantity) && contains(resource, quantity)
 
     fun isRightType(resource: ResourceType) = resource.category == resourceCategory && typeRule(resource)
 
@@ -68,9 +98,14 @@ abstract class ResourceContainer<R : ResourceType>(val resourceCategory: Resourc
      *
      * *NOTE* - does not copy listeners for changes
      */
-    abstract fun copy(): ResourceContainer<R>
+    abstract fun copy(): ResourceContainer
 
     abstract fun getQuantity(resource: ResourceType): Int
 
-    abstract fun toList(): ResourceList
+    abstract fun resourceList(): ResourceList
+
+    /**
+     * @return a set of [ResourceType]s present with quantity greater than 0
+     */
+    abstract fun typeList(): Set<ResourceType>
 }

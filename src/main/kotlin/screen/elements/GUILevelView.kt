@@ -108,6 +108,7 @@ class GUILevelView(parent: RootGUIElement,
             x = ((camera.xPixel - this@GUILevelView.xPixel + (Game.WIDTH - this@GUILevelView.widthPixels) / 2) * Game.SCALE).toFloat()
             y = ((camera.yPixel - this@GUILevelView.yPixel + (Game.HEIGHT - this@GUILevelView.heightPixels) / 2) * Game.SCALE).toFloat()
         }
+        moveListeners.forEach { it.onCameraMove(this, camera.xPixel, camera.yPixel) }
         cameraMatrix.update()
     }
 

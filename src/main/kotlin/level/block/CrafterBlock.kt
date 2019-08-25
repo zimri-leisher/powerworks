@@ -15,7 +15,7 @@ open class CrafterBlock(override val type: CrafterBlockType, xTile: Int, yTile: 
     override val crafterType: Crafter.Type
         get() = type.crafterType
 
-    val crafterGUI = CrafterBlockGUI(this)
+    val gui = CrafterBlockGUI(this)
     var recipe: Recipe? = null
 
     private var currentResources = ResourceList()
@@ -32,13 +32,18 @@ open class CrafterBlock(override val type: CrafterBlockType, xTile: Int, yTile: 
         }
     }
 
-    override fun onContainerClear(container: ResourceContainer<*>) {
+    override fun onRemoveFromLevel() {
+        super.onRemoveFromLevel()
+        gui.open = false
+    }
+
+    override fun onContainerClear(container: ResourceContainer) {
         // basically, refresh the current resource list
         currentResources.clear()
         currentResources = containers.toList()
     }
 
-    override fun onContainerChange(container: ResourceContainer<*>, resource: ResourceType, quantity: Int) {
+    override fun onContainerChange(container: ResourceContainer, resource: ResourceType, quantity: Int) {
         if (quantity < 0) {
             currentResources.remove(resource, -quantity)
         } else if (quantity > 0) {
@@ -65,7 +70,7 @@ open class CrafterBlock(override val type: CrafterBlockType, xTile: Int, yTile: 
 
     override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
         if (type == PressType.PRESSED && button == Input.Buttons.LEFT) {
-            crafterGUI.toggle()
+            gui.toggle()
         }
     }
 }

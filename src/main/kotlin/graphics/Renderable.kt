@@ -1,6 +1,9 @@
 package graphics
 
-abstract class Renderable() {
+/**
+ * Something that is able to be rendered, e.g. a [Texture] or an [Animation]
+ */
+abstract class Renderable {
     abstract val yPixelOffset: Int
     abstract val xPixelOffset: Int
     abstract val widthPixels: Int

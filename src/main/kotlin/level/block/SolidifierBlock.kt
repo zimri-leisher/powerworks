@@ -21,7 +21,12 @@ class SolidifierBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(Mach
         containers.forEach { it.listeners.add(this) }
     }
 
-    override fun onContainerChange(container: ResourceContainer<*>, resource: ResourceType, quantity: Int) {
+    override fun onRemoveFromLevel() {
+        super.onRemoveFromLevel()
+        gui.open = false
+    }
+
+    override fun onContainerChange(container: ResourceContainer, resource: ResourceType, quantity: Int) {
         if (container == tank) {
             if (tank.currentAmount > 0) {
                 currentlySolidifying = tank.currentFluidType!! as MoltenOreFluidType
@@ -33,7 +38,7 @@ class SolidifierBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(Mach
         }
     }
 
-    override fun onContainerClear(container: ResourceContainer<*>) {
+    override fun onContainerClear(container: ResourceContainer) {
         if (container == tank) {
             currentlySolidifying = null
             on = false

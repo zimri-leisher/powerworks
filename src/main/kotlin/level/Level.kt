@@ -15,10 +15,8 @@ import item.ItemType
 import level.block.Block
 import level.moving.MovingObject
 import level.particle.Particle
-import level.pipe.PipeBlockGroup
 import level.tile.OreTileType
 import level.tile.Tile
-import level.tube.TubeBlockGroup
 import main.DebugCode
 import main.Game
 import misc.Geometry
@@ -26,6 +24,7 @@ import misc.Numbers
 import resource.ResourceCategory
 import resource.ResourceNode
 import resource.ResourceType
+import routing.ResourceRoutingNetwork
 import screen.CameraMovementListener
 import screen.elements.GUILevelView
 import screen.mouse.Mouse
@@ -184,7 +183,7 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
             }
         }
 
-        TubeBlockGroup.render()
+        ResourceRoutingNetwork.render()
         Tool.renderAbove()
 
         val chunksInTileRectangle = Chunks.getFromTileRectangle(minX, minY, maxX - minX - 1, maxY - minY - 1)
@@ -208,8 +207,7 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
     }
 
     fun update() {
-        TubeBlockGroup.update()
-        PipeBlockGroup.update()
+        ResourceRoutingNetwork.update()
         updateChunksBeingRendered()
         for (c in loadedChunks) {
             if (c.updatesRequired!!.size == 0 && !c.beingRendered && c.resourceNodes!!.all { it.isEmpty() }) {
@@ -224,7 +222,7 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
     }
 
     // Most of these functions below are messy but they are only used here and only for simplifying boilerplate
-    private fun renderNodeDebug(n: ResourceNode<*>) {
+    private fun renderNodeDebug(n: ResourceNode) {
         val xSign = Geometry.getXSign(n.dir)
         val ySign = Geometry.getYSign(n.dir)
         if (n.behavior.allowOut.possible() == null) {
@@ -486,46 +484,38 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
     }
 
     object ResourceNodes {
-        fun <R : ResourceType> updateAttachments(o: ResourceNode<R>) {
-            val attached = get<R>(o.xTile + Geometry.getXSign(o.dir), o.yTile + Geometry.getYSign(o.dir), o.resourceCategory).filter { it.dir == Geometry.getOppositeAngle(o.dir) }
+        fun updateAttachments(o: ResourceNode) {
+            val attached = get(o.xTile + Geometry.getXSign(o.dir), o.yTile + Geometry.getYSign(o.dir), o.resourceCategory).filter { it.dir == Geometry.getOppositeAngle(o.dir) }
             o.attachedNodes = attached
         }
 
-        fun get(xTile: Int, yTile: Int): List<ResourceNode<*>> {
-            val ret = mutableListOf<ResourceNode<*>>()
+        fun get(xTile: Int, yTile: Int): List<ResourceNode> {
+            val ret = mutableListOf<ResourceNode>()
             Chunks.getFromTile(xTile, yTile).resourceNodes!!.forEach { it.filter { it.xTile == xTile && it.yTile == yTile }.forEach { ret.add(it) } }
             return ret
         }
 
-        fun <R : ResourceType> get(xTile: Int, yTile: Int, resourceCategory: ResourceCategory): List<ResourceNode<R>> {
-            return get(xTile, yTile).filter { it.resourceCategory == resourceCategory } as List<ResourceNode<R>>
+        fun get(xTile: Int, yTile: Int, resourceCategory: ResourceCategory): List<ResourceNode> {
+            return get(xTile, yTile).filter { it.resourceCategory == resourceCategory }
         }
 
-        fun <R : ResourceType> getOutputs(xTile: Int, yTile: Int, resourceCategory: ResourceCategory): List<ResourceNode<R>> {
-            return get<R>(xTile, yTile, resourceCategory).filter { it.allowOut }
-        }
-
-        fun <R : ResourceType> getInputs(xTile: Int, yTile: Int, resourceCategory: ResourceCategory): List<ResourceNode<R>> {
-            return get<R>(xTile, yTile, resourceCategory).filter { it.allowIn }
-        }
-
-        fun getAll(xTile: Int, yTile: Int, predicate: (ResourceNode<*>) -> Boolean = { true }): MutableList<ResourceNode<*>> {
-            val l = mutableListOf<ResourceNode<*>>()
+        fun getAll(xTile: Int, yTile: Int, predicate: (ResourceNode) -> Boolean = { true }): MutableList<ResourceNode> {
+            val l = mutableListOf<ResourceNode>()
             with(Chunks.getFromTile(xTile, yTile)) {
                 resourceNodes!!.forEach { l.addAll(it.filter { predicate(it) && it.xTile == xTile && it.yTile == yTile }) }
             }
             return l
         }
 
-        fun <R : ResourceType> getAll(xTile: Int, yTile: Int, resourceCategory: ResourceCategory, predicate: (ResourceNode<*>) -> Boolean = { true }): MutableList<ResourceNode<R>> {
-            val l = mutableListOf<ResourceNode<R>>()
+        fun getAll(xTile: Int, yTile: Int, predicate: (ResourceNode) -> Boolean = { true }, resourceCategory: ResourceCategory): MutableList<ResourceNode> {
+            val l = mutableListOf<ResourceNode>()
             with(Chunks.getFromTile(xTile, yTile)) {
-                resourceNodes!!.forEach { l.addAll(it.filter { predicate(it) && it.resourceCategory == resourceCategory && it.xTile == xTile && it.yTile == yTile } as List<ResourceNode<R>>) }
+                resourceNodes!!.forEach { l.addAll(it.filter { it.resourceCategory == resourceCategory && predicate(it) && it.xTile == xTile && it.yTile == yTile }) }
             }
             return l
         }
 
-        fun removeAll(xTile: Int, yTile: Int, predicate: (ResourceNode<*>) -> Boolean = { true }) {
+        fun removeAll(xTile: Int, yTile: Int, predicate: (ResourceNode) -> Boolean = { true }) {
             getAll(xTile, yTile, predicate).forEach { remove(it) }
         }
     }
@@ -686,7 +676,7 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
          * If there was already a node at the same position with the same direction, attached container and resource
          * category, it will remove the previous one before finishing addition
          */
-        fun add(resourceNode: ResourceNode<*>) {
+        fun add(resourceNode: ResourceNode) {
             if (resourceNode.inLevel)
                 return
             val c = Chunks.getFromTile(resourceNode.xTile, resourceNode.yTile)
@@ -751,7 +741,7 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
             Game.currentLevel.particles.remove(particle)
         }
 
-        fun remove(resourceNode: ResourceNode<*>) {
+        fun remove(resourceNode: ResourceNode) {
             if (!resourceNode.inLevel)
                 return
             val c = Chunks.getFromTile(resourceNode.xTile, resourceNode.yTile)

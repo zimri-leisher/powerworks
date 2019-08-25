@@ -4,8 +4,8 @@ import com.badlogic.gdx.graphics.Color
 import graphics.Renderer
 import graphics.TextureRenderParams
 import io.PressType
-import level.block.Block
-import level.moving.MovingObject
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Serializer
 import main.DebugCode
 import main.Game
 import java.io.DataOutputStream
@@ -76,7 +76,7 @@ abstract class LevelObject protected constructor(
         }
 
     open fun render() {
-        if(type.requiresRender) {
+        if (type.requiresRender) {
             type.textures.render(this)
             if (Game.currentDebugCode == DebugCode.RENDER_HITBOXES)
                 renderHitbox()
@@ -156,4 +156,5 @@ abstract class LevelObject protected constructor(
         out.writeInt(yPixel)
         out.writeInt(rotation)
     }
+
 }

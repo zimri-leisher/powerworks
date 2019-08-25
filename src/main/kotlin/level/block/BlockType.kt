@@ -20,7 +20,6 @@ import resource.ResourceContainer
 import resource.ResourceNode
 import resource.ResourceType
 import routing.RoutingLanguage
-import routing.RoutingLanguageStatement
 
 open class BlockType<T : Block>(initializer: BlockType<T>.() -> Unit = {}) : LevelObjectType<T>() {
 
@@ -36,14 +35,13 @@ open class BlockType<T : Block>(initializer: BlockType<T>.() -> Unit = {}) : Lev
         ALL.add(this)
     }
 
-    protected fun template(closure: BlockNodesTemplate.() -> Unit) {
+    protected fun nodeTemplate(closure: BlockNodesTemplate.() -> Unit) {
         nodesTemplate.closure()
     }
 
     override fun toString() = name
 
     companion object {
-
         val ALL = mutableListOf<BlockType<*>>()
 
         val ERROR = BlockType<DefaultBlock>()
@@ -66,49 +64,44 @@ open class BlockType<T : Block>(initializer: BlockType<T>.() -> Unit = {}) : Lev
      * at any rotation in the level (if it has nodes)
      */
     inner class BlockNodesTemplate {
-        val containers = mutableListOf<ResourceContainer<*>>()
-        val nodes = mutableListOf<ResourceNode<*>>()
+        val containers = mutableListOf<ResourceContainer>()
+        val nodes = mutableListOf<ResourceNode>()
 
-        fun <R : ResourceType> node(xOffset: Int = 0, yOffset: Int = 0, dir: Int = 0, attachedContainer: ResourceContainer<R>, allowIn: Boolean = false, allowOut: Boolean = false, allowBehaviorModification: Boolean = false): ResourceNode<R> {
-            return ResourceNode(xOffset, yOffset, dir, attachedContainer.resourceCategory, attachedContainer).apply {
-                if (allowIn) {
-                    behavior.allowIn.setStatement(RoutingLanguageStatement.TRUE, null)
-                }
-                if (allowOut) {
-                    behavior.allowOut.setStatement(RoutingLanguageStatement.TRUE, null)
-                }
-                behavior.allowModification = allowBehaviorModification
-                if (containers.all { it !== attachedContainer }) {
-                    containers.add(attachedContainer)
-                }
-                nodes.add(this)
+        fun node(xOffset: Int = 0, yOffset: Int = 0,
+                                    dir: Int = 0,
+                                    attachedContainer: ResourceContainer,
+                                    allowIn: String = "false", allowOut: String = "false",
+                                    forceIn: String = "false", forceOut: String = "false",
+                                    allowBehaviorModification: Boolean = false): ResourceNode {
+            val r = ResourceNode(xOffset, yOffset, dir, attachedContainer.resourceCategory, attachedContainer)
+            with(r.behavior) {
+                this.allowIn.setStatement(RoutingLanguage.parse(allowIn), null)
+                this.allowOut.setStatement(RoutingLanguage.parse(allowOut), null)
+                this.forceIn.setStatement(RoutingLanguage.parse(forceIn), null)
+                this.forceOut.setStatement(RoutingLanguage.parse(forceOut), null)
+                this.allowModification = allowBehaviorModification
             }
-        }
-
-        fun <R : ResourceType> node(xOffset: Int = 0, yOffset: Int = 0, dir: Int = 0, attachedContainer: ResourceContainer<R>, allowIn: String = "false", allowOut: String = "false", forceIn: String = "false", forceOut: String = "false", allowBehaviorModification: Boolean = false): ResourceNode<R> {
-            return ResourceNode(xOffset, yOffset, dir, attachedContainer.resourceCategory, attachedContainer).apply {
-                behavior.allowIn.setStatement(RoutingLanguage.parse(allowIn), null)
-                behavior.allowOut.setStatement(RoutingLanguage.parse(allowOut), null)
-                behavior.forceIn.setStatement(RoutingLanguage.parse(forceIn), null)
-                behavior.forceOut.setStatement(RoutingLanguage.parse(forceOut), null)
-                behavior.allowModification = allowBehaviorModification
-                if (containers.all { it !== attachedContainer }) {
-                    containers.add(attachedContainer)
-                }
-                nodes.add(this)
+            if (containers.none { it === attachedContainer }) {
+                containers.add(attachedContainer)
             }
+            nodes.add(r)
+            return r
         }
 
         private fun instantiateContainers() = containers.associateWith { it.copy() }
 
-        fun instantiate(xTile: Int, yTile: Int, dir: Int): List<ResourceNode<*>> {
+        fun instantiate(xTile: Int, yTile: Int, dir: Int): List<ResourceNode> {
             // todo stop this from being called every tick with a ghost block out
-            val ret = mutableListOf<ResourceNode<*>>()
+            val ret = mutableListOf<ResourceNode>()
             val containers = instantiateContainers()
             for (node in nodes) {
                 val coord = rotate(node.xTile, node.yTile, widthTiles, heightTiles, dir)
                 val newContainer = containers.filter { it.key === node.attachedContainer }.entries.first().value
-                ret.add(node.copy(coord.xTile + xTile, coord.yTile + yTile, Geometry.addAngles(node.dir, dir), attachedContainer = newContainer))
+                val newNode = node.copy(coord.xTile + xTile, coord.yTile + yTile, Geometry.addAngles(node.dir, dir), attachedContainer = newContainer)
+                if(node.behavior.forceOut != newNode.behavior.forceOut) {
+                    println("oopps behaviors diff")
+                }
+                ret.add(newNode)
             }
             return ret
         }
@@ -144,8 +137,8 @@ open class MachineBlockType<T : MachineBlock>(initializer: MachineBlockType<T>.(
             defaultOn = true
             val internalInventory = Inventory(1, 1)
             internalInventory.additionRule = { _, _ -> totalQuantity < 1 }
-            template {
-                node(0, 1, 0, internalInventory, false, true)
+            nodeTemplate {
+                node(0, 1, 0, internalInventory, allowOut = "true", forceOut = "total quantity > 0")
             }
         }
 
@@ -157,12 +150,12 @@ open class MachineBlockType<T : MachineBlock>(initializer: MachineBlockType<T>.(
             textures = LevelObjectTextures(Image.Block.FURNACE)
             loop = true
             hitbox = Hitbox.TILE2X1
-            template {
+            nodeTemplate {
                 val internalInventory = Inventory(1, 1)
                 val internalTank = FluidTank(1)
                 internalInventory.typeRule = { it is OreItemType }
-                node(0, 0, 0, internalInventory, true, false)
-                node(1, 0, 2, internalTank, false, true).outputToLevel = false
+                node(0, 0, 0, internalInventory, "true", "false")
+                node(1, 0, 2, internalTank, "false", "true").outputToLevel = false
             }
         }
         val SOLIDIFIER = MachineBlockType<SolidifierBlock> {
@@ -173,11 +166,11 @@ open class MachineBlockType<T : MachineBlock>(initializer: MachineBlockType<T>.(
             loop = true
             textures = LevelObjectTextures(Animation.SOLIDIFIER)
             hitbox = Hitbox.TILE2X2
-            template {
+            nodeTemplate {
                 val tank = FluidTank(10, { it is MoltenOreFluidType })
                 val out = Inventory(1, 1)
-                node(1, 1, 0, tank, true, false)
-                node(1, 0, 2, out, false, true)
+                node(1, 1, 0, tank, "true", "false")
+                node(1, 0, 2, out, "false", "true")
             }
         }
     }
@@ -202,10 +195,10 @@ class CrafterBlockType(initializer: CrafterBlockType.() -> Unit) : MachineBlockT
             hitbox = Hitbox.TILE2X2
             instantiate = { xPixel, yPixel, rotation -> CrafterBlock(this, xPixel shr 4, yPixel shr 4, rotation) }
             textures = LevelObjectTextures(Image.Block.CRAFTER)
-            template {
+            nodeTemplate {
                 val internalInventory = Inventory(internalStorageSize, 1)
-                node(0, 1, 0, internalInventory, true, false)
-                node(1, 0, 2, internalInventory, false, true)
+                node(0, 1, 0, internalInventory, "true", "false")
+                node(1, 0, 2, internalInventory, "false", "true")
             }
         }
 
@@ -217,11 +210,11 @@ class CrafterBlockType(initializer: CrafterBlockType.() -> Unit) : MachineBlockT
             heightTiles = 3
             textures = LevelObjectTextures(Texture(Image.Block.ROBOT_CRAFTER, xPixelOffset = -8))
             hitbox = Hitbox.TILE3X3
-            template {
+            nodeTemplate {
                 val internalInventory = Inventory(1, 1)
-                node(0, 1, 3, internalInventory, true, false)
-                node(2, 1, 1, internalInventory, true, false)
-                node(1, 0, 2, internalInventory, false, true)
+                node(0, 1, 3, internalInventory, "true", "false")
+                node(2, 1, 1, internalInventory, "true", "false")
+                node(1, 0, 2, internalInventory, "false", "true")
             }
         }
     }
@@ -234,12 +227,12 @@ class FluidTankBlockType(initializer: FluidTankBlockType.() -> Unit) : BlockType
 
     init {
         instantiate = { xPixel, yPixel, rotation -> FluidTankBlock(this, xPixel shr 4, yPixel shr 4, rotation) }
-        template {
+        nodeTemplate {
             val storage = FluidTank(maxAmount)
-            node(0, 0, 0, storage, true, true)
-            node(0, 0, 1, storage, true, true)
-            node(0, 0, 2, storage, true, true)
-            node(0, 0, 3, storage, true, true)
+            node(0, 0, 0, storage, "true", "true")
+            node(0, 0, 1, storage, "true", "true")
+            node(0, 0, 2, storage, "true", "true")
+            node(0, 0, 3, storage, "true", "true")
         }
         initializer()
     }
@@ -261,12 +254,12 @@ class ChestBlockType(initializer: ChestBlockType.() -> Unit) : BlockType<ChestBl
     init {
         instantiate = { xPixel, yPixel, rotation -> ChestBlock(this, xPixel shr 4, yPixel shr 4, rotation) }
         initializer()
-        template {
+        nodeTemplate {
             val storage = Inventory(invWidth, invHeight)
-            node(0, 0, 0, storage, true, true)
-            node(0, 0, 1, storage, true, true)
-            node(0, 0, 2, storage, true, true)
-            node(0, 0, 3, storage, true, true)
+            node(0, 0, 0, storage, "true", "true")
+            node(0, 0, 1, storage, "true", "true")
+            node(0, 0, 2, storage, "true", "true")
+            node(0, 0, 3, storage, "true", "true")
         }
     }
 

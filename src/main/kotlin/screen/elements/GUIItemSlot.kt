@@ -16,7 +16,7 @@ import screen.ScreenManager
 import screen.mouse.Tooltips
 
 
-class GUIItemSlot(parent: RootGUIElement, name: String, xPixel: Int, yPixel: Int, var index: Int, var inv: ResourceContainer<ItemType>,
+class GUIItemSlot(parent: RootGUIElement, name: String, xPixel: Int, yPixel: Int, var index: Int, var inv: ResourceContainer,
                   var isDisplay: Boolean = false, open: Boolean = false, layer: Int = parent.layer + 1) :
         GUIElement(parent, name, xPixel, yPixel, WIDTH, HEIGHT, open, layer) {
 

@@ -31,11 +31,11 @@ class GUIFluidTankMeter(parent: RootGUIElement, name: String, xPixel: Int, yPixe
         }
     }
 
-    override fun onContainerChange(container: ResourceContainer<*>, resource: ResourceType, quantity: Int) {
+    override fun onContainerChange(container: ResourceContainer, resource: ResourceType, quantity: Int) {
         infoText.text = getText()
     }
 
-    override fun onContainerClear(container: ResourceContainer<*>) {
+    override fun onContainerClear(container: ResourceContainer) {
         infoText.text = "0/${tank.maxAmount}"
     }
 

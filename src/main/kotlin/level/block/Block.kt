@@ -14,27 +14,28 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotatio
     override val type = type
 
     /**
-     * The reason this exists and the render method doesn't use the textures defined in the BlockType is because this allows for us to
+     * The reason this exists and the render method doesn't use the textures defined in the [BlockType] is because this allows for us to
      * have animations that are local to this block (that aren't in sync with every other animation of the same type)
      */
     val textures = type.textures
 
     /**
-     * The specific local nodes as specified by BlockType.nodesTemplate
+     * The specific local nodes as specified by [BlockType.nodesTemplate]
      *
-     * For example, for a block of type MachineBlockType.MINER, this would consist of 1 node at (0, 0) relative, pointing up by default. It automatically takes rotation
+     * For example, for a block of type [MachineBlockType.MINER], this would consist of 1 node at (0, 0) relative, pointing up by default. It automatically takes rotation
      * into account, so, for example, if that same block were placed with a rotation of 1 (rotated 90 degrees clockwise), the node would be at (1, 0) relative, pointing right.
      */
-    val nodes = ResourceNodeGroup("Block at $xTile, $yTile, type: $type's node group", type.nodesTemplate.instantiate(xTile, yTile, rotation))
+    val nodes = ResourceNodeGroup(type.nodesTemplate.instantiate(xTile, yTile, rotation))
+
     /**
-     * The specific local containers as specified by BlockType.nodesTemplate
+     * The specific local containers as specified by [BlockType.nodesTemplate]
      *
-     * For example, for a block of type ChestBlockType.SMALL_CHEST, this would consist of a single 8x3 inventory
+     * For example, for a block of type [ChestBlockType.SMALL], this would consist of a single 8x3 inventory
      */
     val containers = ResourceContainerGroup(nodes.getAttachedContainers())
 
     /**
-     * Don't forget to call super.onAddToLevel() in subclasses overriding this so that the onAdjacentBlockAdd methods of adjacent blocks are called
+     * Don't forget to call super.onAddToLevel() in subclasses overriding this so that the [onAdjacentBlockAdd] methods of adjacent blocks are called
      */
     override fun onAddToLevel() {
         ParticleEffect.BLOCK_PLACE.instantiate(this)
@@ -81,14 +82,14 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotatio
     }
 
     /**
-     * When an adjacent block is removed from the level
+     * Called when an adjacent block is removed from the level
      */
     open fun onAdjacentBlockRemove(b: Block) {
 
     }
 
     /**
-     * When an adjacent block is added to the level
+     * Called when an adjacent block is added to the level
      */
     open fun onAdjacentBlockAdd(b: Block) {
 

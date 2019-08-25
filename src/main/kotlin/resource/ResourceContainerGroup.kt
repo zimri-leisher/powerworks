@@ -1,9 +1,6 @@
 package resource
 
-import java.io.DataInputStream
-import java.io.DataOutputStream
-
-class ResourceContainerGroup(private val containers: List<ResourceContainer<*>>) {
+class ResourceContainerGroup(private val containers: List<ResourceContainer>) {
 
     val size
         get() = containers.size
@@ -12,7 +9,7 @@ class ResourceContainerGroup(private val containers: List<ResourceContainer<*>>)
      * Same as the add method except gets called for each individual resource-quantity pairs
      * @return true if all were successfully added. Even if one was unable to be added, it will still try to add all the rest
      */
-    fun add(list: ResourceList, from: ResourceNode<*>? = null, checkIfAble: Boolean = true): Boolean {
+    fun add(list: ResourceList, from: ResourceNode? = null, checkIfAble: Boolean = true): Boolean {
         var ret = true
         for ((r, q) in list) {
             if (!add(r, q, from, checkIfAble)) ret = false
@@ -26,7 +23,7 @@ class ResourceContainerGroup(private val containers: List<ResourceContainer<*>>)
      * @param checkIfAble whether or not to check if the receiving container is able to hold the resources before beginning the adding process
      * @return true if a container was able to accept this
      */
-    fun add(resource: ResourceType, quantity: Int, from: ResourceNode<*>? = null, checkIfAble: Boolean = true): Boolean {
+    fun add(resource: ResourceType, quantity: Int, from: ResourceNode? = null, checkIfAble: Boolean = true): Boolean {
         for (container in containers) {
             if (container.add(resource, quantity, from, checkIfAble))
                 return true
@@ -38,7 +35,7 @@ class ResourceContainerGroup(private val containers: List<ResourceContainer<*>>)
      * Removes all resources in the list (only once per type) from containers in this group, if possible
      * @return false if any resource/quantity pair was unable to be removed from any container in this group
      */
-    fun remove(list: ResourceList, to: ResourceNode<*>? = null, checkIfAble: Boolean = true): Boolean {
+    fun remove(list: ResourceList, to: ResourceNode? = null, checkIfAble: Boolean = true): Boolean {
         var ret = true
         for ((r, q) in list) {
             if (!remove(r, q, to, checkIfAble))
@@ -53,7 +50,7 @@ class ResourceContainerGroup(private val containers: List<ResourceContainer<*>>)
      * @param checkIfAble whether or not to check if the container contains the specified resources
      * @return true if a container had this amount and type removed from it
      */
-    fun remove(resource: ResourceType, quantity: Int, to: ResourceNode<*>? = null, checkIfAble: Boolean = true): Boolean {
+    fun remove(resource: ResourceType, quantity: Int, to: ResourceNode? = null, checkIfAble: Boolean = true): Boolean {
         for (container in containers) {
             if (container.remove(resource, quantity, to, checkIfAble))
                 return true
@@ -66,7 +63,7 @@ class ResourceContainerGroup(private val containers: List<ResourceContainer<*>>)
      */
     fun toList(): ResourceList {
         val list = ResourceList()
-        containers.forEach { list.addAll(it.toList()) }
+        containers.forEach { list.addAll(it.resourceList()) }
         return list
     }
 
@@ -80,9 +77,9 @@ class ResourceContainerGroup(private val containers: List<ResourceContainer<*>>)
         return q
     }
 
-    fun first(p: (ResourceContainer<*>) -> Boolean) = containers.first(p)
+    fun first(p: (ResourceContainer) -> Boolean) = containers.first(p)
 
-    fun forEach(f: (ResourceContainer<*>) -> Unit) = containers.forEach(f)
+    fun forEach(f: (ResourceContainer) -> Unit) = containers.forEach(f)
 
     operator fun iterator() = containers.iterator()
 

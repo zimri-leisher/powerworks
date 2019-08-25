@@ -7,6 +7,9 @@ import io.*
 import item.BlockItemType
 import item.ItemType
 import item.LivingItemType
+import kotlinx.serialization.*
+import kotlinx.serialization.internal.StringDescriptor
+import kotlinx.serialization.json.JSON
 import level.Hitbox
 import level.Level
 import level.LevelObject
@@ -121,11 +124,11 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
 
         object ResourceNodeEditor : Tool(Control.EDIT_RESOURCE_NODE) {
 
-            var selectedNodes = listOf<ResourceNode<*>>()
+            var selectedNodes = listOf<ResourceNode>()
 
             override fun onUse(control: Control, type: PressType, mouseLevelXPixel: Int, mouseLevelYPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
-                if(currentlyActive) {
-                    if(type == PressType.RELEASED) {
+                if (currentlyActive) {
+                    if (type == PressType.RELEASED) {
                         RoutingLanguageEditor.node = selectedNodes.first()
                         RoutingLanguageEditor.open = true
                     }
@@ -150,7 +153,7 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
 
             override fun update() {
                 val item = Mouse.heldItemType
-                if(item != null && item is LivingItemType) {
+                if (item != null && item is LivingItemType) {
                     // TODO make this
                 }
             }
@@ -165,7 +168,7 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
                 if (currentlyActive) {
                     if (type == PressType.PRESSED) {
                         if (control == Control.REMOVE_SELECTED_BLOCKS) {
-                            if(Selector.selected.isNotEmpty()) {
+                            if (Selector.selected.isNotEmpty()) {
                                 Selector.selected.filter { it is Block }.forEach {
                                     it as Block
                                     Level.remove(it)
@@ -210,7 +213,7 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
                                 if (ghostBlock != null) {
                                     val gBlock = ghostBlock!!
                                     if (Level.add(gBlock.type.instantiate(gBlock.xPixel, gBlock.yPixel, gBlock.rotation))) {
-                                        if(Mouse.heldItemType != null) {
+                                        if (Mouse.heldItemType != null) {
                                             val h = Mouse.heldItemType!! // todo why is this crashing occasionally
                                             Game.mainInv.remove(h, 1)
                                         }
@@ -356,23 +359,18 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
         object Debug : Tool(Control.Group.INTERACTION) {
 
             override fun onUse(control: Control, type: PressType, mouseLevelXPixel: Int, mouseLevelYPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
-                if (currentlyActive) {
-                    if (type == PressType.PRESSED) {
-                        Level.Tiles.get(mouseLevelXPixel shr 4, mouseLevelYPixel shr 4).apply {
-                            rotation = (rotation + 1) % 4
-                        }
+                if (type == PressType.PRESSED) {
+                    val obj = Game.currentLevel.selectedLevelObject
+                    if (obj != null) {
+                        //println(JSON.unquoted.stringify(obj.serialize(), obj))
                     }
+
                 }
             }
 
             override fun updateCurrentlyActive() {
-                currentlyActive = false
+                currentlyActive = true
             }
-
-            override fun renderAbove() {
-                Renderer.renderText(Level.Tiles.get(Game.currentLevel.mouseLevelXPixel shr 4, Game.currentLevel.mouseLevelYPixel shr 4).rotation, ((Game.currentLevel.mouseLevelXPixel shr 4) shl 4) + 4, ((Game.currentLevel.mouseLevelYPixel shr 4) shl 4) + 4)
-            }
-
         }
 
         fun renderBelow() {

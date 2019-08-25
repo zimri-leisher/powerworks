@@ -1,11 +1,8 @@
 package level.block
 
 import fluid.FluidTank
-import fluid.FluidType
 import io.*
-import item.IngotItemType
 import item.Inventory
-import item.ItemType
 import item.OreItemType
 import resource.ResourceContainer
 import resource.ResourceContainerChangeListener
@@ -24,14 +21,19 @@ class FurnaceBlock(type: MachineBlockType<FurnaceBlock>, xTile: Int, yTile: Int,
         containers.forEach { it.listeners.add(this) }
     }
 
-    override fun onContainerClear(container: ResourceContainer<*>) {
+    override fun onRemoveFromLevel() {
+        super.onRemoveFromLevel()
+        gui.open = false
+    }
+
+    override fun onContainerClear(container: ResourceContainer) {
         if (container == queue) {
             currentlySmelting = null
             on = false
         }
     }
 
-    override fun onContainerChange(container: ResourceContainer<*>, resource: ResourceType, quantity: Int) {
+    override fun onContainerChange(container: ResourceContainer, resource: ResourceType, quantity: Int) {
         if (container == queue) {
             resource as OreItemType
             if (currentlySmelting == null) {
@@ -59,7 +61,7 @@ class FurnaceBlock(type: MachineBlockType<FurnaceBlock>, xTile: Int, yTile: Int,
         if (queue.totalQuantity > 0) {
             // start smelting another item
             if (queue.getQuantity(currentlySmelting!!) == 0) {
-                currentlySmelting = queue.toList()[0]!!.first as OreItemType
+                currentlySmelting = queue.resourceList()[0]!!.first as OreItemType
             }
             // do nothing, old item still has quantity
         } else {

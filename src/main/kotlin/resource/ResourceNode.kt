@@ -11,14 +11,12 @@ import routing.ResourceRoutingNetwork
  * An example of a place where they appear is the MinerBlock, which uses one to produce the ore it mines
  * from the ground and either put it into the connected inventory or place it on the ground.
  */
-class ResourceNode<R : ResourceType>(
+class ResourceNode(
         val xTile: Int, val yTile: Int,
         val dir: Int,
         val resourceCategory: ResourceCategory,
-        var attachedContainer: ResourceContainer<R>) {
+        var attachedContainer: ResourceContainer) {
 
-    var allowIn = false
-    var allowOut = false
     /**
      * If this node is in the level, meaning it is able to interact with other nodes in the level
      */
@@ -28,7 +26,7 @@ class ResourceNode<R : ResourceType>(
      * Adjacent nodes facing towards this node.
      * This is where resources will get sent to when outputting
      */
-    var attachedNodes: List<ResourceNode<R>> = listOf()
+    var attachedNodes: List<ResourceNode> = listOf()
 
     /**
      * Whether or not this node should be allowed to output resources directly to the level, using the Level.add(ResourceType, Int) method.
@@ -39,12 +37,18 @@ class ResourceNode<R : ResourceType>(
     /**
      * The resource routing network which this is part of
      */
-    var network: ResourceRoutingNetwork<R> = ResourceRoutingNetwork()
+    var network = ResourceRoutingNetwork(resourceCategory)
+    var isInternalNetworkNode = false
+
     /**
      * The input and output behavior of this node. This is where routing language gets put into and evaluated
      */
     var behavior = ResourceNodeBehavior(this)
         private set
+
+    init {
+        ALL.add(this)
+    }
 
     /**
      * @param mustContainEnough whether or not to check if the attached container has enough resources. Set to false if
@@ -55,7 +59,6 @@ class ResourceNode<R : ResourceType>(
     fun canOutput(resource: ResourceType, quantity: Int, mustContainEnough: Boolean = true): Boolean {
         if (!isRightType(resource))
             return false
-        resource as R
         if (!behavior.allowOut.check(resource)) {
             return false
         }
@@ -63,7 +66,7 @@ class ResourceNode<R : ResourceType>(
             if (!attachedContainer.canRemove(resource, quantity))
                 return false
         if (attachedNodes.isNotEmpty()) {
-            if (attachedNodes.all { !it.canInput(resource, quantity) })
+            if (attachedNodes.none { it.canInput(resource, quantity) })
                 return false
         } else if (attachedNodes.isEmpty() && !outputToLevel) {
             return false
@@ -73,13 +76,13 @@ class ResourceNode<R : ResourceType>(
 
     /**
      * @param mustHaveSpace whether or not to check if the attached container has enough space. Set to false if you know
-     * it does or don't care if it doesn't
+     * it does or don't care if it doesn't. This means it will only check the type and behavior of the node (the behavior
+     * may still check for space)
      * @return if the resource is the right type and this node allows input and the attached container can add the resources
      */
     fun canInput(resource: ResourceType, quantity: Int, mustHaveSpace: Boolean = true): Boolean {
         if (!isRightType(resource))
             return false
-        resource as R
         if (!behavior.allowIn.check(resource)) {
             return false
         }
@@ -142,12 +145,23 @@ class ResourceNode<R : ResourceType>(
         return true
     }
 
+    fun update() {
+        for (resource in attachedContainer.typeList()) {
+            if (behavior.forceIn.check(resource)) {
+                network.sendTo(this, resource, 1)
+            }
+            if (behavior.forceOut.check(resource)) {
+                network.takeFrom(this, resource, 1)
+            }
+        }
+    }
+
     /**
      * @return if the resource parameter is of the right resource category
      */
     fun isRightType(resource: ResourceType) = resource.category == resourceCategory
 
-    fun copy(xTile: Int = this.xTile, yTile: Int = this.yTile, dir: Int = this.dir, attachedContainer: ResourceContainer<*> = this.attachedContainer, outputToLevel: Boolean = this.outputToLevel) =
+    fun copy(xTile: Int = this.xTile, yTile: Int = this.yTile, dir: Int = this.dir, attachedContainer: ResourceContainer = this.attachedContainer, outputToLevel: Boolean = this.outputToLevel) =
             ResourceNode(xTile, yTile, dir, resourceCategory, attachedContainer).apply {
                 this.behavior = this@ResourceNode.behavior.copy(this)
                 this.outputToLevel = outputToLevel
@@ -158,14 +172,14 @@ class ResourceNode<R : ResourceType>(
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
-        other as ResourceNode<*>
+        other as ResourceNode
         if (xTile != other.xTile) return false
         if (yTile != other.yTile) return false
         if (dir != other.dir) return false
         if (resourceCategory != other.resourceCategory) return false
         if (attachedContainer != other.attachedContainer) return false
         if (inLevel != other.inLevel) return false
-        if(behavior != other.behavior) return false
+        if (behavior != other.behavior) return false
         return true
     }
 
@@ -176,13 +190,17 @@ class ResourceNode<R : ResourceType>(
         result = 31 * result + resourceCategory.hashCode()
         result = 31 * result + attachedContainer.hashCode()
         result = 31 * result + inLevel.hashCode()
-        result = 31 * result + allowOut.hashCode()
-        result = 31 * result + allowIn.hashCode()
         return result
     }
 
     companion object {
-        fun <R : ResourceType> createCorresponding(n: ResourceNode<R>, attachedContainer: ResourceContainer<R>, behavior: ResourceNodeBehavior) =
+        val ALL = mutableListOf<ResourceNode>()
+
+        fun update() {
+            ALL.forEach { it.update() }
+        }
+
+        fun createCorresponding(n: ResourceNode, attachedContainer: ResourceContainer, behavior: ResourceNodeBehavior) =
                 ResourceNode(n.xTile + Geometry.getXSign(n.dir), n.yTile + Geometry.getYSign(n.dir), Geometry.getOppositeAngle(n.dir), n.resourceCategory, attachedContainer).apply {
                     this.behavior = behavior
                 }

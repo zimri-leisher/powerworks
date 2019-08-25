@@ -25,6 +25,8 @@ import level.block.CrafterBlockType
 import level.block.MachineBlockType
 import mod.ModManager
 import mod.ModPermissionsPolicy
+import resource.ResourceCategory
+import resource.ResourceNode
 import routing.RoutingLanguage
 import screen.IngameGUI
 import screen.MainMenuGUI
@@ -54,14 +56,16 @@ fun toColor(color: Int = 0xFFFFFF, alpha: Float = 1f): Color {
     c.b = (color and 0x000000ff) / 255f
     return c
 }
+
 fun Color.toWhite() = this.set(1f, 1f, 1f, 1f)
 
 fun <K, V> Map<K, V>.joinToString() = toList().joinToString()
 
-fun main(args: Array<String>) {
+fun main() {
     val config = Lwjgl3ApplicationConfiguration()
     config.setWindowedMode(main.Game.WIDTH * main.Game.SCALE, main.Game.HEIGHT * main.Game.SCALE)
     config.setIdleFPS(main.Game.FRAMES_PER_SECOND / 5)
+    config.useVsync(true)
     config.setTitle("Powerworks Industries")
     Lwjgl3Application(Game, config)
 }
@@ -77,7 +81,7 @@ object Game : ApplicationAdapter(), ControlPressHandler {
     const val UPDATES_PER_SECOND = 60
     const val NS_PER_UPDATE: Float = 1000000000f / UPDATES_PER_SECOND
     const val MAX_UPDATES_BEFORE_RENDER = 5
-    var FRAMES_PER_SECOND = 60
+    var FRAMES_PER_SECOND = 30
     var NS_PER_FRAME: Float = 1000000000f / FRAMES_PER_SECOND
 
     /**
@@ -104,8 +108,8 @@ object Game : ApplicationAdapter(), ControlPressHandler {
     var LEVEL_PAUSED = false
 
     var PAUSE_LEVEL_IN_ESCAPE_MENU = false
-    val INVENTORY_WIDTH = 8
 
+    val INVENTORY_WIDTH = 8
     val INVENTOR_HEIGHT = 6
 
     lateinit var currentLevel: Level
@@ -187,6 +191,7 @@ object Game : ApplicationAdapter(), ControlPressHandler {
         Animation.update()
         ScreenManager.update()
         if (State.CURRENT_STATE == State.INGAME) {
+            ResourceNode.update()
             currentLevel.update()
         }
         State.update()
@@ -215,12 +220,6 @@ object Game : ApplicationAdapter(), ControlPressHandler {
         AudioManager.close()
         ModManager.shutdown()
         System.exit(0)
-    }
-
-    fun resetMouseIcon() {
-    }
-
-    fun clearMouseIcon() {
     }
 
     override fun handleControlPress(p: ControlPress) {

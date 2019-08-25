@@ -2,6 +2,7 @@ package screen.elements
 
 import com.badlogic.gdx.Input
 import crafting.Recipe
+import graphics.Renderer
 import io.PressType
 import screen.RecipeSelectorGUI
 
@@ -53,6 +54,10 @@ class GUIRecipeButton(parent: RootGUIElement,
             RecipeSelectorGUI.windowGroup.bringToTop(RecipeSelectorGUI)
             waitingForRecipeSelection = true
         }
+    }
+
+    override fun render() {
+        display.background.localRenderParams.brightness = if(mouseOn) 1.1f else 1f
     }
 
     companion object {

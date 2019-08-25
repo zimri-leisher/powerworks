@@ -7,7 +7,7 @@ import screen.elements.*
 
 object RoutingLanguageEditor : AutoFormatGUIWindow("Routing language editor window", { 0 }, { 0 }, ScreenManager.Groups.PLAYER_UTIL) {
 
-    var node: ResourceNode<*>? = null
+    var node: ResourceNode? = null
 
     class GUIRoutingLanguageRule(parent: RootGUIElement, name: String) : GUIElement(parent, name, 0, 0, GUIButton.WIDTH, GUIButton.HEIGHT + 16) {
         init {

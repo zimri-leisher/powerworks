@@ -1,11 +1,9 @@
 package screen
 
+import graphics.Renderer
 import graphics.text.TextManager
 import item.Inventory
-import screen.elements.GUIDefaultTextureRectangle
-import screen.elements.GUIItemSlot
-import screen.elements.GUIText
-import screen.elements.GUIWindow
+import screen.elements.*
 
 /**
  * A GUIWindow that you can instantiate for any inventory
@@ -24,7 +22,6 @@ class InventoryGUI(name: String,
                 open,
                 layer) {
 
-
     private val itemSlots: Array<GUIItemSlot>
     private val background = GUIDefaultTextureRectangle(this, name + " background", 0, 0)
 
@@ -42,6 +39,14 @@ class InventoryGUI(name: String,
         itemSlots = arr as Array<GUIItemSlot>
         // You want to be able to move and edit inventories at the same time
         partOfLevel = true
+    }
+
+    override fun render() {
+        var index = 0
+        for((resource, quantity) in inv.expected) {
+            resource.icon.render(xPixel, yPixel, GUIItemSlot.WIDTH, GUIItemSlot.HEIGHT, true)
+            Renderer.renderText(quantity, xPixel, yPixel)
+        }
     }
 
     companion object {

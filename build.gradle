@@ -1,7 +1,8 @@
 buildscript {
-    ext.kotlin_version = '1.3.0'
+    ext.kotlin_version = '1.3.10'
     ext.lwjglVersion = "3.0.0a"
     ext.gdxVersion = '1.9.8'
+    ext.serialization_version = '0.9.1'
 
     repositories {
         mavenCentral()
@@ -9,13 +10,13 @@ buildscript {
 
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath "org.jetbrains.kotlin:kotlin-serialization:$kotlin_version"
     }
 }
 
-plugins {
-    id 'java'
-    id "org.jetbrains.kotlin.jvm" version "1.3.0"
-}
+apply plugin: 'java'
+apply plugin: 'kotlin'
+apply plugin: 'kotlinx-serialization'
 
 version '1.0'
 
@@ -23,10 +24,13 @@ repositories {
     mavenCentral()
     maven { url 'https://jitpack.io' }
     maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
+    maven { url "https://kotlin.bintray.com/kotlinx" }
 }
 
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+    compile "org.jetbrains.kotlinx:kotlinx-serialization-runtime-common:$serialization_version"
+    compile "org.jetbrains.kotlinx:kotlinx-serialization-runtime:$serialization_version"
     compile 'com.github.philfrei:AudioCue:-SNAPSHOT'
     compile "com.badlogicgames.gdx:gdx:$gdxVersion"
     compile "com.badlogicgames.gdx:gdx-backend-lwjgl3:$gdxVersion"

@@ -14,12 +14,14 @@ class MinerBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(MachineBl
                         tile.amount -= 1
                     }
                     // if it was already full or if it wasn't, this still happens
+                    /*
                     if (!nodes.output(tile.type.minedItem, 1)) {
                         currentWork = type.maxWork
                     } else {
                         // stop this from sending more than 1 ore
                         return
                     }
+                    */
                 }
             }
         }

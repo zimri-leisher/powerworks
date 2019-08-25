@@ -1,6 +1,8 @@
 module powerworks {
     requires transitive java.desktop;
     requires kotlin.stdlib;
+    requires kotlinx.serialization.runtime;
+    requires kotlinx.serialization.runtime.common;
     requires kotlin.stdlib.jdk8;
     requires AudioCue.SNAPSHOT;
     requires gdx;

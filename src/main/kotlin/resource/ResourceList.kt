@@ -1,7 +1,7 @@
 package resource
 
 /**
- * A list of ResourceType - quantity pairs, where quantity is non zero.
+ * A list of [ResourceType] - quantity pairs, where quantity is non zero.
  *
  * Used in recipes and for easy moving of large quantities of resources between nodes, containers, etc.
  *
@@ -43,16 +43,17 @@ class ResourceList(private val resources: MutableMap<ResourceType, Int> = mutabl
     }
 
     /**
-     * If this doesn't contain enough, IT WILL STILL REMOVE ALL IT CAN!
+     * If this doesn't contain enough, *IT WILL STILL REMOVE ALL IT CAN*!
+     *
+     * @return true if any resources were removed
      */
     fun remove(resource: ResourceType, quantity: Int): Boolean {
         if(resource in resources) {
             if(resources[resource]!! <= quantity) {
                 resources.remove(resource)
-                return false
-            } else {
-                resources.replace(resource, resources[resource]!! - quantity)
                 return true
+            } else {
+                return resources.replace(resource, resources[resource]!! - quantity) != null
             }
         }
         return false
@@ -65,6 +66,8 @@ class ResourceList(private val resources: MutableMap<ResourceType, Int> = mutabl
     operator fun iterator() = resources.iterator()
 
     fun clear() = resources.clear()
+
+    operator fun plus(pair: Pair<ResourceType, Int>) = ResourceList(resources).apply { add(pair.first, pair.second) }
 
     operator fun contains(resource: ResourceType) = resources.containsKey(resource)
 

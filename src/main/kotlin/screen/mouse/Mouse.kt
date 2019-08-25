@@ -18,6 +18,7 @@ import main.State
 import resource.ResourceContainer
 import resource.ResourceContainerChangeListener
 import resource.ResourceType
+import routing.dist
 import screen.HUD
 import screen.ScreenManager
 import screen.elements.*
@@ -106,16 +107,16 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
                 if (t is TubeBlock) {
                     val tubeString = "Tube:\n" +
                             "  Tile: ${t.xTile}, ${t.yTile}\n" +
-                            "  Group: ${t.group.id}\n"
-                    val intersection = t.group.intersections.firstOrNull { it.tubeBlock == t }
+                            "  Group: ${t.network.id}\n"
+                    val intersection = t.network.intersections.firstOrNull { it.tubeBlock == t }
                     val intersectionString =
-                            if (t.group.isIntersection(t) == true && intersection != null)
+                            if (t.shouldBeIntersection() == true && intersection != null)
                                 "Intersection connections:\n" +
-                                        "  Up: ${intersection.connectedTo[0]?.dist}\n" +
-                                        "  Right: ${intersection.connectedTo[1]?.dist}\n" +
-                                        "  Down: ${intersection.connectedTo[2]?.dist}\n" +
-                                        "  Left: ${intersection.connectedTo[3]?.dist}\n"
-                            else if (t.group.isIntersection(t) && intersection == null)
+                                        "  Up: ${intersection.connections[0]?.dist}\n" +
+                                        "  Right: ${intersection.connections[1]?.dist}\n" +
+                                        "  Down: ${intersection.connections[2]?.dist}\n" +
+                                        "  Left: ${intersection.connections[3]?.dist}\n"
+                            else if (t.shouldBeIntersection() && intersection == null)
                                 "Should be intersection but hasn't been added"
                             else "Not intersection\n"
                     Renderer.renderText(tubeString + intersectionString, xPixel, yPixel)
@@ -135,7 +136,9 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
                 val nodes = Level.ResourceNodes.get(Game.currentLevel.mouseLevelXPixel shr 4, Game.currentLevel.mouseLevelYPixel shr 4)
                 val s = StringBuilder()
                 for (n in nodes) {
-                    s.append("    in: ${n.allowIn}, out: ${n.allowOut}, dir: ${n.dir}\n")
+                    s.append("    in: ${n.behavior.allowIn},       out: ${n.behavior.allowOut}\n" +
+                            "    force in: ${n.behavior.forceIn}, forceOut: ${n.behavior.forceOut}\n" +
+                            "    dir: ${n.dir}\n")
                 }
                 Renderer.renderText("Resource nodes at ${Game.currentLevel.mouseLevelXPixel shr 4}, ${Game.currentLevel.mouseLevelYPixel shr 4}:\n$s", xPixel, yPixel)
             }
@@ -171,10 +174,10 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
         }
     }
 
-    override fun onContainerClear(container: ResourceContainer<*>) {
+    override fun onContainerClear(container: ResourceContainer) {
     }
 
-    override fun onContainerChange(container: ResourceContainer<*>, resource: ResourceType, quantity: Int) {
+    override fun onContainerChange(container: ResourceContainer, resource: ResourceType, quantity: Int) {
         if (container == Game.mainInv && heldItemType != null) {
             if (Game.mainInv.getQuantity(heldItemType!!) == 0)
                 heldItemType = null

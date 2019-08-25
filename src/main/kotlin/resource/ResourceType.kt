@@ -1,8 +1,10 @@
 package resource
 
-import com.badlogic.gdx.graphics.g2d.TextureRegion
 import graphics.Renderable
 
+/**
+ * A type of resource, e.g. [item.ItemType.CABLE] or [fluid.MoltenOreFluidType.MOLTEN_COPPER]
+ */
 abstract class ResourceType {
     abstract val icon: Renderable
     abstract val category: ResourceCategory

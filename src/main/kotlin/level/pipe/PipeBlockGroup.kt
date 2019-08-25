@@ -9,7 +9,7 @@ class PipeBlockGroup {
     private val pipes = mutableListOf<PipeBlock>()
     private val storage = PipeBlockInternalStorage(this)
     val id = nextId++
-    val nodes = ResourceNodeGroup("Pipe block group $id")
+    val nodes = ResourceNodeGroup()
 
     val size: Int
         get() = pipes.size
@@ -18,7 +18,7 @@ class PipeBlockGroup {
         ALL.add(this)
     }
 
-    fun createCorrespondingNodes(nodes: List<ResourceNode<FluidType>>) {
+    fun createCorrespondingNodes(nodes: List<ResourceNode>) {
         val new = nodes.map {
             val behavior = ResourceNodeBehavior(it)
             behavior.allowOut.setStatement(RoutingLanguageStatement.TRUE, null)
@@ -50,7 +50,6 @@ class PipeBlockGroup {
             }
         }
         other.nodes.forEach {
-            it as ResourceNode<FluidType>
             if (it !in nodes) {
                 it.attachedContainer = storage
                 nodes.add(it)
@@ -71,15 +70,14 @@ class PipeBlockGroup {
         pipes.remove(p)
     }
 
-    class PipeBlockInternalStorage(val parent: PipeBlockGroup) : ResourceContainer<FluidType>(ResourceCategory.FLUID) {
-
+    class PipeBlockInternalStorage(val parent: PipeBlockGroup) : ResourceContainer(ResourceCategory.FLUID) {
         // watch out, if somebody called add or remove and had checkable to false they could insert any liquid into this network and it would become the current one
         // so, a possible dupe bug
-
         override val totalQuantity: Int
             get() = currentAmount
 
         var currentFluidType: FluidType? = null
+
         var currentAmount = 0
             set(value) {
                 field = value
@@ -96,12 +94,10 @@ class PipeBlockGroup {
             }
         }
 
-        override fun add(resource: ResourceType, quantity: Int, from: ResourceNode<*>?, checkIfAble: Boolean): Boolean {
+        override fun add(resource: ResourceType, quantity: Int, from: ResourceNode?, checkIfAble: Boolean): Boolean {
             if (checkIfAble)
                 if (!canAdd(resource, quantity))
                     return false
-            // doing this so nobody can really fuck this over and put in a different resourcecategory because of checkable
-            // this isn't bad code i promise, it's for performance and it's easy to have not happen!
             resource as FluidType
             if (currentFluidType == null)
                 currentFluidType = resource
@@ -109,9 +105,16 @@ class PipeBlockGroup {
             return true
         }
 
-        override fun spaceFor(resource: FluidType, quantity: Int) = currentFluidType == null || (resource == currentFluidType && currentAmount + quantity <= maxAmount)
+        override fun spaceFor(list: ResourceList): Boolean {
+            for ((resource, quantity) in list) {
+                if (!(currentFluidType == null || (resource == currentFluidType && currentAmount + quantity <= maxAmount))) {
+                    return false
+                }
+            }
+            return true
+        }
 
-        override fun remove(resource: ResourceType, quantity: Int, to: ResourceNode<*>?, checkIfAble: Boolean): Boolean {
+        override fun remove(resource: ResourceType, quantity: Int, to: ResourceNode?, checkIfAble: Boolean): Boolean {
             if (checkIfAble)
                 if (!canRemove(resource, quantity))
                     return false
@@ -122,14 +125,30 @@ class PipeBlockGroup {
             return true
         }
 
-        override fun contains(resource: FluidType, quantity: Int) = resource == currentFluidType && quantity <= currentAmount
+        override fun contains(list: ResourceList): Boolean {
+            for ((resource, quantity) in list) {
+                if (!(resource == currentFluidType && quantity <= currentAmount)) {
+                    return false
+                }
+            }
+            return true
+        }
+
+
+        override fun expect(resource: ResourceType, quantity: Int): Boolean {
+            return false
+        }
+
+        override fun cancelExpectation(resource: ResourceType, quantity: Int): Boolean {
+            return false
+        }
 
         override fun clear() {
             currentAmount = 0
             currentFluidType = null
         }
 
-        override fun copy(): ResourceContainer<FluidType> {
+        override fun copy(): ResourceContainer {
             val ret = PipeBlockInternalStorage(parent)
             ret.currentFluidType = currentFluidType
             ret.currentAmount = currentAmount
@@ -142,12 +161,13 @@ class PipeBlockGroup {
             return 0
         }
 
-        override fun toList(): ResourceList {
+        override fun resourceList(): ResourceList {
             if (currentFluidType == null || currentAmount == 0)
                 return ResourceList()
             return ResourceList(currentFluidType!! to currentAmount)
         }
 
+        override fun typeList() = if (currentFluidType == null || currentAmount == 0) emptySet() else setOf(currentFluidType!!)
     }
 
     companion object {

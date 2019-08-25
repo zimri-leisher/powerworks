@@ -1,6 +1,5 @@
 package level.pipe
 
-import fluid.FluidType
 import graphics.Image
 import graphics.Renderer
 import level.Level
@@ -25,7 +24,7 @@ class PipeBlock(xTile: Int, yTile: Int) : Block(BlockType.PIPE, xTile, yTile) {
 
     val pipeConnections = arrayOfNulls<PipeBlock>(4)
     val nodeConnections = arrayOf<
-            MutableList<ResourceNode<FluidType>>
+            MutableList<ResourceNode>
             >(mutableListOf(), mutableListOf(), mutableListOf(), mutableListOf())
 
     val closedEnds: Array<Boolean>
@@ -109,7 +108,7 @@ class PipeBlock(xTile: Int, yTile: Int) : Block(BlockType.PIPE, xTile, yTile) {
         // If there is a node connection, and pipes can't have nodes connecting to other pipes, then no need to check
         if (pipeConnections[dir] == null) {
             // Get all nodes that could possibly disconnect to a node if placed here
-            val nodes = Level.ResourceNodes.getAll<FluidType>(xTile + getXSign(dir), yTile + getYSign(dir), ResourceCategory.FLUID, { isOppositeAngle(it.dir, dir) })
+            val nodes = Level.ResourceNodes.getAll(xTile + getXSign(dir), yTile + getYSign(dir), { isOppositeAngle(it.dir, dir) }, ResourceCategory.FLUID)
             nodeConnections[dir] = nodes
             if (nodes.isNotEmpty()) {
                 group.createCorrespondingNodes(nodes)

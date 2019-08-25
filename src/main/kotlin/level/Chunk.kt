@@ -22,7 +22,7 @@ class Chunk(val parent: Level, val xChunk: Int, val yChunk: Int) {
     var movingOnBoundary: MutableList<MovingObject>? = null
     var updatesRequired: ConcurrentlyModifiableMutableList<LevelObject>? = null
     var droppedItems: MutableList<DroppedItem>? = null
-    var resourceNodes: Array<MutableList<ResourceNode<*>>>? = null
+    var resourceNodes: Array<MutableList<ResourceNode>>? = null
     var beingRendered = false
 
     /* Convenience methods. Assume it is loaded */
@@ -70,11 +70,11 @@ class Chunk(val parent: Level, val xChunk: Int, val yChunk: Int) {
             removeUpdateRequired(m)
     }
 
-    fun addResourceNode(r: ResourceNode<*>) {
+    fun addResourceNode(r: ResourceNode) {
         resourceNodes!![r.resourceCategory.ordinal].add(r)
     }
 
-    fun removeResourceNode(r: ResourceNode<*>) {
+    fun removeResourceNode(r: ResourceNode) {
         resourceNodes!![r.resourceCategory.ordinal].remove(r)
     }
 
