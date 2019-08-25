@@ -41,6 +41,22 @@ import java.security.Policy
 /* Utility extensions */
 fun URL.toFileHandle() = Gdx.files.internal(path)
 
+fun String.fromSnakeCaseToCamelCase(): String {
+    val builder = StringBuilder()
+    var nextIsCap = false
+    for(char in this.toLowerCase()) {
+        if(char == '_') {
+            nextIsCap = true
+        } else if(nextIsCap) {
+            builder.append(char.toUpperCase())
+            nextIsCap = false
+        } else {
+            builder.append(char)
+        }
+    }
+    return builder.toString()
+}
+
 val TextureRegion.widthPixels: Int
     get() = regionWidth
 val TextureRegion.heightPixels: Int
@@ -67,6 +83,7 @@ fun main() {
     config.setIdleFPS(main.Game.FRAMES_PER_SECOND / 5)
     config.useVsync(true)
     config.setTitle("Powerworks Industries")
+    config.setWindowIcon("textures/icon_windows.png")
     Lwjgl3Application(Game, config)
 }
 
@@ -154,6 +171,7 @@ object Game : ApplicationAdapter(), ControlPressHandler {
         State.setState(State.MAIN_MENU)
         Policy.setPolicy(ModPermissionsPolicy())
         System.setSecurityManager(SecurityManager())
+        Test
         ModManager.initialize()
     }
 
@@ -178,7 +196,7 @@ object Game : ApplicationAdapter(), ControlPressHandler {
         if (thisSecond > lastSecondTime) {
             lastSecondTime = thisSecond
             secondsCount++
-            println("$frameCount FPS, $updateCount UPS")
+            //println("$frameCount FPS, $updateCount UPS")
             frameCount = 0
             updateCount = 0
         }

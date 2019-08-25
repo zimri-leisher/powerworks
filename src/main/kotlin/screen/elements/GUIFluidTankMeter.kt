@@ -8,9 +8,18 @@ import resource.ResourceContainer
 import resource.ResourceContainerChangeListener
 import resource.ResourceType
 
-class GUIFluidTankMeter(parent: RootGUIElement, name: String, xPixel: Int, yPixel: Int, widthPixels: Int = WIDTH, heightPixels: Int = HEIGHT, val tank: FluidTank, open: Boolean = false, layer: Int = parent.layer + 2) :
+class GUIFluidTankMeter(parent: RootGUIElement, name: String, xPixel: Int, yPixel: Int, widthPixels: Int = WIDTH, heightPixels: Int = HEIGHT, tank: FluidTank, open: Boolean = false, layer: Int = parent.layer + 2) :
         GUIElement(parent, name, xPixel, yPixel, widthPixels, heightPixels, open, layer + 1), ResourceContainerChangeListener {
 
+    var tank = tank
+        set(value) {
+            if(field != value) {
+                field.listeners.remove(this)
+                field = value
+                value.listeners.add(this)
+                infoText.text = getText()
+            }
+        }
     var infoText: GUIText = GUIText(this, this.name + " tank info text", (widthPixels - TextManager.getStringWidth(getText())) / 2, heightPixels - TextManager.getFont().charHeight.toInt(),
             getText(), TextRenderParams(size = 15)).apply {
         transparentToInteraction = true

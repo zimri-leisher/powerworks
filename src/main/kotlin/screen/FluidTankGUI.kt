@@ -1,9 +1,15 @@
 package screen
 
 import fluid.FluidTank
+import level.block.ChestBlock
+import level.block.FluidTankBlock
 import screen.elements.*
 
-class FluidTankGUI(val tank: FluidTank) : GUIWindow("Fluid tank GUI of $tank", 0, 0, WIDTH, HEIGHT, ScreenManager.Groups.INVENTORY) {
+open class FluidTankGUI(tank: FluidTank) : GUIWindow("Fluid tank GUI", 0, 0, WIDTH, HEIGHT, ScreenManager.Groups.INVENTORY) {
+    var tank = tank
+        protected set
+
+    protected val fluidTankMeter: GUIFluidTankMeter
 
     init {
         partOfLevel = true
@@ -11,7 +17,7 @@ class FluidTankGUI(val tank: FluidTank) : GUIWindow("Fluid tank GUI of $tank", 0
         generateDragGrip(this.layer + 2)
         generateCloseButton(this.layer + 2)
         GUIDefaultTextureRectangle(this, this.name + " background", 0, 0).run {
-            GUIFluidTankMeter(this, this@FluidTankGUI.name + " meter", 1, 1, WIDTH - 2, HEIGHT - 2, tank)
+            fluidTankMeter = GUIFluidTankMeter(this, this@FluidTankGUI.name + " meter", 1, 1, WIDTH - 2, HEIGHT - 2, tank)
         }
     }
 

@@ -4,11 +4,9 @@ import level.*
 import misc.Numbers
 import java.io.DataOutputStream
 
-const val DEFAULT_MAX_SPEED = 20
-const val DEFAULT_DRAG = 4
 
-abstract class MovingObject(type: LevelObjectType<out MovingObject>, xPixel: Int, yPixel: Int, rotation: Int = 0, hitbox: Hitbox) : LevelObject(type, xPixel, yPixel, rotation, hitbox, true) {
-
+abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: Int, yPixel: Int, rotation: Int = 0, hitbox: Hitbox = type.hitbox) : LevelObject(type, xPixel, yPixel, rotation, hitbox, true) {
+    override val type = type
     /* Only allow setting of pixel values because otherwise it would cause infinite loop (unless I added a lot of boilerplate private values) */
     final override var xPixel = xPixel
         set(value) {
@@ -42,15 +40,15 @@ abstract class MovingObject(type: LevelObjectType<out MovingObject>, xPixel: Int
 
     var xVel = 0
         set(value) {
-            if (value > DEFAULT_MAX_SPEED || value < -DEFAULT_MAX_SPEED)
-                field = DEFAULT_MAX_SPEED * Numbers.sign(value)
+            if (value > type.maxSpeed || value < -type.maxSpeed)
+                field = type.maxSpeed * Numbers.sign(value)
             else
                 field = value
         }
     var yVel = 0
         set(value) {
-            if (value > DEFAULT_MAX_SPEED || value < -DEFAULT_MAX_SPEED)
-                field = DEFAULT_MAX_SPEED * Numbers.sign(value)
+            if (value > type.maxSpeed || value < -type.maxSpeed)
+                field = type.maxSpeed * Numbers.sign(value)
             else
                 field = value
         }
@@ -66,8 +64,7 @@ abstract class MovingObject(type: LevelObjectType<out MovingObject>, xPixel: Int
             if (hitbox == Hitbox.NONE)
                 mutableListOf()
             else
-                Level.Chunks.getFromPixelRectangle(hitbox.xStart + xPixel, hitbox.yStart + yPixel, hitbox.width, hitbox.height).toMutableList().
-                        apply { remove(currentChunk) }
+                Level.Chunks.getFromPixelRectangle(hitbox.xStart + xPixel, hitbox.yStart + yPixel, hitbox.width, hitbox.height).toMutableList().apply { remove(currentChunk) }
     val moveListeners = mutableListOf<MovementListener>()
 
     init {
@@ -92,30 +89,32 @@ abstract class MovingObject(type: LevelObjectType<out MovingObject>, xPixel: Int
     }
 
     open fun move() {
-        if (xVel > 0)
-            rotation = 1
-        if (xVel < 0)
-            rotation = 3
-        if (yVel > 0)
-            rotation = 2
-        if (yVel < 0)
-            rotation = 0
-        val pXPixel = xPixel
-        val pYPixel = yPixel
-        val nXPixel = xPixel + xVel
-        val nYPixel = yPixel + yVel
-        var collisions: MutableSet<LevelObject>? = null
         if (xVel != 0 || yVel != 0) {
+            if (xVel > 0)
+                rotation = 1
+            if (xVel < 0)
+                rotation = 3
+            if (yVel > 0)
+                rotation = 2
+            if (yVel < 0)
+                rotation = 0
+            val pXPixel = xPixel
+            val pYPixel = yPixel
+            val nXPixel = xPixel + xVel
+            val nYPixel = yPixel + yVel
+            var collisions: MutableSet<LevelObject>? = null
             val g = getCollision(nXPixel, nYPixel)
+            var xPixelOk = false
+            var yPixelOk = false
             if (g == null) {
-                xPixel = nXPixel
-                yPixel = nYPixel
+                xPixelOk = true
+                yPixelOk = true
             } else {
                 collisions = mutableSetOf(g)
                 if (nXPixel != xPixel) {
                     val o = getCollision(nXPixel, yPixel)
                     if (o == null) {
-                        xPixel = nXPixel
+                        xPixelOk = true
                     } else {
                         collisions.add(o)
                     }
@@ -123,7 +122,7 @@ abstract class MovingObject(type: LevelObjectType<out MovingObject>, xPixel: Int
                 if (nYPixel != yPixel) {
                     val o = getCollision(xPixel, nYPixel)
                     if (o == null) {
-                        yPixel = nYPixel
+                        yPixelOk = true
                     } else {
                         collisions.add(o)
                     }
@@ -132,11 +131,17 @@ abstract class MovingObject(type: LevelObjectType<out MovingObject>, xPixel: Int
             if (collisions != null) {
                 collisions.forEach { it.onCollide(this); this.onCollide(it) }
             }
+            if(xPixelOk || type.ghost) {
+                xPixel = nXPixel
+            }
+            if(yPixelOk || type.ghost) {
+                yPixel = nYPixel
+            }
             if (pXPixel != xPixel || pYPixel != yPixel) {
                 onMove(pXPixel, pYPixel)
             }
-            xVel /= DEFAULT_DRAG
-            yVel /= DEFAULT_DRAG
+            xVel /= type.drag
+            yVel /= type.drag
         }
     }
 

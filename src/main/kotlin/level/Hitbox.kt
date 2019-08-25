@@ -6,6 +6,7 @@ class Hitbox private constructor(val xStart: Int, val yStart: Int, val width: In
         val TILE3X3 = Hitbox(0, 0, 48, 48)
         val TILE2X2 = Hitbox(0, 0, 32, 32)
         val TILE2X1 = Hitbox(0, 0, 32, 16)
+        val STANDARD_ROBOT = Hitbox(3, 0, 16, 16)
         val DROPPED_ITEM = Hitbox(0, 0, 8, 8)
         val NONE = Hitbox(0, 0, 0, 0)
 

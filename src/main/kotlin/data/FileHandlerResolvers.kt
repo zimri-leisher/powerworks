@@ -26,7 +26,7 @@ abstract class PowerworksFileHandleResolver : FileHandleResolver {
                 throw ResourceNotFoundException("Resource at $fileName not found")
             }
         }
-        return FileHandle(File(url.toURI()))
+        return FileHandle(url.file)
     }
 
     abstract fun getPossibilities(fileName: String): List<String>

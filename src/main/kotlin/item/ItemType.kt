@@ -5,8 +5,8 @@ import resource.ResourceType
 import fluid.MoltenOreFluidType
 import graphics.*
 import level.block.*
-import level.living.LivingType
-import level.living.robot.RobotType
+import level.entity.EntityType
+import level.entity.robot.RobotType
 
 private var nextID = 0
 
@@ -54,18 +54,18 @@ open class ItemType(initializer: ItemType.() -> Unit = {}) : ResourceType() {
     }
 }
 
-open class LivingItemType(initializer: LivingItemType.() -> Unit = {}) : ItemType() {
-    var spawnedLivingObject: LivingType<*> = LivingType.ERROR
+open class EntityItemType(initializer: EntityItemType.() -> Unit = {}) : ItemType() {
+    var spawnedEntity: EntityType<*> = EntityType.ERROR
 
     init {
         initializer()
     }
 }
 
-class RobotItemType(initializer: RobotItemType.() -> Unit) : LivingItemType() {
+class RobotItemType(initializer: RobotItemType.() -> Unit) : EntityItemType() {
 
     init {
-        maxStack = 10
+        maxStack = 100
         initializer()
     }
 
@@ -73,7 +73,7 @@ class RobotItemType(initializer: RobotItemType.() -> Unit) : LivingItemType() {
         val STANDARD = RobotItemType {
             name = "Standard Robot"
             icon = Texture(ImageCollection.ROBOT[0])
-            spawnedLivingObject = RobotType.STANDARD
+            spawnedEntity = RobotType.STANDARD
         }
     }
 }

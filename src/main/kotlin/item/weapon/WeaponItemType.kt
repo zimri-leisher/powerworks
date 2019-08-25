@@ -1,4 +1,22 @@
-package weapon
+package item.weapon
+
+import item.ItemType
+
+class WeaponItemType(initializer: WeaponItemType.() -> Unit = {}) : ItemType() {
+
+    var projectileType = ProjectileType.SMALL_BULLET
+    var fireRate = 10
+
+    init {
+        initializer()
+    }
+
+    companion object {
+        val MACHINE_GUN = WeaponItemType {
+
+        }
+    }
+}
 
 /* TODO
 sealed class WeaponType(val id: Int, val tubeConnections: Array<Pair<Int, Int>>) {

@@ -15,7 +15,6 @@ class FurnaceBlock(type: MachineBlockType<FurnaceBlock>, xTile: Int, yTile: Int,
     val queue = containers.first { it is Inventory }
     val tank = containers.first { it is FluidTank } as FluidTank
     var currentlySmelting: OreItemType? = null
-    private val gui = FurnaceBlockGUI(this)
 
     init {
         containers.forEach { it.listeners.add(this) }
@@ -71,8 +70,8 @@ class FurnaceBlock(type: MachineBlockType<FurnaceBlock>, xTile: Int, yTile: Int,
     }
 
     override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
-        if (type == PressType.PRESSED) {
-            gui.toggle()
+        if (type == PressType.RELEASED) {
+            this.type.guiPool!!.toggle(this)
         }
     }
 }

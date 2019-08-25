@@ -13,7 +13,6 @@ class SolidifierBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(Mach
     val tank = containers.first { it is FluidTank } as FluidTank
 
     val out = containers.first { it is Inventory } as Inventory
-    private val gui = SolidifierBlockGUI(this)
 
     var currentlySolidifying: MoltenOreFluidType? = null
 
@@ -47,8 +46,8 @@ class SolidifierBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(Mach
     }
 
     override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
-        if (type == PressType.PRESSED) {
-            gui.toggle()
+        if (type == PressType.RELEASED) {
+            this.type.guiPool!!.toggle(this)
         }
     }
 

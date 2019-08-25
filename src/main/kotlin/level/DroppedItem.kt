@@ -5,6 +5,7 @@ import io.*
 import item.Item
 import item.ItemType
 import level.moving.MovingObject
+import level.moving.MovingObjectType
 import main.DebugCode
 import main.Game
 import screen.HUD
@@ -12,7 +13,7 @@ import screen.mouse.Mouse
 import screen.mouse.Tooltips
 
 class DroppedItem(xPixel: Int, yPixel: Int, val itemType: ItemType, quantity: Int = 1) :
-        MovingObject(LevelObjectType.DROPPED_ITEM, xPixel, yPixel, 0, Hitbox.DROPPED_ITEM) {
+        MovingObject(MovingObjectType.DROPPED_ITEM, xPixel, yPixel, 0, Hitbox.DROPPED_ITEM) {
 
     var quantity = quantity
         set(value) {

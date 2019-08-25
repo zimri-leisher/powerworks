@@ -1,26 +1,32 @@
 package screen.mouse
 
+import behavior.Behavior
+import behavior.BehaviorTree
 import com.badlogic.gdx.graphics.Color
+import graphics.Image
 import graphics.Renderer
 import graphics.TextureRenderParams
 import io.*
 import item.BlockItemType
 import item.ItemType
-import item.LivingItemType
-import kotlinx.serialization.*
-import kotlinx.serialization.internal.StringDescriptor
-import kotlinx.serialization.json.JSON
+import item.EntityItemType
 import level.Hitbox
 import level.Level
 import level.LevelObject
 import level.block.Block
 import level.block.BlockType
-import level.block.GhostBlock
+import level.entity.Entity
 import level.moving.MovingObject
 import main.Game
 import main.toColor
+import misc.Geometry
+import misc.PixelCoord
 import resource.ResourceNode
 import screen.RoutingLanguageEditor
+import screen.ScreenManager
+import screen.elements.GUIMouseOverRegion
+import screen.elements.GUIOutline
+import screen.elements.GUIWindow
 
 /**
  * A tool is an object that is used by the client to interact with the level through the mouse
@@ -95,7 +101,8 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
             Teleporter
             Selector
             ResourceNodeEditor
-            LivingPlacer
+            EntityPlacer
+            EntityController
             Debug
         }
 
@@ -144,18 +151,129 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
             }
         }
 
-        object LivingPlacer : Tool(Control.SECONDARY_INTERACT) {
+        object EntityPlacer : Tool(Control.SPAWN_ENTITY) {
+
+            var type: EntityItemType? = null
+            var canSpawn = false
+
             override fun onUse(control: Control, type: PressType, mouseLevelXPixel: Int, mouseLevelYPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+                if (currentlyActive) {
+                    if (type == PressType.RELEASED && control == Control.SPAWN_ENTITY) {
+                        if (canSpawn) {
+                            if (Level.add(this.type!!.spawnedEntity.instantiate(mouseLevelXPixel, mouseLevelYPixel, 0))) {
+                                Game.mainInv.remove(this.type!!)
+                            }
+                        }
+                    }
+                }
             }
 
-            override fun updateCurrentlyActive() {
+            override fun renderAbove() {
+                val entity = type!!.spawnedEntity
+                val texture = entity.textures[0]
+                texture.render(Game.currentLevel.mouseLevelXPixel, Game.currentLevel.mouseLevelYPixel, params = TextureRenderParams(color = toColor(alpha = 0.4f)))
+                Renderer.renderEmptyRectangle(Game.currentLevel.mouseLevelXPixel + entity.hitbox.xStart, Game.currentLevel.mouseLevelYPixel + entity.hitbox.yStart, entity.hitbox.width, entity.hitbox.height,
+                        params = TextureRenderParams(color = toColor(
+                                if (canSpawn) 0f else 1f, if (canSpawn) 1f else 0f, 0f, 0.4f)))
             }
 
             override fun update() {
+                canSpawn = Game.currentLevel.selectedLevelObject == null && Level.getCollision(type!!.spawnedEntity, Game.currentLevel.mouseLevelXPixel, Game.currentLevel.mouseLevelYPixel) == null
+            }
+
+            override fun updateCurrentlyActive() {
                 val item = Mouse.heldItemType
-                if (item != null && item is LivingItemType) {
-                    // TODO make this
+                currentlyActive = Game.currentLevel.selectedLevelObject == null && item != null && item is EntityItemType && !Selector.dragging
+                if (currentlyActive) {
+                    type = item as EntityItemType
                 }
+            }
+        }
+
+        object EntityController : Tool(Control.SELECT_ENTITY_COMMAND, Control.USE_ENTITY_COMMAND) {
+
+            const val DRAG_DISTANCE_BEFORE_MENU_OPEN = 8
+
+            var startXPixel = 0
+            var startYPixel = 0
+
+
+            var currentlyHoveringCommand: BehaviorTree? = null
+            var selectedCommand: BehaviorTree? = null
+
+            object ControllerMenu : GUIWindow("Living object moving controller window",
+                    0, 0, 55, 55, ScreenManager.Groups.HUD) {
+                init {
+                    transparentToInteraction = true
+                    GUIMouseOverRegion(this, "move command mouse region", { 20 }, { 38 }, { 14 }, { 14 }, onEnter = {
+                        currentlyHoveringCommand = Behavior.Movement.TO_MOUSE
+                    }, onLeave = {
+                        currentlyHoveringCommand = null
+                    }).apply {
+                        GUIOutline(this, "")
+                    }
+                    GUIMouseOverRegion(this, "attack command mouse region", { 20 }, { 3 }, { 14 }, { 14 }, onEnter = {
+                        currentlyHoveringCommand = Behavior.Offense.ATTACK_ARGUMENT // ATK
+                    }, onLeave = {
+                        currentlyHoveringCommand = null
+                    }).apply {
+                        GUIOutline(this, "")
+                    }
+                    GUIMouseOverRegion(this, "defend command mouse region", { 3 }, { 20 }, { 14 }, { 14 }, onEnter = {
+                        currentlyHoveringCommand = null // DEF
+                    }, onLeave = {
+                        currentlyHoveringCommand = null
+                    }).apply {
+                        GUIOutline(this, "")
+                    }
+                    GUIMouseOverRegion(this, "stop command mouse region", { 37 }, { 20 }, { 14 }, { 14 }, onEnter = {
+                        currentlyHoveringCommand = null // STP
+                    }, onLeave = {
+                        currentlyHoveringCommand = null
+                    }).apply {
+                        GUIOutline(this, "")
+                    }
+                }
+            }
+
+            override fun onUse(control: Control, type: PressType, mouseLevelXPixel: Int, mouseLevelYPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+                if (currentlyActive) {
+                    if (control == Control.SELECT_ENTITY_COMMAND) {
+                        if (type == PressType.PRESSED) {
+                            startXPixel = Mouse.xPixel
+                            startYPixel = Mouse.yPixel
+                        } else if (type == PressType.REPEAT) {
+                            if (Geometry.distance(Mouse.xPixel, Mouse.yPixel, startXPixel, startYPixel) > DRAG_DISTANCE_BEFORE_MENU_OPEN) {
+                                val startXCopy = startXPixel
+                                val startYCopy = startYPixel // the unhappy (sometimes) magic of lambdas
+                                ControllerMenu.alignments.x = { startXCopy - ControllerMenu.alignments.width() / 2 }
+                                ControllerMenu.alignments.y = { startYCopy - ControllerMenu.alignments.height() / 2 }
+                                ControllerMenu.open = true
+                            }
+                        } else {
+                            if (ControllerMenu.open) {
+                                selectedCommand = currentlyHoveringCommand
+                                /*
+                                if (selectedCommand == // STOP) {
+                                    selectedCommand!!.execute(Selector.selected.filterIsInstance<Entity>())
+                                    selectedCommand = null
+                                }
+                                 */
+                                ControllerMenu.open = false
+                            }
+                        }
+                    } else if (control == Control.USE_ENTITY_COMMAND) {
+                        if (type == PressType.PRESSED) {
+                            if (selectedCommand != null && !ControllerMenu.open) {
+                                Selector.selected.filterIsInstance<Entity>().forEach { it.runBehavior(selectedCommand!!) }
+                            }
+                        }
+                    }
+                }
+            }
+
+            override fun updateCurrentlyActive() {
+                currentlyActive = true
             }
         }
 
@@ -196,28 +314,24 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
 
         object BlockPlacer : Tool(Control.PLACE_BLOCK, Control.ROTATE_BLOCK), ControlPressHandler {
 
-            var ghostBlock: GhostBlock? = null
-            var ghostBlockRotation = 0
+            var type: BlockItemType? = null
+            var xTile = 0
+            var yTile = 0
+            var rotation = 0
+            var canPlace = false
 
             override fun onUse(control: Control, type: PressType, mouseLevelXPixel: Int, mouseLevelYPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
                 if (currentlyActive) {
                     if (type == PressType.PRESSED) {
                         if (control == Control.ROTATE_BLOCK) {
-                            ghostBlockRotation = (ghostBlockRotation + 1) % 4
+                            rotation = (rotation + 1) % 4
                         }
                     }
                     if (type == PressType.RELEASED) {
                         if (control == Control.PLACE_BLOCK) {
-                            val block = Game.currentLevel.selectedLevelObject
-                            if (block == null) {
-                                if (ghostBlock != null) {
-                                    val gBlock = ghostBlock!!
-                                    if (Level.add(gBlock.type.instantiate(gBlock.xPixel, gBlock.yPixel, gBlock.rotation))) {
-                                        if (Mouse.heldItemType != null) {
-                                            val h = Mouse.heldItemType!! // todo why is this crashing occasionally
-                                            Game.mainInv.remove(h, 1)
-                                        }
-                                    }
+                            if (canPlace) {
+                                if (Level.add(this.type!!.placedBlock.instantiate(xTile shl 4, yTile shl 4, rotation))) {
+                                    Game.mainInv.remove(this.type!!)
                                 }
                             }
                         }
@@ -226,30 +340,28 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
             }
 
             override fun updateCurrentlyActive() {
-                currentlyActive = Game.currentLevel.selectedLevelObject == null && Mouse.heldItemType is BlockItemType && !Selector.dragging
+                val item = Mouse.heldItemType
+                currentlyActive = Game.currentLevel.selectedLevelObject == null && item is BlockItemType && item.placedBlock != BlockType.ERROR && !Selector.dragging
+                if (currentlyActive) {
+                    type = item as BlockItemType
+                } else {
+                    type = null
+                }
             }
 
             override fun update() {
-                val currentItem = Mouse.heldItemType
-                if (currentItem is BlockItemType) {
-                    if (currentItem.placedBlock == BlockType.ERROR || Game.mainInv.getQuantity(currentItem) == 0) {
-                        ghostBlock = null
-                    } else if (currentItem.placedBlock != BlockType.ERROR) {
-                        val placedType = currentItem.placedBlock
-                        val xTile = ((Game.currentLevel.mouseLevelXPixel) shr 4) - placedType.widthTiles / 2
-                        val yTile = ((Game.currentLevel.mouseLevelYPixel) shr 4) - placedType.heightTiles / 2
-                        ghostBlock = GhostBlock(placedType, xTile, yTile, ghostBlockRotation)
-                    }
-                } else {
-                    ghostBlock = null
-                }
+                xTile = ((Game.currentLevel.mouseLevelXPixel) shr 4) - type!!.placedBlock.widthTiles / 2
+                yTile = ((Game.currentLevel.mouseLevelYPixel) shr 4) - type!!.placedBlock.heightTiles / 2
+                canPlace = Level.getCollision(type!!.placedBlock, xTile shl 4, yTile shl 4) == null
             }
 
             override fun renderAbove() {
-                if (ghostBlock != null) {
-                    val g = ghostBlock!!
-                    g.render()
-                }
+                val blockType = type!!.placedBlock
+                val xPixel = xTile shl 4
+                val yPixel = yTile shl 4
+                blockType.textures.render(xPixel, yPixel, rotation, TextureRenderParams(color = Color(1f, 1f, 1f, 0.4f)))
+                Renderer.renderEmptyRectangle(xPixel, yPixel, blockType.widthTiles shl 4, blockType.heightTiles shl 4, params = TextureRenderParams(color = toColor(if (canPlace) 0x04C900 else 0xC90004, 0.3f)))
+                Renderer.renderTextureKeepAspect(Image.Misc.ARROW, xPixel, yPixel, blockType.widthTiles shl 4, blockType.heightTiles shl 4, TextureRenderParams(rotation = 90f * rotation))
             }
         }
 
@@ -285,7 +397,7 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
 
             private var mode = SelectorMode.ALL
 
-            var selected = mutableListOf<LevelObject>()
+            var selected = mutableSetOf<LevelObject>()
 
             override fun update() {
                 selected.removeIf { !it.inLevel }
@@ -302,7 +414,7 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
                     Control.START_SELECTION_MOVING_ONLY -> mode = SelectorMode.MOVING_ONLY
                 }
                 if (type == PressType.PRESSED) {
-                    selected = mutableListOf()
+                    selected = mutableSetOf()
                     dragStartXPixel = mouseLevelXPixel
                     dragStartYPixel = mouseLevelYPixel
                     currentDragXPixel = mouseLevelXPixel
@@ -331,13 +443,16 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
                     val w = Math.abs(xChange)
                     val h = Math.abs(yChange)
                     selected = when (mode) {
-                        SelectorMode.ALL ->
+                        SelectorMode.MOVING_ONLY -> {
+                            Level.MovingObjects.getIntersectingFromPixelRectangle(x, y, w, h).toMutableSet()
+                        }
+                        SelectorMode.ALL -> {
                             (Level.Blocks.getIntersectingFromPixelRectangle(x, y, w, h).toList() +
-                                    Level.MovingObjects.getFromPixelRectangle(x, y, w, h)).toMutableList()
-                        SelectorMode.BLOCKS_ONLY ->
-                            Level.Blocks.getIntersectingFromPixelRectangle(x, y, w, h).toMutableList()
-                        SelectorMode.MOVING_ONLY ->
-                            Level.MovingObjects.getFromPixelRectangle(x, y, w, h).toMutableList()
+                                    Level.MovingObjects.getIntersectingFromPixelRectangle(x, y, w, h)).toMutableSet()
+                        }
+                        SelectorMode.BLOCKS_ONLY -> {
+                            Level.Blocks.getIntersectingFromPixelRectangle(x, y, w, h).toMutableSet()
+                        }
                     }
                 }
             }

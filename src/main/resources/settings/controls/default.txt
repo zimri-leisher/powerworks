@@ -1,4 +1,4 @@
-//<initial code>[! (if you want it to be activated only when this key is NOT down)][:<secondary code 1> ... :<secondary code n> [:ONLY (if you want this to activate ONLY when these keys are down, no more, no less)]]:<control name>
+//<initial code>[! (if you want it to be activated only when this key is NOT down)][:<secondary code 1> ... :<secondary code n> [:ONLY (if you want this to activate ONLY when these keys are down, no more, no less)]]:<CTRL name>
 W:CAMERA_UP
 // ^ will always activate when W is pressed, regardless of any other keys down
 A:CAMERA_LEFT
@@ -27,9 +27,9 @@ F3:R:ONLY:RESOURCE_NODES_INFO
 7:SLOT_7
 8:SLOT_8
 
-CONTROL:C:COPY_TO_CLIPBOARD
-CONTROL:X:CUT_TO_CLIPBOARD
-CONTROL:V:PASTE_FROM_CLIPBOARD
+CTRL:C:COPY_TO_CLIPBOARD
+CTRL:X:CUT_TO_CLIPBOARD
+CTRL:V:PASTE_FROM_CLIPBOARD
 
 
 R:ONLY:ROTATE_BLOCK
@@ -47,22 +47,26 @@ MOUSE_RIGHT:SHIFT:ONLY:EDIT_RESOURCE_NODE
 
 MOUSE_LEFT:T:ONLY:TELEPORT
 
-MOUSE_LEFT:!SHIFT:!CONTROL:!ALT:PLACE_BLOCK
-MOUSE_RIGHT:!SHIFT:!CONTROL:!ALT:REMOVE_SELECTED_BLOCKS
+MOUSE_LEFT:!SHIFT:!CTRL:!ALT:PLACE_BLOCK
+MOUSE_RIGHT:!SHIFT:!CTRL:!ALT:REMOVE_SELECTED_BLOCKS
+
+MOUSE_LEFT:!SHIFT:!CTRL:!ALT:SPAWN_ENTITY
+MOUSE_RIGHT:!SHIFT:!CTRL:!ALT:SELECT_ENTITY_COMMAND
+MOUSE_RIGHT:!SHIFT:!CTRL:!ALT:USE_ENTITY_COMMAND
 
 // starting of the SELECTOR tool, which allows actions to be done on multiple level objects at once
-MOUSE_LEFT:!SHIFT:!CONTROL:!ALT:START_SELECTION_ALL_OBJECTS
+MOUSE_LEFT:!SHIFT:!CTRL:!ALT:START_SELECTION_ALL_OBJECTS
 // starting of the SELECTOR tool but only selecting blocks
-MOUSE_LEFT:SHIFT:!CONTROL:!ALT:START_SELECTION_BLOCKS_ONLY
+MOUSE_LEFT:SHIFT:!CTRL:!ALT:START_SELECTION_BLOCKS_ONLY
 // starting of the SELECTOR tool but only selecting moving objects
-MOUSE_LEFT:CONTROL:!SHIFT:!ALT:START_SELECTION_MOVING_ONLY
+MOUSE_LEFT:CTRL:!SHIFT:!ALT:START_SELECTION_MOVING_ONLY
 
-// v only activates when mouse left is down and not when shift, control or alt are
-MOUSE_LEFT:!SHIFT:!CONTROL:!ALT:INTERACT
+// v only activates when mouse left is down and not when shift, CTRL or alt are
+MOUSE_LEFT:!SHIFT:!CTRL:!ALT:INTERACT
 MOUSE_LEFT:SHIFT:SHIFT_INTERACT
 MOUSE_LEFT:CTRL:CONTROL_INTERACT
 MOUSE_LEFT:ALT:ALT_INTERACT
-MOUSE_RIGHT:!SHIFT:!CONTROL:!ALT:SECONDARY_INTERACT
+MOUSE_RIGHT:!SHIFT:!CTRL:!ALT:SECONDARY_INTERACT
 MOUSE_RIGHT:SHIFT:SHIFT_SECONDARY_INTERACT
 MOUSE_RIGHT:CTRL:CONTROL_SECONDARY_INTERACT
 MOUSE_RIGHT:ALT:ALT_SECONDARY_INTERACT
