@@ -217,6 +217,8 @@ abstract class Level(val levelInfo: LevelInfo) : CameraMovementListener, MouseMo
 
     fun update() {
         ResourceRoutingNetwork.update()
+        if (InputManager.inputsBeingPressed.contains("SPACE"))
+            add(Robot(RobotType.STANDARD, mouseLevelXPixel, mouseLevelYPixel))
         updateChunksBeingRendered()
         for (c in loadedChunks) {
             if (c.updatesRequired!!.size == 0 && c.movingOnBoundary!!.isEmpty() && !c.beingRendered && c.resourceNodes!!.all { it.isEmpty() }) {

@@ -79,7 +79,7 @@ object Image {
         val WARNING_STRIPES = ResourceManager.getAtlasTexture("gui/warning_stripes")
         val LEVEL_SELECTOR_BUTTON_HIGHLIGHT = ResourceManager.getAtlasTexture("gui/level_selector_button_highlight")
         val CRAFTING_ARROW = ResourceManager.getAtlasTexture("gui/crafting_arrow")
-        //val LIVING_CONTROLLER_MENU = ResourceManager.registerTexture("textures/living_controller.png", asynchronous = false)
+        val ENTITY_CONTROLLER_MENU = ResourceManager.getAtlasTexture("gui/entity_controller")
     }
 
     object Fluid {

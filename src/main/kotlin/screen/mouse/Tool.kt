@@ -26,6 +26,7 @@ import screen.RoutingLanguageEditor
 import screen.ScreenManager
 import screen.elements.GUIMouseOverRegion
 import screen.elements.GUIOutline
+import screen.elements.GUITexturePane
 import screen.elements.GUIWindow
 
 /**
@@ -197,42 +198,35 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
             var startXPixel = 0
             var startYPixel = 0
 
-
             var currentlyHoveringCommand: BehaviorTree? = null
             var selectedCommand: BehaviorTree? = null
 
-            object ControllerMenu : GUIWindow("Living object moving controller window",
+            object ControllerMenu : GUIWindow("Entity controller window",
                     0, 0, 55, 55, ScreenManager.Groups.HUD) {
                 init {
+                    GUITexturePane(this, "Entity controller background", 0, 0, Image.GUI.ENTITY_CONTROLLER_MENU).run {
+                        GUIMouseOverRegion(this, "move command mouse region", { 20 }, { 38 }, { 14 }, { 14 }, onEnter = {
+                            currentlyHoveringCommand = Behavior.Movement.TO_MOUSE
+                        }, onLeave = {
+                            currentlyHoveringCommand = null
+                        })
+                        GUIMouseOverRegion(this, "attack command mouse region", { 20 }, { 3 }, { 14 }, { 14 }, onEnter = {
+                            currentlyHoveringCommand = Behavior.Offense.ATTACK_ARGUMENT // ATK
+                        }, onLeave = {
+                            currentlyHoveringCommand = null
+                        })
+                        GUIMouseOverRegion(this, "defend command mouse region", { 3 }, { 20 }, { 14 }, { 14 }, onEnter = {
+                            currentlyHoveringCommand = null // DEF
+                        }, onLeave = {
+                            currentlyHoveringCommand = null
+                        })
+                        GUIMouseOverRegion(this, "stop command mouse region", { 37 }, { 20 }, { 14 }, { 14 }, onEnter = {
+                            currentlyHoveringCommand = null // STP
+                        }, onLeave = {
+                            currentlyHoveringCommand = null
+                        })
+                    }
                     transparentToInteraction = true
-                    GUIMouseOverRegion(this, "move command mouse region", { 20 }, { 38 }, { 14 }, { 14 }, onEnter = {
-                        currentlyHoveringCommand = Behavior.Movement.TO_MOUSE
-                    }, onLeave = {
-                        currentlyHoveringCommand = null
-                    }).apply {
-                        GUIOutline(this, "")
-                    }
-                    GUIMouseOverRegion(this, "attack command mouse region", { 20 }, { 3 }, { 14 }, { 14 }, onEnter = {
-                        currentlyHoveringCommand = Behavior.Offense.ATTACK_ARGUMENT // ATK
-                    }, onLeave = {
-                        currentlyHoveringCommand = null
-                    }).apply {
-                        GUIOutline(this, "")
-                    }
-                    GUIMouseOverRegion(this, "defend command mouse region", { 3 }, { 20 }, { 14 }, { 14 }, onEnter = {
-                        currentlyHoveringCommand = null // DEF
-                    }, onLeave = {
-                        currentlyHoveringCommand = null
-                    }).apply {
-                        GUIOutline(this, "")
-                    }
-                    GUIMouseOverRegion(this, "stop command mouse region", { 37 }, { 20 }, { 14 }, { 14 }, onEnter = {
-                        currentlyHoveringCommand = null // STP
-                    }, onLeave = {
-                        currentlyHoveringCommand = null
-                    }).apply {
-                        GUIOutline(this, "")
-                    }
                 }
             }
 

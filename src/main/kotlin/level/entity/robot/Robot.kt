@@ -24,7 +24,6 @@ open class Robot(type: RobotType<out Robot>, xPixel: Int, yPixel: Int, rotation:
 
     override val type = type
 
-
     init {
         InputManager.registerControlPressHandler(this, ControlPressHandlerType.LEVEL_ANY, Control.SECONDARY_INTERACT)
     }

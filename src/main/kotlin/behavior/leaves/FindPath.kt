@@ -32,7 +32,7 @@ class FindPath(parent: BehaviorTree, val goalVar: Variable, val pathDestVar: Var
             } else {
                 currentPathingQueue = mutableMapOf(entity to goal)
             }
-
+            
         }
         val route = route(entity, goal)
         setData(pathDestVar, route)
