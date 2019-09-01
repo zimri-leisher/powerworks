@@ -3,10 +3,11 @@ package level.tile
 import graphics.TextureRenderParams
 import graphics.Renderer
 import level.CHUNK_TILE_EXP
+import level.Level
 
 // This is not a level object for performance reasons, and besides,
 // why would we need it to be? It's not involved in anything except mining (for now)
-open class Tile(type: TileType = TileType.GRASS, val xTile: Int, val yTile: Int) {
+open class Tile(type: TileType = TileType.GRASS, val xTile: Int, val yTile: Int, val level: Level) {
 
     val xPixel = xTile shl 4
     val yPixel = yTile shl 4

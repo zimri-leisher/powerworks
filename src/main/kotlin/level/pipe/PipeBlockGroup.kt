@@ -2,10 +2,12 @@ package level.pipe
 
 import fluid.FluidType
 import level.Level
+import level.add
+import level.remove
 import resource.*
 import routing.RoutingLanguageStatement
 
-class PipeBlockGroup {
+class PipeBlockGroup(val level: Level) {
     private val pipes = mutableListOf<PipeBlock>()
     private val storage = PipeBlockInternalStorage(this)
     val id = nextId++
@@ -18,7 +20,7 @@ class PipeBlockGroup {
         ALL.add(this)
     }
 
-    fun createCorrespondingNodes(nodes: List<ResourceNode>) {
+    fun createCorrespondingNodes(nodes: Set<ResourceNode>) {
         val new = nodes.map {
             val behavior = ResourceNodeBehavior(it)
             behavior.allowOut.setStatement(RoutingLanguageStatement.TRUE, null)
@@ -28,7 +30,7 @@ class PipeBlockGroup {
         for (newNode in new) {
             if (newNode !in this.nodes) {
                 this.nodes.add(newNode)
-                Level.add(newNode)
+                level.add(newNode)
             }
         }
     }
@@ -39,7 +41,7 @@ class PipeBlockGroup {
     fun removeCorrespondingNodes(p: PipeBlock) {
         val r = nodes.filter { it.xTile != p.xTile && it.yTile != p.yTile }
         nodes.removeAll(r)
-        r.forEach { Level.remove(it) }
+        r.forEach { level.remove(it) }
     }
 
     fun merge(other: PipeBlockGroup) {

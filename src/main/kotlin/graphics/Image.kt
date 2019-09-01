@@ -80,6 +80,10 @@ object Image {
         val LEVEL_SELECTOR_BUTTON_HIGHLIGHT = ResourceManager.getAtlasTexture("gui/level_selector_button_highlight")
         val CRAFTING_ARROW = ResourceManager.getAtlasTexture("gui/crafting_arrow")
         val ENTITY_CONTROLLER_MENU = ResourceManager.getAtlasTexture("gui/entity_controller")
+        val ENTITY_CONTROLLER_MENU_STOP_SELECTED = ResourceManager.getAtlasTexture("gui/entity_controller_stop_selected")
+        val ENTITY_CONTROLLER_MENU_DEFEND_SELECTED = ResourceManager.getAtlasTexture("gui/entity_controller_defend_selected")
+        val ENTITY_CONTROLLER_MENU_ATTACK_SELECTED = ResourceManager.getAtlasTexture("gui/entity_controller_attack_selected")
+        val ENTITY_CONTROLLER_MENU_MOVE_SELECTED = ResourceManager.getAtlasTexture("gui/entity_controller_move_selected")
     }
 
     object Fluid {

@@ -12,7 +12,6 @@ open class FluidTankGUI(tank: FluidTank) : GUIWindow("Fluid tank GUI", 0, 0, WID
     protected val fluidTankMeter: GUIFluidTankMeter
 
     init {
-        partOfLevel = true
         openAtMouse = true
         generateDragGrip(this.layer + 2)
         generateCloseButton(this.layer + 2)

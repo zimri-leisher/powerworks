@@ -18,16 +18,16 @@ import graphics.Renderer
 import graphics.text.TextManager
 import io.*
 import item.*
-import level.Level
+import level.LevelManager
 import level.block.BlockType
 import level.block.ChestBlockType
 import level.block.CrafterBlockType
 import level.block.MachineBlockType
 import mod.ModManager
 import mod.ModPermissionsPolicy
-import resource.ResourceCategory
-import resource.ResourceNode
-import routing.RoutingLanguage
+import network.Client
+import network.NetworkManager
+import network.Server
 import screen.IngameGUI
 import screen.MainMenuGUI
 import screen.ScreenManager
@@ -35,26 +35,20 @@ import screen.elements.GUICloseButton
 import screen.mouse.Mouse
 import screen.mouse.Tool
 import screen.mouse.Tooltips
-import java.net.URL
 import java.security.Policy
+import kotlin.system.measureTimeMillis
 
 /* Utility extensions */
-fun URL.toFileHandle() = Gdx.files.internal(path)
+fun <K, V> MutableMap<K, V>.removeIfKey(selector: (K) -> Boolean) = removeIf { selector(it.key) }
 
-fun String.fromSnakeCaseToCamelCase(): String {
-    val builder = StringBuilder()
-    var nextIsCap = false
-    for(char in this.toLowerCase()) {
-        if(char == '_') {
-            nextIsCap = true
-        } else if(nextIsCap) {
-            builder.append(char.toUpperCase())
-            nextIsCap = false
-        } else {
-            builder.append(char)
+fun <K, V> MutableMap<K, V>.removeIfValue(selector: (V) -> Boolean) = removeIf { selector(it.value) }
+fun <K, V> MutableMap<K, V>.removeIf(selector: (MutableMap.MutableEntry<K, V>) -> Boolean) {
+    val iterator = this.iterator()
+    for (entry in iterator) {
+        if (selector(entry)) {
+            iterator.remove()
         }
     }
-    return builder.toString()
 }
 
 val TextureRegion.widthPixels: Int
@@ -129,8 +123,6 @@ object Game : ApplicationAdapter(), ControlPressHandler {
     val INVENTORY_WIDTH = 8
     val INVENTOR_HEIGHT = 6
 
-    lateinit var currentLevel: Level
-
     lateinit var mainInv: Inventory
 
     private var lastUpdateTime = System.nanoTime().toDouble()
@@ -153,6 +145,8 @@ object Game : ApplicationAdapter(), ControlPressHandler {
         FileManager
         Tool
         Tooltips
+        Server.start()
+        Client.start()
         AudioManager.load()
         Gdx.input.inputProcessor = InputManager
         InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.PIPE_INFO, Control.ESCAPE, Control.TURN_OFF_DEBUG_INFO, Control.TAKE_SCREENSHOT, Control.POSITION_INFO, Control.RESOURCE_NODES_INFO, Control.RENDER_HITBOXES, Control.SCREEN_INFO, Control.CHUNK_INFO, Control.TOGGLE_INVENTORY, Control.TUBE_INFO)
@@ -179,7 +173,10 @@ object Game : ApplicationAdapter(), ControlPressHandler {
         val now = System.nanoTime().toDouble()
         var updates = 0
         while (now - lastUpdateTime > NS_PER_UPDATE && updates < MAX_UPDATES_BEFORE_RENDER) {
-            update()
+            val updateTime = measureTimeMillis { update() }
+            if (updateTime > 6) {
+                //println("ms to update: $updateTime")
+            }
             lastUpdateTime += NS_PER_UPDATE
             updates++
             updateCount++
@@ -204,13 +201,13 @@ object Game : ApplicationAdapter(), ControlPressHandler {
 
     fun update() {
         FileSystem.update()
+        NetworkManager.update()
         InputManager.update()
         Tooltips.update()
         Animation.update()
         ScreenManager.update()
         if (State.CURRENT_STATE == State.INGAME) {
-            ResourceNode.update()
-            currentLevel.update()
+            LevelManager.update()
         }
         State.update()
     }

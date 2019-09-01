@@ -5,7 +5,7 @@ import misc.Numbers
 import java.io.DataOutputStream
 
 
-abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: Int, yPixel: Int, rotation: Int = 0, hitbox: Hitbox = type.hitbox) : LevelObject(type, xPixel, yPixel, rotation, hitbox, true) {
+abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: Int, yPixel: Int, rotation: Int = 0) : LevelObject(type, xPixel, yPixel, rotation, true) {
     override val type = type
     /* Only allow setting of pixel values because otherwise it would cause infinite loop (unless I added a lot of boilerplate private values) */
     final override var xPixel = xPixel
@@ -56,20 +56,14 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: In
     /**
      * The chunk that this object's coordinates are in
      */
-    var currentChunk = Level.Chunks.get(xChunk, yChunk)
+    var currentChunk: Chunk? = null
+
     /**
      * The chunks that this object's hitbox intersects but not the chunk that its coordinates are in
      */
-    var intersectingChunks =
-            if (hitbox == Hitbox.NONE)
-                mutableListOf()
-            else
-                Level.Chunks.getFromPixelRectangle(hitbox.xStart + xPixel, hitbox.yStart + yPixel, hitbox.width, hitbox.height).toMutableList().apply { remove(currentChunk) }
-    val moveListeners = mutableListOf<MovementListener>()
+    var intersectingChunks = mutableSetOf<Chunk>()
 
-    init {
-        intersectingChunks.remove(currentChunk)
-    }
+    val moveListeners = mutableListOf<MovementListener>()
 
     override fun update() {
         move()
@@ -84,7 +78,7 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: In
     }
 
     protected open fun onMove(pXPixel: Int, pYPixel: Int) {
-        Level.Chunks.updateChunkOf(this)
+        level.updateChunkOf(this)
         moveListeners.forEach { it.onMove(this, pXPixel, pYPixel) }
     }
 
@@ -94,47 +88,47 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: In
                 rotation = 1
             if (xVel < 0)
                 rotation = 3
-            if (yVel > 0)
-                rotation = 2
             if (yVel < 0)
+                rotation = 2
+            if (yVel > 0)
                 rotation = 0
             val pXPixel = xPixel
             val pYPixel = yPixel
             val nXPixel = xPixel + xVel
             val nYPixel = yPixel + yVel
             var collisions: MutableSet<LevelObject>? = null
-            val g = getCollision(nXPixel, nYPixel)
+            val g = getCollisions(nXPixel, nYPixel).toMutableSet()
             var xPixelOk = false
             var yPixelOk = false
-            if (g == null) {
+            if (g.isEmpty()) {
                 xPixelOk = true
                 yPixelOk = true
             } else {
-                collisions = mutableSetOf(g)
+                collisions = g
                 if (nXPixel != xPixel) {
-                    val o = getCollision(nXPixel, yPixel)
-                    if (o == null) {
+                    val o = getCollisions(nXPixel, yPixel)
+                    if (o.isEmpty()) {
                         xPixelOk = true
                     } else {
-                        collisions.add(o)
+                        collisions.addAll(o)
                     }
                 }
                 if (nYPixel != yPixel) {
-                    val o = getCollision(xPixel, nYPixel)
-                    if (o == null) {
+                    val o = getCollisions(xPixel, nYPixel)
+                    if (o.isEmpty()) {
                         yPixelOk = true
                     } else {
-                        collisions.add(o)
+                        collisions.addAll(o)
                     }
                 }
             }
             if (collisions != null) {
                 collisions.forEach { it.onCollide(this); this.onCollide(it) }
             }
-            if(xPixelOk || type.ghost) {
+            if (xPixelOk) {
                 xPixel = nXPixel
             }
-            if(yPixelOk || type.ghost) {
+            if (yPixelOk) {
                 yPixel = nYPixel
             }
             if (pXPixel != xPixel || pYPixel != yPixel) {

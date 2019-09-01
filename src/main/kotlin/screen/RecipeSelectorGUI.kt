@@ -97,7 +97,6 @@ object RecipeSelectorGUI : GUIWindow("Recipe selector", 20, 20, 100,
 
     init {
         openAtMouse = true
-        partOfLevel = true
 
         GUIDefaultTextureRectangle(this, "Recipe selector gui background").apply {
 

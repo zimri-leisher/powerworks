@@ -2,6 +2,7 @@ package behavior.composites
 
 import level.entity.Entity
 import behavior.*
+import level.LevelManager
 import main.Game
 
 /**
@@ -13,34 +14,34 @@ class Sequence(parent: BehaviorTree, children: MutableList<Node>, val order: Com
 
     override fun init(entity: Entity) {
         state = NodeState.RUNNING
+        val firstRunningChild: Node
         if (order == CompositeOrder.RANDOM) {
-            setData(DefaultVariable.SEQUENCE_RANDOM_CHILD_EXECUTION_ORDER, children.indices.shuffled(Game.currentLevel.rand))
+            val order = children.indices.shuffled(entity.level.rand)
+            firstRunningChild = children[order.first()]
+            setData(DefaultVariable.SEQUENCE_RANDOM_CHILD_EXECUTION_ORDER, order)
+        } else {
+            firstRunningChild = children.first()
         }
         setData(DefaultVariable.SEQUENCE_CHILDREN_SUCCEEDED, mutableListOf<Node>())
-        children.forEach { it.init(entity) }
-        val firstRunningChild = children.firstOrNull { it.state == NodeState.RUNNING }
-        setData(DefaultVariable.SEQUENCE_CURRENT_RUNNING_CHILD, firstRunningChild)
-        if(firstRunningChild == null) {
-            state = if(children.any { it.state == NodeState.FAILURE }) NodeState.FAILURE else NodeState.SUCCESS
-            return
+        if (order == CompositeOrder.PARALLEL) {
+            children.forEach { it.init(entity) }
+        } else {
+            firstRunningChild.init(entity)
+            setData(DefaultVariable.SEQUENCE_CHILDREN_INITIALIZED, mutableListOf(firstRunningChild))
         }
     }
 
     override fun execute(entity: Entity) {
         val successfulChildren = getData<MutableList<Node>>(DefaultVariable.SEQUENCE_CHILDREN_SUCCEEDED)!!
-        val childrenIndexOrder = if (order == CompositeOrder.RANDOM) getData<List<Int>>(DefaultVariable.SEQUENCE_RANDOM_CHILD_EXECUTION_ORDER)!! else children.indices
-        for (index in childrenIndexOrder) {
+        val order = if(order == CompositeOrder.RANDOM) getData<List<Int>>(DefaultVariable.SEQUENCE_RANDOM_CHILD_EXECUTION_ORDER)!! else children.indices
+        for(index in order) {
             val child = children[index]
-            if (child !in successfulChildren) {
-                if (child.state == NodeState.RUNNING) {
+            if(child !in successfulChildren) {
+                if(child.state == NodeState.RUNNING) {
                     child.execute(entity)
-                    if (order != CompositeOrder.PARALLEL) {
-                        setData(DefaultVariable.SEQUENCE_CURRENT_RUNNING_CHILD, child)
-                        return
+                    if(this.order != CompositeOrder.PARALLEL) {
+                        break
                     }
-                } else if (child.state == NodeState.SUCCESS) {
-                    successfulChildren.add(child)
-                    return
                 }
             }
         }
@@ -57,27 +58,29 @@ class Sequence(parent: BehaviorTree, children: MutableList<Node>, val order: Com
                 state = NodeState.RUNNING
             }
         } else {
-            val child = getData<Node>(DefaultVariable.SEQUENCE_CURRENT_RUNNING_CHILD)
-            if(child != null) {
-                child.updateState(entity)
-                if (child.state == NodeState.FAILURE) {
-                    state = NodeState.FAILURE
-                    return
-                } else if (child.state == NodeState.RUNNING) {
-                    state = NodeState.RUNNING
-                    return
-                }
-                if (getData<MutableList<Node>>(DefaultVariable.SEQUENCE_CHILDREN_SUCCEEDED)!!.containsAll(children)) {
-                    state = NodeState.SUCCESS
-                    return
-                }
-            } else {
-                if (children.any { it.state == NodeState.FAILURE }) {
-                    state = NodeState.FAILURE
-                } else if (children.all { it.state == NodeState.SUCCESS }) {
-                    state = NodeState.SUCCESS
+            val successfulChildren = getData<MutableList<Node>>(DefaultVariable.SEQUENCE_CHILDREN_SUCCEEDED)!!
+            val initializedChildren = getData<MutableList<Node>>(DefaultVariable.SEQUENCE_CHILDREN_INITIALIZED)!!
+            val order = if(order == CompositeOrder.RANDOM) getData<List<Int>>(DefaultVariable.SEQUENCE_RANDOM_CHILD_EXECUTION_ORDER)!! else children.indices
+            for (index in order) {
+                val child = children[index]
+                if(child !in successfulChildren) {
+                    if(child !in initializedChildren) {
+                        child.init(entity)
+                        initializedChildren.add(child)
+                    }
+                    child.updateState(entity)
+                    if (child.state == NodeState.SUCCESS) {
+                        successfulChildren.add(child)
+                    } else if (child.state == NodeState.FAILURE) {
+                        state = NodeState.FAILURE
+                        return
+                    } else {
+                        state = NodeState.RUNNING
+                        return
+                    }
                 }
             }
+            state = NodeState.SUCCESS
         }
     }
 

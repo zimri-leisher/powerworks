@@ -28,9 +28,9 @@ class SimplexLevel(info: LevelInfo) : Level(info) {
         for(t in OreTileType.ALL) {
             val noise = ((oreNoises.get(t)!!.getNoise(xTile.toDouble() / 24.0, yTile.toDouble() / 24.0) / .826) + 1) / 2 // 0 to 1
             if(noise < t.generationChance && rand.nextInt(t.scatter) == 0)
-                return OreTile(t, xTile, yTile)
+                return OreTile(t, xTile, yTile, this)
         }
-        return Tile(TileType.GRASS, xTile, yTile)
+        return Tile(TileType.GRASS, xTile, yTile, this)
     }
 
     override fun genBlocks(xChunk: Int, yChunk: Int): Array<Block?> {

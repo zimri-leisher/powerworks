@@ -19,7 +19,6 @@ class CrafterBlockGUI(block: CrafterBlock) :
     private val containers: List<GUIResourceContainerDisplay>
     init {
         openAtMouse = true
-        partOfLevel = true
 
         GUIText(group, "Recipe text", 0, 0, "Recipe:")
 

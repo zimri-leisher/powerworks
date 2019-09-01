@@ -1,14 +1,14 @@
 package behavior.leaves
 
-import level.Level
-import level.LevelObject
 import level.entity.Entity
 import behavior.BehaviorTree
 import behavior.DataLeaf
 import behavior.Variable
+import level.*
 import level.moving.MovingObject
 import main.Game
 import misc.Geometry
+import misc.Numbers
 
 /**
  * Stores the nearest [LevelObject] to the nearest [Entity] for which this is being executed in the [BehaviorTree.data]
@@ -23,10 +23,10 @@ class GetNearestLevelObject(parent: BehaviorTree, val dest: Variable, val predic
         val previouslyChecked = mutableListOf<MovingObject>()
         var lowestDistance = Double.MAX_VALUE
         var closestObject: LevelObject? = null
-        while(radius < Game.currentLevel.diagonalLengthPixels / 2)  {
+        while(radius < Numbers.max(entity.level.widthPixels, entity.level.heightPixels) / 2)  {
             radius *= 2
-            val inRadius: Set<LevelObject> = Level.MovingObjects.getInRadius(entity.xPixel, entity.yPixel, radius, predicate) +
-                    Level.Blocks.getInRadius(entity.xPixel, entity.yPixel, radius, predicate)
+            val inRadius: Set<LevelObject> = entity.level.getMovingObjectCollisionsInSquareCenteredOn(entity.xPixel, entity.yPixel, radius, predicate) +
+                    entity.level.getBlockCollisionsInSquareCenteredOn(entity.xPixel, entity.yPixel, radius, predicate)
             for(levelObject in inRadius) {
                 if(levelObject !in previouslyChecked && levelObject != entity) {
                     val h1 = entity.hitbox

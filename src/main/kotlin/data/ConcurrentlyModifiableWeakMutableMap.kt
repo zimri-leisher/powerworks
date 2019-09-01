@@ -10,7 +10,6 @@ class ConcurrentlyModifiableWeakMutableMap<K, V> {
     val toRemove = mutableListOf<K>()
 
     fun put(l: K, o: V) {
-        println("adding $l, $o")
         if (beingTraversed)
             toAdd.put(l, o)
         else

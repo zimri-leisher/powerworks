@@ -39,7 +39,6 @@ open class InventoryGUI(name: String,
         GUIText(background, "Inventory GUI name text", 1, heightPixels - TextManager.getStringHeight(displayName) - 2, displayName, allowTags = true)
         itemSlots = arr as Array<GUIItemSlot>
         // You want to be able to move and edit inventories at the same time
-        partOfLevel = true
     }
 
     override fun render() {

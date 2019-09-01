@@ -5,6 +5,8 @@ import graphics.Renderer
 import level.Level
 import level.block.Block
 import level.block.BlockType
+import level.getBlockAt
+import level.getResourceNodesAt
 import main.DebugCode
 import main.Game
 import main.heightPixels
@@ -24,13 +26,13 @@ class PipeBlock(xTile: Int, yTile: Int) : Block(BlockType.PIPE, xTile, yTile) {
 
     val pipeConnections = arrayOfNulls<PipeBlock>(4)
     val nodeConnections = arrayOf<
-            MutableList<ResourceNode>
-            >(mutableListOf(), mutableListOf(), mutableListOf(), mutableListOf())
+            MutableSet<ResourceNode>
+            >(mutableSetOf(), mutableSetOf(), mutableSetOf(), mutableSetOf())
 
     val closedEnds: Array<Boolean>
         get() = state.closedEnds
 
-    var group = PipeBlockGroup()
+    var group = PipeBlockGroup(level)
 
     override fun onAddToLevel() {
         updateConnections()
@@ -108,7 +110,7 @@ class PipeBlock(xTile: Int, yTile: Int) : Block(BlockType.PIPE, xTile, yTile) {
         // If there is a node connection, and pipes can't have nodes connecting to other pipes, then no need to check
         if (pipeConnections[dir] == null) {
             // Get all nodes that could possibly disconnect to a node if placed here
-            val nodes = Level.ResourceNodes.getAll(xTile + getXSign(dir), yTile + getYSign(dir), { isOppositeAngle(it.dir, dir) }, ResourceCategory.FLUID)
+            val nodes = level.getResourceNodesAt(xTile + getXSign(dir), yTile + getYSign(dir), { it.resourceCategory == ResourceCategory.FLUID && isOppositeAngle(it.dir, dir) }).toMutableSet()
             nodeConnections[dir] = nodes
             if (nodes.isNotEmpty()) {
                 group.createCorrespondingNodes(nodes)
@@ -129,7 +131,7 @@ class PipeBlock(xTile: Int, yTile: Int) : Block(BlockType.PIPE, xTile, yTile) {
     }
 
     private fun getPipeAt(dir: Int): PipeBlock? {
-        val b = Level.Blocks.get(xTile + getXSign(dir), yTile + getYSign(dir))
+        val b = level.getBlockAt(xTile + getXSign(dir), yTile + getYSign(dir))
         if (b != null && b is PipeBlock) {
             return b
         }

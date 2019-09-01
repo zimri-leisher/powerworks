@@ -10,6 +10,7 @@ open class MovingObjectType<T : MovingObject>(initializer: MovingObjectType<T>.(
     var drag = 2
 
     init {
+        requiresUpdate = true
         initializer()
     }
     companion object {
@@ -20,7 +21,7 @@ open class MovingObjectType<T : MovingObject>(initializer: MovingObjectType<T>.(
         }
 
         val CAMERA = MovingObjectType<Camera> {
-            ghost = true
+            hitbox = Hitbox.NONE
             instantiate = { xPixel, yPixel, _ -> Camera(xPixel, yPixel) }
         }
     }

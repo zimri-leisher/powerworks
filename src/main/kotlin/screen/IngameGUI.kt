@@ -4,6 +4,8 @@ import graphics.Image
 import graphics.Renderer
 import io.*
 import level.Level
+import level.LevelManager
+import level.add
 import main.Game
 import misc.Geometry
 import screen.IngameGUI.views
@@ -95,8 +97,8 @@ object IngameGUI : GUIWindow("In game gui",
     }
 
     private fun newCamera(): Camera {
-        val c = Camera(Game.currentLevel.widthPixels / 2, Game.currentLevel.heightPixels / 2)
-        Level.add(c)
+        val c = Camera(LevelManager.localLevel.widthPixels / 2, LevelManager.localLevel.heightPixels / 2)
+        LevelManager.localLevel.add(c)
         return c
     }
 
@@ -108,8 +110,6 @@ object IngameGUI : GUIWindow("In game gui",
                     cameras[viewCount - 1],
                     open = viewCount == 1,
                     windowGroup = ScreenManager.Groups.VIEW).run {
-                if (open)
-                    Game.currentLevel.openViews.add(view)
                 return@run this
             }
         }

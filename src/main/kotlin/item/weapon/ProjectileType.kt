@@ -3,16 +3,14 @@ package item.weapon
 import level.Hitbox
 import level.moving.MovingObjectType
 
-class ProjectileType(initializer: ProjectileType.() -> Unit = {}) : MovingObjectType<Projectile>() {
+class ProjectileType(initializer: ProjectileType.() -> Unit = {}) {
 
     var damage = 50
     var speed = 5
     var lifetime = -1
+    var hitbox = Hitbox.NONE
 
     init {
-        requiresRender = true
-        requiresUpdate = true
-        ghost = true
         initializer()
     }
 

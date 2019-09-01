@@ -1,10 +1,12 @@
 package level
 
+import data.ConcurrentlyModifiableMutableList
 import level.block.Block
 import level.moving.MovingObject
 import level.tile.Tile
-import data.ConcurrentlyModifiableMutableList
 import resource.ResourceNode
+import java.util.*
+import kotlin.Comparator
 
 /**
  * This is just for holding data. Interaction with the level should be done through the Level object and not any of these
@@ -20,7 +22,7 @@ class Chunk(val parent: Level, val xChunk: Int, val yChunk: Int) {
     var movingOnBoundary: MutableList<MovingObject>? = null
     var updatesRequired: ConcurrentlyModifiableMutableList<LevelObject>? = null
     var droppedItems: MutableList<DroppedItem>? = null
-    var resourceNodes: Array<MutableList<ResourceNode>>? = null
+    var resourceNodes: MutableList<MutableList<ResourceNode>>? = null
     var beingRendered = false
 
     /* Convenience methods. Assume it is loaded */
@@ -56,7 +58,7 @@ class Chunk(val parent: Level, val xChunk: Int, val yChunk: Int) {
 
     fun addMoving(m: MovingObject) {
         moving!!.add(m)
-        moving!!.sortedBy { it.yPixel }
+        moving!!.sortWith(Comparator { o1, o2 -> o1.yPixel.compareTo(o2.yPixel) })
         if (m.requiresUpdate) {
             addUpdateRequired(m)
         }
@@ -69,11 +71,11 @@ class Chunk(val parent: Level, val xChunk: Int, val yChunk: Int) {
     }
 
     fun addResourceNode(r: ResourceNode) {
-        resourceNodes!![r.resourceCategory.ordinal].add(r)
+        resourceNodes!!.elementAt(r.resourceCategory.ordinal).add(r)
     }
 
     fun removeResourceNode(r: ResourceNode) {
-        resourceNodes!![r.resourceCategory.ordinal].remove(r)
+        resourceNodes!!.elementAt(r.resourceCategory.ordinal).remove(r)
     }
 
     fun addUpdateRequired(levelObject: LevelObject) {
@@ -95,17 +97,17 @@ class Chunk(val parent: Level, val xChunk: Int, val yChunk: Int) {
     fun load(blocks: Array<Block?>, tiles: Array<Tile>) {
         this.blocks = blocks
         this.tiles = tiles
-        this.moving = mutableListOf()
+        this.moving = Collections.synchronizedList(mutableListOf())
         this.updatesRequired = ConcurrentlyModifiableMutableList()
-        this.movingOnBoundary = mutableListOf()
+        this.movingOnBoundary = Collections.synchronizedList(mutableListOf())
         this.droppedItems = mutableListOf()
-        this.resourceNodes = arrayOf(
+        this.resourceNodes = Collections.synchronizedList(mutableListOf(
                 mutableListOf(),
                 mutableListOf(),
                 mutableListOf(),
                 mutableListOf(),
                 mutableListOf()
-        )
+        ))
         loaded = true
         parent.loadedChunks.add(this)
     }
@@ -113,7 +115,11 @@ class Chunk(val parent: Level, val xChunk: Int, val yChunk: Int) {
     fun unload() {
         blocks = null
         tiles = null
-        moving = null
+        if (moving != null) {
+            synchronized(moving!!) {
+                moving = null
+            }
+        }
         updatesRequired = null
         loaded = false
         movingOnBoundary = null

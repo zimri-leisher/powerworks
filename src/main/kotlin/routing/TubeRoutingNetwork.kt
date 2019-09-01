@@ -1,6 +1,7 @@
 package routing
 
 import data.ConcurrentlyModifiableMutableList
+import level.Level
 import level.tube.TubeBlock
 import misc.Geometry
 import misc.PixelCoord
@@ -8,7 +9,7 @@ import resource.ResourceCategory
 import resource.ResourceNode
 import resource.ResourceType
 
-class TubeRoutingNetwork : ResourceRoutingNetwork(ResourceCategory.ITEM) {
+class TubeRoutingNetwork(level: Level) : ResourceRoutingNetwork(ResourceCategory.ITEM, level) {
 
     val tubes = mutableSetOf<TubeBlock>()
 

@@ -1,24 +1,24 @@
 package behavior.leaves
 
-import behavior.BehaviorTree
-import behavior.DataLeaf
-import behavior.Variable
+import behavior.*
 import graphics.Renderer
 import graphics.TextureRenderParams
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
 import level.entity.Entity
 import main.toColor
 import misc.PixelCoord
 import misc.TileCoord
 import java.awt.Color
-import kotlin.math.abs
 import kotlin.math.floor
-import kotlin.math.sqrt
 
-class FindPath(parent: BehaviorTree, val goalVar: Variable, val pathDestVar: Variable, val useCoroutines: Boolean = false) : DataLeaf(parent) {
+@ExperimentalCoroutinesApi
+class FindPath(parent: BehaviorTree, val goalVar: Variable, val pathDestVar: Variable, val useCoroutines: Boolean = false) : Leaf(parent) {
 
-    var currentPathingQueue: MutableMap<Entity, TileCoord>? = null
-
-    override fun run(entity: Entity): Boolean {
+    override fun init(entity: Entity) {
+        state = NodeState.RUNNING
         val goalAny = getData<Any?>(goalVar)
         val goal: TileCoord
         if (goalAny is PixelCoord) {
@@ -26,17 +26,55 @@ class FindPath(parent: BehaviorTree, val goalVar: Variable, val pathDestVar: Var
         } else {
             goal = goalAny as TileCoord
         }
-        if(useCoroutines) {
-            if(currentPathingQueue != null) {
-                currentPathingQueue!!.put(entity, goal)
-            } else {
-                currentPathingQueue = mutableMapOf(entity to goal)
+        if (useCoroutines) {
+            val result = GlobalScope.async {
+                route(entity, goal)
             }
-            
+            setData(DefaultVariable.PATHING_JOB, result)
+            state = NodeState.RUNNING
+        } else {
+            val route = route(entity, goal)
+            setData(pathDestVar, route)
+            if (route != null) {
+                state = NodeState.SUCCESS
+            } else {
+                state = NodeState.FAILURE
+            }
         }
-        val route = route(entity, goal)
-        setData(pathDestVar, route)
-        return route != null
+    }
+
+    override fun updateState(entity: Entity) {
+        if (useCoroutines) {
+            val job = getData<Deferred<EntityPath?>>(DefaultVariable.PATHING_JOB)
+            if (job == null) {
+                state = NodeState.FAILURE
+            } else if (job.isActive) {
+                state = NodeState.RUNNING
+            } else if (job.isCompleted) {
+                val result = job.getCompleted()
+                if (result != null) {
+                    if (getData<EntityPath>(pathDestVar) == null) {
+                        state = NodeState.RUNNING
+                    } else {
+                        state = NodeState.SUCCESS
+                    }
+                } else {
+                    state = NodeState.FAILURE
+                }
+            }
+        }
+    }
+
+    override fun execute(entity: Entity) {
+        if (useCoroutines) {
+            val job = getData<Deferred<EntityPath?>>(DefaultVariable.PATHING_JOB)
+            if (job != null) {
+                if (job.isCompleted && getData<EntityPath>(pathDestVar) == null) {
+                    val result = job.getCompleted()
+                    setData(pathDestVar, result)
+                }
+            }
+        }
     }
 
     override fun toString() = "FindPath: (goalVar: $goalVar, pathDestVar: $pathDestVar)"
@@ -93,7 +131,7 @@ data class Node(var parent: Node? = null, val pos: TileCoord, val goal: TileCoor
                 val nXTile = xTile + x
                 val nYTile = yTile + y
                 val nCoord = TileCoord(nXTile, nYTile)
-                if ((x != 0 || y != 0) && (nCoord == goal || entity.getCollision(nXTile shl 4, nYTile shl 4, { it !is Entity }) == null)) {
+                if ((x != 0 || y != 0) && (nCoord == goal || entity.getCollisions(nXTile shl 4, nYTile shl 4, { it !is Entity }).isEmpty())) {
                     neighbors.add(Node(null, nCoord, goal, entity))
                 }
             }

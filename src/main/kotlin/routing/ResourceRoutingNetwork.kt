@@ -2,12 +2,14 @@ package routing
 
 import data.WeakMutableList
 import level.Level
+import level.add
+import level.remove
 import misc.Geometry
 import resource.*
 
 class InvalidFunctionCallException(message: String) : Exception(message)
 
-open class ResourceRoutingNetwork(category: ResourceCategory) : ResourceContainer(category) {
+open class ResourceRoutingNetwork(category: ResourceCategory, val level: Level) : ResourceContainer(category) {
 
     val id = nextId++
 
@@ -75,7 +77,7 @@ open class ResourceRoutingNetwork(category: ResourceCategory) : ResourceContaine
     }
 
     override fun copy(): ResourceContainer {
-        return ResourceRoutingNetwork(resourceCategory)
+        return ResourceRoutingNetwork(resourceCategory, level)
     }
 
     override fun resourceList(): ResourceList {
@@ -98,38 +100,38 @@ open class ResourceRoutingNetwork(category: ResourceCategory) : ResourceContaine
     fun attachNode(node: ResourceNode) {
         node.network = this
         attachedNodes.add(node)
-        addCorrespondingNode(node)
+        addCorrespondingInternalNode(node)
     }
 
     fun disattachNode(node: ResourceNode) {
-        node.network = ResourceRoutingNetwork(node.resourceCategory)
+        node.network = ResourceRoutingNetwork(node.resourceCategory, level)
         attachedNodes.remove(node)
-        removeCorrespondingNode(node)
+        removeCorrespondingInternalNode(node)
     }
 
-    fun addCorrespondingNode(node: ResourceNode) {
+    fun addCorrespondingInternalNode(node: ResourceNode) {
         val newNode = ResourceNode(
                 node.xTile + Geometry.getXSign(node.dir),
                 node.yTile + Geometry.getYSign(node.dir),
                 Geometry.getOppositeAngle(node.dir),
                 node.resourceCategory,
-                this)
+                this, level)
         newNode.behavior.allowOut.setStatement(RoutingLanguageStatement.TRUE)
         newNode.behavior.allowIn.setStatement(RoutingLanguageStatement.TRUE)
         newNode.network = this
         newNode.isInternalNetworkNode = true
-        Level.add(newNode)
+        level.add(newNode)
         internalNodes.add(newNode)
     }
 
-    fun removeCorrespondingNode(node: ResourceNode) {
+    fun removeCorrespondingInternalNode(node: ResourceNode) {
         val toRemove = internalNodes.filter {
             it.xTile == node.xTile + Geometry.getXSign(node.dir) &&
                     it.yTile == node.yTile + Geometry.getYSign(node.dir) &&
                     it.dir == Geometry.getOppositeAngle(node.dir) &&
                     it.resourceCategory == node.resourceCategory
         }
-        toRemove.forEach { it.network = ResourceRoutingNetwork(it.resourceCategory); Level.remove(it); internalNodes.remove(it) }
+        toRemove.forEach { it.network = ResourceRoutingNetwork(it.resourceCategory, level); level.remove(it); internalNodes.remove(it) }
     }
 
     /**

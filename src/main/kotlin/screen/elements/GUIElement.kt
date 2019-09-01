@@ -228,6 +228,9 @@ sealed class RootGUIElement(name: String, xAlignment: Alignment, yAlignment: Ali
         return recursivelyFind(predicate, this)
     }
 
+    /**
+     * True the mouse intersects the rectangle starting at [xPixel], [yPixel] with width [widthPixels] and height [heightPixels]
+     */
     var mouseOn: Boolean = false
         set(value) {
             if (value && !field) {
@@ -512,8 +515,6 @@ open class GUIWindow(name: String, xAlignment: Alignment, yAlignment: Alignment,
 
     /* Settings */
 
-    /** If this should not interfere with sending controls to the level when selected */
-    var partOfLevel = false
     /** If this should, when opened, move as near to the mouse as possible (but not beyond the screen) */
     var openAtMouse = false
 

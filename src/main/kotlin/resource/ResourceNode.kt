@@ -4,6 +4,8 @@ import level.Hitbox
 import level.Level
 import misc.Geometry
 import routing.ResourceRoutingNetwork
+import level.add
+import level.LevelManager
 
 /**
  * A node that allows for movement of resources between places on the level. This is not a subclass of LevelObject.
@@ -15,12 +17,17 @@ class ResourceNode(
         val xTile: Int, val yTile: Int,
         val dir: Int,
         val resourceCategory: ResourceCategory,
-        var attachedContainer: ResourceContainer) {
+        var attachedContainer: ResourceContainer,
+        /**
+         * The [Level] this node is in, or will be in if it has not been [added][add] already
+         */
+        val level: Level) {
 
     /**
      * If this node is in the level, meaning it is able to interact with other nodes in the level
      */
     var inLevel = false
+
 
     /**
      * Adjacent nodes facing towards this node.
@@ -37,7 +44,7 @@ class ResourceNode(
     /**
      * The resource routing network which this is part of
      */
-    var network = ResourceRoutingNetwork(resourceCategory)
+    var network = ResourceRoutingNetwork(resourceCategory, level)
     var isInternalNetworkNode = false
 
     /**
@@ -117,11 +124,11 @@ class ResourceNode(
                     break
                 }
             }
-        } else if (outputToLevel) {
+        } else if (outputToLevel && inLevel) {
             // TODO make this better some time, have it actually spawn in the center
             val xSign = Geometry.getXSign(dir)
             val ySign = Geometry.getYSign(dir)
-            Level.add(((xTile shl 4) + 7) + (8 + Hitbox.DROPPED_ITEM.width) * xSign, ((yTile shl 4) + 7) + (8 + Hitbox.DROPPED_ITEM.height) * ySign, resource, quantity)
+            level!!.add(((xTile shl 4) + 7) + (8 + Hitbox.DROPPED_ITEM.width) * xSign, ((yTile shl 4) + 7) + (8 + Hitbox.DROPPED_ITEM.height) * ySign, resource, quantity)
         }
         return true
     }
@@ -162,7 +169,7 @@ class ResourceNode(
     fun isRightType(resource: ResourceType) = resource.category == resourceCategory
 
     fun copy(xTile: Int = this.xTile, yTile: Int = this.yTile, dir: Int = this.dir, attachedContainer: ResourceContainer = this.attachedContainer, outputToLevel: Boolean = this.outputToLevel) =
-            ResourceNode(xTile, yTile, dir, resourceCategory, attachedContainer).apply {
+            ResourceNode(xTile, yTile, dir, resourceCategory, attachedContainer, level).apply {
                 this.behavior = this@ResourceNode.behavior.copy(this)
                 this.outputToLevel = outputToLevel
             }
@@ -201,7 +208,7 @@ class ResourceNode(
         }
 
         fun createCorresponding(n: ResourceNode, attachedContainer: ResourceContainer, behavior: ResourceNodeBehavior) =
-                ResourceNode(n.xTile + Geometry.getXSign(n.dir), n.yTile + Geometry.getYSign(n.dir), Geometry.getOppositeAngle(n.dir), n.resourceCategory, attachedContainer).apply {
+                ResourceNode(n.xTile + Geometry.getXSign(n.dir), n.yTile + Geometry.getYSign(n.dir), Geometry.getOppositeAngle(n.dir), n.resourceCategory, attachedContainer, n.level).apply {
                     this.behavior = behavior
                 }
     }

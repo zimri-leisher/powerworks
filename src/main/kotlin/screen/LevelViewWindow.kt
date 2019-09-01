@@ -32,14 +32,13 @@ class LevelViewWindow(name: String,
     private val controls = mutableListOf<GUIElement>()
 
     init {
-        InputManager.registerControlPressHandler(this, ControlPressHandlerType.SCREEN_THIS, Control.CAMERA_UP, Control.CAMERA_DOWN, Control.CAMERA_LEFT, Control.CAMERA_RIGHT)
+        InputManager.registerControlPressHandler(this, ControlPressHandlerType.INGAME_ONLY, Control.CAMERA_UP, Control.CAMERA_DOWN, Control.CAMERA_LEFT, Control.CAMERA_RIGHT)
         nameText.transparentToInteraction = true
         controls.add(generateDimensionDragGrip(2))
         controls.add(generateDragGrip(2))
         controls.add(generateCloseButton(2))
         controls.add(nameText)
         controls.forEach { it.matchParentOpening = false; it.open = false }
-        partOfLevel = true
     }
 
     override fun handleControlPress(p: ControlPress) {

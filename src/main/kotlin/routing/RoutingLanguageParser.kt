@@ -160,7 +160,6 @@ private class RoutingLanguageParse(val text: String) {
     var error: RoutingLanguageParseError? = null
 
     init {
-        println("    tokenizing $text")
         val tokenList = mutableListOf<Token>()
         // parenthesis
         var editedText = text.replace("(", "( ").replace(")", " )")
@@ -179,7 +178,6 @@ private class RoutingLanguageParse(val text: String) {
             }
         }
         tokens = tokenList.toTypedArray()
-        println("    result: ${tokens.joinToString()}")
     }
 
     private var currentToken = tokens[0]

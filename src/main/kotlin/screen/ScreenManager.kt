@@ -39,14 +39,25 @@ object ScreenManager : ControlPressHandler {
     val playingAnimations = ConcurrentlyModifiableMutableList<GUIAnimation<*>>()
 
     /**
-     * The last GUIElement interacted with. Keep in mind this doesn't look at elements with the transparentToInteraction flag set to true
+     * The last [GUIElement] clicked on. Keep in mind this doesn't look at elements with the [GUIElement.transparentToInteraction] flag set to true
      */
-    var selectedElement: GUIElement? = null
+    lateinit var elementLastInteractedWith: GUIElement
 
     /**
-     * The last GUIWindow interacted with. Keep in mind this doesn't look at elements with the transparentToInteraction flag set to true
+     * The last [GUIWindow] clicked on. Keep in mind this doesn't look at elements with the [GUIWindow.transparentToInteraction] flag set to true
      */
-    var selectedWindow: GUIWindow? = null
+    lateinit var windowLastInteractedWith: GUIWindow
+
+    /**
+     * The [GUIElement] under the mouse
+     */
+    var elementUnderMouse: GUIElement? = null
+
+    /**
+     * The [GUIWindow] under the mouse
+     */
+    var windowUnderMouse: GUIWindow? = null
+
 
     object Groups {
         val BACKGROUND = WindowGroup(0, "Background")
@@ -85,6 +96,8 @@ object ScreenManager : ControlPressHandler {
 
     private fun updateMouseOn() {
         forEachElement({ it.mouseOn = isMouseOn(it) }, { it.open })
+        windowUnderMouse = getHighestWindow(Mouse.xPixel, Mouse.yPixel, { !it.transparentToInteraction })
+        elementUnderMouse = getHighestElement(Mouse.xPixel, Mouse.yPixel, windowUnderMouse, { !it.transparentToInteraction })
     }
 
     fun isMouseOn(e: RootGUIElement): Boolean {
@@ -95,7 +108,7 @@ object ScreenManager : ControlPressHandler {
         return Geometry.contains(e.xPixel, e.yPixel, e.widthPixels, e.heightPixels, xPixel, yPixel, 0, 0)
     }
 
-    /** @return the highest window, layer-wise, that intersects the given x and y coordinates and matches the predicate */
+    /** @return the highest [GUIWindow], [layer][GUIWindow.layer]-wise, that intersects the point ([xPixel], [yPixel]) and matches the [predicate] */
     fun getHighestWindow(xPixel: Int, yPixel: Int, predicate: (GUIWindow) -> Boolean = { true }): GUIWindow? {
         var g: GUIWindow? = null
         windowGroups.forEach {
@@ -106,7 +119,7 @@ object ScreenManager : ControlPressHandler {
         return g
     }
 
-    /** @return the highest element, layer-wise, that intersects the given x and y coordinates and matches the predicate. */
+    /** @return the highest [GUIElement], [layer][GUIElement.layer]-wise, that intersects the point ([xPixel], [yPixel]) and matches the [predicate] */
     fun getHighestElement(xPixel: Int, yPixel: Int, window: GUIWindow? = getHighestWindow(xPixel, yPixel), predicate: (GUIElement) -> Boolean = { true }): GUIElement? {
         return window?.openChildren?.stream()?.filter {
             intersectsElement(xPixel, yPixel, it) && predicate(it)
@@ -120,37 +133,20 @@ object ScreenManager : ControlPressHandler {
     }
 
     private fun updateSelected() {
-        val x = Mouse.xPixel
-        val y = Mouse.yPixel
-        selectedWindow = getHighestWindow(x, y, { !it.transparentToInteraction })
-        val window = selectedWindow
-        if (window != null) {
-            window.windowGroup.bringToTop(window)
-            selectedElement = getHighestElement(x, y, window, { !it.transparentToInteraction })
-        }
-        updateControlHandlers()
-    }
-
-    private fun updateControlHandlers() {
         InputManager.currentScreenHandlers.clear()
-        val x = Mouse.xPixel
-        val y = Mouse.yPixel
-        if (selectedElement is ControlPressHandler) {
-            InputManager.currentScreenHandlers.add(selectedElement as ControlPressHandler)
-        }
-        if (selectedWindow != null) {
-            if (selectedWindow is ControlPressHandler) {
-                InputManager.currentScreenHandlers.add(selectedWindow as ControlPressHandler)
+        if (windowUnderMouse != null) {
+            windowLastInteractedWith = windowUnderMouse!!
+            if (windowLastInteractedWith is ControlPressHandler) {
+                InputManager.currentScreenHandlers.add(windowLastInteractedWith as ControlPressHandler)
             }
-            if (selectedWindow!!.partOfLevel) {
-                val h = getHighestWindow(x, y, { it is LevelViewWindow }) as ControlPressHandler?
-                if (h != null)
-                    InputManager.currentScreenHandlers.add(h)
+        }
+        if (elementUnderMouse != null) {
+            elementLastInteractedWith = elementUnderMouse!!
+            if (elementLastInteractedWith is ControlPressHandler) {
+                InputManager.currentScreenHandlers.add(elementLastInteractedWith as ControlPressHandler)
             }
         }
     }
-
-    // TODO update screen control handlers by going through the selected elements. if one is part of the level, add the gui view under it to the screen handler - find out if this has been done?
 
     private fun forEachElement(func: ((GUIElement) -> Unit), pred: ((GUIElement) -> Boolean)? = null) {
         windows.forEach { it.children.forEach { recursivelyCall(it, func, pred) } }
@@ -172,16 +168,17 @@ object ScreenManager : ControlPressHandler {
         if (Control.Group.INTERACTION.contains(c)) {
             // If it is repeating, we don't want it to change the selected element so we can move the mouse nice and fast
             // without worrying that it will click on something else
-            if (t == PressType.PRESSED)
+            if (t == PressType.PRESSED) {
                 updateSelected()
+            }
             if (Control.Group.SCROLL.contains(c)) {
-                selectedElement?.onScroll(if (c == Control.SCROLL_UP) 1 else -1)
+                elementUnderMouse?.onScroll(if (c == Control.SCROLL_UP) 1 else -1)
             } else {
                 val shift = InputManager.inputsBeingPressed.contains("SHIFT")
                 val control = InputManager.inputsBeingPressed.contains("CONTROL")
                 val alt = InputManager.inputsBeingPressed.contains("ALT")
-                selectedElement?.onInteractOn(t, x, y, b, shift, control, alt)
-                forEachElement({ it.onInteractOff(t, x, y, b, shift, control, alt) }, { it != selectedElement && it.open })
+                elementUnderMouse?.onInteractOn(t, x, y, b, shift, control, alt)
+                forEachElement({ it.onInteractOff(t, x, y, b, shift, control, alt) }, { it != elementUnderMouse && it.open })
             }
         }
     }

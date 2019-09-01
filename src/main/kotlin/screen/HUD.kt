@@ -151,7 +151,6 @@ object HUD {
         private val selectOverlay = GUITexturePane(this, "Hotbar slot selected overlay", { selected * GUIItemSlot.WIDTH }, { 0 }, textureRegion = Image.GUI.HOTBAR_SELECTED_SLOT, layer = layer + 2)
 
         init {
-            partOfLevel = true
             InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.SLOT_1, Control.SLOT_2, Control.SLOT_3, Control.SLOT_4, Control.SLOT_5, Control.SLOT_6, Control.SLOT_7, Control.SLOT_8, Control.GIVE_TEST_ITEM)
             GUITexturePane(this, "hotbar background", -1, 0, Image.GUI.GREY_FILLER, widthPixels + 2, heightPixels + 1, open = true)
             for (i in 0 until HOTBAR_SIZE) {

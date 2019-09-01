@@ -7,9 +7,7 @@ import graphics.Renderer
 import graphics.Texture
 import io.*
 import item.ItemType
-import level.CHUNK_PIXEL_EXP
-import level.DroppedItem
-import level.Level
+import level.*
 import level.pipe.PipeBlock
 import level.tube.TubeBlock
 import main.DebugCode
@@ -78,7 +76,7 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
                 }
             }
         }
-        InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.DROP_HELD_ITEM, Control.PICK_UP_DROPPED_ITEMS)
+        InputManager.registerControlPressHandler(this, ControlPressHandlerType.LEVEL_ANY_UNDER_MOUSE, Control.DROP_HELD_ITEM, Control.PICK_UP_DROPPED_ITEMS)
     }
 
     /**
@@ -103,14 +101,14 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
         }
         when (Game.currentDebugCode) {
             DebugCode.TUBE_INFO -> {
-                val t = Game.currentLevel.selectedLevelObject
+                val t = LevelManager.levelObjectUnderMouse
                 if (t is TubeBlock) {
                     val tubeString = "Tube:\n" +
                             "  Tile: ${t.xTile}, ${t.yTile}\n" +
                             "  Group: ${t.network.id}\n"
                     val intersection = t.network.intersections.firstOrNull { it.tubeBlock == t }
                     val intersectionString =
-                            if (t.shouldBeIntersection() == true && intersection != null)
+                            if (t.shouldBeIntersection() && intersection != null)
                                 "Intersection connections:\n" +
                                         "  Up: ${intersection.connections[0]?.dist}\n" +
                                         "  Right: ${intersection.connections[1]?.dist}\n" +
@@ -123,7 +121,7 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
                 }
             }
             DebugCode.PIPE_INFO -> {
-                val t = Game.currentLevel.selectedLevelObject
+                val t = LevelManager.levelObjectUnderMouse
                 if (t is PipeBlock) {
                     val pipeString = "Tube:\n" +
                             "  Tile: ${t.xTile}, ${t.yTile}\n" +
@@ -133,31 +131,32 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
                 }
             }
             DebugCode.RESOURCE_NODES_INFO -> {
-                val nodes = Level.ResourceNodes.get(Game.currentLevel.mouseLevelXPixel shr 4, Game.currentLevel.mouseLevelYPixel shr 4)
-                val s = StringBuilder()
-                for (n in nodes) {
-                    s.append("    in: ${n.behavior.allowIn},       out: ${n.behavior.allowOut}\n" +
-                            "    force in: ${n.behavior.forceIn}, forceOut: ${n.behavior.forceOut}\n" +
-                            "    dir: ${n.dir}\n")
+                val nodes = LevelManager.levelUnderMouse?.getResourceNodesAt(LevelManager.mouseLevelXPixel shr 4, LevelManager.mouseLevelYPixel shr 4)
+                if(nodes != null) {
+                    val s = StringBuilder()
+                    for (n in nodes) {
+                        s.append("    in: ${n.behavior.allowIn},       out: ${n.behavior.allowOut}\n" +
+                                "    force in: ${n.behavior.forceIn}, forceOut: ${n.behavior.forceOut}\n" +
+                                "    dir: ${n.dir}\n")
+                    }
+                    Renderer.renderText("Resource nodes at ${LevelManager.mouseLevelXPixel shr 4}, ${LevelManager.mouseLevelYPixel shr 4}:\n$s", xPixel, yPixel)
+
                 }
-                Renderer.renderText("Resource nodes at ${Game.currentLevel.mouseLevelXPixel shr 4}, ${Game.currentLevel.mouseLevelYPixel shr 4}:\n$s", xPixel, yPixel)
-            }
+                   }
             DebugCode.SCREEN_INFO -> {
                 Renderer.renderText("Element on mouse:\n" +
                         "  ${ScreenManager.getHighestElement(xPixel, yPixel, predicate = { !it.transparentToInteraction })}\n" +
-                        "Window on mouse:\n" +
-                        "  ${ScreenManager.getHighestWindow(xPixel, yPixel, { !it.transparentToInteraction })}", xPixel + 3, yPixel + 3)
+                        "Window under mouse:\n" +
+                        "  ${ScreenManager.windowUnderMouse}", xPixel + 3, yPixel + 3)
                 Renderer.renderFilledRectangle(xPixel, yPixel, 1, 1)
             }
             DebugCode.POSITION_INFO -> {
                 Renderer.renderText("Screen:\n" +
                         "  Pixel: $xPixel, $yPixel\n" +
-                        "  Tile: ${xPixel shr 4}, ${yPixel shr 4}\n" +
-                        "  Chunk: ${xPixel shr CHUNK_PIXEL_EXP}, ${yPixel shr CHUNK_PIXEL_EXP}\n" +
                         if (State.CURRENT_STATE == State.INGAME) "Level:\n" +
-                                "  Pixel: ${Game.currentLevel.mouseLevelXPixel}, ${Game.currentLevel.mouseLevelYPixel}\n" +
-                                "  Tile: ${Game.currentLevel.mouseLevelXPixel shr 4}, ${Game.currentLevel.mouseLevelYPixel shr 4}\n" +
-                                "  Chunk: ${Game.currentLevel.mouseLevelXPixel shr CHUNK_PIXEL_EXP}, ${Game.currentLevel.mouseLevelYPixel shr CHUNK_PIXEL_EXP}" else "", xPixel, yPixel)
+                                "  Pixel: ${LevelManager.mouseLevelXPixel}, ${LevelManager.mouseLevelYPixel}\n" +
+                                "  Tile: ${LevelManager.mouseLevelXPixel shr 4}, ${LevelManager.mouseLevelYPixel shr 4}\n" +
+                                "  Chunk: ${LevelManager.mouseLevelXPixel shr CHUNK_PIXEL_EXP}, ${LevelManager.mouseLevelYPixel shr CHUNK_PIXEL_EXP}" else "", xPixel, yPixel)
             }
         }
     }
@@ -169,7 +168,7 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
     private fun dropHeldItem(q: Int = 1) {
         if (heldItemType != null) {
             val type = heldItemType!!
-            if (Level.add(DroppedItem(Game.currentLevel.mouseLevelXPixel, Game.currentLevel.mouseLevelYPixel, type, q)))
+            if (LevelManager.levelUnderMouse?.add(DroppedItem(LevelManager.mouseLevelXPixel, LevelManager.mouseLevelYPixel, type, q)) == true)
                 Game.mainInv.remove(type, q)
         }
     }
@@ -190,12 +189,12 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
                 Control.DROP_HELD_ITEM -> if (State.CURRENT_STATE == State.INGAME) dropHeldItem()
                 Control.PICK_UP_DROPPED_ITEMS -> {
                     if (State.CURRENT_STATE == State.INGAME) {
-                        val i = Level.DroppedItems.getInRadius(Game.currentLevel.mouseLevelXPixel, Game.currentLevel.mouseLevelYPixel, DROPPED_ITEM_PICK_UP_RANGE)
-                        if (i.isNotEmpty()) {
+                        val i = LevelManager.levelUnderMouse?.getDroppedItemCollisionsInSquareCenteredOn(LevelManager.mouseLevelXPixel, LevelManager.mouseLevelYPixel, DROPPED_ITEM_PICK_UP_RANGE)
+                        if (i != null && i.isNotEmpty()) {
                             val g = i.first()
                             if (!Game.mainInv.full) {
                                 Game.mainInv.add(g.itemType, g.quantity)
-                                Level.remove(g)
+                                LevelManager.localLevel.remove(g)
                                 if (heldItemType == null) {
                                     heldItemType = g.itemType
                                 }

@@ -1,9 +1,7 @@
 package level.block
 
 import graphics.Renderer
-import level.CHUNK_TILE_EXP
-import level.Level
-import level.LevelObject
+import level.*
 import level.particle.ParticleEffect
 import resource.ResourceContainerGroup
 import resource.ResourceNodeGroup
@@ -39,7 +37,7 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotatio
      */
     override fun onAddToLevel() {
         ParticleEffect.BLOCK_PLACE.instantiate(this)
-        nodes.forEach { Level.add(it) }
+        nodes.forEach { level.add(it) }
         // loop through each block touching this one, accounting for width and height
         val adjacent = mutableSetOf<Block>()
         for (w in 0 until type.widthTiles) {
@@ -47,7 +45,7 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotatio
                 for (y in -1..1) {
                     for (x in -1..1) {
                         if (Math.abs(x) != Math.abs(y)) {
-                            val b = Level.Blocks.get(xTile + x + w, yTile + y + h)
+                            val b = level.getBlockAt(xTile + x + w, yTile + y + h)
                             if (b != null && b != this)
                                 adjacent.add(b)
                         }
@@ -62,7 +60,7 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotatio
      * Don't forget to call super.onRemoveFromLevel() in subclasses overriding this so that the onAdjacentBlockRemove methods of adjacent blocks are called
      */
     override fun onRemoveFromLevel() {
-        nodes.forEach { Level.remove(it) }
+        nodes.forEach { level.remove(it) }
         // loop through each block touching this one, accounting for width and height
         val adjacent = mutableSetOf<Block>()
         for (w in 0 until type.widthTiles) {
@@ -70,7 +68,7 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotatio
                 for (y in -1..1) {
                     for (x in -1..1) {
                         if (Math.abs(x) != Math.abs(y)) {
-                            val b = Level.Blocks.get(xTile + x + w, yTile + y + h)
+                            val b = level.getBlockAt(xTile + x + w, yTile + y + h)
                             if (b != null && b != this)
                                 adjacent.add(b)
                         }
@@ -96,27 +94,28 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotatio
 
     }
 
-    override fun getCollision(xPixel: Int, yPixel: Int, predicate: ((LevelObject) -> Boolean)?): LevelObject? {
+    override fun getCollisions(xPixel: Int, yPixel: Int, predicate: (LevelObject) -> Boolean, level: Level): Set<LevelObject> {
+        val set = mutableSetOf<LevelObject>()
         // Check if a block is already present
         val nXTile = xPixel shr 4
         val nYTile = yPixel shr 4
+        set.addAll(level.getMovingObjectCollisions(hitbox, xPixel, yPixel, predicate))
         for (x in nXTile until (nXTile + type.widthTiles)) {
             for (y in nYTile until (nYTile + type.heightTiles)) {
-                val c = Level.Chunks.get(x shr CHUNK_TILE_EXP, y shr CHUNK_TILE_EXP)
+                val c = level.getChunkAt(x shr CHUNK_TILE_EXP, y shr CHUNK_TILE_EXP)
                 val b = c.getBlock(x, y)
                 if (b != null) {
-                    if (predicate != null && !predicate(b)) {
+                    if (!predicate(b)) {
                         continue
                     }
                     // check memory because we could be trying to put the same block down at the same place
                     if (b !== this) {
-                        return b
+                        set.add(b)
                     }
                 }
             }
         }
-        // Checks for moving objects. Don't worry about blocks
-        return Level.MovingObjects.getCollision(this, xPixel, yPixel, predicate)
+        return set
     }
 
     override fun save(out: DataOutputStream) {

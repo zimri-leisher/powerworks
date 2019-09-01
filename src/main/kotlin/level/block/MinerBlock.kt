@@ -1,13 +1,15 @@
 package level.block
 
 import level.Level
+import level.getTileAt
 import level.tile.OreTile
 
 class MinerBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(MachineBlockType.MINER, xTile, yTile, rotation) {
+
     override fun onFinishWork() {
         for (x in 0 until type.widthTiles) {
             for (y in 0 until type.heightTiles) {
-                val tile = Level.Tiles.get(xTile + x, yTile + y)
+                val tile = level.getTileAt(xTile + x, yTile + y)
                 if (tile is OreTile) {
                     // fill up the internal inventory
                     if (containers.add(tile.type.minedItem, 1)) {

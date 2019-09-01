@@ -8,8 +8,13 @@ import level.entity.Entity
 
 class Succeeder(parent: BehaviorTree, child: Node) : Decorator(parent, child) {
     override fun init(entity: Entity) {
-        state = NodeState.RUNNING
         child.init(entity)
+        if(child.state != NodeState.RUNNING) {
+            state = NodeState.SUCCESS
+        } else {
+            state = NodeState.RUNNING
+
+        }
     }
 
     override fun updateState(entity: Entity) {

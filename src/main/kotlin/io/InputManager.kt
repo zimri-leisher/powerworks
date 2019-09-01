@@ -3,11 +3,12 @@ package io
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputProcessor
 import data.ConcurrentlyModifiableMutableMap
-import data.ConcurrentlyModifiableWeakMutableMap
 import data.WeakMutableList
+import level.Level
+import level.LevelManager
+import level.LevelObject
 import main.Game
-import screen.ScreenManager
-import screen.elements.GUILevelView
+import main.State
 import screen.mouse.Mouse
 import java.awt.event.KeyEvent
 import java.lang.ref.WeakReference
@@ -19,12 +20,25 @@ interface ControlPressHandler {
 enum class ControlPressHandlerType {
     /** Anywhere, no matter what */
     GLOBAL,
-    /** Only this object in the level*/
-    LEVEL_THIS,
-    /** Anywhere in the level. More specifically, if the last selected gui element is a GUILevelView*/
-    LEVEL_ANY,
-    /** Only this object on the screen. More specifically, if the control handler is the last selected gui element, or the control handler is a gui window with partOfLevel set to false.
-     * If the last selected window has partOfLevel set to true, the control handler will receive the controls if it the highest GUILevelView directly under the mouse*/
+    /**
+     * Only when this [LevelObject] is under the mouse
+     */
+    LEVEL_THIS_UNDER_MOUSE,
+    /**
+     * Only when this [LevelObject] is the last [LevelObject] interacted with (clicked on)
+     */
+    LEVEL_THIS_LAST_SELECTED,
+    /**
+     * Only when there is a [Level] under the mouse
+     */
+    LEVEL_ANY_UNDER_MOUSE,
+    /**
+     * Only when the [State.CURRENT_STATE] is [State.INGAME]
+     */
+    INGAME_ONLY,
+    /**
+     * Only this object on the screen
+     */
     SCREEN_THIS
     // no need for SCREEN_ANY because that's the same as global
 }
@@ -37,7 +51,7 @@ object InputManager : InputProcessor {
     var map = ControlMap.DEFAULT
 
     val handlers = ConcurrentlyModifiableMutableMap<
-            // the handler itself and the handler type (GLOBAL, LEVEL_ANY, etc.)
+            // the handler itself and the handler type (GLOBAL, LEVEL_ANY_UNDER_MOUSE, etc.)
             Pair<
                     WeakReference<ControlPressHandler>,
                     ControlPressHandlerType>,
@@ -45,7 +59,7 @@ object InputManager : InputProcessor {
             // each pair in this map specifies the control map and the controls that the handler wants to receive when that map is active
             Map<
                     ControlMap,
-                    // you've tried to remove this 'out' before. don't bother.
+                    // you've tried to remove this 'out' before. don't bother. lmao kotlin generics
                     Array<out Control>?>?>()
 
     var currentScreenHandlers = WeakMutableList<ControlPressHandler>()
@@ -77,7 +91,7 @@ object InputManager : InputProcessor {
 
     /**
      * Registers a control press handler
-     * @param type one of GLOBAL, LEVEL_ANY, LEVEL_THIS and SCREEN_THIS
+     * @param type one of GLOBAL, LEVEL_ANY_UNDER_MOUSE, LEVEL_THIS_UNDER_MOUSE and SCREEN_THIS
      * @param controls the control group of controls to send to this
      */
     fun registerControlPressHandler(h: ControlPressHandler, type: ControlPressHandlerType, controls: Control.Group) {
@@ -86,7 +100,7 @@ object InputManager : InputProcessor {
 
     /**
      * Registers a control press handler
-     * @param type one of GLOBAL, LEVEL_ANY, LEVEL_THIS and SCREEN_THIS
+     * @param type one of GLOBAL, LEVEL_ANY_UNDER_MOUSE, LEVEL_THIS_UNDER_MOUSE and SCREEN_THIS
      * @param controls the first element is the control map that these controls are active on, the second is the list of controls to send to this
      */
     fun registerControlPressHandler(h: ControlPressHandler, type: ControlPressHandlerType, controls: Map<ControlMap, Array<out Control>>? = null) {
@@ -95,7 +109,7 @@ object InputManager : InputProcessor {
 
     /**
      * Registers a control press handler
-     * @param type one of GLOBAL, LEVEL_ANY, LEVEL_THIS and SCREEN_THIS
+     * @param type one of GLOBAL, LEVEL_ANY_UNDER_MOUSE, LEVEL_THIS_UNDER_MOUSE and SCREEN_THIS
      * @param controls the list of controls to send to this
      */
     fun registerControlPressHandler(h: ControlPressHandler, type: ControlPressHandlerType, controls: List<Control>) {
@@ -104,7 +118,7 @@ object InputManager : InputProcessor {
 
     /**
      * Registers a control press handler
-     * @param type one of GLOBAL, LEVEL_ANY, LEVEL_THIS and SCREEN_THIS
+     * @param type one of GLOBAL, LEVEL_ANY_UNDER_MOUSE, LEVEL_THIS_UNDER_MOUSE and SCREEN_THIS
      * @param map the map for which controls should be sent to the handler. If the map is any other, even if the controls
      * match, this will not receive them
      * @param controls the list of controls to send to this
@@ -115,7 +129,7 @@ object InputManager : InputProcessor {
 
     /**
      * Registers a control press handler
-     * @param type one of GLOBAL, LEVEL_ANY, LEVEL_THIS and SCREEN_THIS
+     * @param type one of GLOBAL, LEVEL_ANY_UNDER_MOUSE, LEVEL_THIS_UNDER_MOUSE and SCREEN_THIS
      * @param controls the list of controls to send to this
      */
     fun registerControlPressHandler(h: ControlPressHandler, type: ControlPressHandlerType, vararg controls: Control) {
@@ -128,7 +142,7 @@ object InputManager : InputProcessor {
 
     /**
      * Registers a control press handler
-     * @param type one of GLOBAL, LEVEL_ANY, LEVEL_THIS and SCREEN_THIS
+     * @param type one of GLOBAL, LEVEL_ANY_UNDER_MOUSE, LEVEL_THIS_UNDER_MOUSE and SCREEN_THIS
      * @param map whenever this map is active, all controls will be sent to this
      */
     fun registerControlPressHandler(h: ControlPressHandler, type: ControlPressHandlerType, map: ControlMap) {
@@ -148,8 +162,6 @@ object InputManager : InputProcessor {
 
 
     fun update() {
-
-
         if (textHandler != null) {
             charsTyped.forEach {
                 textHandler!!.handleChar(it)
@@ -208,20 +220,16 @@ object InputManager : InputProcessor {
 
     private fun sendPress(p: ControlPress) {
         handlers.forEach { k, v ->
-            if(k.first.get() == null) {
+            if (k.first.get() == null) {
                 handlers.remove(k)
             } else {
                 val handler = k.first.get()!!
                 if (k.second == ControlPressHandlerType.GLOBAL ||
                         (k.second == ControlPressHandlerType.SCREEN_THIS && currentScreenHandlers.contains(handler)) ||
-                        (k.second == ControlPressHandlerType.LEVEL_ANY && ScreenManager.selectedElement is GUILevelView) ||
-                        (k.second == ControlPressHandlerType.LEVEL_THIS &&
-                                // we want the part below because otherwise the level controls will trigger even when we
-                                // press on a gui element that is higher. They stop the controls from being sent to the level object
-                                // if there is an element in front of it, basically
-                                // However, we don't care if it is a gui view because that's how we're supposed to interact
-                                (ScreenManager.selectedWindow == null || ScreenManager.selectedElement is GUILevelView)
-                                && currentLevelHandlers.contains(handler))) {
+                        (k.second == ControlPressHandlerType.LEVEL_ANY_UNDER_MOUSE && LevelManager.levelUnderMouse != null) ||
+                        (k.second == ControlPressHandlerType.LEVEL_THIS_LAST_SELECTED && LevelManager.levelObjectLastInteractedWith == handler) ||
+                        (k.second == ControlPressHandlerType.LEVEL_THIS_UNDER_MOUSE && LevelManager.levelObjectUnderMouse != null && currentLevelHandlers.contains(handler)) ||
+                        (k.second == ControlPressHandlerType.INGAME_ONLY && State.CURRENT_STATE == State.INGAME)) {
                     if (v != null) {
                         if (v.containsKey(map)) {
                             val controls = v.get(map)

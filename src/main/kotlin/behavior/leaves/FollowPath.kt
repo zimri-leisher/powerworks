@@ -2,7 +2,6 @@ package behavior.leaves
 
 import behavior.*
 import level.entity.Entity
-import misc.Numbers
 
 class FollowPath(parent: BehaviorTree, val pathVar: Variable) : Leaf(parent) {
 
@@ -14,22 +13,40 @@ class FollowPath(parent: BehaviorTree, val pathVar: Variable) : Leaf(parent) {
         if (path == null) {
             state = NodeState.FAILURE
             return
-        } else if(path.steps.isEmpty()) {
+        } else if (path.steps.isEmpty()) {
             state = NodeState.SUCCESS
             return
         }
         setData(DefaultVariable.PATH_BEING_FOLLOWED, path)
         setData(DefaultVariable.PATH_CURRENT_STEP_INDEX, 0)
-
         setData(moveTo, entity, DefaultVariable.MOVE_TO_GOAL_POSITION.name, path.steps[0])
         moveTo.init(entity)
-        if(moveTo.state == NodeState.FAILURE) {
+        if (moveTo.state == NodeState.FAILURE) {
             state = NodeState.FAILURE
         }
     }
 
     override fun updateState(entity: Entity) {
-        val path = getData<EntityPath>(DefaultVariable.PATH_BEING_FOLLOWED)!!
+        var path = getData<EntityPath>(DefaultVariable.PATH_BEING_FOLLOWED)
+        if (path == null) {
+            val recheckPath = getData<EntityPath>(pathVar)
+            if (recheckPath == null) {
+                state = NodeState.FAILURE
+                return
+            } else if (recheckPath.steps.isEmpty()) {
+                state = NodeState.SUCCESS
+                return
+            } else {
+                path = recheckPath
+                setData(DefaultVariable.PATH_BEING_FOLLOWED, path)
+                setData(DefaultVariable.PATH_CURRENT_STEP_INDEX, 0)
+                setData(moveTo, entity, DefaultVariable.MOVE_TO_GOAL_POSITION.name, path.steps[0])
+                moveTo.init(entity)
+                if (moveTo.state == NodeState.FAILURE) {
+                    state = NodeState.FAILURE
+                }
+            }
+        }
         val currentStepIndex = getData<Int>(DefaultVariable.PATH_CURRENT_STEP_INDEX)!!
         moveTo.updateState(entity)
         if (moveTo.state == NodeState.SUCCESS) {
@@ -41,7 +58,7 @@ class FollowPath(parent: BehaviorTree, val pathVar: Variable) : Leaf(parent) {
             setData(moveTo, entity, DefaultVariable.MOVE_TO_GOAL_POSITION.name, path.steps[currentStepIndex + 1])
             state = NodeState.RUNNING
             return
-        } else if(moveTo.state == NodeState.FAILURE) {
+        } else if (moveTo.state == NodeState.FAILURE) {
             state = NodeState.FAILURE
             return
         } else {
@@ -50,7 +67,7 @@ class FollowPath(parent: BehaviorTree, val pathVar: Variable) : Leaf(parent) {
     }
 
     override fun execute(entity: Entity) {
-        if(moveTo.state == NodeState.RUNNING) {
+        if (moveTo.state == NodeState.RUNNING) {
             moveTo.execute(entity)
         }
     }

@@ -10,6 +10,7 @@ import graphics.Texture
 import item.Inventory
 import item.OreItemType
 import level.Hitbox
+import level.LevelManager
 import level.LevelObjectTextures
 import level.LevelObjectType
 import level.pipe.PipeBlock
@@ -77,7 +78,7 @@ open class BlockType<T : Block>(initializer: BlockType<T>.() -> Unit = {}) : Lev
                                     allowIn: String = "false", allowOut: String = "false",
                                     forceIn: String = "false", forceOut: String = "false",
                                     allowBehaviorModification: Boolean = false): ResourceNode {
-            val r = ResourceNode(xOffset, yOffset, dir, attachedContainer.resourceCategory, attachedContainer)
+            val r = ResourceNode(xOffset, yOffset, dir, attachedContainer.resourceCategory, attachedContainer, LevelManager.emptyLevel)
             with(r.behavior) {
                 this.allowIn.setStatement(RoutingLanguage.parse(allowIn), null)
                 this.allowOut.setStatement(RoutingLanguage.parse(allowOut), null)
@@ -95,7 +96,6 @@ open class BlockType<T : Block>(initializer: BlockType<T>.() -> Unit = {}) : Lev
         private fun instantiateContainers() = containers.associateWith { it.copy() }
 
         fun instantiate(xTile: Int, yTile: Int, dir: Int): List<ResourceNode> {
-            // todo stop this from being called every tick with a ghost block out
             val ret = mutableListOf<ResourceNode>()
             val containers = instantiateContainers()
             for (node in nodes) {

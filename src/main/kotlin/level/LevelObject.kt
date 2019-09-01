@@ -4,27 +4,27 @@ import com.badlogic.gdx.graphics.Color
 import graphics.Renderer
 import graphics.TextureRenderParams
 import io.PressType
+import level.moving.MovingObject
 import main.DebugCode
 import main.Game
+import screen.mouse.Tool.Companion.Interactor
 import java.io.DataOutputStream
 
 private var nextId = 0
 
 abstract class LevelObject protected constructor(
-        open val type: LevelObjectType<out LevelObject>,
+        type: LevelObjectType<out LevelObject>,
         open val xPixel: Int, open val yPixel: Int,
         rotation: Int = 0,
         /**
-         * Should be the default (unrotated) instance of the hitbox.
-         */
-        hitbox: Hitbox = type.hitbox,
-        requiresUpdate: Boolean = type.requiresUpdate,
-        /**
-         * Whether or not the INTERACTOR tool should allow clicking on this
+         * Whether or not the [Interactor] tool should allow clicking on this
          */
         var isInteractable: Boolean = true) {
 
+    open val type = type
     val id = nextId++
+
+    var level = LevelManager.emptyLevel
 
     open val xTile = xPixel shr 4
     open val yTile = yPixel shr 4
@@ -42,8 +42,15 @@ abstract class LevelObject protected constructor(
             }
         }
 
-    var hitbox = Hitbox.rotate(hitbox, rotation)
-        private set
+    var hitbox = type.hitbox
+        set(value) {
+            if (field != value) {
+                if(this is MovingObject) {
+                    level.updateChunkOf(this)
+                }
+                field = value
+            }
+        }
 
     var rotation = rotation
         set(value) {
@@ -67,9 +74,9 @@ abstract class LevelObject protected constructor(
             }
         }
 
-    var requiresUpdate: Boolean = requiresUpdate
+    var requiresUpdate = type.requiresUpdate
         set(value) {
-            val c = Level.Chunks.get(xChunk, yChunk)
+            val c = level.getChunkAt(xChunk, yChunk)
             if (field && !value) {
                 field = value
                 c.removeUpdateRequired(this)
@@ -77,15 +84,12 @@ abstract class LevelObject protected constructor(
                 field = value
                 c.addUpdateRequired(this)
             }
-
         }
 
     open fun render() {
-        if (type.requiresRender) {
-            type.textures.render(this)
-            if (Game.currentDebugCode == DebugCode.RENDER_HITBOXES)
-                renderHitbox()
-        }
+        type.textures.render(this)
+        if (Game.currentDebugCode == DebugCode.RENDER_HITBOXES)
+            renderHitbox()
     }
 
     /**
@@ -119,13 +123,13 @@ abstract class LevelObject protected constructor(
     }
 
     /**
-     * Checks if this level object would have a collision at the given coordinates, excludes all collisions that would happen with a level object not matching the given predicate
-     * @param predicate if null, all level objects are checked
-     * */
-    open fun getCollision(xPixel: Int, yPixel: Int, predicate: ((LevelObject) -> Boolean)? = null): LevelObject? {
+     * @return a set of [LevelObject]s that would collide with this [LevelObject] if it were at [xPixel], [yPixel] in the
+     * given [level] (defaults to [LevelObject.level]). Only considers other [LevelObject]s matching the given [predicate]
+     */
+    open fun getCollisions(xPixel: Int, yPixel: Int, predicate: (LevelObject) -> Boolean = { true }, level: Level = this.level): Set<LevelObject> {
         if (hitbox == Hitbox.NONE)
-            return null
-        return Level.getCollision(this, xPixel, yPixel, predicate)
+            return emptySet()
+        return level.getCollisionsWith(hitbox, xPixel, yPixel, {it != this && predicate(it)})
     }
 
     /**

@@ -3,10 +3,7 @@ package screen
 import graphics.Image
 import graphics.text.TextManager
 import io.PressType
-import level.Level
-import level.LevelGeneratorSettings
-import level.LevelInfo
-import level.SimplexLevel
+import level.*
 import main.Game
 import main.State
 import main.heightPixels
@@ -112,7 +109,7 @@ object LevelSelectorGUI : GUIWindow("Level selector window", { 0 }, { 0 }, { Gam
             val selectionList = GUIDefaultTextureRectangle(this, "level selection list background", { returnButton.alignments.x() + returnButton.widthPixels + 4 }, { 9 }, { GUILevelSelectionButton.WIDTH + GUIVerticalScrollBar.WIDTH + 4 }, { heightPixels - 16 }).apply {
 
                 selectionList = GUIElementList(this, "level selection list", { 2 }, { 2 }, { widthPixels - 4 }, { heightPixels - 4 }, {
-                    for (info in Level.levelInfos) {
+                    for (info in LevelManager.levelInfos) {
                         GUILevelSelectionButton(info, this)
                     }
                 })
@@ -123,7 +120,7 @@ object LevelSelectorGUI : GUIWindow("Level selector window", { 0 }, { 0 }, { Gam
             playButton = GUIButton(this, "level play button", { Game.WIDTH - (19 * (Game.WIDTH.toFloat() / 300)).toInt() - 2 }, { 2 }, "<size=40>P\nL\nA\nY", true, { (19 * (Game.WIDTH.toFloat() / 300)).toInt() }, { Game.HEIGHT - 4 },
                     available = false, notAvailableMessage = "Select a level first!",
                     onRelease = {
-                        Game.currentLevel = SimplexLevel(selectedLevelInfo!!)
+                        LevelManager.setLocalLevel(SimplexLevel(selectedLevelInfo!!))
                         State.setState(State.INGAME)
                         SlideOffScreenAnimation(this@LevelSelectorGUI, onStop = {
                             this@LevelSelectorGUI.open = false
@@ -143,10 +140,10 @@ object LevelSelectorGUI : GUIWindow("Level selector window", { 0 }, { 0 }, { Gam
 
                 GUIButton(this, "level create button", 0, 0, "Create level", onRelease = {
                     var i = 0
-                    while (Level.exists("testinglevel$i"))
+                    while (LevelManager.exists("testinglevel$i"))
                         i++
                     val info = LevelInfo("testinglevel$i", LocalDateTime.now().toString(), LevelGeneratorSettings(256, 256), File(""), File(""))
-                    Level.levelInfos.add(info)
+                    LevelManager.levelInfos.add(info)
                     this@LevelSelectorGUI.selectionList.add(GUILevelSelectionButton(info, this@LevelSelectorGUI.selectionList))
                 })
 

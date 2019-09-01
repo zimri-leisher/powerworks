@@ -8,7 +8,6 @@ open class EntityType<T : Entity>(initializer: () -> Unit = {}) : MovingObjectTy
 
     init {
         requiresUpdate = true
-        requiresRender = true
         initializer()
     }
 

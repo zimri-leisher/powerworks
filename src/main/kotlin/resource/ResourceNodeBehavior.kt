@@ -1,6 +1,7 @@
 package resource
 
 import level.Level
+import level.updateResourceNodeAttachments
 import main.State
 import main.joinToString
 import routing.RoutingLanguageStatement
@@ -32,7 +33,7 @@ class ResourceNodeBehavior(val node: ResourceNode) {
 
     private fun updateAttachments() {
         if (State.CURRENT_STATE == State.INGAME) {
-            Level.ResourceNodes.updateAttachments(node)
+            node.level.updateResourceNodeAttachments(node)
         }
     }
 

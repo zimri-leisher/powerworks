@@ -2,6 +2,7 @@ package screen.elements
 
 import com.badlogic.gdx.graphics.OrthographicCamera
 import graphics.Renderer
+import level.LevelManager
 import level.LevelObject
 import level.MovementListener
 import level.moving.MovingObject
@@ -31,14 +32,15 @@ class GUILevelView(parent: RootGUIElement,
                 layer: Int = parent.layer + 1) :
             this(parent, name, { relXPixel }, { relYPixel }, { widthPixels }, { heightPixels }, camera, zoomLevel, open, layer)
 
+    val level get() = camera.level
+
     /**
      * A list of objects that want to be informed when the camera of this view moves
      */
     val moveListeners = mutableListOf<CameraMovementListener>()
 
     /**
-     * The level object that this view will follow. The view rectangle will be centered on this, meaning the bottom
-     * left corner is at (camera.xPixel - viewWidthPixels / 2, camera.yPixel - viewHeightPixels / 2)
+     * The level object that this view will follow. The view rectangle will be centered on this but clamped to inside the level
      */
     var camera = camera
         set(value) {
@@ -78,10 +80,9 @@ class GUILevelView(parent: RootGUIElement,
         }
 
     /**
-     * The current view rectangle. Bottom left corner is at (camera.xPixel - viewWidthPixels / 2, camera.yPixel - viewHeightPixels / 2),
-     * width is viewWidthPixels, height is viewHeightPixels
+     * The current view rectangle. It will be clamped to the width and height of the level, so that you are never able to see out of bounds
      */
-    var viewRectangle: Rectangle
+    var viewRectangle = Rectangle()
 
     init {
         // Only one level loaded at a time so no need for parents
@@ -89,24 +90,29 @@ class GUILevelView(parent: RootGUIElement,
             camera.moveListeners.add(this)
         }
         updateCamera()
-        viewRectangle = Rectangle(camera.xPixel - viewWidthPixels / 2, camera.yPixel - viewHeightPixels / 2, viewWidthPixels, viewHeightPixels)
-    }
-
-    override fun onClose() {
-        Game.currentLevel.openViews.remove(this)
-    }
-
-    override fun onOpen() {
-        Game.currentLevel.openViews.add(this)
+        updateViewRectangle()
+        LevelManager.addLevelView(this)
     }
 
     private fun updateCamera() {
-        cameraMatrix.viewportWidth = Game.WIDTH.toFloat() * Game.SCALE
-        cameraMatrix.viewportHeight = Game.HEIGHT.toFloat() * Game.SCALE
+        cameraMatrix.viewportWidth = widthPixels.toFloat() * Game.SCALE
+        cameraMatrix.viewportHeight = heightPixels.toFloat() * Game.SCALE
         cameraMatrix.zoom = 1 / zoomMultiplier
         cameraMatrix.position.apply {
-            x = ((camera.xPixel - this@GUILevelView.xPixel + (Game.WIDTH - this@GUILevelView.widthPixels) / 2) * Game.SCALE).toFloat()
-            y = ((camera.yPixel - this@GUILevelView.yPixel + (Game.HEIGHT - this@GUILevelView.heightPixels) / 2) * Game.SCALE).toFloat()
+            var viewXPixel = camera.xPixel
+            var viewYPixel = camera.yPixel
+            if (viewXPixel - viewWidthPixels / 2 < 0) {
+                viewXPixel = viewWidthPixels / 2
+            } else if (viewXPixel + viewWidthPixels / 2 > camera.level.widthPixels) {
+                viewXPixel = camera.level.widthPixels - viewWidthPixels / 2
+            }
+            if (viewYPixel - viewHeightPixels / 2 < 0) {
+                viewYPixel = viewHeightPixels / 2
+            } else if (viewYPixel + viewHeightPixels / 2 > camera.level.heightPixels) {
+                viewYPixel = camera.level.heightPixels - viewHeightPixels / 2
+            }
+            x = (viewXPixel * Game.SCALE).toFloat()
+            y = (viewYPixel * Game.SCALE).toFloat()
         }
         moveListeners.forEach { it.onCameraMove(this, camera.xPixel, camera.yPixel) }
         cameraMatrix.update()
@@ -115,25 +121,37 @@ class GUILevelView(parent: RootGUIElement,
     private fun updateViewRectangle() {
         viewWidthPixels = (widthPixels / zoomMultiplier).toInt()
         viewHeightPixels = (heightPixels / zoomMultiplier).toInt()
-        viewRectangle = Rectangle(camera.xPixel - viewWidthPixels / 2, camera.yPixel - viewHeightPixels / 2, viewWidthPixels, viewHeightPixels)
+        var viewXPixel = camera.xPixel - viewWidthPixels / 2
+        var viewYPixel = camera.yPixel - viewHeightPixels / 2
+        if (viewXPixel < 0) {
+            viewXPixel = 0
+        } else if (viewXPixel + viewWidthPixels > camera.level.widthPixels) {
+            viewXPixel = camera.level.widthPixels - viewWidthPixels
+        }
+        if (viewYPixel < 0) {
+            viewYPixel = 0
+        } else if (viewYPixel + viewHeightPixels > camera.level.heightPixels) {
+            viewYPixel = camera.level.heightPixels - viewHeightPixels
+        }
+        viewRectangle = Rectangle(viewXPixel, viewYPixel, viewWidthPixels, viewHeightPixels)
     }
 
     override fun onDimensionChange(oldWidth: Int, oldHeight: Int) {
         updateCamera()
         updateViewRectangle()
-        Game.currentLevel.updateViewBeingInteractedWith()
+        LevelManager.updateLevelAndViewInformation()
     }
 
     override fun onPositionChange(pXPixel: Int, pYPixel: Int) {
         updateCamera()
-        Game.currentLevel.updateViewBeingInteractedWith()
+        LevelManager.updateLevelAndViewInformation()
     }
 
     //Camera moves
     override fun onMove(m: MovingObject, pXPixel: Int, pYPixel: Int) {
         if (open) {
             updateCamera()
-            viewRectangle = Rectangle(camera.xPixel - viewWidthPixels / 2, camera.yPixel - viewHeightPixels / 2, viewWidthPixels, viewHeightPixels)
+            updateViewRectangle()
             moveListeners.forEach { it.onCameraMove(this, pXPixel, pYPixel) }
         }
     }
@@ -142,7 +160,7 @@ class GUILevelView(parent: RootGUIElement,
         val screenMatrix = Renderer.batch.projectionMatrix.cpy()
         Renderer.batch.projectionMatrix = cameraMatrix.combined
         Renderer.setClip(xPixel, yPixel, widthPixels, heightPixels)
-        Game.currentLevel.render(this)
+        camera.level.render(this)
         Renderer.batch.projectionMatrix = screenMatrix
         Renderer.resetClip()
     }

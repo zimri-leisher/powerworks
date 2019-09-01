@@ -13,12 +13,12 @@ import screen.mouse.Mouse
 import screen.mouse.Tooltips
 
 class DroppedItem(xPixel: Int, yPixel: Int, val itemType: ItemType, quantity: Int = 1) :
-        MovingObject(MovingObjectType.DROPPED_ITEM, xPixel, yPixel, 0, Hitbox.DROPPED_ITEM) {
+        MovingObject(MovingObjectType.DROPPED_ITEM, xPixel, yPixel, 0) {
 
     var quantity = quantity
         set(value) {
             if (quantity < 1) {
-                Level.remove(this)
+                level.remove(this)
             } else {
                 field = value
             }
@@ -26,7 +26,7 @@ class DroppedItem(xPixel: Int, yPixel: Int, val itemType: ItemType, quantity: In
 
     override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
         if (type == PressType.RELEASED) {
-            Level.remove(this)
+            level.remove(this)
             Game.mainInv.add(Item(itemType, quantity))
             Mouse.heldItemType = itemType
             HUD.Hotbar.items.add(itemType)

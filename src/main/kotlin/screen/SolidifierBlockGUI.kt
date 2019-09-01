@@ -14,7 +14,6 @@ class SolidifierBlockGUI(block: SolidifierBlock) :
     private val outputContainerDisplay: GUIResourceContainerDisplay
 
     init {
-        partOfLevel = true
         openAtMouse = true
 
         val nameText = GUIText(group, this@SolidifierBlockGUI.name + " name text", 0, 0, "Solidifying:")

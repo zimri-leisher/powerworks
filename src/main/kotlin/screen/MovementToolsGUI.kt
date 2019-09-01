@@ -22,7 +22,6 @@ object MovementToolsGUI : GUIWindow("Player movement tools", { Game.WIDTH - 80 }
         }
 
     init {
-        partOfLevel = true
         InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.TOGGLE_MOVEMENT_TOOLS)
         GUIDefaultTextureRectangle(this, name + " background", 0, 0).run {
             val runSpeedPrompt = GUIText(this, this@MovementToolsGUI.name + " run speed prompt", 2, 4, "Movement speed:")

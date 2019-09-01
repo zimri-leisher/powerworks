@@ -14,7 +14,6 @@ class FurnaceBlockGUI(block: FurnaceBlock) : AutoFormatGUIWindow("Furnace block 
     private val fluidTankMeter: GUIFluidTankMeter
 
     init {
-        partOfLevel = true
         openAtMouse = true
 
         GUIText(group, this.name + " name text", 0, 0,

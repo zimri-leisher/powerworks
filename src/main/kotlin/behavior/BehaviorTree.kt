@@ -1,8 +1,8 @@
 package behavior
 
 import level.entity.Entity
-import main.fromSnakeCaseToCamelCase
 import behavior.composites.Sequence
+
 class DecoratorWithoutChildException(message: String) : Exception(message)
 class NoSuchDataNameException(message: String) : Exception(message)
 class DataCastException(message: String) : Exception(message)
@@ -17,7 +17,7 @@ class DataCastException(message: String) : Exception(message)
  * Behavior trees, in addition to storing data about nodes and their layout, store arbitrary data used to communicate between
  * nodes in the [data] map. This data can be retrieved/modified with a [DataKey] and [Node.getData] or [Node.setData]
  */
-class BehaviorTree(initializer: Composite.() -> Unit = {}) {
+class BehaviorTree(initializer: CompositeContext.() -> Unit = {}) {
 
     private val base = Sequence(this, mutableListOf())
     private val entities = mutableListOf<Entity>()
@@ -30,7 +30,7 @@ class BehaviorTree(initializer: Composite.() -> Unit = {}) {
     val data = VariableData()
 
     init {
-        initializer(base)
+        CompositeContext(base).initializer()
     }
 
     /**

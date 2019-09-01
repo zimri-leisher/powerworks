@@ -2,6 +2,7 @@ package behavior.leaves
 
 import level.entity.Entity
 import behavior.*
+import level.LevelManager
 import main.Game
 import misc.PixelCoord
 
@@ -16,14 +17,14 @@ import misc.PixelCoord
 class GetRandomPosition(parent: BehaviorTree, val dest: Variable, val xCenter: Int, val yCenter: Int, val radius: Int) : DataLeaf(parent) {
     override fun run(entity: Entity): Boolean {
         val xPixel = if (xCenter == -1)
-            Game.currentLevel.rand.nextInt(Game.currentLevel.widthPixels)
+            entity.level.rand.nextInt(entity.level.widthPixels)
         else
-            xCenter + (Game.currentLevel.rand.nextInt(radius * 2) - radius)
+            xCenter + (entity.level.rand.nextInt(radius * 2) - radius)
         val yPixel = if (yCenter == -1)
-            Game.currentLevel.rand.nextInt(Game.currentLevel.heightPixels)
+            entity.level.rand.nextInt(entity.level.heightPixels)
         else
-            yCenter + (Game.currentLevel.rand.nextInt(radius * 2) - radius)
-        setData(dest, PixelCoord(xPixel, yPixel).enforceBounds(Game.currentLevel))
+            yCenter + (entity.level.rand.nextInt(radius * 2) - radius)
+        setData(dest, PixelCoord(xPixel, yPixel).enforceBounds(entity.level))
         return true
     }
 

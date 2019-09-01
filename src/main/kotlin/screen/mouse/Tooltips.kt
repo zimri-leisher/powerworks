@@ -1,7 +1,7 @@
 package screen.mouse
 
+import level.LevelManager
 import level.LevelObject
-import main.Game
 import main.State
 import screen.ScreenManager
 import screen.elements.RootGUIElement
@@ -43,7 +43,7 @@ object Tooltips {
             }
         }
         if (s == null && State.CURRENT_STATE == State.INGAME) {
-            val level = Game.currentLevel.selectedLevelObject
+            val level = LevelManager.levelObjectUnderMouse
             if (level != null) {
                 for (v in levelTooltipTemplates.values) {
                     for (f in v) {

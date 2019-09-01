@@ -6,38 +6,48 @@ import level.Level
 import level.LevelObject
 import level.entity.Entity
 import level.moving.MovingObject
+import level.remove
 import kotlin.math.cos
 import kotlin.math.sin
 
-class Projectile(type: ProjectileType, xPixel: Int, yPixel: Int, rotation: Int, val angle: Float, val parent: LevelObject) : MovingObject(type, xPixel, yPixel, rotation) {
-    override var type = type
+class Projectile(val type: ProjectileType, var xPixel: Int, var yPixel: Int, val angle: Float, val parent: LevelObject) {
+
+    var xVel = 0f
+    var yVel = 0f
+    var xPixelLeftover = 0f
+    var yPixelLeftover = 0f
 
     var ticksLived = 0
 
-    override fun render() {
+    fun render() {
         Renderer.renderFilledRectangle(xPixel, yPixel, 8, 4, TextureRenderParams(rotation = Math.toDegrees(angle.toDouble()).toFloat()))
     }
 
-    override fun onCollide(o: LevelObject) {
+    fun onCollide(o: LevelObject) {
         if(o != parent) {
             if(o is Entity) {
                 o.health -= type.damage
                 if(o.health <= 0) {
-                    Level.remove(o)
+                    parent.level.remove(this)
                 }
             }
-            Level.remove(this)
+            parent.level.remove(this)
         }
     }
 
-    override fun update() {
+    fun update() {
         ticksLived++
         if(ticksLived >= type.lifetime) {
-            Level.remove(this)
+            parent.level.remove(this)
         } else {
-            xVel = (type.speed * cos(angle)).toInt()
-            yVel = (type.speed * sin(angle)).toInt()
-            super.update()
+            xVel = type.speed * cos(angle)
+            yVel = type.speed * sin(angle)
+            xPixelLeftover += xVel % 1
+            yPixelLeftover += yVel % 1
+            xPixel += xVel.toInt() + xPixelLeftover.toInt()
+            yPixel += yVel.toInt() + yPixelLeftover.toInt()
+            xPixelLeftover %= 1
+            yPixelLeftover %= 1
         }
     }
 }

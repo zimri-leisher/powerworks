@@ -1,11 +1,11 @@
 package level.entity
 
-import level.moving.MovingObject
-import item.weapon.WeaponItemType
 import behavior.BehaviorTree
 import behavior.DefaultVariable
+import item.weapon.WeaponItemType
+import level.moving.MovingObject
 
-abstract class Entity(type: EntityType<out Entity>, xPixel: Int, yPixel: Int, rotation: Int = 0) : MovingObject(type, xPixel, yPixel, rotation, type.hitbox) {
+abstract class Entity(type: EntityType<out Entity>, xPixel: Int, yPixel: Int, rotation: Int = 0) : MovingObject(type, xPixel, yPixel, rotation) {
     override val type = type
 
     var health = type.maxHealth
@@ -18,7 +18,7 @@ abstract class Entity(type: EntityType<out Entity>, xPixel: Int, yPixel: Int, ro
 
     override fun update() {
         traversing = true
-        behaviors.forEach { println("updating behavior for $this"); it.key.update(this) }
+        behaviors.forEach { it.key.update(this) }
         traversing = false
         behaviors.putAll(_toAdd)
         _toAdd.clear()

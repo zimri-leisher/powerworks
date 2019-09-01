@@ -1,20 +1,19 @@
 package behavior
 
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+
 object Behavior {
 
     object Movement {
-        val TO_MOUSE = BehaviorTree {
-            moveTo(getMouseLevelPosition())
-        }
-
-        val TO_ARGUMENT = BehaviorTree {
-            moveTo(DefaultVariable.ARGUMENT)
+        val PATH_TO_MOUSE = BehaviorTree {
+            followPath(findPath(getMouseLevelPosition(), useCoroutines = true))
         }
     }
 
     object Offense {
-        val ATTACK_ARGUMENT = BehaviorTree {
-            followPath(findPath(getMouseLevelPosition()))
+        @ExperimentalCoroutinesApi
+        val ATTACK_NEAREST = BehaviorTree {
+            followPath(findPath(getNearestLevelObject()))
         }
     }
 }

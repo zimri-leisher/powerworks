@@ -5,6 +5,9 @@ import graphics.Renderer
 import level.Level
 import level.block.Block
 import level.block.BlockType
+import level.getBlockAt
+import level.getResourceNodesAt
+import level.remove
 import main.DebugCode
 import main.Game
 import main.heightPixels
@@ -24,13 +27,13 @@ class TubeBlock(xTile: Int, yTile: Int) : Block(BlockType.TUBE, xTile, yTile) {
 
     val tubeConnections = arrayOfNulls<TubeBlock>(4)
     val nodeConnections =
-            arrayOf<MutableList<ResourceNode>>(
-                    mutableListOf(), mutableListOf(), mutableListOf(), mutableListOf())
+            arrayOf<MutableSet<ResourceNode>>(
+                    mutableSetOf(), mutableSetOf(), mutableSetOf(), mutableSetOf())
 
     val closedEnds: Array<Boolean>
         get() = state.closedEnds
 
-    var network = TubeRoutingNetwork()
+    var network = TubeRoutingNetwork(level)
     var intersection: Intersection? = null
 
     override fun onAddToLevel() {
@@ -45,7 +48,7 @@ class TubeBlock(xTile: Int, yTile: Int) : Block(BlockType.TUBE, xTile, yTile) {
             network.removeIntersection(intersection!!)
         }
         val toRemove = network.internalNodes.filter { it.xTile == xTile && it.yTile == yTile }
-        toRemove.forEach { Level.remove(it); network.internalNodes.remove(it) }
+        toRemove.forEach { level.remove(it); network.internalNodes.remove(it) }
         super.onRemoveFromLevel()
     }
 
@@ -88,7 +91,7 @@ class TubeBlock(xTile: Int, yTile: Int) : Block(BlockType.TUBE, xTile, yTile) {
                 onTubeConnectionChange(tube)
                 connectionChanged = true
             }
-            val newNodes = Level.ResourceNodes.getAll(xTile + getXSign(dir), yTile + getYSign(dir), { isOppositeAngle(it.dir, dir) }, ResourceCategory.ITEM)
+            val newNodes = level.getResourceNodesAt(xTile + getXSign(dir), yTile + getYSign(dir), { it.resourceCategory == ResourceCategory.ITEM && isOppositeAngle(it.dir, dir) }).toMutableSet()
             if ((newNodes.isEmpty() && nodeConnections[dir].isNotEmpty()) || (newNodes.isNotEmpty() && nodeConnections[dir].isEmpty())) {
                 val addedNodes = newNodes.filter { it !in nodeConnections[dir] }
                 val removedNodes = nodeConnections[dir].filter { it !in newNodes }
@@ -120,15 +123,13 @@ class TubeBlock(xTile: Int, yTile: Int) : Block(BlockType.TUBE, xTile, yTile) {
         }
     }
 
-    /**
-     * Assumes state is updated
-     */
+    // Assumes state is updated
     fun shouldBeIntersection(): Boolean {
         return state in TubeState.Group.INTERSECTION || nodeConnections.any { it.isNotEmpty() }
     }
 
     private fun getTubeAt(dir: Int): TubeBlock? {
-        val b = Level.Blocks.get(xTile + getXSign(dir), yTile + getYSign(dir))
+        val b = level.getBlockAt(xTile + getXSign(dir), yTile + getYSign(dir))
         if (b != null && b is TubeBlock) {
             return b
         }
