@@ -1,11 +1,11 @@
 package resource
 
+import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag
 import level.Hitbox
 import level.Level
+import level.add
 import misc.Geometry
 import routing.ResourceRoutingNetwork
-import level.add
-import level.LevelManager
 
 /**
  * A node that allows for movement of resources between places on the level. This is not a subclass of LevelObject.
@@ -14,18 +14,26 @@ import level.LevelManager
  * from the ground and either put it into the connected inventory or place it on the ground.
  */
 class ResourceNode(
-        val xTile: Int, val yTile: Int,
+        @Tag(1)
+        val xTile: Int,
+        @Tag(2)
+        val yTile: Int,
+        @Tag(3)
         val dir: Int,
+        @Tag(4)
         val resourceCategory: ResourceCategory,
+        @Tag(5)
         var attachedContainer: ResourceContainer,
         /**
          * The [Level] this node is in, or will be in if it has not been [added][add] already
          */
+        @Tag(6)
         val level: Level) {
 
     /**
      * If this node is in the level, meaning it is able to interact with other nodes in the level
      */
+    @Tag(7)
     var inLevel = false
 
 
@@ -33,23 +41,28 @@ class ResourceNode(
      * Adjacent nodes facing towards this node.
      * This is where resources will get sent to when outputting
      */
+    @Tag(8)
     var attachedNodes: List<ResourceNode> = listOf()
 
     /**
      * Whether or not this node should be allowed to output resources directly to the level, using the Level.add(ResourceType, Int) method.
      * If false, calls to can/couldOutput will return false if there is no attached node, regardless of whether there is space in the level
      */
+    @Tag(9)
     var outputToLevel = true
 
     /**
      * The resource routing network which this is part of
      */
+    @Tag(10)
     var network = ResourceRoutingNetwork(resourceCategory, level)
+    @Tag(11)
     var isInternalNetworkNode = false
 
     /**
      * The input and output behavior of this node. This is where routing language gets put into and evaluated
      */
+    @Tag(12)
     var behavior = ResourceNodeBehavior(this)
         private set
 
@@ -128,7 +141,7 @@ class ResourceNode(
             // TODO make this better some time, have it actually spawn in the center
             val xSign = Geometry.getXSign(dir)
             val ySign = Geometry.getYSign(dir)
-            level!!.add(((xTile shl 4) + 7) + (8 + Hitbox.DROPPED_ITEM.width) * xSign, ((yTile shl 4) + 7) + (8 + Hitbox.DROPPED_ITEM.height) * ySign, resource, quantity)
+            level.add(((xTile shl 4) + 7) + (8 + Hitbox.DROPPED_ITEM.width) * xSign, ((yTile shl 4) + 7) + (8 + Hitbox.DROPPED_ITEM.height) * ySign, resource, quantity)
         }
         return true
     }

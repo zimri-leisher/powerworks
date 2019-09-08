@@ -1,28 +1,50 @@
 package level
 
+import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag
 import data.ConcurrentlyModifiableMutableList
 import level.block.Block
 import level.moving.MovingObject
 import level.tile.Tile
 import resource.ResourceNode
+import java.io.DataInputStream
+import java.io.DataOutputStream
 import java.util.*
 import kotlin.Comparator
 
 /**
  * This is just for holding data. Interaction with the level should be done through the Level object and not any of these
  */
-class Chunk(val parent: Level, val xChunk: Int, val yChunk: Int) {
+class Chunk(
+        @Tag(1)
+        val parent: Level,
+        @Tag(2)
+        val xChunk: Int,
+        @Tag(3)
+        val yChunk: Int) {
 
+    @Tag(4)
     var xTile = xChunk shl 3
+    @Tag(5)
     var yTile = yChunk shl 3
+    @Tag(6)
     var loaded = false
+    @Tag(7)
     var tiles: Array<Tile>? = null
+    @Tag(8)
+    var modifiedTiles: MutableList<Tile>? = null
+    @Tag(9)
     var blocks: Array<Block?>? = null
+    @Tag(10)
     var moving: MutableList<MovingObject>? = null
+    @Tag(11)
     var movingOnBoundary: MutableList<MovingObject>? = null
+    @Tag(12)
     var updatesRequired: ConcurrentlyModifiableMutableList<LevelObject>? = null
+    @Tag(13)
     var droppedItems: MutableList<DroppedItem>? = null
+    @Tag(14)
     var resourceNodes: MutableList<MutableList<ResourceNode>>? = null
+    @Tag(15)
     var beingRendered = false
 
     /* Convenience methods. Assume it is loaded */
@@ -31,6 +53,7 @@ class Chunk(val parent: Level, val xChunk: Int, val yChunk: Int) {
     fun getTile(xTile: Int, yTile: Int) = tiles!![(xTile - this.xTile) + (yTile - this.yTile) * CHUNK_SIZE_TILES]
     fun setTile(tile: Tile) {
         tiles!![(tile.xTile - xTile) + (tile.yTile - yTile) * CHUNK_SIZE_TILES] = tile
+        modifiedTiles!!.add(tile)
         /* Don't bother checking if it requires an update */
     }
 
@@ -97,6 +120,7 @@ class Chunk(val parent: Level, val xChunk: Int, val yChunk: Int) {
     fun load(blocks: Array<Block?>, tiles: Array<Tile>) {
         this.blocks = blocks
         this.tiles = tiles
+        this.modifiedTiles = Collections.synchronizedList(mutableListOf())
         this.moving = Collections.synchronizedList(mutableListOf())
         this.updatesRequired = ConcurrentlyModifiableMutableList()
         this.movingOnBoundary = Collections.synchronizedList(mutableListOf())
@@ -115,6 +139,7 @@ class Chunk(val parent: Level, val xChunk: Int, val yChunk: Int) {
     fun unload() {
         blocks = null
         tiles = null
+        modifiedTiles = null
         if (moving != null) {
             synchronized(moving!!) {
                 moving = null

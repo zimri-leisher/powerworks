@@ -1,13 +1,15 @@
 package level.particle
 
-import graphics.TextureRenderParams
 import graphics.Renderer
-import level.Level
+import graphics.TextureRenderParams
 import level.LevelManager
 import level.remove
 import misc.Geometry
 
-class Particle(val type: ParticleType, var xPixel: Int, var yPixel: Int, var rotation: Int = 0) {
+class Particle(
+        val type: ParticleType,
+        var xPixel: Int,
+        var yPixel: Int, var rotation: Int = 0) {
 
     var ticksLeftBeforeRotation = -1
     var ticksExisted = 0

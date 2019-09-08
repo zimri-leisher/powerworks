@@ -1,5 +1,7 @@
 package resource
 
+import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag
+
 /**
  * A list of [ResourceType] - quantity pairs, where quantity is non zero.
  *
@@ -7,7 +9,9 @@ package resource
  *
  * Also has some convenience methods for consumption and addition of resources
  */
-class ResourceList(private val resources: MutableMap<ResourceType, Int> = mutableMapOf()) {
+class ResourceList(
+        @Tag(1)
+        private val resources: MutableMap<ResourceType, Int> = mutableMapOf()) {
 
     constructor(vararg pairs: Pair<ResourceType, Int>) : this(pairs.toMap().toMutableMap())
 

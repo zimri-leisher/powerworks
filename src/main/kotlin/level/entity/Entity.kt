@@ -2,18 +2,27 @@ package level.entity
 
 import behavior.BehaviorTree
 import behavior.DefaultVariable
+import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag
 import item.weapon.WeaponItemType
 import level.moving.MovingObject
 
 abstract class Entity(type: EntityType<out Entity>, xPixel: Int, yPixel: Int, rotation: Int = 0) : MovingObject(type, xPixel, yPixel, rotation) {
     override val type = type
 
+    // tags start here because of superclass tags
+
+    @Tag(22)
     var health = type.maxHealth
+    @Tag(23)
     var weapon: WeaponItemType? = null
 
+    @Tag(24)
     val behaviors = mutableMapOf<BehaviorTree, Int>()
+    @Tag(25)
     private val _toAdd = mutableMapOf<BehaviorTree, Int>()
+    @Tag(26)
     private val _toRemove = mutableListOf<BehaviorTree>()
+    @Tag(27)
     private var traversing = false
 
     override fun update() {

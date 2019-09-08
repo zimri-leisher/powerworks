@@ -5,6 +5,9 @@ import level.updateResourceNodeAttachments
 import main.State
 import main.joinToString
 import routing.RoutingLanguageStatement
+import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag
+import item.Inventory
+import level.LevelManager
 
 private fun <K, V> MutableMap<K, V>.copy(): MutableMap<K, V> {
     val map = mutableMapOf<K, V>()
@@ -19,16 +22,26 @@ private fun <K, V> MutableMap<K, V>.copy(): MutableMap<K, V> {
  * The behaviors are specified by routing language statements, which are parsed from text into a boolean expression in
  * the context of the node.
  */
-class ResourceNodeBehavior(val node: ResourceNode) {
+class ResourceNodeBehavior(
+        @Tag(1)
+        val node: ResourceNode) {
+
+    private constructor() : this(ResourceNode(0, 0, 0, ResourceCategory.ITEM, Inventory(0, 0), LevelManager.emptyLevel))
+
+    @Tag(2)
     var allowIn = RoutingLanguageIORule()
         private set
+    @Tag(3)
     var allowOut = RoutingLanguageIORule()
         private set
+    @Tag(4)
     var forceIn = RoutingLanguageIORule(RoutingLanguageStatement.FALSE)
         private set
+    @Tag(5)
     var forceOut = RoutingLanguageIORule(RoutingLanguageStatement.FALSE)
         private set
 
+    @Tag(6)
     var allowModification = true
 
     private fun updateAttachments() {
@@ -41,7 +54,9 @@ class ResourceNodeBehavior(val node: ResourceNode) {
      * A rule specifying any number of [RoutingLanguageStatement]s and the [ResourceType]s they correspond to.
      * [check] returns true if there are no statements, so by default, this will always evaluate to true
      */
-    inner class RoutingLanguageIORule(val statements: MutableMap<RoutingLanguageStatement, List<ResourceType>?>) {
+    inner class RoutingLanguageIORule(
+            @Tag(1)
+            val statements: MutableMap<RoutingLanguageStatement, List<ResourceType>?>) {
         constructor() : this(mutableMapOf())
         constructor(statement: RoutingLanguageStatement) : this(mutableMapOf<RoutingLanguageStatement, List<ResourceType>?>(statement to null))
 

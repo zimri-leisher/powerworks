@@ -8,12 +8,16 @@ import resource.ResourceContainer
 import resource.ResourceContainerChangeListener
 import resource.ResourceType
 import screen.FurnaceBlockGUI
+import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag
 
 class FurnaceBlock(type: MachineBlockType<FurnaceBlock>, xTile: Int, yTile: Int, rotation: Int = 0) : MachineBlock(type, xTile, yTile, rotation), ResourceContainerChangeListener {
 
     // the internal inventory, not the internal tank
-    val queue = containers.first { it is Inventory }
+    @Tag(23)
+    val queue = containers.first { it is Inventory } as Inventory
+    @Tag(24)
     val tank = containers.first { it is FluidTank } as FluidTank
+    @Tag(25)
     var currentlySmelting: OreItemType? = null
 
     init {

@@ -1,128 +1,109 @@
 package network
 
-import com.badlogic.gdx.Gdx
-import com.badlogic.gdx.Net
-import com.badlogic.gdx.net.Socket
-import java.io.*
-import java.net.Inet4Address
-import java.net.NetworkInterface
-import java.net.SocketException
+import com.esotericsoftware.kryonet.Client
+import com.esotericsoftware.kryonet.Connection
+import com.esotericsoftware.kryonet.Listener
+import main.Game
+import main.SERVER_IP
+import main.SERVER_PORT
+import main.registerKryo
+import network.Client.connection
+import network.packet.*
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.thread
 
-object Client : PacketHandler {
-    val running = AtomicBoolean(false)
+object Client : PacketHandler{
+    private lateinit var kryoClient: KryoClient
 
-    lateinit var socket: Socket
+    private lateinit var connection: Connection
 
-    lateinit var output: DataOutputStream
-    lateinit var input: DataInputStream
+    private lateinit var thread: Thread
 
-    lateinit var networkAddresses: List<String>
+    private val running = AtomicBoolean(false)
 
-    lateinit var thread: Thread
+    private val packetHandlers = mutableMapOf<PacketHandler, MutableList<PacketType>>()
 
-    val receivedPackets = Collections.synchronizedList(mutableListOf<Packet>())
-    private val packetHandlers = mutableMapOf<PacketHandler, List<PacketType>>()
+    private val receivedPackets = Collections.synchronizedList(mutableListOf<Packet>())
 
-    val outwardPackets = Collections.synchronizedList(mutableListOf<Packet>())
-
+    private val outwardPackets = Collections.synchronizedList(mutableListOf<Packet>())
     fun start() {
-        NetworkManager.client = true
         running.set(true)
-        registerPacketHandler(this, PacketType.SERVER_HANDSHAKE)
-        findNetworkInterfaces()
-        thread = thread(start = true, isDaemon = true) {
-            socket = Gdx.net.newClientSocket(Net.Protocol.TCP, "127.0.0.1", 9412, null)
-            println("Connected to server")
-            // sends output to the socket
-            output = DataOutputStream(socket.outputStream)
-            input = DataInputStream(socket.inputStream)
-            val currentTime = System.currentTimeMillis()
-            sendToServer(ClientHandshakePacket(currentTime))
-            while (running.get()) {
+        thread = thread(isDaemon = true) {
+            kryoClient = Client()
+            registerKryo(kryoClient.kryo)
+            kryoClient.start()
+            kryoClient.setName(Game.USER.id)
+            kryoClient.addListener(object : Listener() {
+                override fun received(connection: Connection, data: Any?) {
+                    if (data is Packet) {
+                        receivedPackets.add(data)
+                    }
+                }
 
-                val nextPacketType = input.readInt()
-                if (nextPacketType == -1) {
-                    close()
-                    break
+                override fun connected(connection: Connection) {
+                    println("connected to server")
+                    this@Client.connection = connection
+                    sendToServer(ClientHandshakePacket(System.currentTimeMillis(), Game.USER))
                 }
-                try {
-                    val newPacket = PacketType.read(nextPacketType, input)
-                    receivedPackets.add(newPacket)
-                } catch (e: InvalidObjectException) {
-                    println("Invalid packet received")
-                }
+            })
+            try {
+                kryoClient.connect(5000, SERVER_IP, SERVER_PORT)
+            } catch (e: Exception) {
+                println("Unable to connect to server at $SERVER_IP:$SERVER_PORT")
             }
-            output.close()
-            input.close()
         }
     }
 
-    @Synchronized
-    fun close() {
-        running.set(false)
-        thread.join()
+    override fun handleClientPacket(packet: Packet) {
     }
 
-    override fun handlePacket(packet: Packet) {
+    override fun handleServerPacket(packet: Packet) {
         if(packet is ServerHandshakePacket) {
-            println("Latency: ${System.currentTimeMillis() - packet.serverTimestamp} ms")
-            println("Time to connect: ${packet.serverTimestamp - packet.clientTimestamp} ms")
+            val receivedTime = System.currentTimeMillis()
+            println("Connected to server at $SERVER_IP:$SERVER_PORT in ${packet.serverTimestamp - packet.clientTimestamp} ms")
+            println("Latency: ${receivedTime - packet.serverTimestamp} ms")
         }
     }
 
     fun sendToServer(packet: Packet) {
+        packet.connectionId = connection.id
         outwardPackets.add(packet)
     }
 
-    fun registerPacketHandler(handler: PacketHandler, vararg types: PacketType) {
-        packetHandlers.put(handler, listOf(*types))
-    }
-
-    fun removePacketHandler(handler: PacketHandler) {
-        packetHandlers.remove(handler)
-    }
-
-    private fun findNetworkInterfaces() {
-        val addresses = mutableListOf<String>()
-        try {
-            val interfaces = NetworkInterface.getNetworkInterfaces()
-            for (ni in Collections.list(interfaces)) {
-                for (address in Collections.list(ni.inetAddresses)) {
-                    if (address is Inet4Address) {
-                        addresses.add(address.getHostAddress())
-                    }
-                }
-            }
-        } catch (e: SocketException) {
-            e.printStackTrace()
+    fun registerServerPacketHandler(handler: PacketHandler, vararg types: PacketType) {
+        if (handler !in packetHandlers) {
+            packetHandlers[handler] = types.toMutableList()
+        } else {
+            packetHandlers[handler]!!.addAll(types)
         }
-        networkAddresses = addresses
     }
-
-    fun hasConnected() = socket.isConnected
 
     fun update() {
-        if (!hasConnected())
-            return
         synchronized(receivedPackets) {
             for (packet in receivedPackets) {
                 for ((handler, types) in packetHandlers) {
                     if (packet.type in types) {
-                        handler.handlePacket(packet)
+                        handler.handleServerPacket(packet)
                     }
                 }
             }
             receivedPackets.clear()
         }
-        synchronized(outwardPackets) {
-            for (packet in outwardPackets) {
-                packet.write(output)
-                output.flush()
+        if(this::connection.isInitialized) {
+            synchronized(outwardPackets) {
+                for (packet in outwardPackets) {
+                    println("sending packet $packet")
+                    kryoClient.sendTCP(packet)
+                }
+                outwardPackets.clear()
             }
-            outwardPackets.clear()
         }
+    }
+
+    fun close() {
+        running.set(false)
+        thread.join()
+        kryoClient.close()
     }
 }

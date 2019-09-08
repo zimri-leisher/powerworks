@@ -19,7 +19,11 @@ import level.moving.MovingObject
 import main.Game
 import main.toColor
 import misc.Geometry
-import network.*
+import network.Client
+import network.Server
+import network.packet.Packet
+import network.packet.PacketHandler
+import network.packet.PacketType
 import resource.ResourceNode
 import screen.RoutingLanguageEditor
 import screen.ScreenManager
@@ -315,7 +319,8 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
             var canPlace = false
 
             init {
-                Server.registerPacketHandler(this, PacketType.PLACE_BLOCK)
+                Server.registerClientPacketHandler(this, PacketType.PLACE_BLOCK)
+                Client.registerServerPacketHandler(this, PacketType.PLACE_BLOCK)
             }
 
             override fun onUse(control: Control, type: PressType, mouseLevelXPixel: Int, mouseLevelYPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
@@ -328,23 +333,45 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
                     if (control == Control.PLACE_BLOCK) {
                         if (canPlace) {
                             val blockType = this.type!!.placedBlock
-                            Client.sendToServer(PlaceBlockPacket(blockType.id, xTile, yTile, 0, LevelManager.levelUnderMouse!!.levelInfo.name))
+                            println("placing")
+                            //Client.sendToServer(PlaceBlockPacket(blockType.id, xTile, yTile, LevelManager.levelUnderMouse!!.levelInfo.name))
                         }
                     }
                 }
             }
 
-            override fun handlePacket(packet: Packet) {
-                if (packet is PlaceBlockPacket) {
-                    val type = BlockType.ALL.firstOrNull { it.id == packet.blockTypeID }
-                            ?: throw IllegalArgumentException("BlockType id ${packet.blockTypeID} does not exist")
-                    val level = LevelManager.allLevels.firstOrNull { it.levelInfo.name == packet.levelName }
-                            ?: throw IllegalArgumentException("Level with name ${packet.levelName} does not exist")
+            override fun handleServerPacket(packet: Packet) {
+//                if (packet is PlaceBlockPacket) {
+//                    handlePlaceBlockPacket(packet)
+//                }
+            }
+
+            override fun handleClientPacket(packet: Packet) {
+//                if (packet is PlaceBlockPacket) {
+//                    val success = handlePlaceBlockPacket(packet)
+//                    if (success) {
+//                        Server.sendToClients(packet)
+//                        return
+//                    }
+//                }
+            }
+
+            /*
+            private fun handlePlaceBlockPacket(packet: PlaceBlockPacket): Boolean {
+                val type = BlockType.ALL.firstOrNull { it.id == packet.blockTypeID }
+                        ?: throw IllegalArgumentException("BlockType id ${packet.blockTypeID} does not exist")
+                val level = LevelManager.allLevels.firstOrNull { it.levelInfo.name == packet.levelName }
+                        ?: throw IllegalArgumentException("Level with name ${packet.levelName} does not exist")
+                val itemType = ItemType.ALL.first { it is BlockItemType && it.placedBlock == type }
+                if (Game.mainInv.contains(itemType)) {
                     if (level.add(type.instantiate(packet.xTile shl 4, packet.yTile shl 4, 0))) {
-                        Game.mainInv.remove(ItemType.ALL.first { it is BlockItemType && it.placedBlock == type })
+                        Game.mainInv.remove(itemType)
+                        return true
                     }
                 }
+                return false
             }
+            */
 
             override fun updateCurrentlyActive() {
                 val item = Mouse.heldItemType

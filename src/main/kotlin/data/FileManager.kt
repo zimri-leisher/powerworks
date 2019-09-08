@@ -26,6 +26,9 @@ object FileManager {
             }
             directory("saves", GameDirectoryIdentifier.SAVES)
         }
+        if(Game.IS_SERVER) {
+            directory("server", GameDirectoryIdentifier.SERVER_SAVES)
+        }
         directory("screenshots", GameDirectoryIdentifier.SCREENSHOTS, false)
     }
 
@@ -54,5 +57,5 @@ object FileManager {
 }
 
 enum class GameDirectoryIdentifier : DirectoryIdentifier {
-    ENCLOSING, MODS, SCREENSHOTS, SAVES, CONTROLS
+    ENCLOSING, MODS, SCREENSHOTS, SAVES, CONTROLS, SERVER_SAVES
 }

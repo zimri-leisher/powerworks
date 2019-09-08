@@ -1,5 +1,7 @@
 package resource
 
+import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag
+
 /**
  * A group of resource nodes of any type
  *
@@ -12,6 +14,7 @@ package resource
  */
 class ResourceNodeGroup(nodes: List<ResourceNode> = listOf()) {
 
+    @Tag(1)
     private val nodes = nodes.toMutableList()
 
     constructor(vararg nodes: ResourceNode) : this(mutableListOf(*nodes))
@@ -62,7 +65,7 @@ class ResourceNodeGroup(nodes: List<ResourceNode> = listOf()) {
      * @return the first node that is trying to force output the given resource type that has the given quantity and matches the onlyTo predicate
      */
     fun getForceOutputter(type: ResourceType, quantity: Int = 1, onlyTo: (ResourceNode) -> Boolean = { true }, mustContainEnough: Boolean = true) =
-            nodes.firstOrNull { onlyTo(it) && it.behavior.forceOut.check(type) && it.canOutput(type, quantity, mustContainEnough)}
+            nodes.firstOrNull { onlyTo(it) && it.behavior.forceOut.check(type) && it.canOutput(type, quantity, mustContainEnough) }
 
     /**
      * @param onlyTo a predicate for which nodes are considered as options

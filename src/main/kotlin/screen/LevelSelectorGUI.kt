@@ -9,6 +9,7 @@ import main.State
 import main.heightPixels
 import main.widthPixels
 import misc.Numbers
+import network.User
 import screen.animations.SlideOffScreenAnimation
 import screen.elements.*
 import java.io.File
@@ -142,9 +143,8 @@ object LevelSelectorGUI : GUIWindow("Level selector window", { 0 }, { 0 }, { Gam
                     var i = 0
                     while (LevelManager.exists("testinglevel$i"))
                         i++
-                    val info = LevelInfo("testinglevel$i", LocalDateTime.now().toString(), LevelGeneratorSettings(256, 256), File(""), File(""))
-                    LevelManager.levelInfos.add(info)
-                    this@LevelSelectorGUI.selectionList.add(GUILevelSelectionButton(info, this@LevelSelectorGUI.selectionList))
+                    //val info = LevelManager.createNewLevelInfoFor(Game.USER, "testingLevel$i")
+                    //this@LevelSelectorGUI.selectionList.add(GUILevelSelectionButton(info, this@LevelSelectorGUI.selectionList))
                 })
 
             }, accountForChildHeight = true, yPixelSeparation = 2, flipY = true)

@@ -1,6 +1,7 @@
 package main
 
 import audio.AudioManager
+import behavior.Behavior
 import com.badlogic.gdx.ApplicationAdapter
 import com.badlogic.gdx.Game
 import com.badlogic.gdx.Gdx
@@ -9,6 +10,9 @@ import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.g2d.TextureRegion
+import com.esotericsoftware.kryo.Kryo
+import com.esotericsoftware.minlog.Log
+import com.esotericsoftware.minlog.Log.LEVEL_TRACE
 import data.FileManager
 import data.FileSystem
 import data.ResourceManager
@@ -17,17 +21,15 @@ import graphics.Image
 import graphics.Renderer
 import graphics.text.TextManager
 import io.*
-import item.*
+import item.Inventory
+import item.ItemType
 import level.LevelManager
 import level.block.BlockType
-import level.block.ChestBlockType
-import level.block.CrafterBlockType
-import level.block.MachineBlockType
 import mod.ModManager
 import mod.ModPermissionsPolicy
 import network.Client
-import network.NetworkManager
 import network.Server
+import network.User
 import screen.IngameGUI
 import screen.MainMenuGUI
 import screen.ScreenManager
@@ -71,13 +73,22 @@ fun Color.toWhite() = this.set(1f, 1f, 1f, 1f)
 
 fun <K, V> Map<K, V>.joinToString() = toList().joinToString()
 
-fun main() {
+const val SERVER_IP = "127.0.0.1"
+const val SERVER_PORT = 9412
+
+fun main(args: Array<String>) {
     val config = Lwjgl3ApplicationConfiguration()
+    main.Game.processArguments(args)
     config.setWindowedMode(main.Game.WIDTH * main.Game.SCALE, main.Game.HEIGHT * main.Game.SCALE)
-    config.setIdleFPS(main.Game.FRAMES_PER_SECOND / 5)
-    config.useVsync(true)
-    config.setTitle("Powerworks Industries")
     config.setWindowIcon("textures/icon_windows.png")
+    config.useVsync(true)
+    if (main.Game.IS_SERVER) {
+        config.setInitialVisible(false)
+        config.setTitle("Powerworks Server")
+    } else {
+        config.setIdleFPS(main.Game.FRAMES_PER_SECOND / 3)
+        config.setTitle("Powerworks Industries")
+    }
     Lwjgl3Application(Game, config)
 }
 
@@ -94,6 +105,15 @@ object Game : ApplicationAdapter(), ControlPressHandler {
     const val MAX_UPDATES_BEFORE_RENDER = 5
     var FRAMES_PER_SECOND = 30
     var NS_PER_FRAME: Float = 1000000000f / FRAMES_PER_SECOND
+
+    val USER = User("default_user")
+
+    val VERSION = Version.`0_4_1`
+
+    val KRYO = Kryo().apply { setReferences(true) }
+
+    var IS_SERVER = false
+        private set
 
     /**
      * Frames since the beginning of this execution
@@ -131,42 +151,44 @@ object Game : ApplicationAdapter(), ControlPressHandler {
     private var frameCount = 0
     private var updateCount = 0
 
+    fun processArguments(args: Array<String>) {
+        if ("server" in args) {
+            IS_SERVER = true
+        }
+    }
+
     override fun create() {
         // order matters with some of these!
         ResourceManager.registerAtlas("textures/all.atlas")
-        Image.Misc
-        Image.GUI
-        Image.Block
-        Image.Fluid
-        Image.Item
-        Image.Particle
-        ScreenManager
-        TextManager
-        FileManager
+        registerKryo(KRYO)
+        Log.set(LEVEL_TRACE)
+        Image
         Tool
-        Tooltips
-        Server.start()
-        Client.start()
-        AudioManager.load()
-        Gdx.input.inputProcessor = InputManager
-        InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.PIPE_INFO, Control.ESCAPE, Control.TURN_OFF_DEBUG_INFO, Control.TAKE_SCREENSHOT, Control.POSITION_INFO, Control.RESOURCE_NODES_INFO, Control.RENDER_HITBOXES, Control.SCREEN_INFO, Control.CHUNK_INFO, Control.TOGGLE_INVENTORY, Control.TUBE_INFO)
-        // the main menu GUI is by default open, but it won't get initialized till we call it somewhere
-        MainMenuGUI
-        // just making sure these are loaded before mods load
-        ItemType
-        IngotItemType
-        OreItemType
-        BlockItemType
-        RobotItemType
-        BlockType
-        MachineBlockType
-        CrafterBlockType
-        ChestBlockType
-        State.setState(State.MAIN_MENU)
-        Policy.setPolicy(ModPermissionsPolicy())
-        System.setSecurityManager(SecurityManager())
-        Test
-        ModManager.initialize()
+        FileManager
+        if (IS_SERVER) {
+            State.setState(State.SERVER)
+            Server.start()
+        } else {
+            ScreenManager
+            TextManager
+            Tooltips
+            Client.start()
+            AudioManager.load()
+            Gdx.input.inputProcessor = InputManager
+            InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.PIPE_INFO, Control.ESCAPE, Control.TURN_OFF_DEBUG_INFO, Control.TAKE_SCREENSHOT, Control.POSITION_INFO, Control.RESOURCE_NODES_INFO, Control.RENDER_HITBOXES, Control.SCREEN_INFO, Control.CHUNK_INFO, Control.TOGGLE_INVENTORY, Control.TUBE_INFO)
+            // the main menu GUI is by default open, but it won't get initialized till we call it somewhere
+            MainMenuGUI
+            // just making sure these are loaded before mods load and before the level is saved
+            ItemType
+            BlockType
+            Behavior
+            State.setState(State.MAIN_MENU)
+            Policy.setPolicy(ModPermissionsPolicy())
+            System.setSecurityManager(SecurityManager())
+            Test
+            ModManager.initialize()
+        }
+
     }
 
     override fun render() {
@@ -185,10 +207,12 @@ object Game : ApplicationAdapter(), ControlPressHandler {
         if (now - lastUpdateTime > NS_PER_UPDATE) {
             lastUpdateTime = now - NS_PER_UPDATE
         }
-        renderFinal()
-        framesCount++
-        frameCount++
-        lastRenderTime = now
+        if (!IS_SERVER) {
+            renderFinal()
+            framesCount++
+            frameCount++
+            lastRenderTime = now
+        }
         val thisSecond = (lastUpdateTime / 1000000000).toInt()
         if (thisSecond > lastSecondTime) {
             lastSecondTime = thisSecond
@@ -201,7 +225,11 @@ object Game : ApplicationAdapter(), ControlPressHandler {
 
     fun update() {
         FileSystem.update()
-        NetworkManager.update()
+        if(IS_SERVER) {
+            Server.update()
+        } else {
+            Client.update()
+        }
         InputManager.update()
         Tooltips.update()
         Animation.update()
@@ -229,6 +257,11 @@ object Game : ApplicationAdapter(), ControlPressHandler {
     }
 
     override fun dispose() {
+        if(IS_SERVER) {
+            Server.close()
+        } else {
+            Client.close()
+        }
         Renderer.batch.dispose()
         ResourceManager.dispose()
         TextManager.dispose()

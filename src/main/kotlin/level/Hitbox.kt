@@ -1,6 +1,16 @@
 package level
 
-class Hitbox private constructor(val xStart: Int, val yStart: Int, val width: Int, val height: Int) {
+import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag
+
+class Hitbox private constructor(
+        @Tag(1)
+        val xStart: Int,
+        @Tag(2)
+        val yStart: Int,
+        @Tag(3)
+        val width: Int,
+        @Tag(4)
+        val height: Int) {
     companion object {
         val TILE = Hitbox(0, 0, 16, 16)
         val TILE3X3 = Hitbox(0, 0, 48, 48)

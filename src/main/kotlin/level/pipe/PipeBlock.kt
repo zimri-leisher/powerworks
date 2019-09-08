@@ -18,13 +18,17 @@ import misc.Geometry.getYSign
 import misc.Geometry.isOppositeAngle
 import resource.ResourceCategory
 import resource.ResourceNode
+import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag
 
 class PipeBlock(xTile: Int, yTile: Int) : Block(BlockType.PIPE, xTile, yTile) {
 
+    @Tag(20)
     var state = PipeState.NONE
         private set
 
+    @Tag(21)
     val pipeConnections = arrayOfNulls<PipeBlock>(4)
+    @Tag(22)
     val nodeConnections = arrayOf<
             MutableSet<ResourceNode>
             >(mutableSetOf(), mutableSetOf(), mutableSetOf(), mutableSetOf())
@@ -32,6 +36,7 @@ class PipeBlock(xTile: Int, yTile: Int) : Block(BlockType.PIPE, xTile, yTile) {
     val closedEnds: Array<Boolean>
         get() = state.closedEnds
 
+    @Tag(23)
     var group = PipeBlockGroup(level)
 
     override fun onAddToLevel() {

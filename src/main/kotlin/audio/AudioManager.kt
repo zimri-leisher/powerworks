@@ -6,6 +6,7 @@ import level.MovementListener
 import level.moving.MovingObject
 import main.Game
 import java.util.*
+import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag
 
 private fun Sound.play(vol: Double = 1.0, pan: Double = 0.0, speed: Double = 1.0, loops: Int = 0): Int {
     val s = a.play(vol, pan, speed, loops)
@@ -22,8 +23,8 @@ object AudioManager : MovementListener {
             if (vol != 0.0) {
                 if (!it.playing)
                     it.playing = true
-                it.s.setVolume(getVolume(it.xPixel, it.yPixel), it.instance)
-                it.s.setPan(getPan(it.xPixel), it.instance)
+                it.sound.setVolume(getVolume(it.xPixel, it.yPixel), it.instance)
+                it.sound.setPan(getPan(it.xPixel), it.instance)
             } else {
                 if (it.playing)
                     it.playing = false
@@ -75,21 +76,33 @@ object AudioManager : MovementListener {
         levelSounds.forEach { it.close() }
     }
 
-    class SoundSource(xPixel: Int, yPixel: Int, var instance: Int, var s: Sound, var loop: Boolean) {
+    class SoundSource(xPixel: Int, yPixel: Int,
+                      @Tag(1)
+                      var instance: Int,
+                      @Tag(2)
+                      var sound: Sound,
+                      @Tag(3)
+                      var loop: Boolean) {
+
+        private constructor() : this(0, 0, 0, Sound.MOTHERLODE_SPARK, false)
+
+        @Tag(4)
         var playing = true
             set(value) {
                 if (!value && field) {
-                    s.stop(instance)
+                    sound.stop(instance)
                 } else if (value && !field) {
-                    s.start(instance)
+                    sound.start(instance)
                 }
                 field = value
             }
+        @Tag(5)
         var xPixel = xPixel
             set(value) {
                 field = value
                 forceUpdate()
             }
+        @Tag(6)
         var yPixel = yPixel
             set(value) {
                 field = value
@@ -100,8 +113,8 @@ object AudioManager : MovementListener {
             get() = instance != -1
 
         fun close() {
-            s.a.stop(instance)
-            s.a.releaseInstance(instance)
+            sound.a.stop(instance)
+            sound.a.releaseInstance(instance)
             levelSounds.remove(this)
             forceUpdate.remove(this)
         }
@@ -162,8 +175,8 @@ object AudioManager : MovementListener {
             levelSounds.forEach { it.playing = true }
         }
         forceUpdate.forEach {
-            it.s.setVolume(getVolume(it.xPixel, it.yPixel), it.instance)
-            it.s.setPan(getPan(it.xPixel), it.instance)
+            it.sound.setVolume(getVolume(it.xPixel, it.yPixel), it.instance)
+            it.sound.setPan(getPan(it.xPixel), it.instance)
             forceUpdate.remove(it)
         }
     }

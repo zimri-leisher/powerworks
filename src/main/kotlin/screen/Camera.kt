@@ -10,7 +10,6 @@ import level.moving.MovingObjectType
 class Camera(xPixel: Int, yPixel: Int) : MovingObject(MovingObjectType.CAMERA, xPixel, yPixel, 0) {
 
     override fun render() {
-        Renderer.renderEmptyRectangle(xPixel, yPixel, 16, 16)
     }
 
     override fun toString(): String {

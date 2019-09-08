@@ -4,6 +4,7 @@ import level.tube.TubeBlock
 import misc.Geometry
 import misc.PixelCoord
 import resource.ResourceNode
+import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag
 
 /**
  * @param input the internal network node that the package will start at
@@ -72,7 +73,11 @@ fun route(startXPixel: Int, startYPixel: Int, output: ResourceNode, network: Tub
     return null
 }
 
-data class Intersection(val tubeBlock: TubeBlock, var connections: Connections) {
+data class Intersection(
+        @Tag(1)
+        val tubeBlock: TubeBlock,
+        @Tag(2)
+        var connections: Connections) {
 
     val xTile get() = tubeBlock.xTile
     val yTile get() = tubeBlock.yTile

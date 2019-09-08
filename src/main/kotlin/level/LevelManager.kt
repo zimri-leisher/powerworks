@@ -1,6 +1,7 @@
 package level
 
 import audio.AudioManager
+import com.esotericsoftware.kryo.io.Input
 import data.DirectoryChangeWatcher
 import data.FileManager
 import data.GameDirectoryIdentifier
@@ -8,7 +9,14 @@ import data.WeakMutableList
 import io.ControlPressHandler
 import io.InputManager
 import io.MouseMovementListener
+import main.Game
 import main.State
+import network.Client
+import network.Server
+import network.User
+import network.packet.Packet
+import network.packet.PacketHandler
+import network.packet.PacketType
 import resource.ResourceNode
 import screen.CameraMovementListener
 import screen.ScreenManager
@@ -18,9 +26,10 @@ import java.io.File
 import java.nio.charset.Charset
 import java.nio.file.Files
 import java.nio.file.Path
+import java.time.LocalDateTime
 import kotlin.streams.toList
 
-object LevelManager : DirectoryChangeWatcher, MouseMovementListener, CameraMovementListener {
+object LevelManager : DirectoryChangeWatcher, MouseMovementListener, CameraMovementListener, PacketHandler {
     val allLevels = mutableSetOf<Level>()
 
     /**
@@ -28,6 +37,7 @@ object LevelManager : DirectoryChangeWatcher, MouseMovementListener, CameraMovem
      */
     lateinit var localLevel: Level
         private set
+
     /**
      * The [Level] that the mouse is over, or null if the mouse is not over any [Level]
      */
@@ -40,11 +50,10 @@ object LevelManager : DirectoryChangeWatcher, MouseMovementListener, CameraMovem
      * The default [Level] for [LevelObject]s and [ResourceNode]s. They are never added to it and only store it after their
      * instantiation and before they get [added][Level.add] to a [Level]
      */
-    val emptyLevel = object : Level(LevelInfo("emptyLevel", "-1", LevelGeneratorSettings(0, 0), File(""), File(""))) {
+    val emptyLevel = object : Level(LevelInfo("", "emptyLevel", "-1", LevelGeneratorSettings(0, 0), 0)) {
         override fun genTiles(xChunk: Int, yChunk: Int) = throw UnsupportedOperationException("Empty level cannot generate tiles")
 
         override fun genBlocks(xChunk: Int, yChunk: Int) = throw UnsupportedOperationException("Empty level cannot generate blocks")
-
     }
 
     private val allViews = WeakMutableList<GUILevelView>()
@@ -61,6 +70,7 @@ object LevelManager : DirectoryChangeWatcher, MouseMovementListener, CameraMovem
      */
     lateinit var levelViewLastInteractedWith: GUILevelView
         private set
+
     /**
      * The [LevelObject] that the mouse is currently over, or null if the mouse is not over any [LevelObject]. If there are
      * multiple [LevelObject]s under the [Mouse], it will return [MovingObject]s first (in an undefined order) and [Block]s
@@ -68,12 +78,12 @@ object LevelManager : DirectoryChangeWatcher, MouseMovementListener, CameraMovem
      */
     var levelObjectUnderMouse: LevelObject? = null
         private set
-
     /**
      * The last [LevelObject] that was clicked on. Before any have been clicked on, defaults to the camera of the first [GUILevelView]
      */
     lateinit var levelObjectLastInteractedWith: LevelObject
         private set
+
     var mouseLevelXPixel = 0
         private set(value) {
             if (field != value) {
@@ -82,7 +92,6 @@ object LevelManager : DirectoryChangeWatcher, MouseMovementListener, CameraMovem
                 mouseLevelXChunk = value shr CHUNK_PIXEL_EXP
             }
         }
-
     var mouseLevelYPixel = 0
         private set(value) {
             if (field != value) {
@@ -91,24 +100,31 @@ object LevelManager : DirectoryChangeWatcher, MouseMovementListener, CameraMovem
                 mouseLevelYChunk = value shr CHUNK_PIXEL_EXP
             }
         }
+
     var mouseLevelXTile = 0
         private set
-
     var mouseLevelYTile = 0
         private set
+
     var mouseLevelXChunk = 0
         private set
-
     var mouseLevelYChunk = 0
         private set
-    val mouseMovementListeners = mutableSetOf<MouseLevelMovementListener>()
 
+    val mouseMovementListeners = mutableSetOf<MouseLevelMovementListener>()
     val levelInfos = mutableListOf<LevelInfo>()
 
     init {
         InputManager.mouseMovementListeners.add(this)
-        FileManager.fileSystem.registerDirectoryChangeWatcher(this, FileManager.fileSystem.getPath(GameDirectoryIdentifier.SAVES))
-        indexLevels()
+        if (Game.IS_SERVER) {
+            Server.registerClientPacketHandler(this, PacketType.REQUEST_LEVEL_INFO)
+            FileManager.fileSystem.registerDirectoryChangeWatcher(this, FileManager.fileSystem.getPath(GameDirectoryIdentifier.SERVER_SAVES))
+        } else {
+            println("requesting level info")
+            Client.registerServerPacketHandler(this, PacketType.LEVEL_INFO)
+            //Client.sendToServer(RequestLevelInfoPacket())
+            FileManager.fileSystem.registerDirectoryChangeWatcher(this, FileManager.fileSystem.getPath(GameDirectoryIdentifier.SAVES))
+        }
     }
 
     fun setLocalLevel(level: Level) {
@@ -124,6 +140,21 @@ object LevelManager : DirectoryChangeWatcher, MouseMovementListener, CameraMovem
         allViews.add(view)
     }
 
+    override fun handleServerPacket(packet: Packet) {
+//        if (packet is LevelInfoPacket) {
+//            levelInfos.add(packet.info)
+//            Client.sendToServer(RequestLevelDataPacket())
+//        }
+    }
+
+    override fun handleClientPacket(packet: Packet) {
+//        if (packet is RequestLevelInfoPacket) {
+//            val correspondingLevelInfo = getLevelInfoFor(User(packet.userId))
+//            Server.sendToClient(LevelInfoPacket(correspondingLevelInfo), packet.clientId)
+//            println("sending level info to clients")
+//        }
+    }
+
     override fun onMouseMove(pXPixel: Int, pYPixel: Int) {
         if (State.CURRENT_STATE == State.INGAME) {
             updateMouseLevelPosition()
@@ -132,6 +163,14 @@ object LevelManager : DirectoryChangeWatcher, MouseMovementListener, CameraMovem
 
     override fun onCameraMove(view: GUILevelView, pXPixel: Int, pYPixel: Int) {
         updateMouseLevelPosition()
+    }
+
+    fun getLevelInfoFor(user: User) = levelInfos.firstOrNull { it.userId == user.id } ?: createNewLevelInfoFor(user)
+
+    private fun createNewLevelInfoFor(user: User, name: String = user.id): LevelInfo {
+        val info = LevelInfo(user.id, name, LocalDateTime.now().toString(), LevelGeneratorSettings(), (Math.random() * 4096).toLong())
+        levelInfos.add(info)
+        return info
     }
 
     /**
@@ -177,7 +216,7 @@ object LevelManager : DirectoryChangeWatcher, MouseMovementListener, CameraMovem
     }
 
     fun updateMouseLevelPosition() {
-        if(levelViewUnderMouse != null) {
+        if (levelViewUnderMouse != null) {
             val zoom = levelViewUnderMouse!!.zoomMultiplier
             val viewRectangle = levelViewUnderMouse!!.viewRectangle
             val pXPixel = mouseLevelXPixel
@@ -219,14 +258,17 @@ object LevelManager : DirectoryChangeWatcher, MouseMovementListener, CameraMovem
     }
 
     override fun onDirectoryChange(dir: Path) {
-        if (dir == FileManager.fileSystem.getPath(GameDirectoryIdentifier.SAVES)) {
+        if (dir == FileManager.fileSystem.getPath(GameDirectoryIdentifier.SAVES) ||
+                dir == FileManager.fileSystem.getPath(GameDirectoryIdentifier.SERVER_SAVES)) {
             println("directory changed")
-            indexLevels()
+            indexLevels(dir)
         }
     }
 
-    fun indexLevels() {
-        val allFiles = Files.walk(FileManager.fileSystem.getPath(GameDirectoryIdentifier.SAVES)).filter { Files.isRegularFile(it) }.map { it.toFile() }.toList()
+    fun indexLevels(id: GameDirectoryIdentifier = GameDirectoryIdentifier.SAVES) = indexLevels(FileManager.fileSystem.getPath(id))
+
+    fun indexLevels(path: Path) {
+        val allFiles = Files.walk(path).filter { Files.isRegularFile(it) }.map { it.toFile() }.toList()
         val levelFileInfoFilePairs = mutableMapOf<File, File>()
         for (file in allFiles) {
             if (file.name.endsWith(".level"))
@@ -235,12 +277,9 @@ object LevelManager : DirectoryChangeWatcher, MouseMovementListener, CameraMovem
                 }
         }
         for ((level, info) in levelFileInfoFilePairs) {
-            val text = info.readLines(Charset.forName("UTF-16"))
-            levelInfos.add(LevelInfo.parse(text, level, info))
+            val stream = Input(info.inputStream())
+            val levelInfo = Game.KRYO.readObject(stream, LevelInfo::class.java)
+            levelInfos.add(levelInfo)
         }
-    }
-
-    fun save() {
-
     }
 }

@@ -19,18 +19,54 @@ import misc.Geometry
 import misc.Geometry.rotate
 import resource.ResourceContainer
 import resource.ResourceNode
-import resource.ResourceType
 import routing.RoutingLanguage
-import routing.RoutingLanguageStatement
 import screen.*
 import screen.elements.BlockGUI
 
+/**
+ * A type of [Block]. All [Block]s have a type, and they define constants between each of their instances. For example,
+ * [BlockType.TUBE] defines the [TubeBlock]'s name, default texture and instantiation function. New subclasses of this
+ * can define additional parameters, for example, the [MachineBlockType] defines a [MachineBlockType.maxWork] which
+ * dictates how quickly machines of each type finish working.
+ *
+ * To create a new type, all you must do is instantiate this anywhere. Parameters are idiomatically set in the closure
+ * accepted by the constructor, but you can really change them anywhere at any time.
+ *
+ * Here is an example of creating a new type:
+ *
+ *     val TEST_TYPE = BlockType<DefaultBlock> {
+ *         widthTiles = 3
+ *         heightTiles = 5
+ *         name = "Tester"
+ *     }
+ *
+ * You are able to define [ResourceNode] placement and [ResourceContainer]s--see [BlockNodesTemplate]. Because of the
+ * [RoutingLanguage], you can often set most of the resource-based functionality of a [Block] through its type. This is the recommended
+ * way to add new features, as opposed to putting code directly inside classes.
+ * You are also able to define a [BlockGUIPool] which will allow easy creation and deletion of [BlockGUI]s from a pool
+ */
 open class BlockType<T : Block>(initializer: BlockType<T>.() -> Unit = {}) : LevelObjectType<T>() {
 
+    /**
+     * The user-friendly name of this [BlockType]. This will be displayed in in inventories and other GUIs
+     */
     var name = "Error"
+    /**
+     * How many tiles wide the base of this [BlockType] will be
+     */
     var widthTiles = 1
+    /**
+     * How many tiles high the base of this [BlockType] will be
+     */
     var heightTiles = 1
+    /**
+     * The template that defines [ResourceNode] placement and [ResourceContainer]s. See [BlockNodesTemplate]
+     */
     var nodesTemplate = BlockNodesTemplate()
+    /**
+     * The [BlockGUIPool] for [Block]s of this [BlockType]. This is meant for [Block]s which have a single, standard
+     * [BlockGUI] across all instances, and is usually accessed in the [Block.onInteractOn] method (e.g. `guiPool.open(this)`)
+     */
     var guiPool: BlockGUIPool<*>? = null
 
     init {
@@ -51,6 +87,13 @@ open class BlockType<T : Block>(initializer: BlockType<T>.() -> Unit = {}) : Lev
 
         val ERROR = BlockType<DefaultBlock>()
 
+        init {
+            MachineBlockType
+            CrafterBlockType
+            FluidTankBlockType
+            ChestBlockType
+        }
+
         val TUBE = BlockType<TubeBlock> {
             name = "Tube"
             textures = LevelObjectTextures(Image.Block.TUBE_2_WAY_VERTICAL)
@@ -65,19 +108,33 @@ open class BlockType<T : Block>(initializer: BlockType<T>.() -> Unit = {}) : Lev
     }
 
     /**
-     * A way of storing the positions of nodes for a block type. This will be instantiated at an offset for any block placed
-     * at any rotation in the level (if it has nodes)
+     * A way of storing the positions of nodes for a block type. Define new [ResourceNode]s inside this template by using
+     * the [node] function with the appropriate arguments. When a [Block] with this template is placed in a [Level],
+     * [instantiate] will be called, which takes [ResourceNode]s from this template and creates them at the
+     * [Block], with the correct rotation and position. It additionally [copies][ResourceContainer.copy] new containers
+     * as necessary
      */
     inner class BlockNodesTemplate {
         val containers = mutableListOf<ResourceContainer>()
         val nodes = mutableListOf<ResourceNode>()
 
+        /**
+         * Creates a template [ResourceNode]
+         * @param xOffset the amount of x tiles offset from the bottom left
+         * @param yOffset the amount of y tiles offset from the bottom left
+         * @param attachedContainer the [ResourceContainer] this node is attached to
+         * @param allowIn the [RoutingLanguage] script determining whether this node allows input. Defaults to "false"
+         * @param allowOut the [RoutingLanguage] script determining whether this node allows input. Defaults to "false"
+         * @param forceIn the [RoutingLanguage] script determining whether this node will forcibly pull in resources. Defaults to "false"
+         * @param forceOut the [RoutingLanguage] script determining whether this node will forcibly push out resources. Defaults to "false"
+         * @param allowBehaviorModification whether or not the behavior of this node should be able to be changed by the player
+         */
         fun node(xOffset: Int = 0, yOffset: Int = 0,
-                                    dir: Int = 0,
-                                    attachedContainer: ResourceContainer,
-                                    allowIn: String = "false", allowOut: String = "false",
-                                    forceIn: String = "false", forceOut: String = "false",
-                                    allowBehaviorModification: Boolean = false): ResourceNode {
+                 dir: Int = 0,
+                 attachedContainer: ResourceContainer,
+                 allowIn: String = "false", allowOut: String = "false",
+                 forceIn: String = "false", forceOut: String = "false",
+                 allowBehaviorModification: Boolean = false): ResourceNode {
             val r = ResourceNode(xOffset, yOffset, dir, attachedContainer.resourceCategory, attachedContainer, LevelManager.emptyLevel)
             with(r.behavior) {
                 this.allowIn.setStatement(RoutingLanguage.parse(allowIn), null)
@@ -102,7 +159,7 @@ open class BlockType<T : Block>(initializer: BlockType<T>.() -> Unit = {}) : Lev
                 val coord = rotate(node.xTile, node.yTile, widthTiles, heightTiles, dir)
                 val newContainer = containers.filter { it.key === node.attachedContainer }.entries.first().value
                 val newNode = node.copy(coord.xTile + xTile, coord.yTile + yTile, Geometry.addAngles(node.dir, dir), attachedContainer = newContainer)
-                if(node.behavior.forceOut != newNode.behavior.forceOut) {
+                if (node.behavior.forceOut != newNode.behavior.forceOut) {
                     println("oopps behaviors diff")
                 }
                 ret.add(newNode)
@@ -112,16 +169,35 @@ open class BlockType<T : Block>(initializer: BlockType<T>.() -> Unit = {}) : Lev
     }
 }
 
+/**
+ * A [BlockType] for [MachineBlock]s. Defines various things related to work speed and efficiency, as well as [Sound]s to
+ * be played
+ */
 open class MachineBlockType<T : MachineBlock>(initializer: MachineBlockType<T>.() -> Unit = {}) : BlockType<T>() {
     /**
      * Power consumption multiplier, inverse of this
      */
     var efficiency = 1f
+    /**
+     * [maxWork] multiplier, inverse of this
+     */
     var speed = 1f
+    /**
+     * The amount of game ticks this takes to complete. Can be modified by [speed]
+     */
     var maxWork = 200
+    /**
+     * Whether [MachineBlock]s of this type should automatically start work once they finish
+     */
     var loop = true
+    /**
+     * The sound this plays while on
+     */
     var onSound: Sound? = null
 
+    /**
+     * Whether [MachineBlock]s of this type should be on by default
+     */
     var defaultOn = false
 
     init {

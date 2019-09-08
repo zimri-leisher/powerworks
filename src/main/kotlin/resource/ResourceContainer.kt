@@ -1,23 +1,31 @@
 package resource
 
-abstract class ResourceContainer(val resourceCategory: ResourceCategory, var typeRule: ResourceContainer.(ResourceType) -> Boolean = { true }) {
+import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag
 
-    // TODO worried about forgetting checkIfAble and thus skipping add/remove rule checks, how2fix?? thoughts from later - still dont know.
+abstract class ResourceContainer(
+        @Tag(1)
+        val resourceCategory: ResourceCategory,
+        @Tag(2)
+        var typeRule: ResourceContainer.(ResourceType) -> Boolean = { true }) {
 
     /**
      * Should be checked in the addition method of all resource containers. If false, and the checkIfAble arg of the add method is true, no addition operation will be done
      * This is not checked in the spaceFor method
      */
+    @Tag(3)
     var additionRule: ResourceContainer.(ResourceType, Int) -> Boolean = { _, _ -> true }
+
     /**
      * Should be checked in the removal method of all resource containers. If false, and the checkIfAble arg of the remove method is true, no removal operation will be done
      * This is not checked in the contains method
      */
+    @Tag(4)
     var removalRule: ResourceContainer.(ResourceType, Int) -> Boolean = { _, _ -> true }
 
     /**
      * Mutator methods should send appropriate calls to these
      */
+    @Tag(5)
     val listeners = mutableListOf<ResourceContainerChangeListener>()
 
     abstract val totalQuantity: Int

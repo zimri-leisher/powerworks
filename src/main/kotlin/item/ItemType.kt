@@ -12,7 +12,6 @@ private var nextID = 0
 
 open class ItemType(initializer: ItemType.() -> Unit = {}) : ResourceType() {
 
-    val id = nextID++
     override var name = "Error"
     override var icon: Renderable = Texture(Image.Misc.ERROR)
 
@@ -27,18 +26,18 @@ open class ItemType(initializer: ItemType.() -> Unit = {}) : ResourceType() {
 
     override fun toString() = name
 
-    override fun equals(other: Any?): Boolean {
-        return other is ItemType && other.id == id
-    }
-
-    override fun hashCode(): Int {
-        return id
-    }
-
     companion object {
         val ALL = mutableListOf<ItemType>()
 
         val ERROR = ItemType()
+
+        init {
+            EntityItemType
+            RobotItemType
+            BlockItemType
+            OreItemType
+            IngotItemType
+        }
 
         val CIRCUIT = ItemType {
             name = "Circuit"
@@ -59,6 +58,10 @@ open class EntityItemType(initializer: EntityItemType.() -> Unit = {}) : ItemTyp
 
     init {
         initializer()
+    }
+
+    companion object {
+
     }
 }
 

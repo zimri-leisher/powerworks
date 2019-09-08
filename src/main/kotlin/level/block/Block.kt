@@ -1,6 +1,6 @@
 package level.block
 
-import graphics.Renderer
+import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag
 import level.*
 import level.particle.ParticleEffect
 import resource.ResourceContainerGroup
@@ -15,6 +15,7 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotatio
      * The reason this exists and the render method doesn't use the textures defined in the [BlockType] is because this allows for us to
      * have animations that are local to this block (that aren't in sync with every other animation of the same type)
      */
+    @Tag(17)
     val textures = type.textures
 
     /**
@@ -23,6 +24,7 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotatio
      * For example, for a block of type [MachineBlockType.MINER], this would consist of 1 node at (0, 0) relative, pointing up by default. It automatically takes rotation
      * into account, so, for example, if that same block were placed with a rotation of 1 (rotated 90 degrees clockwise), the node would be at (1, 0) relative, pointing right.
      */
+    @Tag(18)
     val nodes = ResourceNodeGroup(type.nodesTemplate.instantiate(xTile, yTile, rotation))
 
     /**
@@ -30,6 +32,7 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotatio
      *
      * For example, for a block of type [ChestBlockType.SMALL], this would consist of a single 8x3 inventory
      */
+    @Tag(19)
     val containers = ResourceContainerGroup(nodes.getAttachedContainers())
 
     /**

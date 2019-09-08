@@ -1,6 +1,10 @@
 package level.tube
 
 import com.badlogic.gdx.graphics.g2d.TextureRegion
+import com.esotericsoftware.kryo.Kryo
+import com.esotericsoftware.kryo.Serializer
+import com.esotericsoftware.kryo.io.Input
+import com.esotericsoftware.kryo.io.Output
 import graphics.Image.Block
 import graphics.ImageCollection as Col
 
@@ -97,4 +101,15 @@ enum class TubeState(val texture: TextureRegion, val connections: Array<Boolean>
             return values().first { it.connections.contentEquals(dirs) }
         }
     }
+}
+
+class TubeStateSerializer : Serializer<TubeState>() {
+    override fun write(kryo: Kryo, output: Output, `object`: TubeState) {
+        output.writeString(`object`.name)
+    }
+
+    override fun read(kryo: Kryo, input: Input, type: Class<out TubeState>): TubeState {
+        return TubeState.valueOf(input.readString())
+    }
+
 }

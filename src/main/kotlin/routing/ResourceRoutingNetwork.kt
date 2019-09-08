@@ -1,5 +1,7 @@
 package routing
 
+import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer
+import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag
 import data.WeakMutableList
 import level.Level
 import level.add
@@ -11,21 +13,24 @@ class InvalidFunctionCallException(message: String) : Exception(message)
 
 open class ResourceRoutingNetwork(category: ResourceCategory, val level: Level) : ResourceContainer(category) {
 
+    @Tag(6)
     val id = nextId++
-
-    init {
-        ALL.add(this)
-    }
 
     /**
      * The nodes this network touches
      */
+    @Tag(7)
     val attachedNodes = ResourceNodeGroup()
 
     /**
      * The nodes that correspond with the nodes this network touches
      */
+    @Tag(8)
     val internalNodes = ResourceNodeGroup()
+
+    init {
+        ALL.add(this)
+    }
 
     override val totalQuantity get() = attachedNodes.getAttachedContainers().sumBy { it.totalQuantity }
 

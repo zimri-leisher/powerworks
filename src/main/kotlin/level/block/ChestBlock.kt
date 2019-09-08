@@ -1,30 +1,19 @@
 package level.block
 
 import com.badlogic.gdx.Input
-import io.*
+import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag
+import io.PressType
 import item.Inventory
-import main.Game
-import screen.InventoryGUI
 
 class ChestBlock(override val type: ChestBlockType, xTile: Int, yTile: Int, rotation: Int) : Block(type, xTile, yTile, rotation) {
 
+    @Tag(20)
     val inv = containers.first { it is Inventory } as Inventory
 
-    var typeRuleB = true
-
     override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
-        if(type == PressType.PRESSED) {
-            if(button == Input.Buttons.LEFT) {
-                if(shift) {
-                    val item = inv[0]!!
-                    nodes.output(item.type, item.quantity, onlyTo = { it.attachedNodes.isNotEmpty() })
-                } else {
-                    this.type.guiPool!!.toggle(this)
-                }
-            } else if(shift) {
-                typeRuleB = !typeRuleB
-                val b = typeRuleB
-                inv.typeRule = { !b }
+        if (type == PressType.PRESSED) {
+            if (button == Input.Buttons.LEFT) {
+                this.type.guiPool!!.toggle(this)
             }
         }
     }

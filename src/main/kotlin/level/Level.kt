@@ -1,16 +1,12 @@
 package level
 
-import audio.AudioManager
 import behavior.leaves.FindPath
+import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag
 import data.ConcurrentlyModifiableMutableList
-import data.FileManager
-import data.GameDirectoryIdentifier
 import graphics.Image
 import graphics.Renderer
 import graphics.TextureRenderParams
-import io.ControlPressHandler
 import io.InputManager
-import io.MouseMovementListener
 import item.weapon.Projectile
 import level.block.Block
 import level.entity.robot.Robot
@@ -24,13 +20,9 @@ import misc.Geometry
 import misc.Numbers
 import resource.ResourceNode
 import routing.ResourceRoutingNetwork
-import screen.CameraMovementListener
 import screen.elements.GUILevelView
-import screen.mouse.Mouse
 import screen.mouse.Tool
 import java.io.*
-import java.nio.file.Files
-import java.time.LocalDateTime
 import java.util.*
 
 const val CHUNK_SIZE_TILES = 8
@@ -38,60 +30,45 @@ val CHUNK_TILE_EXP = (Math.log(CHUNK_SIZE_TILES.toDouble()) / Math.log(2.0)).toI
 val CHUNK_PIXEL_EXP = CHUNK_TILE_EXP + 4
 val CHUNK_SIZE_PIXELS = CHUNK_SIZE_TILES shl 4
 
-abstract class Level(val levelInfo: LevelInfo) {
+abstract class Level(
+        @Tag(1)
+        val levelInfo: LevelInfo) {
 
+    @Tag(2)
     val widthTiles = levelInfo.settings.widthTiles
+    @Tag(3)
     val heightTiles = levelInfo.settings.heightTiles
+    @Tag(4)
     val heightPixels = heightTiles shl 4
+    @Tag(5)
     val widthPixels = widthTiles shl 4
+    @Tag(6)
     val heightChunks = heightTiles shr CHUNK_TILE_EXP
+    @Tag(7)
     val widthChunks = widthTiles shr CHUNK_TILE_EXP
 
+    @Tag(8)
     val seed: Long
+    @Tag(9)
     val rand: Random
 
     val particles = ConcurrentlyModifiableMutableList<Particle>()
+    @Tag(10)
     val chunks: Array<Chunk>
 
     val loadedChunks = ConcurrentlyModifiableMutableList<Chunk>()
-
+    @Tag(11)
     val oreNoises = mutableMapOf<OreTileType, Noise>()
 
+    @Tag(12)
     val projectiles = mutableListOf<Projectile>()
-
-    // TODO redo this with LevelOutputStream and such. This is pretty ew.
-    private fun DataOutputStream.writeAndNewline(s: Any?) {
-        writeChars(s.toString())
-        writeChars("\n")
-    }
 
     init {
         if (!levelInfo.settings.empty) {
             LevelManager.allLevels.add(this)
-            val p = FileManager.fileSystem.getPath(GameDirectoryIdentifier.SAVES).resolve(levelInfo.name)
-            if (Files.notExists(p)) {
-                Files.createDirectory(p)
-                seed = (Math.random() * 4096).toLong()
-                rand = Random(seed)
-                println("Creating level")
-                levelInfo.levelFile = Files.createFile(p.toAbsolutePath().resolve(levelInfo.name + ".level")).toFile()
-                val levelOut = DataOutputStream(BufferedOutputStream(FileOutputStream(levelInfo.levelFile, true)))
-                levelOut.writeLong(seed)
-                levelOut.close()
-                levelInfo.infoFile = Files.createFile(p.toAbsolutePath().resolve(levelInfo.name + ".info")).toFile()
-                val infoOut = DataOutputStream(BufferedOutputStream(FileOutputStream(levelInfo.infoFile, true)))
-                infoOut.writeAndNewline(levelInfo.name)
-                infoOut.writeAndNewline(LocalDateTime.now().toString())
-                infoOut.writeAndNewline(levelInfo.settings.widthTiles)
-                infoOut.writeAndNewline(levelInfo.settings.heightTiles)
-                infoOut.close()
-            } else {
-                println("Loading level")
-                val g = DataInputStream(BufferedInputStream(FileInputStream(levelInfo.levelFile)))
-                seed = g.readLong()
-                rand = Random(seed)
-                g.close()
-            }
+            println("Loading level")
+            seed = levelInfo.seed
+            rand = Random(seed)
             for (t in OreTileType.ALL) {
                 oreNoises.put(t, OpenSimplexNoise(Numbers.genRandom(seed, rand.nextInt(99).toLong())))
             }
@@ -223,11 +200,10 @@ abstract class Level(val levelInfo: LevelInfo) {
 
     // even older Zim (18 yrs old now) says it turns out a lot of it got moved away anyways, so it worked perfectly as a temporary solution!
 
-    // 19 now, and bam, its all gone to [LevelManager]. 2:22 am mohican outdoor center
+    // 19 now, and bam, its all gone to [LevelManager] or [LevelUtility]. 2:22 am mohican outdoor center
 
     /* Generation */
     abstract fun genTiles(xChunk: Int, yChunk: Int): Array<Tile>
 
     abstract fun genBlocks(xChunk: Int, yChunk: Int): Array<Block?>
-
 }

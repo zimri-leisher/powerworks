@@ -8,7 +8,6 @@ import level.tile.TileType
 import misc.Numbers.genRandom
 import java.util.*
 
-
 class SimplexLevel(info: LevelInfo) : Level(info) {
 
     override fun genTiles(xChunk: Int, yChunk: Int): Array<Tile> {

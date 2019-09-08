@@ -1,5 +1,6 @@
 package graphics
 
+import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag
 import main.heightPixels
 import main.toColor
 import main.widthPixels
@@ -317,13 +318,18 @@ class StepChain(stepID: String? = null, closure: StepChain.() -> Unit) : Animati
 class Animation(path: String,
                 numberOfFrames: Int,
                 startPlaying: Boolean = false,
+                @Tag(1)
                 val smoothing: Boolean = false,
+                @Tag(2)
                 val offsets: List<PixelCoord> = listOf(),
-                closure: StepChain.() -> Unit) : Renderable() {
-    // TODO add local animations
+                closure: StepChain.() -> Unit = {}) : Renderable() {
 
+    private constructor() : this("misc/error", 1)
+
+    @Tag(3)
     val frames = ImageCollection(path, numberOfFrames)
 
+    @Tag(4)
     var currentFrameIndex = 0
         set(value) {
             lastFrame = currentFrame
@@ -333,6 +339,7 @@ class Animation(path: String,
     override val xPixelOffset get() = if (currentFrameIndex > offsets.lastIndex) 0 else offsets[currentFrameIndex].xPixel
     override val yPixelOffset get() = if (currentFrameIndex > offsets.lastIndex) 0 else offsets[currentFrameIndex].yPixel
     val currentFrame get() = frames[currentFrameIndex]
+    @Tag(5)
     private var lastFrame = frames[0]
 
     override val widthPixels get() = currentFrame.widthPixels

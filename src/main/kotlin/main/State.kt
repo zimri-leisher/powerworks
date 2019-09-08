@@ -1,14 +1,14 @@
 package main
 
 import audio.AudioManager
+import data.GameDirectoryIdentifier
 import item.Inventory
 import item.ItemType
-import network.Client
-import network.ClientHandshakePacket
+import level.LevelManager
 import screen.*
 import screen.mouse.Mouse
 
-class State(val activate: (State) -> (Unit), val deactivate: (State) -> (Unit)) {
+class State(val activate: () -> Unit, val deactivate: () -> Unit) {
     companion object {
 
         private var NEXT_STATE: State? = null
@@ -35,6 +35,15 @@ class State(val activate: (State) -> (Unit), val deactivate: (State) -> (Unit)) 
         }, {
         })
 
+        val SERVER = State({
+            LevelManager.indexLevels(GameDirectoryIdentifier.SERVER_SAVES)
+            Game.mainInv = Inventory(Game.INVENTORY_WIDTH, Game.INVENTOR_HEIGHT)
+            Game.mainInv.listeners.add(Mouse)
+            for (i in ItemType.ALL) {
+                Game.mainInv.add(i, i.maxStack)
+            }
+        }, {})
+
         var CURRENT_STATE = MAIN_MENU
             private set
 
@@ -44,8 +53,8 @@ class State(val activate: (State) -> (Unit), val deactivate: (State) -> (Unit)) 
 
         fun update() {
             if (NEXT_STATE != null) {
-                CURRENT_STATE.deactivate(NEXT_STATE!!)
-                NEXT_STATE!!.activate(CURRENT_STATE)
+                CURRENT_STATE.deactivate()
+                NEXT_STATE!!.activate()
                 CURRENT_STATE = NEXT_STATE!!
                 NEXT_STATE = null
             }

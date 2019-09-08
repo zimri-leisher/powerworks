@@ -8,15 +8,19 @@ import misc.PixelCoord
 import resource.ResourceCategory
 import resource.ResourceNode
 import resource.ResourceType
+import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag
 
 class TubeRoutingNetwork(level: Level) : ResourceRoutingNetwork(ResourceCategory.ITEM, level) {
 
+    @Tag(9)
     val tubes = mutableSetOf<TubeBlock>()
 
     /**
      * The list of [Intersection]s in this network
      */
+    @Tag(10)
     val intersections = mutableSetOf<Intersection>()
+    @Tag(11)
     private val packages = ConcurrentlyModifiableMutableList<RoutingPackage>()
 
     val size

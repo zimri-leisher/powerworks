@@ -10,6 +10,12 @@ import level.LevelManager
 
 open class Robot(type: RobotType<out Robot>, xPixel: Int, yPixel: Int, rotation: Int = 0) : Entity(type, xPixel, yPixel, rotation), ControlPressHandler {
 
+    override val type = type
+
+    init {
+        InputManager.registerControlPressHandler(this, ControlPressHandlerType.LEVEL_ANY_UNDER_MOUSE, Control.SECONDARY_INTERACT)
+    }
+
     override fun handleControlPress(p: ControlPress) {
         if(p.pressType == PressType.PRESSED && inLevel) {
             val xPixel = LevelManager.mouseLevelXPixel
@@ -19,12 +25,6 @@ open class Robot(type: RobotType<out Robot>, xPixel: Int, yPixel: Int, rotation:
             val angle = atan(yDiff.toDouble() / xDiff) + if(Numbers.sign(xDiff) == -1) PI else 0.0
             //attack(angle.toFloat())
         }
-    }
-
-    override val type = type
-
-    init {
-        InputManager.registerControlPressHandler(this, ControlPressHandlerType.LEVEL_ANY_UNDER_MOUSE, Control.SECONDARY_INTERACT)
     }
 
      fun attack(target: LevelObject) {

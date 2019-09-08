@@ -1,9 +1,15 @@
 package level
 
 import com.badlogic.gdx.graphics.g2d.TextureRegion
-import graphics.*
+import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag
+import graphics.ImageCollection
+import graphics.Renderable
+import graphics.Texture
+import graphics.TextureRenderParams
 
-class LevelObjectTextures(vararg val textures: Renderable) {
+class LevelObjectTextures(
+        @Tag(1)
+        vararg val textures: Renderable) {
 
     constructor(vararg textures: TextureRegion) : this(*textures.map { Texture(it) }.toTypedArray())
     constructor(col: ImageCollection) : this(*col.textures)
