@@ -17,12 +17,10 @@ class WeakMutableMap<K, V> {
         get() = map.size
 
     fun put(key: K, value: V): V? {
-        println("adding $key")
         return map.put(WeakReference(key), value)
     }
 
     fun remove(key: K): V? {
-        println("removing $key")
         val i = map.iterator()
         for ((k, v) in i) {
             if (k.get() == key) {
@@ -36,7 +34,6 @@ class WeakMutableMap<K, V> {
     }
 
     private fun check() {
-        println("checking")
         val i = map.iterator()
         for ((k, v) in i) {
             if (k.get() == null) {
@@ -46,7 +43,6 @@ class WeakMutableMap<K, V> {
     }
 
     fun get(key: K): V? {
-        println("getting $key")
         for ((k, v) in map) {
             if (k.get() == key) {
                 return v
@@ -56,7 +52,6 @@ class WeakMutableMap<K, V> {
     }
 
     fun forEach(f: (K, V) -> Unit) {
-        println("looping")
         check()
         map.forEach { (k, v) ->
             // prevents GC from removing while iterating
@@ -73,22 +68,18 @@ class WeakMutableMap<K, V> {
     }
 
     fun clear() {
-        println("clearing")
         map.clear()
     }
 
     fun contains(key: K): Boolean {
-        println("checking contains")
         return map.any { it.key.get() == key }
     }
 
     fun putAll(f: Map<K, V>) {
-        println("adding all")
         f.forEach { put(it.key, it.value) }
     }
 
     fun removeAll(f: Map<K, V>) {
-        println("removing all")
         f.forEach { remove(it.key) }
     }
 
@@ -113,19 +104,16 @@ class WeakMutableMap<K, V> {
      */
 
     fun filter(f: (K) -> Boolean): List<Pair<K, V>> {
-        println("filtering")
         check()
         return map.filter { if (it.key.get() == null) false else f(it.key.get()!!) }.map { it.key.get()!! to it.value }
     }
 
     fun isNotEmpty(): Boolean {
-        println("checking not empty")
         check()
         return map.isNotEmpty()
     }
 
     fun joinToString(): String {
-        println("joining to string")
         return map.toList().joinToString { "(${it.first.get().toString()}, ${it.second}" }
     }
 }

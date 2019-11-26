@@ -50,6 +50,7 @@ object FileManager {
         PixmapIO.writePNG(FileHandle(file), pixmap)
         pixmap.dispose()
         println("Taken screenshot")
+        val l = mutableListOf<String>()
     }
 }
 

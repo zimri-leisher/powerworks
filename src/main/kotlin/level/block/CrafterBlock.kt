@@ -4,10 +4,7 @@ import com.badlogic.gdx.Input
 import crafting.Crafter
 import crafting.Recipe
 import io.PressType
-import resource.ResourceContainer
-import resource.ResourceContainerChangeListener
-import resource.ResourceList
-import resource.ResourceType
+import resource.*
 import screen.CrafterBlockGUI
 
 open class CrafterBlock(override val type: CrafterBlockType, xTile: Int, yTile: Int, rotation: Int) : MachineBlock(type, xTile, yTile, rotation), ResourceContainerChangeListener, Crafter {

@@ -220,7 +220,6 @@ object LevelManager : DirectoryChangeWatcher, MouseMovementListener, CameraMovem
 
     override fun onDirectoryChange(dir: Path) {
         if (dir == FileManager.fileSystem.getPath(GameDirectoryIdentifier.SAVES)) {
-            println("directory changed")
             indexLevels()
         }
     }

@@ -4,6 +4,7 @@ import com.badlogic.gdx.Input
 import io.*
 import item.Inventory
 import main.Game
+import resource.output
 import screen.InventoryGUI
 
 class ChestBlock(override val type: ChestBlockType, xTile: Int, yTile: Int, rotation: Int) : Block(type, xTile, yTile, rotation) {

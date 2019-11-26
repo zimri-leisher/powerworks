@@ -7,6 +7,7 @@ import item.OreItemType
 import resource.ResourceContainer
 import resource.ResourceContainerChangeListener
 import resource.ResourceType
+import resource.output
 import screen.FurnaceBlockGUI
 
 class FurnaceBlock(type: MachineBlockType<FurnaceBlock>, xTile: Int, yTile: Int, rotation: Int = 0) : MachineBlock(type, xTile, yTile, rotation), ResourceContainerChangeListener {

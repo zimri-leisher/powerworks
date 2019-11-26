@@ -58,14 +58,18 @@ fun route(startXPixel: Int, startYPixel: Int, output: ResourceNode, network: Tub
     }
     if (finalNode != null) {
         val instructions = mutableListOf<RouteStep>()
+        println("output direction: ${output.dir}")
         val endXTile = output.xTile + Geometry.getXSign(output.dir)
         val endYTile = output.yTile + Geometry.getYSign(output.dir)
         instructions.add(RouteStep(PixelCoord(endXTile shl 4, endYTile shl 4), -1))
-        instructions.add(RouteStep(PixelCoord(finalNode.xTile shl 4, finalNode.yTile shl 4), output.dir))
+        instructions.add(RouteStep(PixelCoord(output.xTile shl 4, output.yTile shl 4), output.dir))
         while (finalNode!!.parent != null) {
             instructions.add(RouteStep(PixelCoord(finalNode.parent!!.xTile shl 4, finalNode.parent!!.yTile shl 4), finalNode.directionFromParent))
             finalNode = finalNode.parent
         }
+        val firstNodeXPixel = finalNode.xTile shl 4
+        val firstNodeYPixel = finalNode.yTile shl 4
+        instructions.add(RouteStep(PixelCoord(startXPixel, startYPixel), Geometry.getDir(firstNodeXPixel - startXPixel, firstNodeYPixel - startYPixel)))
         instructions.reverse()
         return PackageRoute(instructions.toTypedArray())
     }

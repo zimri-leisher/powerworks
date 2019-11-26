@@ -259,6 +259,10 @@ fun Level.updateResourceNodeAttachments(node: ResourceNode) {
     val attached = getResourceNodesAt(node.xTile + Geometry.getXSign(node.dir), node.yTile + Geometry.getYSign(node.dir), { it.resourceCategory == node.resourceCategory })
             .filter { it.dir == Geometry.getOppositeAngle(node.dir) }
     node.attachedNodes = attached
+    val networks = attached.map { it.network }.distinct()
+    for(network in networks) {
+        node.network
+    }
 }
 
 /**

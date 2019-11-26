@@ -1,10 +1,10 @@
 package level.block
 
-import graphics.Renderer
 import level.*
 import level.particle.ParticleEffect
 import resource.ResourceContainerGroup
-import resource.ResourceNodeGroup
+import resource.getAttachedContainers
+import resource.toResourceNodeGroup
 import java.io.DataOutputStream
 
 abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotation: Int = 0) : LevelObject(type, xTile shl 4, yTile shl 4, rotation) {
@@ -23,7 +23,7 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotatio
      * For example, for a block of type [MachineBlockType.MINER], this would consist of 1 node at (0, 0) relative, pointing up by default. It automatically takes rotation
      * into account, so, for example, if that same block were placed with a rotation of 1 (rotated 90 degrees clockwise), the node would be at (1, 0) relative, pointing right.
      */
-    val nodes = ResourceNodeGroup(type.nodesTemplate.instantiate(xTile, yTile, rotation))
+    val nodes = type.nodesTemplate.instantiate(xTile, yTile, rotation).toResourceNodeGroup()
 
     /**
      * The specific local containers as specified by [BlockType.nodesTemplate]

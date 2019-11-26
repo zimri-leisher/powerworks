@@ -68,8 +68,6 @@ private enum class SingleOperator(val tokenType: TokenType, private val evaluate
     NETWORK_CONTAINS(TokenType.NETWORK_CONTAINS, { arg, context -> ResourceType.getType(arg.replace("_", " "))?.let { context.network.getQuantity(it) >= 1 } }),
     QUANTITY(TokenType.QUANTITY, { arg, context ->
         val type = ResourceType.getType(arg.replace("_", " "))
-        println(context)
-        println("cont: ${context.attachedContainer}")
         if (type != null) context.attachedContainer.getQuantity(type)
         else null
     }),
@@ -82,7 +80,6 @@ private enum class SingleOperator(val tokenType: TokenType, private val evaluate
 
 private enum class Statements(val tokenType: TokenType, private val evaluate: (context: ResourceNode) -> Any?) {
     TOTAL_QUANTITY(TokenType.TOTAL_QUANTITY, {
-        println("evaluating total quantity for context: $it")
         it.attachedContainer.totalQuantity }),
     NETWORK_TOTAL_QUANTITY(TokenType.NETWORK_TOTAL_QUANTITY, { it.network.totalQuantity });
 
@@ -121,7 +118,6 @@ sealed class Node(val token: Token) {
                 this as SingleOperation
                 val arg = arg.visit(context)
                 val func = SingleOperator.values().first { it.tokenType == token.type }
-                println("function: $func, eval ($arg): ${func.evaluate(arg, context)}")
                 return func.evaluate(arg, context)
             }
             TokenCategory.STATEMENT -> {

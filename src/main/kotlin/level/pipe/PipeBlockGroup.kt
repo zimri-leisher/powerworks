@@ -11,7 +11,7 @@ class PipeBlockGroup(val level: Level) {
     private val pipes = mutableListOf<PipeBlock>()
     private val storage = PipeBlockInternalStorage(this)
     val id = nextId++
-    val nodes = ResourceNodeGroup()
+    val nodes = mutableListOf<ResourceNode>()
 
     val size: Int
         get() = pipes.size
@@ -56,7 +56,6 @@ class PipeBlockGroup(val level: Level) {
                 it.attachedContainer = storage
                 nodes.add(it)
             }
-
         }
     }
 
@@ -135,7 +134,6 @@ class PipeBlockGroup(val level: Level) {
             }
             return true
         }
-
 
         override fun expect(resource: ResourceType, quantity: Int): Boolean {
             return false
