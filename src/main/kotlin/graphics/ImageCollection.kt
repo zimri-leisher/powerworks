@@ -1,13 +1,39 @@
 package graphics
 
 import com.badlogic.gdx.graphics.g2d.TextureRegion
+import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer
 import data.ResourceManager
 import main.heightPixels
 import main.widthPixels
+import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag
 
-class ImageCollection(identifier: String, numberOfFrames: Int) {
+class ImageCollection(
+        @Tag(1)
+        val identifier: String,
+        numberOfFrames: Int) {
+
+    private constructor() : this("misc/error", 1)
+
+    @Tag(2)
+    val textures: Array<TextureRegion>
+
+    operator fun get(i: Int): TextureRegion {
+        return textures[i]
+    }
+
+    init {
+        ALL.add(this)
+        val list = mutableListOf<TextureRegion>()
+        for (i in 1..numberOfFrames) {
+            list.add(ResourceManager.getAtlasTexture(identifier, i))
+        }
+        textures = list.toTypedArray()
+    }
 
     companion object {
+
+        val ALL = mutableListOf<ImageCollection>()
+
         val GRASS_TILE = ImageCollection("tile/grass", 4)
         val GRASS_IRON_ORE_TILE = ImageCollection("tile/grass_iron_ore", 3)
         val GRASS_COPPER_ORE_TILE = ImageCollection("tile/grass_copper_ore", 4)
@@ -16,23 +42,5 @@ class ImageCollection(identifier: String, numberOfFrames: Int) {
         val TUBE_3_WAY = ImageCollection("block/tube/3_way", 4)
         val PIPE_CORNER = ImageCollection("block/pipe/corner", 4)
         val PIPE_3_WAY = ImageCollection("block/pipe/3_way", 4)
-    }
-
-    val textures: Array<TextureRegion>
-    var width: Int
-    var height: Int
-
-    operator fun get(i: Int): TextureRegion {
-        return textures[i]
-    }
-
-    init {
-        val list = mutableListOf<TextureRegion>()
-        for(i in 1..numberOfFrames) {
-            list.add(ResourceManager.getAtlasTexture(identifier, i))
-        }
-        width = list[0].widthPixels
-        height = list[1].heightPixels
-        textures = list.toTypedArray()
     }
 }

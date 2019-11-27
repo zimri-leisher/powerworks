@@ -7,8 +7,6 @@ import com.badlogic.gdx.files.FileHandle
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.TextureAtlas
 import com.badlogic.gdx.graphics.g2d.TextureRegion
-import mod.Mod
-import mod.ModManager
 import java.io.InputStream
 import java.net.URL
 
@@ -26,8 +24,6 @@ object ResourceManager {
 
     private val defaultTextureFile: FileHandle = Gdx.files.internal("textures/misc/error.png")
 
-    var currentModContext: Mod? = null
-
     /**
      * Loads a [TextureAtlas] and adds it to the internal list
      */
@@ -44,18 +40,18 @@ object ResourceManager {
      * @param index the index of the texture (the number after the last underscore if there is one). -1 if no index
      */
     fun getAtlasTexture(identifier: String, index: Int = -1): TextureRegion {
-        val fullId = identifier + if(index != -1) "_$index" else ""
+        val fullId = identifier + if (index != -1) "_$index" else ""
         val r = textureRegions[fullId]
-        if(r != null)
+        if (r != null)
             return r
         var region: TextureRegion? = null
-        for(atlas in textureAtlases) {
-            region = if(index == -1) atlas.findRegion(identifier) else atlas.findRegion(identifier, index)
-            if(region != null)
+        for (atlas in textureAtlases) {
+            region = if (index == -1) atlas.findRegion(identifier) else atlas.findRegion(identifier, index)
+            if (region != null)
                 break
         }
-        if(region == null) {
-            throw ResourceNotFoundException("Resource with identifier $identifier ${if(index !=-1) "and index $index" else ""} not found in an atlas")
+        if (region == null) {
+            throw ResourceNotFoundException("Resource with identifier $identifier ${if (index != -1) "and index $index" else ""} not found in an atlas")
         }
         textureRegions.put(fullId, region)
         return region
@@ -124,18 +120,10 @@ object ResourceManager {
      * @return an absolute [URL] to the path
      */
     fun getRawResource(path: String): URL {
-        if (currentModContext != null) {
-            return try {
-                ModManager.getMainClass(currentModContext!!).getResource(path)!!
-            } catch (e: KotlinNullPointerException) {
-                throw ResourceNotFoundException("Resource at $path not found for current mod $currentModContext")
-            }
-        } else {
-            return try {
-                ResourceManager.javaClass.getResource(path)!!
-            } catch (e: KotlinNullPointerException) {
-                throw ResourceNotFoundException("Resource at $path not found")
-            }
+        return try {
+            ResourceManager.javaClass.getResource(path)!!
+        } catch (e: KotlinNullPointerException) {
+            throw ResourceNotFoundException("Resource at $path not found")
         }
     }
 
@@ -145,18 +133,11 @@ object ResourceManager {
      * @return an [InputStream] to the resource
      */
     fun getRawResourceAsStream(path: String): InputStream {
-        if (currentModContext != null)
-            return try {
-                ModManager.getMainClass(currentModContext!!).getResourceAsStream(path)
-            } catch (e: KotlinNullPointerException) {
-                throw ResourceNotFoundException("Resource at $path not found for current mod $currentModContext")
-            }
-        else
-            return try {
-                ResourceManager.javaClass.getResourceAsStream(path)!!
-            } catch (e: KotlinNullPointerException) {
-                throw ResourceNotFoundException("Resource at $path not found")
-            }
+        return try {
+            ResourceManager.javaClass.getResourceAsStream(path)!!
+        } catch (e: KotlinNullPointerException) {
+            throw ResourceNotFoundException("Resource at $path not found")
+        }
     }
 
     /**

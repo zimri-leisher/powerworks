@@ -1,11 +1,39 @@
 package behavior
 
-import level.entity.Entity
 import behavior.composites.Sequence
+import com.esotericsoftware.kryo.Kryo
+import com.esotericsoftware.kryo.Serializer
+import com.esotericsoftware.kryo.io.Input
+import com.esotericsoftware.kryo.io.Output
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import level.entity.Entity
+
+object Behavior {
+
+    init {
+        Movement
+        Offense
+    }
+
+    object Movement {
+        val PATH_TO_MOUSE = BehaviorTree {
+            followPath(findPath(getMouseLevelPosition(), useCoroutines = true))
+        }
+    }
+
+    object Offense {
+        @ExperimentalCoroutinesApi
+        val ATTACK_NEAREST = BehaviorTree {
+            followPath(findPath(getNearestLevelObject()))
+        }
+    }
+}
 
 class DecoratorWithoutChildException(message: String) : Exception(message)
 class NoSuchDataNameException(message: String) : Exception(message)
 class DataCastException(message: String) : Exception(message)
+
+private var nextId = 0
 
 /**
  * A data structure that is used to define behavior for [Entities][Entity]. It is based on [Leaf nodes][Leaf], [Composite nodes][Composite],
@@ -15,17 +43,28 @@ class DataCastException(message: String) : Exception(message)
  * every game tick to execute the behavior.
  *
  * Behavior trees, in addition to storing data about nodes and their layout, store arbitrary data used to communicate between
- * nodes in the [data] map. This data can be retrieved/modified with a [DataKey] and [Node.getData] or [Node.setData]
+ * nodes in the [data] map. This data can be retrieved/modified with a [Variable] and [Node.getData] or [Node.setData]
  */
 class BehaviorTree(initializer: CompositeContext.() -> Unit = {}) {
+
+    /**
+     * The identifier number of this [BehaviorTree]. Because behavior trees are generic to all entities, so they only need
+     * to be instantiated at the start of the program when defining the actual behavior
+     */
+    val id = nextId++
 
     private val base = Sequence(this, mutableListOf())
     private val entities = mutableListOf<Entity>()
 
+    /**
+     * The entity this [BehaviorTree] is currently executing behavior for. This will go through every entity which is
+     * running this behavior over the course of a game tick
+     */
     var currentEntity: Entity? = null
 
     /**
-     * The data for this tree that is used to communicate between [Node]s
+     * The data for this tree that is used to communicate between [Node]s. Use [Node.setData] and [Node.getData] with
+     * the appropriate [Variable] to modify or retrieve values
      */
     val data = VariableData()
 
@@ -76,6 +115,10 @@ class BehaviorTree(initializer: CompositeContext.() -> Unit = {}) {
     override fun toString(): String {
         return "BehaviorTree: [\n    ${base.children.joinToString(separator = "\n    ")}\n]"
     }
+
+    companion object {
+        val ALL = mutableListOf<BehaviorTree>()
+    }
 }
 
 /**
@@ -104,6 +147,9 @@ enum class NodeState {
 }
 
 
+/**
+ * The order [Node]s in a [Composite] will be executed
+ */
 enum class CompositeOrder {
     /**
      * The children of this composite will be executed in a random order that is shuffled every time it is initialized
@@ -129,4 +175,15 @@ class DefaultLeaf(parent: BehaviorTree) : Leaf(parent) {
 
     override fun execute(entity: Entity) {
     }
+}
+
+class BehaviorTreeSerializer : Serializer<BehaviorTree>() {
+    override fun write(kryo: Kryo, output: Output, `object`: BehaviorTree) {
+        output.writeInt(`object`.id)
+    }
+
+    override fun read(kryo: Kryo, input: Input, type: Class<out BehaviorTree>): BehaviorTree {
+        return BehaviorTree.ALL.first { it.id == input.readInt() }.apply { kryo.reference(this) }
+    }
+
 }

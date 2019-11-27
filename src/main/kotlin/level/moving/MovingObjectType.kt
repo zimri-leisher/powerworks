@@ -1,5 +1,6 @@
 package level.moving
 
+import item.ItemType
 import level.DroppedItem
 import level.Hitbox
 import level.LevelObjectType
@@ -16,7 +17,7 @@ open class MovingObjectType<T : MovingObject>(initializer: MovingObjectType<T>.(
     companion object {
         val DROPPED_ITEM = MovingObjectType<DroppedItem> {
             // Instead, instantiate the actual class with the given item type. TODO fix this, this is bad - what to do?
-            instantiate = { _, _, _ -> throw Exception("Don't use the LevelObjectType.DROPPED_ITEM.instantiate function") }
+            instantiate = { xPixel, yPixel, rotation -> DroppedItem(xPixel, yPixel, ItemType.ERROR) }
             hitbox = Hitbox.DROPPED_ITEM
         }
 

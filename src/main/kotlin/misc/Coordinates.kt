@@ -1,8 +1,16 @@
 package misc
 
 import level.Level
+import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag
 
-data class PixelCoord(var xPixel: Int, var yPixel: Int) {
+data class PixelCoord(
+        @Tag(1)
+        var xPixel: Int,
+        @Tag(2)
+        var yPixel: Int) {
+
+    private constructor() : this(0, 0)
+
     fun toTile() = TileCoord(xPixel shr 4, yPixel shr 4)
 
     fun enforceBounds(level: Level) = enforceBounds(0, level.widthPixels, 0, level.heightPixels)
@@ -31,7 +39,11 @@ data class PixelCoord(var xPixel: Int, var yPixel: Int) {
     }
 }
 
-data class TileCoord(var xTile: Int, var yTile: Int) {
+data class TileCoord(
+        @Tag(1)
+        var xTile: Int,
+        @Tag(2)
+        var yTile: Int) {
     fun toPixel() = PixelCoord(xTile shl 4, yTile shl 4)
 
     fun enforceBounds(level: Level) = enforceBounds(0, level.widthTiles, 0, level.heightTiles)

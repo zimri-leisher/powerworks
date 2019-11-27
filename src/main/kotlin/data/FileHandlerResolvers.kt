@@ -2,7 +2,6 @@ package data
 
 import com.badlogic.gdx.assets.loaders.FileHandleResolver
 import com.badlogic.gdx.files.FileHandle
-import java.io.File
 import java.net.URL
 
 abstract class PowerworksFileHandleResolver : FileHandleResolver {
@@ -20,11 +19,7 @@ abstract class PowerworksFileHandleResolver : FileHandleResolver {
             }
         }
         if (url == null) {
-            if (ResourceManager.currentModContext != null) {
-                throw ResourceNotFoundException("Resource at $fileName not found for current mod ${ResourceManager.currentModContext}")
-            } else {
-                throw ResourceNotFoundException("Resource at $fileName not found")
-            }
+            throw ResourceNotFoundException("Resource at $fileName not found")
         }
         return FileHandle(url.file)
     }

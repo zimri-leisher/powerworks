@@ -2,6 +2,9 @@ package data
 
 class ConcurrentlyModifiableWeakMutableList<T> {
 
+    val size
+        get() = elements.size + toAdd.size - toRemove.size
+
     var beingTraversed = false
 
     val elements = WeakMutableList<T>()
@@ -26,8 +29,7 @@ class ConcurrentlyModifiableWeakMutableList<T> {
 
     fun contains(l: T) = !toRemove.contains(l) && (elements.contains(l) || toAdd.contains(l))
 
-    val size
-        get() = elements.size + toAdd.size - toRemove.size
+    fun <R : Comparable<R>>sortedBy(f: (T) -> R?) = elements.sortedBy(f)
 
     fun forEach(f: (T) -> Unit) {
         beingTraversed = true

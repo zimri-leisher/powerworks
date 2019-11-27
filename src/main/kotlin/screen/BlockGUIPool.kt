@@ -6,6 +6,8 @@ import screen.elements.GUIWindow
 
 // this should 100 percent use generics to determine the block class. but it doesn't. because i can't figure it out. it almost works,
 // but some block types just cant use it. who knows
+
+// TODO make it abstract for any gui you want so we can have, for example, inv guis being pooled
 /**
  * A class that stores instances of GUIs for blocks. They are instantiated on demand until they reach the [maxGUICount],
  * and then the previously instantiated GUIs start being repurposed to display new blocks using [BlockGUI.displayBlock]

@@ -20,12 +20,16 @@ plugins {
 version '1.0'
 
 repositories {
+    jcenter()
     mavenCentral()
     maven { url 'https://jitpack.io' }
     maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
+    maven { url "http://clojars.org/repo/" }
 }
 
 dependencies {
+    compile "com.esotericsoftware:kryo:5.0.0-RC4"
+    compile "kryonet:kryonet:2.21"
     compile 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.0'
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
     compile 'com.github.philfrei:AudioCue:-SNAPSHOT'

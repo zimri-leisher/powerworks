@@ -69,7 +69,7 @@ class GUILevelView(parent: RootGUIElement,
 
     /**
      * The zoom 'level'. This is different from a multiplier in that it is an integer value that determines the multiplier.
-     * Higher values means a higher zoomMultiplier
+     * Higher values means a higher [zoomMultiplier]
      */
     var zoomLevel = zoomLevel
         set(value) {
@@ -85,7 +85,6 @@ class GUILevelView(parent: RootGUIElement,
     var viewRectangle = Rectangle()
 
     init {
-        // Only one level loaded at a time so no need for parents
         if (camera is MovingObject) {
             camera.moveListeners.add(this)
         }

@@ -1,13 +1,21 @@
 package data
 
-class ConcurrentlyModifiableMutableList<T>(val elements: MutableList<T> = mutableListOf()) {
+import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag
 
+class ConcurrentlyModifiableMutableList<T>(
+        @Tag(1)
+        val elements: MutableList<T> = mutableListOf()) {
+
+    @Tag(2)
     var beingTraversed = false
 
+    @Tag(3)
     val toAdd = mutableListOf<T>()
 
+    @Tag(4)
     val toRemove = mutableListOf<T>()
 
+    @Tag(5)
     private var sorter: Comparator<T>? = null
 
     fun add(l: T) {
@@ -24,7 +32,7 @@ class ConcurrentlyModifiableMutableList<T>(val elements: MutableList<T> = mutabl
             elements.remove(l)
     }
 
-    fun contains(l: T) = !toRemove.contains(l) && (elements.contains(l) || toAdd.contains(l))
+    operator fun contains(l: T) = !toRemove.contains(l) && (elements.contains(l) || toAdd.contains(l))
 
     val size: Int
         get() {

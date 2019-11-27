@@ -5,6 +5,7 @@ import behavior.*
 import level.LevelManager
 import main.Game
 import misc.PixelCoord
+import java.util.*
 
 /**
  * Gets a random position from the level based on the given coordinates and [radius], and then puts it into the appropriate
@@ -16,14 +17,15 @@ import misc.PixelCoord
  */
 class GetRandomPosition(parent: BehaviorTree, val dest: Variable, val xCenter: Int, val yCenter: Int, val radius: Int) : DataLeaf(parent) {
     override fun run(entity: Entity): Boolean {
+        val rand = Random(entity.level.info.seed)
         val xPixel = if (xCenter == -1)
-            entity.level.rand.nextInt(entity.level.widthPixels)
+            rand.nextInt(entity.level.widthPixels)
         else
-            xCenter + (entity.level.rand.nextInt(radius * 2) - radius)
+            xCenter + (rand.nextInt(radius * 2) - radius)
         val yPixel = if (yCenter == -1)
-            entity.level.rand.nextInt(entity.level.heightPixels)
+            rand.nextInt(entity.level.heightPixels)
         else
-            yCenter + (entity.level.rand.nextInt(radius * 2) - radius)
+            yCenter + (rand.nextInt(radius * 2) - radius)
         setData(dest, PixelCoord(xPixel, yPixel).enforceBounds(entity.level))
         return true
     }

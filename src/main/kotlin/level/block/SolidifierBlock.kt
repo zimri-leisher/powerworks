@@ -1,5 +1,6 @@
 package level.block
 
+import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag
 import fluid.FluidTank
 import fluid.MoltenOreFluidType
 import io.PressType
@@ -7,14 +8,16 @@ import item.Inventory
 import resource.ResourceContainer
 import resource.ResourceContainerChangeListener
 import resource.ResourceType
-import resource.output
-import screen.SolidifierBlockGUI
 
 class SolidifierBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(MachineBlockType.SOLIDIFIER, xTile, yTile, rotation), ResourceContainerChangeListener {
+
+    @Tag(23)
     val tank = containers.first { it is FluidTank } as FluidTank
 
+    @Tag(24)
     val out = containers.first { it is Inventory } as Inventory
 
+    @Tag(25)
     var currentlySolidifying: MoltenOreFluidType? = null
 
     init {

@@ -5,16 +5,22 @@ import level.Level
 import level.tube.TubeBlock
 import misc.Geometry
 import misc.PixelCoord
-import resource.*
+import resource.ResourceCategory
+import resource.ResourceNode
+import resource.ResourceType
+import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag
 
 class TubeRoutingNetwork(level: Level) : ResourceRoutingNetwork(ResourceCategory.ITEM, level) {
 
+    @Tag(9)
     val tubes = mutableSetOf<TubeBlock>()
 
     /**
      * The list of [Intersection]s in this network
      */
+    @Tag(10)
     val intersections = mutableSetOf<Intersection>()
+    @Tag(11)
     private val packages = ConcurrentlyModifiableMutableList<RoutingPackage>()
 
     val size
@@ -30,6 +36,20 @@ class TubeRoutingNetwork(level: Level) : ResourceRoutingNetwork(ResourceCategory
 
     fun getIntersection(t: TubeBlock): Intersection? {
         return intersections.firstOrNull { it.tubeBlock == t }
+    }
+
+    fun mergeIntoThis(other: TubeRoutingNetwork) {
+        other.tubes.forEach {
+            if (it !in tubes) {
+                tubes.add(it)
+                it.network = this
+            }
+        }
+        other.attachedNodes.forEach {
+            it.attachedContainer = this
+            if (it !in attachedNodes)
+                attachedNodes.add(it)
+        }
     }
 
     private fun getTubeAt(xTile: Int, yTile: Int) = tubes.firstOrNull { it.xTile == xTile && it.yTile == yTile }
@@ -162,11 +182,12 @@ class TubeRoutingNetwork(level: Level) : ResourceRoutingNetwork(ResourceCategory
             if (atDestination(it)) {
                 packages.remove(it)
                 if (!it.to.attachedNodes.first().input(it.type, it.quantity)) {
+                    println("couldnt input at end")
                 }
             } else {
-                if (it.position == it.route[it.routeStepIndex].loc) {
-                    it.dir = it.currentRouteStep.nextDir
+                if (it.position == it.currentRouteStep.loc) {
                     it.routeStepIndex++
+                    it.dir = it.currentRouteStep.nextDir
                 }
                 it.position.xPixel += Geometry.getXSign(it.dir)
                 it.position.yPixel += Geometry.getYSign(it.dir)
@@ -176,7 +197,7 @@ class TubeRoutingNetwork(level: Level) : ResourceRoutingNetwork(ResourceCategory
 
     override fun render() {
         packages.forEach {
-            it.type.icon.render(it.position.xPixel, it.position.yPixel + 4, 12, 12, true)
+            it.type.icon.render(it.position.xPixel, it.position.yPixel)
         }
     }
 
@@ -187,7 +208,7 @@ class TubeRoutingNetwork(level: Level) : ResourceRoutingNetwork(ResourceCategory
                                       val route: PackageRoute,
                                       var routeStepIndex: Int = 0,
                                       var position: PixelCoord = PixelCoord(from.xTile shl 4, from.yTile shl 4),
-                                      var dir: Int = route[routeStepIndex].nextDir) {
+                                      var dir: Int = -1) {
         val currentRouteStep
             get() = route[routeStepIndex]
     }

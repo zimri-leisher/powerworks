@@ -14,12 +14,14 @@
  *   will be the same when ported to other languages.
  */
 
-package level
+package level.generator
 
+import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer
 import kotlin.experimental.and
 
 class OpenSimplexNoise : Noise {
 
+    @TaggedFieldSerializer.Tag(1)
     private var perm: ShortArray? = null
 
     constructor(perm: ShortArray) {

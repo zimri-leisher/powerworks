@@ -1,5 +1,7 @@
 package routing
 
+import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer
+import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag
 import data.WeakMutableList
 import level.Level
 import level.add
@@ -9,41 +11,28 @@ import resource.*
 
 class InvalidFunctionCallException(message: String) : Exception(message)
 
-open class ResourceRoutingNetwork(category: ResourceCategory, var level: Level) : ResourceContainer(category) {
+open class ResourceRoutingNetwork(category: ResourceCategory, val level: Level) : ResourceContainer(category) {
 
+    @Tag(6)
     val id = nextId++
+
+    /**
+     * The nodes this network touches
+     */
+    @Tag(7)
+    val attachedNodes = ResourceNodeGroup()
+
+    /**
+     * The nodes that correspond with the nodes this network touches
+     */
+    @Tag(8)
+    val internalNodes = ResourceNodeGroup()
 
     init {
         ALL.add(this)
     }
 
-    /**
-     * The nodes this network touches
-     */
-    val attachedNodes = mutableListOf<ResourceNode>()
-
-    /**
-     * The nodes that correspond with the nodes this network touches
-     */
-    val internalNodes = mutableListOf<ResourceNode>()
-
     override val totalQuantity get() = attachedNodes.getAttachedContainers().sumBy { it.totalQuantity }
-
-    fun mergeIntoThis(other: TubeRoutingNetwork) {
-        other.attachedNodes.forEach {
-            it.network = this
-            if (it !in attachedNodes) {
-                attachedNodes.add(it)
-            }
-        }
-        other.internalNodes.forEach {
-            it.network = this
-            it.attachedContainer = this
-            if(it !in internalNodes) {
-
-            }
-        }
-    }
 
     override fun add(resource: ResourceType, quantity: Int, from: ResourceNode?, checkIfAble: Boolean): Boolean {
         if (checkIfAble) {
@@ -158,7 +147,7 @@ open class ResourceRoutingNetwork(category: ResourceCategory, var level: Level) 
      */
     open fun sendTo(node: ResourceNode, type: ResourceType, quantity: Int) {
         val sendTo = if (node.isInternalNetworkNode) node.attachedNodes.first() else node
-        val outputters = attachedNodes.getOutputters(type, quantity, { it != sendTo })
+        val outputters = attachedNodes.getOutputters(type, quantity, {it != sendTo })
         val takeFrom = outputters.getForceOutputter(type, quantity)
                 ?: outputters.firstOrNull()
         if (takeFrom != null) {
@@ -176,8 +165,8 @@ open class ResourceRoutingNetwork(category: ResourceCategory, var level: Level) 
      * or an attached node (one that corresponds to an actual block/machine/etc. and is attached to an internal node).
      */
     open fun takeFrom(node: ResourceNode, type: ResourceType, quantity: Int) {
-        val takeFrom = if (node.isInternalNetworkNode) node.attachedNodes.first() else node
-        val inputters = attachedNodes.getInputters(type, quantity, { it != takeFrom })
+        val takeFrom = if(node.isInternalNetworkNode) node.attachedNodes.first() else node
+        val inputters = attachedNodes.getInputters(type, quantity, {it != takeFrom })
         val sendTo = inputters.getForceInputter(type, quantity)
                 ?: inputters.firstOrNull()
         if (sendTo != null) {

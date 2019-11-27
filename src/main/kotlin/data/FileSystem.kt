@@ -29,12 +29,12 @@ class FileSystem(basePath: Path, baseIdentifier: DirectoryIdentifier? = null, cl
         closure(baseDir)
     }
 
-    fun registerDirectoryChangeWatcher(w: DirectoryChangeWatcher, dir: Path) {
-        dir.register(fileChangeWatcher, StandardWatchEventKinds.ENTRY_MODIFY, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE)
+    fun registerDirectoryChangeWatcher(w: DirectoryChangeWatcher, vararg dir: Path) {
+        dir.forEach { it.register(fileChangeWatcher, StandardWatchEventKinds.ENTRY_MODIFY, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE) }
         if (w in directoryChangeWatchers) {
-            directoryChangeWatchers.get(w)!!.add(dir)
+            directoryChangeWatchers.get(w)!!.addAll(dir)
         } else {
-            directoryChangeWatchers.put(w, mutableListOf(dir))
+            directoryChangeWatchers.put(w, dir.toMutableList())
         }
     }
 

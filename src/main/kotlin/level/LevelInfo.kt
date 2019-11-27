@@ -1,12 +1,36 @@
 package level
 
-import java.io.File
+import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag
+import level.generator.LevelType
+import network.User
+import java.time.LocalDateTime
+import java.util.*
 
-data class LevelInfo(val name: String, val dateCreated: String, val settings: LevelGeneratorSettings, var levelFile: File, var infoFile: File) {
-
-    companion object {
-        fun parse(rawData: List<String>, levelFile: File, infoFile: File): LevelInfo {
-            return LevelInfo(rawData[0], rawData[1], LevelGeneratorSettings(rawData[2].toInt(), rawData[3].toInt()), levelFile, infoFile)
-        }
-    }
+/**
+ * An object containing information describing the general characteristics and generation settings of a [Level]
+ */
+data class LevelInfo(
+        /**
+         * The owner of the [Level]
+         */
+        @Tag(1)
+        val owner: User,
+        /**
+         * The name of the [Level]. This is purely for identification and is usually the name of the [owner]
+         */
+        @Tag(2)
+        val name: String,
+        /**
+         * The date this level was created, gotten with [LocalDateTime.now]
+         */
+        @Tag(3)
+        val dateCreated: String,
+        /**
+         * The generationSettings specifying how the [Level] should be generated
+         */
+        @Tag(4)
+        val levelType: LevelType,
+        @Tag(5)
+        val seed: Long) {
+    private constructor() : this(User(UUID.randomUUID(), ""), "", "", LevelType.EMPTY, 0)
 }

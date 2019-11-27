@@ -48,6 +48,7 @@ class GetNearestLevelObject(parent: BehaviorTree, val dest: Variable, val predic
             }
         }
         setData(dest, closestObject)
+        println("found a level object $closestObject")
         return closestObject != null
     }
 

@@ -1,13 +1,16 @@
 package level.moving
 
+import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer
 import level.*
 import misc.Numbers
 import java.io.DataOutputStream
-
+import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag
+import main.Game
 
 abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: Int, yPixel: Int, rotation: Int = 0) : LevelObject(type, xPixel, yPixel, rotation, true) {
     override val type = type
     /* Only allow setting of pixel values because otherwise it would cause infinite loop (unless I added a lot of boilerplate private values) */
+
     final override var xPixel = xPixel
         set(value) {
             val old = field
@@ -38,6 +41,9 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: In
     final override var yChunk = yTile shr CHUNK_TILE_EXP
         private set
 
+    // tags start here because of superclass tags
+
+    @Tag(17)
     var xVel = 0
         set(value) {
             if (value > type.maxSpeed || value < -type.maxSpeed)
@@ -45,6 +51,8 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: In
             else
                 field = value
         }
+
+    @Tag(18)
     var yVel = 0
         set(value) {
             if (value > type.maxSpeed || value < -type.maxSpeed)
@@ -56,13 +64,16 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: In
     /**
      * The chunk that this object's coordinates are in
      */
+    @Tag(19)
     var currentChunk: Chunk? = null
 
     /**
      * The chunks that this object's hitbox intersects but not the chunk that its coordinates are in
      */
+    @Tag(20)
     var intersectingChunks = mutableSetOf<Chunk>()
 
+    @Tag(21)
     val moveListeners = mutableListOf<MovementListener>()
 
     override fun update() {
@@ -122,9 +133,7 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: In
                     }
                 }
             }
-            if (collisions != null) {
-                collisions.forEach { it.onCollide(this); this.onCollide(it) }
-            }
+            collisions?.forEach { it.onCollide(this); this.onCollide(it) }
             if (xPixelOk) {
                 xPixel = nXPixel
             }

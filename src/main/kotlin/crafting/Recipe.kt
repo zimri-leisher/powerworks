@@ -1,11 +1,17 @@
 package crafting
 
+import com.esotericsoftware.kryo.Kryo
+import com.esotericsoftware.kryo.Serializer
+import com.esotericsoftware.kryo.io.Input
+import com.esotericsoftware.kryo.io.Output
 import item.BlockItemType
 import item.IngotItemType
 import item.ItemType
 import item.RobotItemType
 import resource.ResourceList
 import resource.ResourceType
+
+private var nextId = 0
 
 class Recipe(
         /**
@@ -21,11 +27,13 @@ class Recipe(
          */
         val iconType: ResourceType,
         /**
-        * Whichever crafter types are able to make this recipe. For example, [Crafter.Type.DEFAULT].
-        * Null means any
-        */
+         * Whichever crafter types are able to make this recipe. For example, [Crafter.Type.DEFAULT].
+         * Null means any
+         */
         val validCrafterTypes: List<Crafter.Type>? = null,
         val category: RecipeCategory = RecipeCategory.MISC) {
+
+    val id = nextId++
 
     init {
         ALL.add(this)
@@ -73,5 +81,16 @@ class Recipe(
                 BlockItemType.CRAFTER,
                 listOf(Crafter.Type.DEFAULT, Crafter.Type.ITEM),
                 RecipeCategory.MACHINE)
+    }
+}
+
+class RecipeSerializer : Serializer<Recipe>() {
+    override fun write(kryo: Kryo, output: Output, `object`: Recipe) {
+        output.writeInt(`object`.id)
+    }
+
+    override fun read(kryo: Kryo, input: Input, type: Class<out Recipe>): Recipe {
+        val id = input.readInt()
+        return Recipe.ALL.first { it.id == id }.apply { kryo.reference(this) }
     }
 }

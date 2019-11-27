@@ -11,10 +11,16 @@ import main.Game
 import screen.HUD
 import screen.mouse.Mouse
 import screen.mouse.Tooltips
+import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag
+import player.PlayerManager
 
-class DroppedItem(xPixel: Int, yPixel: Int, val itemType: ItemType, quantity: Int = 1) :
+class DroppedItem(xPixel: Int, yPixel: Int,
+                  @Tag(1)
+                  val itemType: ItemType,
+                  quantity: Int = 1) :
         MovingObject(MovingObjectType.DROPPED_ITEM, xPixel, yPixel, 0) {
 
+    @Tag(2)
     var quantity = quantity
         set(value) {
             if (quantity < 1) {
@@ -27,7 +33,7 @@ class DroppedItem(xPixel: Int, yPixel: Int, val itemType: ItemType, quantity: In
     override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
         if (type == PressType.RELEASED) {
             level.remove(this)
-            Game.mainInv.add(Item(itemType, quantity))
+            PlayerManager.localPlayer.brainRobot.inventory.add(Item(itemType, quantity))
             Mouse.heldItemType = itemType
             HUD.Hotbar.items.add(itemType)
         }

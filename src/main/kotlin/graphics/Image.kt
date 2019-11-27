@@ -5,6 +5,15 @@ import data.ResourceManager
 
 object Image {
 
+    init {
+        Misc
+        Block
+        GUI
+        Fluid
+        Particle
+        Item
+    }
+
     object Misc {
         // TODO definitely rethink how weapon textures are done, apply this to other things in the future like block textures
         val ERROR = ResourceManager.getAtlasTexture("misc/error")

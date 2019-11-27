@@ -1,13 +1,16 @@
 package level.particle
 
-import graphics.TextureRenderParams
 import graphics.Renderer
+import graphics.TextureRenderParams
 import level.Level
 import level.LevelManager
 import level.remove
 import misc.Geometry
 
-class Particle(val type: ParticleType, var xPixel: Int, var yPixel: Int, var rotation: Int = 0) {
+class Particle(
+        val type: ParticleType,
+        var xPixel: Int,
+        var yPixel: Int, var rotation: Int = 0, var level: Level) {
 
     var ticksLeftBeforeRotation = -1
     var ticksExisted = 0
@@ -35,7 +38,7 @@ class Particle(val type: ParticleType, var xPixel: Int, var yPixel: Int, var rot
         if (ticksExisted >= type.minTicksToDisappear) {
             val remove = (Math.random() * (type.maxTicksToDisappear - type.minTicksToDisappear)).toInt() == 0
             if (remove) {
-                LevelManager.localLevel.remove(this)
+                level.remove(this)
             }
         }
         ticksExisted++

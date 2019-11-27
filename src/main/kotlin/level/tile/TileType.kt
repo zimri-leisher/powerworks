@@ -1,19 +1,23 @@
 package level.tile
 
 import com.badlogic.gdx.graphics.g2d.TextureRegion
+import com.esotericsoftware.kryo.Kryo
+import com.esotericsoftware.kryo.Serializer
+import com.esotericsoftware.kryo.io.Input
+import com.esotericsoftware.kryo.io.Output
 import graphics.ImageCollection
 import item.ItemType
 import item.OreItemType
 
 private var nextID = 0
 
-open class OreTileType(textures: ImageCollection, name: String,
-                       val maxAmount: Int,
-                       val minAmount: Int,
-                       val minedItem: ItemType,
-                       val backgroundType: TileType,
-                       val scatter: Int,
-                       val generationChance: Double) : TileType(name, textures) {
+open class OreTileType(textures: ImageCollection = ImageCollection.GRASS_COPPER_ORE_TILE, name: String = "Error",
+                       val maxAmount: Int = 1000,
+                       val minAmount: Int = 1000,
+                       val minedItem: ItemType = ItemType.ERROR,
+                       val backgroundType: TileType = GRASS,
+                       val scatter: Int = 1,
+                       val generationChance: Double = .1) : TileType(name, textures) {
 
     init {
         ALL.add(this)
@@ -47,6 +51,10 @@ open class TileType(val name: String, val textures: Array<TextureRegion>) {
 
     val id = nextID++
 
+    init {
+        ALL.add(this)
+    }
+
     override fun equals(other: Any?): Boolean {
         if (other is TileType) {
             if (other.id == this.id)
@@ -55,13 +63,27 @@ open class TileType(val name: String, val textures: Array<TextureRegion>) {
         return false
     }
 
-    companion object {
-        val GRASS = TileType("Grass", ImageCollection.GRASS_TILE)
-    }
-
     override fun toString() = name
 
     override fun hashCode(): Int {
         return id
     }
+
+    companion object {
+        val ALL = mutableListOf<TileType>()
+
+        val GRASS = TileType("Grass", ImageCollection.GRASS_TILE)
+    }
+}
+
+class TileTypeSerializer : Serializer<TileType>() {
+    override fun write(kryo: Kryo, output: Output, `object`: TileType) {
+        output.writeInt(`object`.id)
+    }
+
+    override fun read(kryo: Kryo, input: Input, type: Class<out TileType>): TileType {
+        val id = input.readInt()
+        return TileType.ALL.first { it.id == id }.apply { kryo.reference(this) }
+    }
+
 }

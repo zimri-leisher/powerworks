@@ -1,5 +1,7 @@
 package graphics
 
+import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag
+
 /**
  * Something that is able to be rendered, e.g. a [Texture] or an [Animation]
  */

@@ -1,6 +1,10 @@
 package level.pipe
 
 import com.badlogic.gdx.graphics.g2d.TextureRegion
+import com.esotericsoftware.kryo.Kryo
+import com.esotericsoftware.kryo.Serializer
+import com.esotericsoftware.kryo.io.Input
+import com.esotericsoftware.kryo.io.Output
 import graphics.Image
 import graphics.ImageCollection
 
@@ -99,4 +103,15 @@ enum class PipeState(val texture: TextureRegion, val connections: Array<Boolean>
             return values().first { it.connections.contentEquals(dirs) }
         }
     }
+}
+
+class PipeStateSerializer : Serializer<PipeState>() {
+    override fun write(kryo: Kryo, output: Output, `object`: PipeState) {
+        output.writeString(`object`.name)
+    }
+
+    override fun read(kryo: Kryo, input: Input, type: Class<out PipeState>): PipeState {
+        return PipeState.valueOf(input.readString()).apply { kryo.reference(this) }
+    }
+
 }

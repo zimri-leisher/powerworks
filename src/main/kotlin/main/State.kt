@@ -1,14 +1,17 @@
 package main
 
 import audio.AudioManager
+import data.GameDirectoryIdentifier
 import item.Inventory
 import item.ItemType
-import network.Client
-import network.ClientHandshakePacket
+import level.LevelManager
+import level.add
+import level.entity.robot.BrainRobot
+import player.PlayerManager
 import screen.*
 import screen.mouse.Mouse
 
-class State(val activate: (State) -> (Unit), val deactivate: (State) -> (Unit)) {
+class State(val activate: () -> Unit, val deactivate: () -> Unit) {
     companion object {
 
         private var NEXT_STATE: State? = null
@@ -20,13 +23,11 @@ class State(val activate: (State) -> (Unit), val deactivate: (State) -> (Unit)) 
         })
 
         val INGAME = State({
-            // the level should be set before this
-            Game.mainInv = Inventory(Game.INVENTORY_WIDTH, Game.INVENTOR_HEIGHT)
-            IngameGUI
+            IngameGUI.open = true
             // the mouse listens to changes so that if there are no more items of the selected type in the main inventory, then it will switch the type to null
-            Game.mainInv.listeners.add(Mouse)
+            PlayerManager.localPlayer.brainRobot.inventory.listeners.add(Mouse)
             for (i in ItemType.ALL) {
-                Game.mainInv.add(i, i.maxStack)
+                PlayerManager.localPlayer.brainRobot.inventory.add(i, i.maxStack)
             }
             AudioManager.ears = IngameGUI.cameras[0]
             RecipeSelectorGUI
@@ -44,8 +45,8 @@ class State(val activate: (State) -> (Unit), val deactivate: (State) -> (Unit)) 
 
         fun update() {
             if (NEXT_STATE != null) {
-                CURRENT_STATE.deactivate(NEXT_STATE!!)
-                NEXT_STATE!!.activate(CURRENT_STATE)
+                CURRENT_STATE.deactivate()
+                NEXT_STATE!!.activate()
                 CURRENT_STATE = NEXT_STATE!!
                 NEXT_STATE = null
             }

@@ -13,6 +13,7 @@ import level.tube.TubeBlock
 import main.DebugCode
 import main.Game
 import main.State
+import player.PlayerManager
 import resource.ResourceContainer
 import resource.ResourceContainerChangeListener
 import resource.ResourceType
@@ -42,15 +43,15 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
     internal var window = GUIWindow("Mouse", { 0 }, { 0 }, { 0 }, { 0 }, ScreenManager.Groups.MOUSE, true, 0).apply {
         transparentToInteraction = true
     }
-    private var group = GUIGroup(window, "Mouse info group", { 0 }, { 0 }, open = true).apply {
+    private var group = GUIGroup(window, "Mouse levelInfo group", { 0 }, { 0 }, open = true).apply {
         transparentToInteraction = true
     }
 
-    internal var text = GUIText(group, "Mouse info group text", 2, 2, "", layer = group.layer + 3).apply {
+    internal var text = GUIText(group, "Mouse levelInfo group text", 2, 2, "", layer = group.layer + 3).apply {
         open = false
     }
 
-    internal var background = GUIDefaultTextureRectangle(group, "Mouse info group background", { 0 }, { 0 }, { text.widthPixels + 4 }, { text.heightPixels + 4 }, layer = group.layer + 2).apply {
+    internal var background = GUIDefaultTextureRectangle(group, "Mouse levelInfo group background", { 0 }, { 0 }, { text.widthPixels + 4 }, { text.heightPixels + 4 }, layer = group.layer + 2).apply {
         open = false
     }
 
@@ -91,10 +92,10 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
         icon.open = false
     }
 
-    internal fun render() {
+    fun render() {
         if (heldItemType != null) {
             val i = heldItemType!!
-            val q = Game.mainInv.getQuantity(i)
+            val q = PlayerManager.localPlayer.brainRobot.inventory.getQuantity(i)
             val t = i.icon
             t.render(xPixel, yPixel, GUIItemSlot.WIDTH, GUIItemSlot.HEIGHT, true)
             Renderer.renderText(q, xPixel + 4, yPixel - 4)
@@ -125,7 +126,7 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
                 if (t is PipeBlock) {
                     val pipeString = "Tube:\n" +
                             "  Tile: ${t.xTile}, ${t.yTile}\n" +
-                            "  Group: ${t.group.id}\n" +
+                            "  Group: ${t.group}\n" +
                             "     Size: ${t.group.size}"
                     Renderer.renderText(pipeString, xPixel, yPixel)
                 }
@@ -169,7 +170,7 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
         if (heldItemType != null) {
             val type = heldItemType!!
             if (LevelManager.levelUnderMouse?.add(DroppedItem(LevelManager.mouseLevelXPixel, LevelManager.mouseLevelYPixel, type, q)) == true)
-                Game.mainInv.remove(type, q)
+                PlayerManager.localPlayer.brainRobot.inventory.remove(type, q)
         }
     }
 
@@ -177,8 +178,8 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
     }
 
     override fun onContainerChange(container: ResourceContainer, resource: ResourceType, quantity: Int) {
-        if (container == Game.mainInv && heldItemType != null) {
-            if (Game.mainInv.getQuantity(heldItemType!!) == 0)
+        if (container == PlayerManager.localPlayer.brainRobot.inventory && heldItemType != null) {
+            if (PlayerManager.localPlayer.brainRobot.inventory.getQuantity(heldItemType!!) == 0)
                 heldItemType = null
         }
     }
@@ -192,9 +193,9 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
                         val i = LevelManager.levelUnderMouse?.getDroppedItemCollisionsInSquareCenteredOn(LevelManager.mouseLevelXPixel, LevelManager.mouseLevelYPixel, DROPPED_ITEM_PICK_UP_RANGE)
                         if (i != null && i.isNotEmpty()) {
                             val g = i.first()
-                            if (!Game.mainInv.full) {
-                                Game.mainInv.add(g.itemType, g.quantity)
-                                LevelManager.localLevel.remove(g)
+                            if (!PlayerManager.localPlayer.brainRobot.inventory.full) {
+                                PlayerManager.localPlayer.brainRobot.inventory.add(g.itemType, g.quantity)
+                                PlayerManager.localPlayer.brainRobot.level.remove(g)
                                 if (heldItemType == null) {
                                     heldItemType = g.itemType
                                 }

@@ -8,6 +8,7 @@ import item.Inventory
 import item.Item
 import item.ItemType
 import main.Game
+import player.PlayerManager
 import resource.ResourceContainer
 import screen.HUD
 import screen.InventoryGUI
@@ -30,7 +31,7 @@ class GUIItemSlot(parent: RootGUIElement, name: String, xPixel: Int, yPixel: Int
         } else if (inv is HUD.Hotbar.HotbarInventory) {
             val invItemType = (inv as HUD.Hotbar.HotbarInventory)[index]
             if (invItemType != null) {
-                currentItem = Item(invItemType, Game.mainInv.getQuantity(invItemType))
+                currentItem = Item(invItemType, PlayerManager.localPlayer.brainRobot.inventory.getQuantity(invItemType))
             } else {
                 currentItem = null
             }

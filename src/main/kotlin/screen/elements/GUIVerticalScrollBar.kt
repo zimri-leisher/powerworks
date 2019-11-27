@@ -47,6 +47,7 @@ class GUIVerticalScrollBar(parent: RootGUIElement,
     }
 
     fun updateScrollBarHeight() {
+        if(parent !is VerticalScrollable) return
         val s = parent as VerticalScrollable
         // i know, fuck you
         currentPos = currentPos
@@ -86,13 +87,13 @@ class GUIVerticalScrollBar(parent: RootGUIElement,
     }
 
     override fun onParentChange(oldParent: RootGUIElement) {
-        if (parent !is VerticalScrollable)
-            throw Exception("Parent must be VerticalScrollable")
-        updateScrollBarHeight()
+        if (parent is VerticalScrollable)
+            updateScrollBarHeight()
     }
 
     override fun onParentDimensionChange(oldWidth: Int, oldHeight: Int) {
-        updateScrollBarHeight()
+        if (parent is VerticalScrollable)
+            updateScrollBarHeight()
     }
 
     override fun onDimensionChange(oldWidth: Int, oldHeight: Int) {

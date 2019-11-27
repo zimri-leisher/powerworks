@@ -1,19 +1,24 @@
 package level.block
 
 import com.badlogic.gdx.Input
+import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag
 import crafting.Crafter
 import crafting.Recipe
 import io.PressType
-import resource.*
-import screen.CrafterBlockGUI
+import resource.ResourceContainer
+import resource.ResourceContainerChangeListener
+import resource.ResourceList
+import resource.ResourceType
 
 open class CrafterBlock(override val type: CrafterBlockType, xTile: Int, yTile: Int, rotation: Int) : MachineBlock(type, xTile, yTile, rotation), ResourceContainerChangeListener, Crafter {
 
     override val crafterType: Crafter.Type
         get() = type.crafterType
 
+    @Tag(23)
     var recipe: Recipe? = null
 
+    @Tag(24)
     private var currentResources = ResourceList()
 
     init {

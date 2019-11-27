@@ -19,13 +19,17 @@ import resource.ResourceCategory
 import resource.ResourceNode
 import routing.Intersection
 import routing.TubeRoutingNetwork
+import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag
 
 class TubeBlock(xTile: Int, yTile: Int) : Block(BlockType.TUBE, xTile, yTile) {
 
+    @Tag(20)
     var state = TubeState.NONE
         private set
 
+    @Tag(21)
     val tubeConnections = arrayOfNulls<TubeBlock>(4)
+    @Tag(22)
     val nodeConnections =
             arrayOf<MutableSet<ResourceNode>>(
                     mutableSetOf(), mutableSetOf(), mutableSetOf(), mutableSetOf())
@@ -33,11 +37,12 @@ class TubeBlock(xTile: Int, yTile: Int) : Block(BlockType.TUBE, xTile, yTile) {
     val closedEnds: Array<Boolean>
         get() = state.closedEnds
 
+    @Tag(23)
     var network = TubeRoutingNetwork(level)
+    @Tag(24)
     var intersection: Intersection? = null
 
     override fun onAddToLevel() {
-        network.level = level
         updateConnections()
         network.addTube(this)
         super.onAddToLevel()

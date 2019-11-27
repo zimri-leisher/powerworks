@@ -7,11 +7,10 @@ import level.remove
 import resource.*
 import routing.RoutingLanguageStatement
 
-class PipeBlockGroup(val level: Level) {
+class PipeBlockGroup(val level: Level) { // TODO do the same thing to this as did Tube
     private val pipes = mutableListOf<PipeBlock>()
     private val storage = PipeBlockInternalStorage(this)
-    val id = nextId++
-    val nodes = mutableListOf<ResourceNode>()
+    val nodes = ResourceNodeGroup()
 
     val size: Int
         get() = pipes.size
@@ -56,6 +55,7 @@ class PipeBlockGroup(val level: Level) {
                 it.attachedContainer = storage
                 nodes.add(it)
             }
+
         }
     }
 
@@ -135,6 +135,7 @@ class PipeBlockGroup(val level: Level) {
             return true
         }
 
+
         override fun expect(resource: ResourceType, quantity: Int): Boolean {
             return false
         }
@@ -171,8 +172,6 @@ class PipeBlockGroup(val level: Level) {
     }
 
     companion object {
-
-        private var nextId = 0
 
         val STORAGE_PER_PIPE = 5
 

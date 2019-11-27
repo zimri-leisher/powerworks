@@ -94,7 +94,7 @@ fun Level.getIntersectingBlocksFromTileRectangle(xTile: Int, yTile: Int, widthTi
 fun Level.getBlockCollisionsInSquareCenteredOn(xPixel: Int, yPixel: Int, radius: Int, predicate: (Block) -> Boolean = { true }): Set<Block> {
     val l = mutableSetOf<Block>()
     for (c in getChunksFromPixelRectangle(xPixel - radius, yPixel - radius, radius * 2, radius * 2)) {
-        for (d in c.blocks!!) {
+        for (d in c.data.blocks) {
             if (d != null && predicate(d) && Geometry.intersects(xPixel - radius, yPixel - radius, radius * 2, radius * 2, d.xPixel + d.hitbox.xStart, d.yPixel + d.hitbox.yStart, d.hitbox.width, d.hitbox.height)) {
                 l.add(d)
             }
@@ -125,8 +125,8 @@ fun Level.getMovingObjectCollisions(hitbox: Hitbox, xPixel: Int, yPixel: Int, pr
     val chunks = getChunksFromPixelRectangle(xPixel + hitbox.xStart, yPixel + hitbox.yStart, hitbox.width, hitbox.height)
     val set = mutableSetOf<LevelObject>()
     for (chunk in chunks) {
-        set.addAll(getCollisionsWith(chunk.moving!!, hitbox, xPixel, yPixel, predicate))
-        set.addAll(getCollisionsWith(chunk.movingOnBoundary!!, hitbox, xPixel, yPixel, predicate))
+        set.addAll(getCollisionsWith(chunk.data.moving, hitbox, xPixel, yPixel, predicate))
+        set.addAll(getCollisionsWith(chunk.data.movingOnBoundary, hitbox, xPixel, yPixel, predicate))
     }
     return set as Set<MovingObject>
 }
@@ -221,8 +221,8 @@ fun Level.doHitboxesCollide(hitbox1: Hitbox, xPixel1: Int, yPixel1: Int,
 fun Level.getMovingObjectCollisionsFromPixelRectangle(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int, predicate: (MovingObject) -> Boolean = { true }): Set<MovingObject> {
     val set = mutableSetOf<LevelObject>()
     for (chunk in getChunksFromPixelRectangle(xPixel, yPixel, widthPixels, heightPixels)) {
-        set.addAll(getCollisionsWith(chunk.moving!!, xPixel, yPixel, widthPixels, heightPixels, predicate))
-        set.addAll(getCollisionsWith(chunk.movingOnBoundary!!, xPixel, yPixel, widthPixels, heightPixels, predicate))
+        set.addAll(getCollisionsWith(chunk.data.moving, xPixel, yPixel, widthPixels, heightPixels, predicate))
+        set.addAll(getCollisionsWith(chunk.data.movingOnBoundary, xPixel, yPixel, widthPixels, heightPixels, predicate))
     }
     return set as Set<MovingObject>
 }
@@ -234,8 +234,8 @@ fun Level.getMovingObjectCollisionsFromPixelRectangle(xPixel: Int, yPixel: Int, 
 fun Level.getMovingObjectCollisionsInSquareCenteredOn(xPixel: Int, yPixel: Int, radius: Int, predicate: (MovingObject) -> Boolean = { true }): Set<MovingObject> {
     val set = mutableSetOf<MovingObject>()
     for (chunk in getChunksFromPixelRectangle(xPixel - radius, yPixel - radius, radius * 2, radius * 2)) {
-        set.addAll(getCollisionsWith(chunk.moving!!, xPixel, yPixel, widthPixels, heightPixels, predicate))
-        set.addAll(getCollisionsWith(chunk.movingOnBoundary!!, xPixel, yPixel, widthPixels, heightPixels, predicate))
+        set.addAll(getCollisionsWith(chunk.data.moving, xPixel, yPixel, widthPixels, heightPixels, predicate))
+        set.addAll(getCollisionsWith(chunk.data.movingOnBoundary, xPixel, yPixel, widthPixels, heightPixels, predicate))
     }
     return set
 }
@@ -247,8 +247,8 @@ fun Level.getMovingObjectCollisionsInSquareCenteredOn(xPixel: Int, yPixel: Int, 
 fun Level.getMovingObjectCollisionsWithPoint(xPixel: Int, yPixel: Int, predicate: (MovingObject) -> Boolean = { true }): Set<MovingObject> {
     val set = mutableSetOf<MovingObject>()
     val chunk = getChunkFromPixel(xPixel, yPixel)
-    set.addAll(getCollisionsWith(chunk.moving!!, xPixel, yPixel, 0, 0, predicate))
-    set.addAll(getCollisionsWith(chunk.movingOnBoundary!!, xPixel, yPixel, 0, 0, predicate))
+    set.addAll(getCollisionsWith(chunk.data.moving, xPixel, yPixel, 0, 0, predicate))
+    set.addAll(getCollisionsWith(chunk.data.movingOnBoundary, xPixel, yPixel, 0, 0, predicate))
     return set
 }
 
@@ -259,10 +259,6 @@ fun Level.updateResourceNodeAttachments(node: ResourceNode) {
     val attached = getResourceNodesAt(node.xTile + Geometry.getXSign(node.dir), node.yTile + Geometry.getYSign(node.dir), { it.resourceCategory == node.resourceCategory })
             .filter { it.dir == Geometry.getOppositeAngle(node.dir) }
     node.attachedNodes = attached
-    val networks = attached.map { it.network }.distinct()
-    for(network in networks) {
-        node.network
-    }
 }
 
 /**
@@ -271,7 +267,7 @@ fun Level.updateResourceNodeAttachments(node: ResourceNode) {
 fun Level.getResourceNodesAt(xTile: Int, yTile: Int, predicate: (ResourceNode) -> Boolean = { true }): Set<ResourceNode> {
     val set = mutableSetOf<ResourceNode>()
     val chunk = getChunkFromTile(xTile, yTile)
-    chunk.resourceNodes!!.forEach { it.filter { predicate(it) && it.xTile == xTile && it.yTile == yTile }.forEach { set.add(it) } }
+    chunk.data.resourceNodes.forEach { it.filter { predicate(it) && it.xTile == xTile && it.yTile == yTile }.forEach { set.add(it) } }
     return set
 }
 
@@ -282,7 +278,7 @@ fun Level.getResourceNodesAt(xTile: Int, yTile: Int, predicate: (ResourceNode) -
 fun Level.getDroppedItemCollisionsInSquareCenteredOn(xPixel: Int, yPixel: Int, radius: Int, predicate: (DroppedItem) -> Boolean = { true }): Set<DroppedItem> {
     val set = mutableSetOf<DroppedItem>()
     for (chunk in getChunksFromPixelRectangle(xPixel - radius, yPixel - radius, radius * 2, radius * 2)) {
-        set.addAll(getCollisionsWith(chunk.droppedItems!!, xPixel, yPixel, widthPixels, heightPixels, predicate))
+        set.addAll(getCollisionsWith(chunk.data.droppedItems, xPixel, yPixel, widthPixels, heightPixels, predicate))
     }
     return set
 }
@@ -317,8 +313,8 @@ fun Level.updateChunkOf(moving: MovingObject) {
                 moving.hitbox.xStart + moving.xPixel, moving.hitbox.yStart + moving.yPixel, moving.hitbox.width, moving.hitbox.height).toMutableSet()
         intersectingChunks.remove(currentChunk)
         if (moving.intersectingChunks != intersectingChunks) {
-            moving.intersectingChunks.forEach { it.movingOnBoundary!!.remove(moving) }
-            intersectingChunks.forEach { it.movingOnBoundary!!.add(moving) }
+            moving.intersectingChunks.forEach { it.data.movingOnBoundary.remove(moving) }
+            intersectingChunks.forEach { it.data.movingOnBoundary.add(moving) }
             moving.intersectingChunks = intersectingChunks
         }
     }
@@ -329,27 +325,23 @@ fun Level.updateChunkOf(moving: MovingObject) {
     }
 }
 
-fun Level.loadChunkAt(xChunk: Int, yChunk: Int): Chunk {
-    val c = chunks[xChunk + yChunk * widthChunks]
-    c.load(genBlocks(xChunk, yChunk), genTiles(xChunk, yChunk))
-    return c
+fun Level.getChunkAt(xChunk: Int, yChunk: Int): Chunk {
+    return data.chunks[xChunk + yChunk * widthChunks]
 }
 
-fun Level.getChunkAt(xChunk: Int, yChunk: Int, load: Boolean = true): Chunk {
-    val c = chunks[xChunk + yChunk * this.widthChunks]
-    if (load && !c.loaded) {
-        loadChunkAt(xChunk, yChunk)
-    }
-    return c
-}
+fun Level.getChunkFromTile(xTile: Int, yTile: Int) =
+        getChunkAt(xTile shr CHUNK_TILE_EXP, yTile shr CHUNK_TILE_EXP)
 
-fun Level.getChunkFromTile(xTile: Int, yTile: Int, load: Boolean = true) =
-        getChunkAt(xTile shr CHUNK_TILE_EXP, yTile shr CHUNK_TILE_EXP, load)
+fun Level.getChunkFromPixel(xPixel: Int, yPixel: Int) =
+        getChunkFromTile(xPixel shr 4, yPixel shr 4)
 
-fun Level.getChunkFromPixel(xPixel: Int, yPixel: Int, load: Boolean = true) =
-        getChunkFromTile(xPixel shr 4, yPixel shr 4, load)
+fun Level.getChunksFromTileRectangle(xTile: Int, yTile: Int, widthTiles: Int, heightTiles: Int) =
+        getChunksFromChunkRectangle(xTile shr CHUNK_TILE_EXP, yTile shr CHUNK_TILE_EXP, (xTile + widthTiles) shr CHUNK_TILE_EXP, (yTile + heightTiles) shr CHUNK_TILE_EXP)
 
-fun Level.getChunksFromChunkRectangle(xChunk: Int, yChunk: Int, xChunk2: Int, yChunk2: Int, load: Boolean = true): Set<Chunk> {
+fun Level.getChunksFromPixelRectangle(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int): Set<Chunk> =
+        getChunksFromChunkRectangle(xPixel shr CHUNK_PIXEL_EXP, yPixel shr CHUNK_PIXEL_EXP, (xPixel + widthPixels) shr CHUNK_PIXEL_EXP, (yPixel + heightPixels) shr CHUNK_PIXEL_EXP)
+
+fun Level.getChunksFromChunkRectangle(xChunk: Int, yChunk: Int, xChunk2: Int, yChunk2: Int): Set<Chunk> {
     val l = mutableSetOf<Chunk>()
     val nXChunk = max(0, xChunk)
     val nYChunk = max(0, yChunk)
@@ -357,17 +349,11 @@ fun Level.getChunksFromChunkRectangle(xChunk: Int, yChunk: Int, xChunk2: Int, yC
     val nYChunk2 = min(heightChunks - 1, yChunk2)
     for (x in nXChunk..nXChunk2) {
         for (y in nYChunk..nYChunk2) {
-            l.add(getChunkAt(x, y, load))
+            l.add(getChunkAt(x, y))
         }
     }
     return l
 }
-
-fun Level.getChunksFromTileRectangle(xTile: Int, yTile: Int, widthTiles: Int, heightTiles: Int) =
-        getChunksFromChunkRectangle(xTile shr CHUNK_TILE_EXP, yTile shr CHUNK_TILE_EXP, (xTile + widthTiles) shr CHUNK_TILE_EXP, (yTile + heightTiles) shr CHUNK_TILE_EXP)
-
-fun Level.getChunksFromPixelRectangle(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int): Set<Chunk> =
-        getChunksFromChunkRectangle(xPixel shr CHUNK_PIXEL_EXP, yPixel shr CHUNK_PIXEL_EXP, (xPixel + widthPixels) shr CHUNK_PIXEL_EXP, (yPixel + heightPixels) shr CHUNK_PIXEL_EXP)
 
 /**
  * Does everything necessary to put the object to the level
@@ -406,7 +392,7 @@ fun Level.add(l: LevelObject): Boolean {
             }
             if (l.getCollisions(l.xPixel, l.yPixel, level = this).isEmpty()) {
                 if (l.hitbox != Hitbox.NONE) {
-                    l.intersectingChunks.forEach { it.movingOnBoundary!!.add(l) }
+                    l.intersectingChunks.forEach { it.data.movingOnBoundary.add(l) }
                 }
                 updateChunkOf(l)
                 l.level = this
@@ -419,7 +405,7 @@ fun Level.add(l: LevelObject): Boolean {
             if (l.getCollisions(l.xPixel, l.yPixel, level = this).isNotEmpty())
                 return false
             if (l.hitbox != Hitbox.NONE) {
-                l.intersectingChunks.forEach { it.movingOnBoundary!!.add(l) }
+                l.intersectingChunks.forEach { it.data.movingOnBoundary.add(l) }
             }
             updateChunkOf(l)
             l.level = this
@@ -454,7 +440,7 @@ fun Level.add(resourceNode: ResourceNode) {
         return
     val c = getChunkFromTile(resourceNode.xTile, resourceNode.yTile)
     val previousNode: ResourceNode?
-    previousNode = c.resourceNodes!![resourceNode.resourceCategory.ordinal].firstOrNull {
+    previousNode = c.data.resourceNodes[resourceNode.resourceCategory.ordinal].firstOrNull {
         it.xTile == resourceNode.xTile && it.yTile == resourceNode.yTile && it.dir == resourceNode.dir && it.attachedContainer == resourceNode.attachedContainer
     }
     if (previousNode != null) {
@@ -486,7 +472,7 @@ fun Level.remove(l: LevelObject): Boolean {
                 l.currentChunk!!.removeDroppedItem(l)
             }
             if (l.hitbox != Hitbox.NONE)
-                l.intersectingChunks.forEach { it.movingOnBoundary!!.remove(l) }
+                l.intersectingChunks.forEach { it.data.movingOnBoundary.remove(l) }
             l.currentChunk!!.removeMoving(l)
             l.inLevel = false
         }
@@ -500,27 +486,29 @@ fun Level.remove(l: LevelObject): Boolean {
  *
  * @return false if there was no matching projectile
  */
-fun Level.remove(projectile: Projectile) = projectiles.remove(projectile)
+fun Level.remove(projectile: Projectile) = data.projectiles.remove(projectile)
 
 /**
  * Adds a [Projectile] to this [Level]
  */
 fun Level.add(projectile: Projectile) {
-    projectiles.add(projectile)
+    data.projectiles.add(projectile)
 }
 
 /**
  * Adds a particle to the level. Particles are temporary and purely decorative, they do not get saved
  */
 fun Level.add(particle: Particle) {
-    particles.add(particle)
+    particle.level = this
+    data.particles.add(particle)
 }
 
 /**
  * Removes a particle from the level
  */
 fun Level.remove(particle: Particle) {
-    particles.remove(particle)
+    particle.level = LevelManager.EMPTY_LEVEL
+    data.particles.remove(particle)
 }
 
 fun Level.remove(resourceNode: ResourceNode) {

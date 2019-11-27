@@ -4,6 +4,7 @@ import level.entity.Entity
 import behavior.*
 import level.LevelManager
 import main.Game
+import java.util.*
 
 /**
  * A composite node that executes each of its children in the given [order].
@@ -16,7 +17,8 @@ class Sequence(parent: BehaviorTree, children: MutableList<Node>, val order: Com
         state = NodeState.RUNNING
         val firstRunningChild: Node
         if (order == CompositeOrder.RANDOM) {
-            val order = children.indices.shuffled(entity.level.rand)
+            val rand = Random(entity.level.info.seed)
+            val order = children.indices.shuffled(rand)
             firstRunningChild = children[order.first()]
             setData(DefaultVariable.SEQUENCE_RANDOM_CHILD_EXECUTION_ORDER, order)
         } else {

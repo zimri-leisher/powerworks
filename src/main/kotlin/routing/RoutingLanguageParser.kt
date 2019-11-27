@@ -1,7 +1,13 @@
 package routing
 
+import com.esotericsoftware.kryo.Kryo
+import com.esotericsoftware.kryo.Serializer
+import com.esotericsoftware.kryo.io.Input
+import com.esotericsoftware.kryo.io.Output
+import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer
 import resource.ResourceNode
 import resource.ResourceType
+import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag
 
 class EvaluationException(message: String) : Throwable(message)
 
@@ -68,6 +74,8 @@ private enum class SingleOperator(val tokenType: TokenType, private val evaluate
     NETWORK_CONTAINS(TokenType.NETWORK_CONTAINS, { arg, context -> ResourceType.getType(arg.replace("_", " "))?.let { context.network.getQuantity(it) >= 1 } }),
     QUANTITY(TokenType.QUANTITY, { arg, context ->
         val type = ResourceType.getType(arg.replace("_", " "))
+        println(context)
+        println("cont: ${context.attachedContainer}")
         if (type != null) context.attachedContainer.getQuantity(type)
         else null
     }),
@@ -80,6 +88,7 @@ private enum class SingleOperator(val tokenType: TokenType, private val evaluate
 
 private enum class Statements(val tokenType: TokenType, private val evaluate: (context: ResourceNode) -> Any?) {
     TOTAL_QUANTITY(TokenType.TOTAL_QUANTITY, {
+        println("evaluating total quantity for context: $it")
         it.attachedContainer.totalQuantity }),
     NETWORK_TOTAL_QUANTITY(TokenType.NETWORK_TOTAL_QUANTITY, { it.network.totalQuantity });
 
@@ -104,6 +113,7 @@ private data class Token(val type: TokenType, val value: String) {
 }
 
 sealed class Node(val token: Token) {
+
     fun visit(context: ResourceNode): String {
         when (token.type.category) {
             TokenCategory.LITERAL -> return token.value
@@ -118,6 +128,7 @@ sealed class Node(val token: Token) {
                 this as SingleOperation
                 val arg = arg.visit(context)
                 val func = SingleOperator.values().first { it.tokenType == token.type }
+                println("function: $func, eval ($arg): ${func.evaluate(arg, context)}")
                 return func.evaluate(arg, context)
             }
             TokenCategory.STATEMENT -> {
@@ -148,7 +159,8 @@ private class SingleOperation(val arg: Node, token: Token) : Node(token) {
 
 private class RoutingLanguageParseError(val beginIndex: Int, val length: Int, val message: String)
 
-private class RoutingLanguageParse(val text: String) {
+private class RoutingLanguageParse(
+        val text: String) {
 
     private val tokens: Array<Token>
     private var currentIndex = 0
@@ -249,15 +261,15 @@ private class RoutingLanguageParse(val text: String) {
     }
 }
 
-class RoutingLanguageStatement(private val node: Node) {
+class RoutingLanguageStatement(private val node: Node, val text: String) {
 
     fun evaluate(context: ResourceNode) = node.visit(context).toBoolean()
 
     override fun toString() = node.toString()
 
     companion object {
-        val TRUE = RoutingLanguageStatement(RoutingLanguageParse("true").parse())
-        val FALSE = RoutingLanguageStatement(RoutingLanguageParse("false").parse())
+        val TRUE = RoutingLanguageStatement(RoutingLanguageParse("true").parse(), "true")
+        val FALSE = RoutingLanguageStatement(RoutingLanguageParse("false").parse(), "false")
     }
 }
 
@@ -269,6 +281,17 @@ object RoutingLanguage {
             return RoutingLanguageStatement.TRUE
         if (text.toLowerCase() == "false")
             return RoutingLanguageStatement.FALSE
-        return RoutingLanguageStatement(RoutingLanguageParse(text).parse())
+        return RoutingLanguageStatement(RoutingLanguageParse(text).parse(), text)
     }
+}
+
+class RoutingLanguageSerializer : Serializer<RoutingLanguageStatement>() {
+    override fun write(kryo: Kryo, output: Output, `object`: RoutingLanguageStatement) {
+        output.writeString(`object`.text)
+    }
+
+    override fun read(kryo: Kryo, input: Input, type: Class<out RoutingLanguageStatement>): RoutingLanguageStatement {
+        return RoutingLanguage.parse(input.readString()).apply { kryo.reference(this) }
+    }
+
 }

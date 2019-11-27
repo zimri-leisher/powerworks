@@ -7,14 +7,13 @@ import main.Game
 import screen.ScreenManager
 import screen.WindowGroup
 import screen.mouse.Mouse
+import java.util.*
 
 typealias Alignment = () -> Int
 
-private var nextId = 0
-
 sealed class RootGUIElement(name: String, xAlignment: Alignment, yAlignment: Alignment, widthAlignment: Alignment, heightAlignment: Alignment, open: Boolean, var layer: Int) {
 
-    val id = nextId++
+    val id = UUID.randomUUID()!!
     var name = name
 
     var open: Boolean = open
@@ -202,7 +201,7 @@ sealed class RootGUIElement(name: String, xAlignment: Alignment, yAlignment: Ali
     }
 
     /* Gets the specified element by id (unique for each element). If checkChildren is true (default), it checks recursively */
-    fun getChild(id: Int, checkChildren: Boolean = true): GUIElement? {
+    fun getChild(uuid: UUID, checkChildren: Boolean = true): GUIElement? {
         var r = children.firstOrNull { it.id == id }
         if (checkChildren) {
             val i = children.iterator()
@@ -332,29 +331,16 @@ sealed class RootGUIElement(name: String, xAlignment: Alignment, yAlignment: Ali
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
+
         other as RootGUIElement
-        if (name != other.name) return false
-        if (layer != other.layer) return false
-        if (open != other.open) return false
-        if (alignments != other.alignments) return false
-        if (xPixel != other.xPixel) return false
-        if (yPixel != other.yPixel) return false
-        if (widthPixels != other.widthPixels) return false
-        if (heightPixels != other.heightPixels) return false
+
+        if (id != other.id) return false
+
         return true
     }
 
     override fun hashCode(): Int {
-        var result = name.hashCode()
-        result = 31 * result + id
-        result = 31 * result + layer
-        result = 31 * result + open.hashCode()
-        result = 31 * result + alignments.hashCode()
-        result = 31 * result + xPixel
-        result = 31 * result + yPixel
-        result = 31 * result + widthPixels
-        result = 31 * result + heightPixels
-        return result
+        return id.hashCode()
     }
 
     class ElementAlignments(parent: RootGUIElement, x: Alignment, y: Alignment, width: Alignment, height: Alignment) {

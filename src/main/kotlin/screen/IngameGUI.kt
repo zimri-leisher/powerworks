@@ -8,6 +8,7 @@ import level.LevelManager
 import level.add
 import main.Game
 import misc.Geometry
+import player.PlayerManager
 import screen.IngameGUI.views
 import screen.elements.*
 import screen.mouse.Mouse
@@ -85,7 +86,7 @@ object IngameGUI : GUIWindow("In game gui",
 
     const val MAX_VIEWS = 4
 
-    val mainInvGUI = InventoryGUI("In game main inventory gui", "Inventory", Game.mainInv, 20, 20, layer = MAX_VIEWS * 3 + 2)
+    val mainInvGUI = InventoryGUI("In game main inventory gui", "Inventory", PlayerManager.localPlayer.brainRobot.inventory, 20, 20, layer = MAX_VIEWS * 3 + 2)
 
     val cameras = arrayOf(newCamera(), newCamera(), newCamera(), newCamera())
     val views = arrayOf(newView(), newView(), newView(), newView())
@@ -97,8 +98,8 @@ object IngameGUI : GUIWindow("In game gui",
     }
 
     private fun newCamera(): Camera {
-        val c = Camera(LevelManager.localLevel.widthPixels / 2, LevelManager.localLevel.heightPixels / 2)
-        LevelManager.localLevel.add(c)
+        val c = Camera(PlayerManager.localPlayer.brainRobot.xPixel, PlayerManager.localPlayer.brainRobot.yPixel)
+        PlayerManager.localPlayer.brainRobot.level.add(c)
         return c
     }
 

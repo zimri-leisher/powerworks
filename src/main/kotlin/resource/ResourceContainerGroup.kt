@@ -1,6 +1,10 @@
 package resource
 
-class ResourceContainerGroup(private val containers: List<ResourceContainer>) {
+import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag
+
+class ResourceContainerGroup(
+        @Tag(1)
+        val containers: List<ResourceContainer>) {
 
     val size
         get() = containers.size

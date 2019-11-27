@@ -1,10 +1,12 @@
 package level.block
 
+import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag
 import audio.AudioManager
 import audio.AudioManager.SoundSource
 
 abstract class MachineBlock(override val type: MachineBlockType<out MachineBlock>, xTile: Int, yTile: Int, rotation: Int, on: Boolean = type.defaultOn) : Block(type, xTile, yTile, rotation) {
 
+    @Tag(20)
     var on = on
         set(value) {
             if (!value && field) {
@@ -20,7 +22,9 @@ abstract class MachineBlock(override val type: MachineBlockType<out MachineBlock
             field = value
         }
 
+    @Tag(21)
     var currentSound: SoundSource? = null
+    @Tag(22)
     var currentWork = 0
 
     open fun onTurnOn() {

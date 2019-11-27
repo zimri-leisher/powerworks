@@ -30,7 +30,7 @@ object Tooltips {
         screenTooltipTemplates.get(priority)!!.add(f)
     }
 
-    internal fun update() {
+    fun update() {
         var s: String? = null
         val screen = ScreenManager.getHighestElement(Mouse.xPixel, Mouse.yPixel, ScreenManager.getHighestWindow(Mouse.xPixel, Mouse.yPixel, { !it.transparentToInteraction }), { !it.transparentToInteraction })
         if (screen != null) {

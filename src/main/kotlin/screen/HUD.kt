@@ -7,6 +7,7 @@ import item.Item
 import item.ItemType
 import main.Game
 import main.State
+import player.PlayerManager
 import resource.*
 import screen.elements.GUIItemSlot
 import screen.elements.GUITexturePane
@@ -156,7 +157,7 @@ object HUD {
             for (i in 0 until HOTBAR_SIZE) {
                 GUIItemSlot(this, "Hotbar slot $i", i * GUIItemSlot.WIDTH, 0, i, items, open = true)
             }
-            Game.mainInv.listeners.add(this)
+            PlayerManager.localPlayer.brainRobot.inventory.listeners.add(this)
             selectOverlay.transparentToInteraction = true
         }
 
@@ -173,7 +174,7 @@ object HUD {
                     Control.SLOT_6 -> selected = 5
                     Control.SLOT_7 -> selected = 6
                     Control.SLOT_8 -> selected = 7
-                    Control.GIVE_TEST_ITEM -> Game.mainInv.add(Item(BlockItemType.TUBE))
+                    Control.GIVE_TEST_ITEM -> PlayerManager.localPlayer.brainRobot.inventory.add(Item(BlockItemType.TUBE))
                 }
             }
         }
@@ -182,8 +183,8 @@ object HUD {
         }
 
         override fun onContainerChange(container: ResourceContainer, resource: ResourceType, quantity: Int) {
-            if (container == Game.mainInv) {
-                if (selected != -1 && items[selected] != null && Game.mainInv.getQuantity(items[selected]!!) > 0)
+            if (container == PlayerManager.localPlayer.brainRobot.inventory) {
+                if (selected != -1 && items[selected] != null && PlayerManager.localPlayer.brainRobot.inventory.getQuantity(items[selected]!!) > 0)
                     Mouse.heldItemType = items[selected]
             }
         }

@@ -19,7 +19,9 @@ import level.moving.MovingObject
 import main.Game
 import main.toColor
 import misc.Geometry
-import network.*
+import network.ClientNetworkManager
+import network.packet.*
+import player.PlayerManager
 import resource.ResourceNode
 import screen.RoutingLanguageEditor
 import screen.ScreenManager
@@ -51,7 +53,9 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
 
     init {
         ALL.add(this)
-        InputManager.registerControlPressHandler(this, ControlPressHandlerType.LEVEL_ANY_UNDER_MOUSE, *use)
+        if(!Game.IS_SERVER) {
+            InputManager.registerControlPressHandler(this, ControlPressHandlerType.LEVEL_ANY_UNDER_MOUSE, *use)
+        }
     }
 
     override fun handleControlPress(p: ControlPress) {
@@ -158,7 +162,7 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
                 if (type == PressType.RELEASED && control == Control.SPAWN_ENTITY) {
                     if (canSpawn) {
                         if (LevelManager.levelUnderMouse!!.add(this.type!!.spawnedEntity.instantiate(mouseLevelXPixel, mouseLevelYPixel, 0))) {
-                            Game.mainInv.remove(this.type!!)
+                            PlayerManager.localPlayer.brainRobot.inventory.remove(this.type!!)
                         }
                     }
                 }
@@ -288,7 +292,7 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
                                 Selector.selected.remove(it)
                                 val item = ItemType.ALL.firstOrNull { item -> item is BlockItemType && item.placedBlock == it.type }
                                 if (item != null) {
-                                    Game.mainInv.add(item)
+                                    PlayerManager.localPlayer.brainRobot.inventory.add(item)
                                 }
                             }
                         } else {
@@ -297,7 +301,7 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
                                 LevelManager.levelUnderMouse!!.remove(o)
                                 val item = ItemType.ALL.firstOrNull { it is BlockItemType && it.placedBlock == o.type }
                                 if (item != null) {
-                                    Game.mainInv.add(item)
+                                    PlayerManager.localPlayer.brainRobot.inventory.add(item)
                                 }
                             }
                         }
@@ -306,17 +310,13 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
             }
         }
 
-        object BlockPlacer : Tool(Control.PLACE_BLOCK, Control.ROTATE_BLOCK), ControlPressHandler, PacketHandler {
+        object BlockPlacer : Tool(Control.PLACE_BLOCK, Control.ROTATE_BLOCK), ControlPressHandler {
             var type: BlockItemType? = null
 
             var xTile = 0
             var yTile = 0
             var rotation = 0
             var canPlace = false
-
-            init {
-                Server.registerPacketHandler(this, PacketType.PLACE_BLOCK)
-            }
 
             override fun onUse(control: Control, type: PressType, mouseLevelXPixel: Int, mouseLevelYPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
                 if (type == PressType.PRESSED) {
@@ -328,20 +328,8 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
                     if (control == Control.PLACE_BLOCK) {
                         if (canPlace) {
                             val blockType = this.type!!.placedBlock
-                            Client.sendToServer(PlaceBlockPacket(blockType.id, xTile, yTile, 0, LevelManager.levelUnderMouse!!.levelInfo.name))
+                            ClientNetworkManager.sendToServer(PlaceBlockPacket(blockType, 0, 0, LevelManager.levelUnderMouse!!.id))
                         }
-                    }
-                }
-            }
-
-            override fun handlePacket(packet: Packet) {
-                if (packet is PlaceBlockPacket) {
-                    val type = BlockType.ALL.firstOrNull { it.id == packet.blockTypeID }
-                            ?: throw IllegalArgumentException("BlockType id ${packet.blockTypeID} does not exist")
-                    val level = LevelManager.allLevels.firstOrNull { it.levelInfo.name == packet.levelName }
-                            ?: throw IllegalArgumentException("Level with name ${packet.levelName} does not exist")
-                    if (level.add(type.instantiate(packet.xTile shl 4, packet.yTile shl 4, 0))) {
-                        Game.mainInv.remove(ItemType.ALL.first { it is BlockItemType && it.placedBlock == type })
                     }
                 }
             }

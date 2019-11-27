@@ -34,7 +34,7 @@ object ScreenManager : ControlPressHandler {
 
     private val _backwardsWindowGroups = mutableListOf<WindowGroup>()
     val windows = ConcurrentlyModifiableWeakMutableList<GUIWindow>()
-    internal val openWindows = WeakMutableList<GUIWindow>()
+    val openWindows = ConcurrentlyModifiableWeakMutableList<GUIWindow>()
 
     val playingAnimations = ConcurrentlyModifiableMutableList<GUIAnimation<*>>()
 

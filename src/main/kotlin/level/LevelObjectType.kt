@@ -1,5 +1,9 @@
 package level
 
+import com.esotericsoftware.kryo.Kryo
+import com.esotericsoftware.kryo.Serializer
+import com.esotericsoftware.kryo.io.Input
+import com.esotericsoftware.kryo.io.Output
 import graphics.Image
 import screen.Camera
 
@@ -19,11 +23,22 @@ open class LevelObjectType<T : LevelObject>(initializer: LevelObjectType<T>.() -
 
     init {
         initializer()
+        ALL.add(this)
     }
 
     companion object {
-
+        val ALL = mutableListOf<LevelObjectType<*>>()
         val ERROR = LevelObjectType<LevelObject>()
+    }
+}
 
+class LevelObjectTypeSerializer : Serializer<LevelObjectType<*>>() {
+    override fun write(kryo: Kryo, output: Output, `object`: LevelObjectType<*>) {
+        output.writeInt(`object`.id)
+    }
+
+    override fun read(kryo: Kryo, input: Input, type: Class<out LevelObjectType<*>>): LevelObjectType<*> {
+        val id = input.readInt()
+        return LevelObjectType.ALL.first { it.id == id }.apply { kryo.reference(this) }
     }
 }
