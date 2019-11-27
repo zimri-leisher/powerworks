@@ -5,6 +5,7 @@ import level.*
 import level.particle.ParticleEffect
 import resource.ResourceContainerGroup
 import resource.ResourceNodeGroup
+import resource.getAttachedContainers
 import java.io.DataOutputStream
 
 abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotation: Int = 0) : LevelObject(type, xTile shl 4, yTile shl 4, rotation) {
@@ -25,7 +26,7 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotatio
      * into account, so, for example, if that same block were placed with a rotation of 1 (rotated 90 degrees clockwise), the node would be at (1, 0) relative, pointing right.
      */
     @Tag(18)
-    val nodes = ResourceNodeGroup(type.nodesTemplate.instantiate(xTile, yTile, rotation))
+    val nodes = type.nodesTemplate.instantiate(xTile, yTile, rotation).toMutableList()
 
     /**
      * The specific local containers as specified by [BlockType.nodesTemplate]

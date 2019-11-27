@@ -116,7 +116,6 @@ fun registerKryo(kryo: Kryo) {
         register(Hitbox::class.java)
 
         register(Recipe::class.java, RecipeSerializer())
-        register(ResourceNodeGroup::class.java)
         register(ResourceNode::class.java)
         register(ResourceContainerGroup::class.java)
         register(ResourceContainer::class.java)

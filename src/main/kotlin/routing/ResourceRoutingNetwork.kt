@@ -11,7 +11,7 @@ import resource.*
 
 class InvalidFunctionCallException(message: String) : Exception(message)
 
-open class ResourceRoutingNetwork(category: ResourceCategory, val level: Level) : ResourceContainer(category) {
+open class ResourceRoutingNetwork(category: ResourceCategory, var level: Level) : ResourceContainer(category) {
 
     @Tag(6)
     val id = nextId++
@@ -20,19 +20,35 @@ open class ResourceRoutingNetwork(category: ResourceCategory, val level: Level) 
      * The nodes this network touches
      */
     @Tag(7)
-    val attachedNodes = ResourceNodeGroup()
+    val attachedNodes = mutableListOf<ResourceNode>()
 
     /**
      * The nodes that correspond with the nodes this network touches
      */
     @Tag(8)
-    val internalNodes = ResourceNodeGroup()
+    val internalNodes = mutableListOf<ResourceNode>()
 
     init {
         ALL.add(this)
     }
 
     override val totalQuantity get() = attachedNodes.getAttachedContainers().sumBy { it.totalQuantity }
+
+    fun mergeIntoThis(other: TubeRoutingNetwork) {
+        other.attachedNodes.forEach {
+            it.network = this
+            if (it !in attachedNodes) {
+                attachedNodes.add(it)
+            }
+        }
+        other.internalNodes.forEach {
+            it.network = this
+            it.attachedContainer = this
+            if(it !in internalNodes) {
+
+            }
+        }
+    }
 
     override fun add(resource: ResourceType, quantity: Int, from: ResourceNode?, checkIfAble: Boolean): Boolean {
         if (checkIfAble) {

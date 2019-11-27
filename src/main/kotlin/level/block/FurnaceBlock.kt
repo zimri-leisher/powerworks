@@ -9,6 +9,7 @@ import resource.ResourceContainerChangeListener
 import resource.ResourceType
 import screen.FurnaceBlockGUI
 import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag
+import resource.output
 
 class FurnaceBlock(type: MachineBlockType<FurnaceBlock>, xTile: Int, yTile: Int, rotation: Int = 0) : MachineBlock(type, xTile, yTile, rotation), ResourceContainerChangeListener {
 

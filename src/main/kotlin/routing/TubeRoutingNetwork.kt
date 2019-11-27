@@ -5,10 +5,8 @@ import level.Level
 import level.tube.TubeBlock
 import misc.Geometry
 import misc.PixelCoord
-import resource.ResourceCategory
-import resource.ResourceNode
-import resource.ResourceType
 import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag
+import resource.*
 
 class TubeRoutingNetwork(level: Level) : ResourceRoutingNetwork(ResourceCategory.ITEM, level) {
 
@@ -36,20 +34,6 @@ class TubeRoutingNetwork(level: Level) : ResourceRoutingNetwork(ResourceCategory
 
     fun getIntersection(t: TubeBlock): Intersection? {
         return intersections.firstOrNull { it.tubeBlock == t }
-    }
-
-    fun mergeIntoThis(other: TubeRoutingNetwork) {
-        other.tubes.forEach {
-            if (it !in tubes) {
-                tubes.add(it)
-                it.network = this
-            }
-        }
-        other.attachedNodes.forEach {
-            it.attachedContainer = this
-            if (it !in attachedNodes)
-                attachedNodes.add(it)
-        }
     }
 
     private fun getTubeAt(xTile: Int, yTile: Int) = tubes.firstOrNull { it.xTile == xTile && it.yTile == yTile }
@@ -186,8 +170,8 @@ class TubeRoutingNetwork(level: Level) : ResourceRoutingNetwork(ResourceCategory
                 }
             } else {
                 if (it.position == it.currentRouteStep.loc) {
-                    it.routeStepIndex++
                     it.dir = it.currentRouteStep.nextDir
+                    it.routeStepIndex++
                 }
                 it.position.xPixel += Geometry.getXSign(it.dir)
                 it.position.yPixel += Geometry.getYSign(it.dir)
@@ -197,7 +181,7 @@ class TubeRoutingNetwork(level: Level) : ResourceRoutingNetwork(ResourceCategory
 
     override fun render() {
         packages.forEach {
-            it.type.icon.render(it.position.xPixel, it.position.yPixel)
+            it.type.icon.render(it.position.xPixel, it.position.yPixel + 4, 12, 12, true)
         }
     }
 
@@ -208,7 +192,7 @@ class TubeRoutingNetwork(level: Level) : ResourceRoutingNetwork(ResourceCategory
                                       val route: PackageRoute,
                                       var routeStepIndex: Int = 0,
                                       var position: PixelCoord = PixelCoord(from.xTile shl 4, from.yTile shl 4),
-                                      var dir: Int = -1) {
+                                      var dir: Int = route[routeStepIndex].nextDir) {
         val currentRouteStep
             get() = route[routeStepIndex]
     }

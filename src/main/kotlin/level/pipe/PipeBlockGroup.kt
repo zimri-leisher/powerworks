@@ -10,7 +10,7 @@ import routing.RoutingLanguageStatement
 class PipeBlockGroup(val level: Level) { // TODO do the same thing to this as did Tube
     private val pipes = mutableListOf<PipeBlock>()
     private val storage = PipeBlockInternalStorage(this)
-    val nodes = ResourceNodeGroup()
+    val nodes = mutableListOf<ResourceNode>()
 
     val size: Int
         get() = pipes.size

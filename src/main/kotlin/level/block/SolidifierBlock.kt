@@ -8,6 +8,7 @@ import item.Inventory
 import resource.ResourceContainer
 import resource.ResourceContainerChangeListener
 import resource.ResourceType
+import resource.output
 
 class SolidifierBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(MachineBlockType.SOLIDIFIER, xTile, yTile, rotation), ResourceContainerChangeListener {
 

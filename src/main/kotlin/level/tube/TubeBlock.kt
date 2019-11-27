@@ -43,6 +43,7 @@ class TubeBlock(xTile: Int, yTile: Int) : Block(BlockType.TUBE, xTile, yTile) {
     var intersection: Intersection? = null
 
     override fun onAddToLevel() {
+        network.level = level
         updateConnections()
         network.addTube(this)
         super.onAddToLevel()
