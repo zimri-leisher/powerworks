@@ -104,3 +104,14 @@ enum class PipeState(val texture: TextureRegion, val connections: Array<Boolean>
         }
     }
 }
+
+class PipeStateSerializer : Serializer<PipeState>() {
+    override fun write(kryo: Kryo, output: Output, `object`: PipeState) {
+        output.writeString(`object`.name)
+    }
+
+    override fun read(kryo: Kryo, input: Input, type: Class<out PipeState>): PipeState {
+        return PipeState.valueOf(input.readString())
+    }
+
+}

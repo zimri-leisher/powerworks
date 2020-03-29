@@ -62,6 +62,10 @@ open class EntityItemType(initializer: EntityItemType.() -> Unit = {}) : ItemTyp
     companion object {
         val ALL = mutableListOf<EntityItemType>()
     }
+
+    companion object {
+
+    }
 }
 
 class RobotItemType(initializer: RobotItemType.() -> Unit) : EntityItemType() {

@@ -102,3 +102,14 @@ enum class TubeState(val texture: TextureRegion, val connections: Array<Boolean>
         }
     }
 }
+
+class TubeStateSerializer : Serializer<TubeState>() {
+    override fun write(kryo: Kryo, output: Output, `object`: TubeState) {
+        output.writeString(`object`.name)
+    }
+
+    override fun read(kryo: Kryo, input: Input, type: Class<out TubeState>): TubeState {
+        return TubeState.valueOf(input.readString())
+    }
+
+}

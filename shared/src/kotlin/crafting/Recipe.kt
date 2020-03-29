@@ -1,5 +1,9 @@
 package crafting
 
+import com.esotericsoftware.kryo.Kryo
+import com.esotericsoftware.kryo.Serializer
+import com.esotericsoftware.kryo.io.Input
+import com.esotericsoftware.kryo.io.Output
 import item.BlockItemType
 import item.IngotItemType
 import item.ItemType
@@ -11,6 +15,8 @@ import serialization.Output
 import serialization.Serializer
 import java.io.DataInputStream
 import java.io.DataOutputStream
+
+private var nextId = 0
 
 private var nextId = 0
 
@@ -82,5 +88,15 @@ class Recipe(
                 BlockItemType.CRAFTER,
                 listOf(Crafter.Type.DEFAULT, Crafter.Type.ITEM),
                 RecipeCategory.MACHINE)
+    }
+}
+
+class RecipeSerializer : Serializer<Recipe>() {
+    override fun write(kryo: Kryo, output: Output, `object`: Recipe) {
+        output.writeInt(`object`.id)
+    }
+
+    override fun read(kryo: Kryo, input: Input, type: Class<out Recipe>): Recipe {
+        return Recipe.ALL.first { it.id == input.readInt() }
     }
 }
