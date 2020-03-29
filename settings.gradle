@@ -1,2 +1,4 @@
 rootProject.name = 'powerworks'
-
+include 'shared'
+include 'server'
+include 'client'
