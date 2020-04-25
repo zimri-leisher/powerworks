@@ -1,53 +1,29 @@
 package screen.elements
 
+import graphics.Renderer
 import resource.ResourceList
 
-class GUIResourceListDisplay(parent: RootGUIElement, name: String, currentResources: ResourceList,
+class GUIResourceListDisplay(parent: RootGUIElement, name: String, var currentResources: ResourceList,
                              xAlignment: Alignment, yAlignment: Alignment, width: Int, height: Int,
+                             val displayQuantity: Boolean = true,
                              open: Boolean = false, layer: Int = parent.layer + 1) :
-        GUIElement(parent, name, xAlignment, yAlignment, { width * 16 }, { height * 16 }, open, layer) {
-
-    var width = width
-        set(value) {
-            if (field != value) {
-                children.clear()
-                field = value
-                createSlots()
-                alignments.updateDimension()
-            }
-        }
-
-    var height = height
-        set(value) {
-            if (field != value) {
-                // TODO worry about the memory leakage here - whats going on when children gets cleared?
-                children.clear()
-                field = value
-                createSlots()
-                alignments.updateDimension()
-            }
-        }
-
-    var currentResources = currentResources
-        set(value) {
-            field = value
-            slots.forEach { it.list = value }
-        }
-
-    private val slots = mutableListOf<GUIResourceDisplaySlot>()
+        GUIIconList(parent, name, xAlignment, yAlignment, width, height,
+                renderIcon = { xPixel, yPixel, index -> (this as GUIResourceListDisplay).renderIcon(xPixel, yPixel, index) }, open = open, layer = layer) {
 
     init {
-        alignments.width = { this.width * 16 }
-        alignments.height = { this.height * 16 }
-        createSlots()
+        getToolTip = { index ->
+            if (index != -1 && currentResources[index] != null)
+                "${currentResources[index]!!.key.name} * ${currentResources[index]!!.value}"
+            else null
+        }
     }
 
-    private fun createSlots() {
-        var i = 0
-        for (x in 0 until width) {
-            for (y in 0 until height) {
-                GUIResourceDisplaySlot(this, name + " slot $i", x * GUIResourceDisplaySlot.WIDTH, y * GUIResourceDisplaySlot.HEIGHT, currentResources, i, open, layer + 1).apply { slots.add(this) }
-                i++
+    private fun renderIcon(xPixel: Int, yPixel: Int, index: Int) {
+        val entry = currentResources[index]
+        if (entry != null) {
+            entry.key.icon.render(xPixel, yPixel, iconSize, iconSize, true)
+            if (displayQuantity) {
+                Renderer.renderText(entry.value, xPixel, yPixel)
             }
         }
     }

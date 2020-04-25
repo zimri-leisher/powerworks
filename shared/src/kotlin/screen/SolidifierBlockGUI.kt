@@ -1,33 +1,31 @@
 package screen
 
 import level.block.Block
-import level.block.FluidTankBlock
 import level.block.SolidifierBlock
+import main.toColor
 import screen.elements.*
 
 class SolidifierBlockGUI(block: SolidifierBlock) :
         AutoFormatGUIWindow("GUI window for solidifier block: $block", { 0 }, { 0 }, ScreenManager.Groups.INVENTORY), BlockGUI {
     var block = block
         private set
-    var progressBar: GUIProgressBar
+    var progressArrow: GUIProgressArrow
     private val fluidTankMeter: GUIFluidTankMeter
     private val outputContainerDisplay: GUIResourceContainerDisplay
 
     init {
         openAtMouse = true
 
-        val nameText = GUIText(group, this@SolidifierBlockGUI.name + " name text", 0, 0, "Solidifying:")
+        GUIText(group, this@SolidifierBlockGUI.name + " name text", 0, 0, "Solidifier")
 
-        fluidTankMeter = GUIFluidTankMeter(group, this@SolidifierBlockGUI.name + " solidifier tank display", 0, 0, 26, 17, block.tank)
-
-        progressBar = GUIProgressBar(group, this@SolidifierBlockGUI.name + " solidifying progress bar", { 0 }, { 0 }, { nameText.widthPixels + 10 }, maxProgress = block.type.maxWork)
-
-        GUIText(group, this@SolidifierBlockGUI.name + " tank text", 0, 0, "Output:")
+        fluidTankMeter = GUIFluidTankMeter(group, this@SolidifierBlockGUI.name + " solidifier tank display", 0, 0, 52, GUIFluidTankMeter.HEIGHT, block.tank)
 
         outputContainerDisplay = GUIResourceContainerDisplay(group, this@SolidifierBlockGUI.name + " tank meter", { 0 }, { 0 }, 1, 1, block.out)
 
-        generateCloseButton(this.layer + 1)
-        generateDragGrip(this.layer + 1)
+        progressArrow = GUIProgressArrow(group, name + " progress arrow", fluidTankMeter, 2, outputContainerDisplay, 1, block.type.maxWork, toColor(90, 90, 90))
+
+        generateCloseButton()
+        generateDragGrip()
     }
 
     override fun canDisplayBlock(newBlock: Block): Boolean {
@@ -41,14 +39,16 @@ class SolidifierBlockGUI(block: SolidifierBlock) :
         block = newBlock as SolidifierBlock
         fluidTankMeter.tank = newBlock.tank
         outputContainerDisplay.container = newBlock.out
-        progressBar.maxProgress = newBlock.type.maxWork
-        progressBar.currentProgress = newBlock.currentWork
+        progressArrow.maxProgress = newBlock.type.maxWork
+        progressArrow.currentProgress = newBlock.currentWork
+        progressArrow.progressColor = newBlock.currentlySolidifying?.color ?: progressArrow.progressColor
         return true
     }
 
     override fun isDisplayingBlock(block: Block) = block == this.block
 
     override fun update() {
-        progressBar.currentProgress = block.currentWork
+        progressArrow.progressColor = block.currentlySolidifying?.color ?: progressArrow.progressColor
+        progressArrow.currentProgress = block.currentWork
     }
 }

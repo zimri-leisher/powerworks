@@ -1,11 +1,11 @@
 package routing
 
 import data.ConcurrentlyModifiableWeakMutableList
-import data.WeakMutableList
 import level.Level
 import level.LevelManager
 import misc.Geometry
 import resource.*
+import routing.script.RoutingLanguage
 import serialization.Id
 
 class InvalidFunctionCallException(message: String) : Exception(message)
@@ -15,6 +15,8 @@ open class ResourceRoutingNetwork(category: ResourceCategory,
                                   var level: Level) : ResourceContainer(category) {
 
     private constructor() : this(ResourceCategory.ITEM, LevelManager.EMPTY_LEVEL)
+
+    override val expected get() = throw InvalidFunctionCallException("Routing networks cannot expect resources")
 
     /**
      * The nodes this network touches
@@ -27,6 +29,9 @@ open class ResourceRoutingNetwork(category: ResourceCategory,
      */
     @Id(8)
     val internalNodes = mutableListOf<ResourceNode>()
+
+    @Id(10)
+    val nodesSentTo = mutableSetOf<ResourceNode>()
 
     init {
         ALL.add(this)
@@ -50,13 +55,13 @@ open class ResourceRoutingNetwork(category: ResourceCategory,
         }
     }
 
-    override fun add(resource: ResourceType, quantity: Int, from: ResourceNode?, checkIfAble: Boolean): Boolean {
+    override fun add(resources: ResourceList, from: ResourceNode?, checkIfAble: Boolean): Boolean {
         if (checkIfAble) {
-            if (!canAdd(resource, quantity)) {
+            if (!canAdd(resources)) {
                 return false
             }
         }
-        onAddResource(resource, quantity, from)
+        onAddResources(resources, from)
         return true
     }
 
@@ -69,19 +74,19 @@ open class ResourceRoutingNetwork(category: ResourceCategory,
         return true
     }
 
-    override fun remove(resource: ResourceType, quantity: Int, to: ResourceNode?, checkIfAble: Boolean): Boolean {
+    override fun remove(resources: ResourceList, to: ResourceNode?, checkIfAble: Boolean): Boolean {
         if (checkIfAble) {
-            if (!canRemove(resource, quantity)) {
+            if (!canRemove(resources)) {
                 return false
             }
         }
-        onRemoveResource(resource, quantity, to)
+        onRemoveResource(resources, to)
         return true
     }
 
-    override fun expect(resource: ResourceType, quantity: Int) = throw InvalidFunctionCallException("Routing networks cannot expect resources")
+    override fun expect(resources: ResourceList) = throw InvalidFunctionCallException("Routing networks cannot expect resources")
 
-    override fun cancelExpectation(resource: ResourceType, quantity: Int) = true
+    override fun cancelExpectation(resources: ResourceList) = true
 
     override fun clear() {
         attachedNodes.getAttachedContainers().forEach { it.clear() }
@@ -100,39 +105,37 @@ open class ResourceRoutingNetwork(category: ResourceCategory,
         return ResourceRoutingNetwork(resourceCategory, level)
     }
 
-    override fun resourceList(): ResourceList {
-        val all = attachedNodes.getAttachedContainers().toList().map { it.resourceList() }
+    override fun toResourceList(): ResourceList {
+        val all = attachedNodes.getAttachedContainers().toList().map { it.toResourceList() }
         val final = ResourceList()
         all.forEach { final.addAll(it) }
         return final
     }
 
-    override fun typeList() = attachedNodes.getAttachedContainers().flatMap { it.typeList() }.toSet()
-
     override fun contains(resource: ResourceType, quantity: Int) = attachedNodes.getAttachedContainers().sumBy { it.getQuantity(resource) } >= quantity
 
     override fun getQuantity(resource: ResourceType) = attachedNodes.getAttachedContainers().sumBy { it.getQuantity(resource) }
 
-    open fun onAddResource(type: ResourceType, quantity: Int, from: ResourceNode?) {
+    open fun onAddResources(resources: ResourceList, from: ResourceNode?) {
         if (from == null) throw java.lang.IllegalArgumentException("Resource networks cannot accept resources from non-ResourceNode sources. What a tounge-twister.")
-
-        val destination = findDestinationFor(type, quantity, { it.attachedNode != from })
-        // there must be a destination because otherwise nothing would be able to be added
-        destination!!
-        transferResources(type, quantity, from, destination)
+        for ((resource, quantity) in resources) {
+            val destination = findDestinationFor(resource, quantity, { it.attachedNode != from })
+            // there must be a destination because otherwise nothing would be able to be added
+            destination!!
+            transferResources(resource, quantity, from, destination)
+        }
     }
 
-    open fun onRemoveResource(type: ResourceType, quantity: Int, to: ResourceNode?) {}
+    open fun onRemoveResource(resources: ResourceList, to: ResourceNode?) {}
 
     /**
      * @return an internal node that is attached to a node able to receive the given resources, with preference for nodes
      * which are trying to force input, which passes the [onlyTo] predicate
      */
     protected open fun findDestinationFor(type: ResourceType, quantity: Int, onlyTo: (ResourceNode) -> Boolean = { true }): ResourceNode? {
-        val possibleSendToAttached = attachedNodes.getInputters(type, quantity, onlyTo)
-        val sendToAttached = possibleSendToAttached.getForceInputter(type, quantity)
-                ?: possibleSendToAttached.firstOrNull()
-        return sendToAttached?.attachedNode
+        val possibleSendToAttached = attachedNodes.getInputters(type, quantity, onlyTo, accountForExpected = true).map { it.attachedNode!! }
+        val possibleForceInputter = possibleSendToAttached.getForceInputter(type, quantity, onlyTo, accountForExpected = true)?.attachedNode
+        return possibleForceInputter ?: possibleSendToAttached.minBy { if (it in nodesSentTo) 1 else 0 }
     }
 
     /**
@@ -141,7 +144,7 @@ open class ResourceRoutingNetwork(category: ResourceCategory,
      */
     protected open fun findSourceFor(type: ResourceType, quantity: Int, onlyFrom: (ResourceNode) -> Boolean = { true }): ResourceNode? {
         val possibleTakeFromAttached = attachedNodes.getOutputters(type, quantity, onlyFrom)
-        val takeFromAttached = possibleTakeFromAttached.getForceOutputter(type, quantity)
+        val takeFromAttached = possibleTakeFromAttached.getForceOutputter(type, quantity, onlyFrom)
                 ?: possibleTakeFromAttached.firstOrNull()
         return takeFromAttached?.attachedNode
     }
@@ -165,8 +168,8 @@ open class ResourceRoutingNetwork(category: ResourceCategory,
                 Geometry.getOppositeAngle(node.dir),
                 node.resourceCategory,
                 this, level)
-        newNode.behavior.allowOut.setStatement(RoutingLanguageStatement.TRUE)
-        newNode.behavior.allowIn.setStatement(RoutingLanguageStatement.TRUE)
+        newNode.behavior.allowOut.setStatement(RoutingLanguage.TRUE)
+        newNode.behavior.allowIn.setStatement(RoutingLanguage.TRUE)
         newNode.network = this
         newNode.isInternalNetworkNode = true
         level.add(newNode)
@@ -189,7 +192,15 @@ open class ResourceRoutingNetwork(category: ResourceCategory,
      * @return true if the resources were able to be sent
      */
     protected open fun transferResources(type: ResourceType, quantity: Int, from: ResourceNode, to: ResourceNode): Boolean {
-        return to.input(type, quantity)
+        val success = to.input(type, quantity)
+        if (success) {
+            nodesSentTo.add(to)
+            if (nodesSentTo.size == attachedNodes.filter { it.behavior.allowIn.possible() != null }.size) {
+                // if we've sent to all internal nodes
+                nodesSentTo.clear()
+            }
+        }
+        return success
     }
 
     /**

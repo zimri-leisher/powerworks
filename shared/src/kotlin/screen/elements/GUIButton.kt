@@ -65,7 +65,6 @@ class GUIButton(parent: RootGUIElement,
         this.text.transparentToInteraction = true
         this.text.alignments.x = { (this.widthPixels - this.text.widthPixels) / 2 }
         this.text.alignments.y = { (this.heightPixels - this.text.heightPixels) / 2 }
-        // if it is the default specs
         if (!available) {
             localRenderParams.brightness = 0.9f
         }

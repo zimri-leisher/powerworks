@@ -9,6 +9,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import level.entity.Entity
 import main.toColor
+import misc.Geometry
 import misc.PixelCoord
 import misc.TileCoord
 import java.awt.Color
@@ -117,9 +118,8 @@ class FindPath(parent: BehaviorTree, val goalVar: Variable, val pathDestVar: Var
     }
 }
 
-data class Node(var parent: Node? = null, val pos: TileCoord, val goal: TileCoord, val entity: Entity) {
-    var g = 0.0
-    var h = 0.0
+data class Node(var parent: Node? = null, val pos: TileCoord, val goal: TileCoord, val entity: Entity, var g: Double) {
+    var h = heuristic(this)
     val f get() = g + h
     val xTile get() = pos.xTile
     val yTile get() = pos.yTile
@@ -132,7 +132,7 @@ data class Node(var parent: Node? = null, val pos: TileCoord, val goal: TileCoor
                 val nYTile = yTile + y
                 val nCoord = TileCoord(nXTile, nYTile)
                 if ((x != 0 || y != 0) && (nCoord == goal || entity.getCollisions(nXTile shl 4, nYTile shl 4, { it !is Entity }).isEmpty())) {
-                    neighbors.add(Node(null, nCoord, goal, entity))
+                    neighbors.add(Node(this, nCoord, goal, entity, this.g + Math.sqrt(Math.pow(xTile - nXTile.toDouble(), 2.0) + Math.pow(yTile - nYTile.toDouble(), 2.0))))
                 }
             }
         }
@@ -142,59 +142,56 @@ data class Node(var parent: Node? = null, val pos: TileCoord, val goal: TileCoor
 
 data class EntityPath(val goal: PixelCoord, val steps: List<PixelCoord>)
 
-fun moveCost(node1: Node, node2: Node): Double {
-    val dX = node1.xTile - node2.xTile.toDouble()
-    val dY = node1.yTile - node2.yTile.toDouble()
-    return Math.sqrt(Math.pow(dX, 2.0) + Math.pow(dY, 2.0))
-}
-
 fun heuristic(node: Node): Double {
     return Math.sqrt(Math.pow(node.xTile - node.goal.xTile.toDouble(), 2.0) + Math.pow(node.yTile - node.goal.yTile.toDouble(), 2.0))
 }
-
-fun costFromStart(node: Node): Double = if (node.parent == null) 0.0 else (node.parent!!.g + moveCost(node.parent!!, node))
 
 fun route(entity: Entity, goal: TileCoord): EntityPath? {
     if (entity.xTile == goal.xTile && entity.yTile == goal.yTile) {
         return EntityPath(goal.toPixel(), listOf())
     }
+
     var nodeCount = 0
     var step = 0
-    val startNode = Node(null, TileCoord(entity.xTile, entity.yTile), goal, entity)
-    var openNodes = mutableListOf(startNode)
+
+    val startNode = Node(null, TileCoord(entity.xTile, entity.yTile), goal, entity, 0.0)
+
+    val openNodes = mutableListOf(startNode)
     val closedNodes = mutableListOf<Node>()
+
     var finalNode: Node? = null
+
     if (FindPath.renderForEntity == entity && FindPath.goal != goal) {
         FindPath.goal = goal
         FindPath.currentStep = 0
     }
-    main@ while (openNodes.isNotEmpty()) {
+
+    while (openNodes.isNotEmpty()) {
         val nextNode = openNodes.minBy { it.f }!!
-        closedNodes.add(nextNode)
-        openNodes.remove(nextNode)
+        if (nextNode.pos == goal) {
+            finalNode = nextNode
+            break
+        }
         val neighbors = nextNode.getNeighbors()
-        nodeCount += neighbors.size
         for (child in neighbors) {
             if (closedNodes.any { it.pos == child.pos }) {
                 continue
             }
-            child.parent = nextNode
-            if (child.pos == goal) {
-                finalNode = child
-                break@main
-            }
-            child.g = costFromStart(child)
-            child.h = heuristic(child)
+            nodeCount++
             val alreadyThere = openNodes.firstOrNull { it.pos == child.pos }
             if (alreadyThere != null) {
                 if (alreadyThere.g < child.g) {
                     continue
-                } else {
-                    openNodes.remove(alreadyThere)
+                } else if(alreadyThere.g > child.g) {
+                    alreadyThere.g = child.g
+                    alreadyThere.parent = child.parent
                 }
+            } else {
+                openNodes.add(child)
             }
-            openNodes = (listOf(child) + openNodes).toMutableList()
         }
+        openNodes.remove(nextNode)
+        closedNodes.add(nextNode)
         step++
         if(step > 300) {
             // just to stop infinite searches
@@ -211,7 +208,6 @@ fun route(entity: Entity, goal: TileCoord): EntityPath? {
             }
         }
     }
-    //println("created $nodeCount")
     if (finalNode != null) {
         val usedNodes = backtrack(finalNode)
         val path = EntityPath(goal.toPixel(), usedNodes.map { it.pos.toPixel() })

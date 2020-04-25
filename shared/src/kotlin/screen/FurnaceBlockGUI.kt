@@ -1,14 +1,14 @@
 package screen
 
 import level.block.Block
-import level.block.FluidTankBlock
 import level.block.FurnaceBlock
+import main.toColor
 import screen.elements.*
 
 class FurnaceBlockGUI(block: FurnaceBlock) : AutoFormatGUIWindow("Furnace block gui", { 0 }, { 0 }, ScreenManager.Groups.INVENTORY), BlockGUI {
     var block = block
         private set
-    private val progressBar: GUIProgressBar
+    private val progressArrow: GUIProgressArrow
 
     private val queueDisplay: GUIResourceContainerDisplay
     private val fluidTankMeter: GUIFluidTankMeter
@@ -17,27 +17,24 @@ class FurnaceBlockGUI(block: FurnaceBlock) : AutoFormatGUIWindow("Furnace block 
         openAtMouse = true
 
         GUIText(group, this.name + " name text", 0, 0,
-                "Melting:")
+                "Furnace")
 
         queueDisplay = GUIResourceContainerDisplay(group, this.name + " smelting queue display",
                 { 0 }, { 0 }, 1, 1,
                 block.queue)
 
-        progressBar = GUIProgressBar(group, this.name + " smelting progress bar",
-                { 0 }, { 0 }, { group.widthPixels }, { GUIProgressBar.HEIGHT }, maxProgress = block.type.maxWork)
-
-        GUIText(group, this.name + " tank text", 0, 0,
-                "Output:")
-
-        fluidTankMeter = GUIFluidTankMeter(group, this.name + " tank meter", 0, 0, group.widthPixels, GUIFluidTankMeter.HEIGHT,
+        fluidTankMeter = GUIFluidTankMeter(group, this.name + " tank meter", 0, 0, 48, GUIFluidTankMeter.HEIGHT,
                 block.tank)
 
-        generateCloseButton(this.layer + 1)
-        generateDragGrip(this.layer + 1)
+        progressArrow = GUIProgressArrow(this, "Furnace block progress arrow", queueDisplay, 1, fluidTankMeter, 0, maxProgress = block.type.maxWork, backgroundColor = toColor(90, 90, 90))
+
+        generateCloseButton()
+        generateDragGrip()
     }
 
     override fun update() {
-        progressBar.currentProgress = block.currentWork
+        progressArrow.progressColor = block.currentlySmelting?.moltenForm?.color ?: progressArrow.progressColor
+        progressArrow.currentProgress = block.currentWork
     }
 
     override fun canDisplayBlock(newBlock: Block): Boolean {
@@ -45,14 +42,15 @@ class FurnaceBlockGUI(block: FurnaceBlock) : AutoFormatGUIWindow("Furnace block 
     }
 
     override fun displayBlock(newBlock: Block): Boolean {
-        if(!canDisplayBlock(newBlock)) {
+        if (!canDisplayBlock(newBlock)) {
             return false
         }
         block = newBlock as FurnaceBlock
         queueDisplay.container = newBlock.queue
         fluidTankMeter.tank = newBlock.tank
-        progressBar.maxProgress = newBlock.type.maxWork
-        progressBar.currentProgress = newBlock.currentWork
+        progressArrow.maxProgress = newBlock.type.maxWork
+        progressArrow.currentProgress = newBlock.currentWork
+        progressArrow.progressColor = newBlock.currentlySmelting?.moltenForm?.color ?: progressArrow.progressColor
         return true
     }
 

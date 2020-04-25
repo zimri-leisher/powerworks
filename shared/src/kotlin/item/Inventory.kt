@@ -22,64 +22,65 @@ class Inventory(
         }
 
     @Id(9)
-    val expected = ResourceList()
+    override val expected = ResourceList()
 
     @Id(10)
     override var totalQuantity = 0
         private set
 
-    override fun add(resource: ResourceType, quantity: Int, from: ResourceNode?, checkIfAble: Boolean): Boolean {
+    override fun add(resources: ResourceList, from: ResourceNode?, checkIfAble: Boolean): Boolean {
         if (checkIfAble)
-            if (!canAdd(resource, quantity))
+            if (!canAdd(resources))
                 return false
-        resource as ItemType
-        if (expected.contains(resource)) {
-            cancelExpectation(resource, quantity)
-        }
-        var amountLeftToAdd = quantity
-        // fill out unmaxed stacks
-        for (item in items) {
-            if (item != null && item.type == resource && item.quantity < resource.maxStack) {
-                if (amountLeftToAdd + item.quantity > resource.maxStack) {
-                    amountLeftToAdd -= resource.maxStack - item.quantity
-                    item.quantity = resource.maxStack
-                } else {
-                    item.quantity += amountLeftToAdd
+
+        cancelExpectation(resources)
+
+        list@ for ((resource, quantity) in resources) {
+            resource as ItemType
+            var amountLeftToAdd = quantity
+            // fill out unmaxed stacks
+            for (item in items) {
+                if (item != null && item.type == resource && item.quantity < resource.maxStack) {
+                    if (amountLeftToAdd + item.quantity > resource.maxStack) {
+                        amountLeftToAdd -= resource.maxStack - item.quantity
+                        item.quantity = resource.maxStack
+                    } else {
+                        item.quantity += amountLeftToAdd
+                        totalQuantity += quantity
+                        continue@list
+                    }
+                }
+            }
+            // create new stacks
+            for (i in items.indices) {
+                if (items[i] == null) {
+                    val q = Math.min(resource.maxStack, amountLeftToAdd)
+                    items[i] = Item(resource, q)
+                    amountLeftToAdd -= q
+                }
+                if (amountLeftToAdd <= 0) {
                     totalQuantity += quantity
-                    listeners.forEach { it.onContainerChange(this, resource, quantity) }
-                    return true
+                    continue@list
                 }
             }
         }
-        // create new stacks
-        for (i in items.indices) {
-            if (items[i] == null) {
-                val q = Math.min(resource.maxStack, amountLeftToAdd)
-                items[i] = Item(resource, q)
-                amountLeftToAdd -= q
-            }
-            if (amountLeftToAdd <= 0) {
-                totalQuantity += quantity
-                listeners.forEach { it.onContainerChange(this, resource, quantity) }
-                return true
-            }
-        }
+        listeners.forEach { it.onAddToContainer(this, resources) }
         return true
     }
 
-    override fun expect(resource: ResourceType, quantity: Int): Boolean {
-        if (!isRightType(resource))
+    override fun expect(resources: ResourceList): Boolean {
+        if (resources.keys.any { !isRightType(it) })
             return false
-        resource as ItemType
-        if (spaceFor(expected + (resource to quantity))) {
-            expected.add(resource, quantity)
+        if (spaceFor(expected + resources)) {
+            expected.addAll(resources)
             return true
         }
         return false
     }
 
-    override fun cancelExpectation(resource: ResourceType, quantity: Int): Boolean {
-        return expected.remove(resource, quantity)
+    override fun cancelExpectation(resources: ResourceList): Boolean {
+        val ret = expected.takeAll(resources)
+        return ret
     }
 
     override fun getQuantity(resource: ResourceType) = items.filter { it?.type == resource }.sumBy { it?.quantity ?: 0 }
@@ -94,55 +95,50 @@ class Inventory(
     }
 
     fun add(i: Item): Boolean {
-        return add(i.type, i.quantity, checkIfAble = true)
+        return add(i.type, i.quantity)
     }
 
     override fun spaceFor(list: ResourceList): Boolean {
-        var extraStacks = 0
+        var extraSlots = items.count { it == null }
         for ((resource, quantity) in list) {
-            if (!isRightType(resource)) {
-                return false
-            }
             resource as ItemType
-            var capacity = 0
-            for (i in items.indices) {
+            // the extra space on existing stacks of this type
+            val extraSpace = items.filter { it?.type == resource && it.quantity != resource.maxStack }.sumBy { resource.maxStack - it!!.quantity }
+            if (extraSpace < quantity) {
+                // if we can't fit all we want to add in existing stacks
+                // we need to use up a new slot for each stack we want to add
+                extraSlots -= Math.ceil((quantity - extraSpace) / resource.maxStack.toDouble()).toInt()
+                if(extraSlots < 0) {
+                    return false
+                }
+            }
+        }
+        return true
+    }
+
+    override fun remove(resources: ResourceList, to: ResourceNode?, checkIfAble: Boolean): Boolean {
+        if (checkIfAble)
+            if (!canRemove(resources))
+                return false
+        list@ for ((resource, quantity) in resources) {
+            var amountLeftToRemove = quantity
+            for (i in items.indices.reversed()) {
                 val item = items[i]
-                if (item != null) {
-                    if (item.type == resource) {
-                        capacity += resource.maxStack - item.quantity
+                if (item != null && item.type == resource) {
+                    val prevQ = item.quantity
+                    item.quantity = Math.max(item.quantity - amountLeftToRemove, 0)
+                    if (item.quantity <= 0) {
+                        items[i] = null
+                    }
+                    amountLeftToRemove -= prevQ - item.quantity
+                    if (amountLeftToRemove <= 0) {
+                        totalQuantity -= quantity
+                        continue@list
                     }
                 }
             }
-            if (capacity < quantity) {
-                val remaining = quantity - capacity
-                extraStacks += Math.ceil(remaining.toDouble() / resource.maxStack).toInt()
-            }
         }
-        return items.sumBy { if (it == null) 1 else 0 } >= extraStacks
-    }
-
-    override fun remove(resource: ResourceType, quantity: Int, to: ResourceNode?, checkIfAble: Boolean): Boolean {
-        if (checkIfAble)
-            if (!canRemove(resource, quantity))
-                return false
-        var amountLeftToRemove = quantity
-        for (i in items.indices.reversed()) {
-            val item = items[i]
-            if (item != null && item.type == resource) {
-                val prevQ = item.quantity
-                item.quantity = Math.max(item.quantity - amountLeftToRemove, 0)
-                if (item.quantity <= 0) {
-                    items[i] = null
-                }
-                amountLeftToRemove -= prevQ - item.quantity
-                if (amountLeftToRemove <= 0) {
-                    totalQuantity -= quantity
-                    listeners.forEach { it.onContainerChange(this, resource, -quantity) }
-                    return true
-                }
-            }
-        }
-        // not going to throw an exception here. Once past the checkIfAble, we assume that we are going to succeed blindly
+        listeners.forEach { it.onRemoveFromContainer(this, resources) }
         return true
     }
 
@@ -167,7 +163,7 @@ class Inventory(
         return true
     }
 
-    override fun resourceList(): ResourceList {
+    override fun toResourceList(): ResourceList {
         val map = mutableMapOf<ResourceType, Int>()
         for (item in items) {
             if (item != null) {
@@ -181,8 +177,6 @@ class Inventory(
         }
         return ResourceList(map)
     }
-
-    override fun typeList() = items.mapNotNull { it?.type }.toSet()
 
     /**
      * Inclusive, goes to the end of items from this index

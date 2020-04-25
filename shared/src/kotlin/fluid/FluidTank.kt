@@ -22,18 +22,21 @@ class FluidTank(
     var expectedFluidType: FluidType? = null
     var expectedAmount = 0
 
+    override val expected get() = if(expectedFluidType == null) ResourceList() else ResourceList(expectedFluidType!! to expectedAmount)
+
     override val totalQuantity: Int
         get() = currentAmount
 
-    override fun add(resource: ResourceType, quantity: Int, from: ResourceNode?, checkIfAble: Boolean): Boolean {
+    override fun add(resources: ResourceList, from: ResourceNode?, checkIfAble: Boolean): Boolean {
         if (checkIfAble)
-            if (!canAdd(resource, quantity))
+            if (!canAdd(resources))
                 return false
-        resource as FluidType
-        if (currentFluidType == null)
-            currentFluidType = resource
-        currentAmount += quantity
-        listeners.forEach { it.onContainerChange(this, resource, quantity) }
+        list@for((resource, quantity) in resources) {
+            if (currentFluidType == null)
+                currentFluidType = resource as FluidType
+            currentAmount += quantity
+        }
+        listeners.forEach { it.onAddToContainer(this, resources) }
         return true
     }
 
@@ -41,34 +44,36 @@ class FluidTank(
         if (list.size != 1) {
             return false
         }
-        val resource = list[0]!!.first
-        val quantity = list[0]!!.second
+        val resource = list[0]!!.key
+        val quantity = list[0]!!.value
         return currentFluidType == null || (resource == currentFluidType && currentAmount + quantity <= maxAmount)
     }
 
-    override fun remove(resource: ResourceType, quantity: Int, to: ResourceNode?, checkIfAble: Boolean): Boolean {
+    override fun remove(resources: ResourceList, to: ResourceNode?, checkIfAble: Boolean): Boolean {
         if (checkIfAble)
-            if (!canRemove(resource, quantity))
+            if (!canRemove(resources))
                 return false
+        val (resource, quantity) = resources[0]!!
         currentAmount -= quantity
         if (currentAmount == 0)
             currentFluidType = null
-        listeners.forEach { it.onContainerChange(this, resource, -quantity) }
+        listeners.forEach { it.onRemoveFromContainer(this, resources) }
         return true
     }
 
-    override fun expect(resource: ResourceType, quantity: Int): Boolean {
-        if (canAdd(resource, expectedAmount + quantity)) {
-            expectedFluidType = resource as FluidType
-            expectedAmount += quantity
-            return true
+    override fun expect(resources: ResourceList): Boolean {
+        val currentExpected = if(expectedFluidType == null) resources else resources + ResourceList(expectedFluidType!! to expectedAmount)
+        if(!canAdd(currentExpected)) {
+            return false
         }
-        return false
+        expectedFluidType = resources[0]!!.key as FluidType
+        expectedAmount += resources[0]!!.value
+        return true
     }
 
-    override fun cancelExpectation(resource: ResourceType, quantity: Int): Boolean {
-        if (resource == expectedFluidType && expectedAmount != 0) {
-            expectedAmount = Math.max(0, expectedAmount - quantity)
+    override fun cancelExpectation(resources: ResourceList): Boolean {
+        if (resources[0]?.key == expectedFluidType && expectedAmount != 0) {
+            expectedAmount = Math.max(0, expectedAmount - resources[0]!!.value)
             return true
         }
         return false
@@ -78,8 +83,8 @@ class FluidTank(
         if (list.size != 1) {
             return false
         }
-        val resource = list[0]!!.first
-        val quantity = list[0]!!.second
+        val resource = list[0]!!.key
+        val quantity = list[0]!!.value
         return currentFluidType == resource && quantity <= currentAmount
     }
 
@@ -91,9 +96,6 @@ class FluidTank(
 
     override fun copy(): ResourceContainer {
         val ret = FluidTank(maxAmount)
-        ret.typeRule = typeRule
-        ret.additionRule = additionRule
-        ret.removalRule = removalRule
         ret.currentFluidType = currentFluidType
         ret.currentAmount = currentAmount
         return ret
@@ -105,8 +107,5 @@ class FluidTank(
         return 0
     }
 
-    override fun resourceList() = if (currentFluidType == null || currentAmount == 0) ResourceList() else ResourceList(currentFluidType!! to currentAmount)
-
-    override fun typeList() = if (currentFluidType == null || currentAmount == 0) emptySet() else setOf(currentFluidType!!)
-
+    override fun toResourceList() = if (currentFluidType == null || currentAmount == 0) ResourceList() else ResourceList(currentFluidType!! to currentAmount)
 }

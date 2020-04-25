@@ -1,10 +1,10 @@
 package resource
 
 interface ResourceContainerChangeListener {
-    /**
-     * @param quantity the amount of resources added or removed. Negative means removed, positive means added
-     */
-    fun onContainerChange(container: ResourceContainer, resource: ResourceType, quantity: Int)
+
+    fun onAddToContainer(container: ResourceContainer, resources: ResourceList)
+
+    fun onRemoveFromContainer(container: ResourceContainer, resources: ResourceList)
 
     fun onContainerClear(container: ResourceContainer)
 }

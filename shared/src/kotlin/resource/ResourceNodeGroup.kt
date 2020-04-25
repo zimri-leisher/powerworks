@@ -28,8 +28,8 @@ fun ResourceNodeGroup.getAttachedNodes() = map { it.attachedNode }.distinct()
  * Set to false if you know they do or don't care if they don't
  * @return a [ResourceNodeGroup] of nodes that are able to input the given resource type with the given quantity while matching the onlyTo predicate
  */
-fun ResourceNodeGroup.getInputters(type: ResourceType, quantity: Int = 1, onlyTo: (ResourceNode) -> Boolean = { true }, mustHaveSpace: Boolean = true) =
-        filter { onlyTo(it) && it.canInput(type, quantity, mustHaveSpace) }
+fun ResourceNodeGroup.getInputters(type: ResourceType, quantity: Int = 1, onlyTo: (ResourceNode) -> Boolean = { true }, mustHaveSpace: Boolean = true, accountForExpected: Boolean = false) =
+        filter { onlyTo(it) && it.canInput(type, quantity, mustHaveSpace, accountForExpected) }
 
 /**
  * @param onlyTo a predicate for which nodes are considered as options
@@ -66,8 +66,8 @@ fun ResourceNodeGroup.getForceOutputter(type: ResourceType, quantity: Int = 1, o
  * Set to false if you know it does or don't care if it doesn't
  * @return the first node that is able to, and trying to force input the given resource type that has the given quantity and matches the onlyTo predicate
  */
-fun ResourceNodeGroup.getForceInputter(type: ResourceType, quantity: Int = 1, onlyTo: (ResourceNode) -> Boolean = { true }, mustHaveSpace: Boolean = true) =
-        firstOrNull { onlyTo(it) && it.behavior.forceIn.check(type) && it.canInput(type, quantity, mustHaveSpace) }
+fun ResourceNodeGroup.getForceInputter(type: ResourceType, quantity: Int = 1, onlyTo: (ResourceNode) -> Boolean = { true }, mustHaveSpace: Boolean = true, accountForExpected: Boolean = false) =
+        firstOrNull { onlyTo(it) && it.behavior.forceIn.check(type) && it.canInput(type, quantity, mustHaveSpace, accountForExpected) }
 
 /**
  * @param onlyTo a predicate for which nodes are considered as options
@@ -75,9 +75,9 @@ fun ResourceNodeGroup.getForceInputter(type: ResourceType, quantity: Int = 1, on
  * Set to false if you know it does or don't care if it doesn't
  * @return the first node that can input the given resource type with the given quantity while matching the onlyTo predicate
  */
-fun ResourceNodeGroup.getInputter(type: ResourceType, quantity: Int = 1, onlyTo: (ResourceNode) -> Boolean = { true }, mustHaveSpace: Boolean = true) =
+fun ResourceNodeGroup.getInputter(type: ResourceType, quantity: Int = 1, onlyTo: (ResourceNode) -> Boolean = { true }, mustHaveSpace: Boolean = true, accountForExpected: Boolean = false) =
         firstOrNull {
-            onlyTo(it) && it.canInput(type, quantity, mustHaveSpace)
+            onlyTo(it) && it.canInput(type, quantity, mustHaveSpace, accountForExpected)
         }
 
 /**

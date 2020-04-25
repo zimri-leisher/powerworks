@@ -39,6 +39,7 @@ class LevelViewWindow(name: String,
         controls.add(generateCloseButton(2))
         controls.add(nameText)
         controls.forEach { it.matchParentOpening = false; it.open = false }
+        allowEscapeToClose = false
     }
 
     override fun handleControlPress(p: ControlPress) {

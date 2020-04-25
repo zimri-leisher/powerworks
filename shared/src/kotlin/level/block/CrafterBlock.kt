@@ -1,11 +1,11 @@
 package level.block
 
 import com.badlogic.gdx.Input
-import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag
 import crafting.Crafter
 import crafting.Recipe
 import io.PressType
 import resource.*
+import routing.script.RoutingLanguage
 import serialization.Id
 
 open class CrafterBlock(override val type: CrafterBlockType, xTile: Int, yTile: Int, rotation: Int) : MachineBlock(type, xTile, yTile, rotation), ResourceContainerChangeListener, Crafter {
@@ -15,20 +15,49 @@ open class CrafterBlock(override val type: CrafterBlockType, xTile: Int, yTile: 
 
     @Id(23)
     var recipe: Recipe? = null
+        set(value) {
+            if (field != value) {
+                field = value
+                inputNodes.forEach { it.behavior.allowIn.clearStatements(); it.behavior.forceIn.clearStatements() }
+                if (field != null) {
+                    val canCraft = enoughToCraft()
+                    if (on && !canCraft) {
+                        currentWork = 0
+                    }
+                    on = canCraft
+                    inputNodes.forEach {
+                        it.behavior.allowIn.addStatement(RoutingLanguage.TRUE, field!!.consume.keys.toList())
+                        for ((type, quantity) in field!!.consume) {
+                            it.behavior.forceIn.addStatement(RoutingLanguage.parse("quantity of $type < $quantity"), listOf(type))
+                        }
+                    }
+                } else {
+                    inputNodes.forEach { it.behavior.allowIn.addStatement(RoutingLanguage.FALSE); it.behavior.forceIn.addStatement(RoutingLanguage.FALSE) }
+                }
+            }
+        }
 
     @Id(24)
     private var currentResources = ResourceList()
 
+    @Id(25)
+    private val inputNodes = nodes.filter { it.behavior.allowIn.possible()?.isEmpty() == true } // nodes that start out allowing all types out
+
+    @Id(26)
+    private val inputContainer = inputNodes.getAttachedContainers().first()
+
+    @Id(27)
+    private val outputContainer = nodes.filter { it.behavior.allowOut.possible()?.isEmpty() == true }.getAttachedContainers().first()
+
     init {
-        containers.forEach { container ->
-            container.listeners.add(this)
-            // only allow input if there is a recipe
-            container.typeRule = { recipe != null }
-            // only allow addition if there are less ingredients than required
-            container.additionRule = { resource, quantity ->
-                resource in recipe!!.consume && getQuantity(resource) + quantity <= recipe!!.consume.getQuantity(resource)
-            }
-        }
+        inputContainer.listeners.add(this)
+    }
+
+    override fun onAddToLevel() {
+        super.onAddToLevel()
+        // we want to edit their behavior so that they only accept what a recipe needs. We'll set it to false for now because there is no recipe, and update
+        // the behavior when we change the recipe
+        inputNodes.forEach { it.behavior.allowIn.setStatement(RoutingLanguage.FALSE) }
     }
 
     override fun onContainerClear(container: ResourceContainer) {
@@ -37,12 +66,8 @@ open class CrafterBlock(override val type: CrafterBlockType, xTile: Int, yTile: 
         currentResources = containers.toResourceList()
     }
 
-    override fun onContainerChange(container: ResourceContainer, resource: ResourceType, quantity: Int) {
-        if (quantity < 0) {
-            currentResources.remove(resource, -quantity)
-        } else if (quantity > 0) {
-            currentResources.add(resource, quantity)
-        }
+    override fun onAddToContainer(container: ResourceContainer, resources: ResourceList) {
+        currentResources.addAll(resources)
         val canCraft = enoughToCraft()
         if (on && !canCraft) {
             currentWork = 0
@@ -50,12 +75,24 @@ open class CrafterBlock(override val type: CrafterBlockType, xTile: Int, yTile: 
         on = canCraft
     }
 
-    private fun enoughToCraft() = recipe?.consume?.enoughIn(currentResources) == true
+    override fun onRemoveFromContainer(container: ResourceContainer, resources: ResourceList) {
+        currentResources.takeAll(resources)
+        val canCraft = enoughToCraft()
+        if (on && !canCraft) {
+            currentWork = 0
+        }
+        on = canCraft
+    }
+
+    private fun enoughToCraft() = currentResources.containsAtLeastAll(recipe!!.consume)
 
     override fun onFinishWork() {
-        if (nodes.canOutput(recipe!!.produce, mustContainEnough = false)) {
-            if (containers.take(recipe!!.consume)) {
-                nodes.output(recipe!!.produce, mustContainEnough = false)
+        if (outputContainer.spaceFor(recipe!!.produce) && inputContainer.contains(recipe!!.consume)) {
+            for ((type, quantity) in recipe!!.consume) {
+                inputContainer.remove(type, quantity)
+            }
+            for ((type, quantity) in recipe!!.produce) {
+                outputContainer.add(type, quantity)
             }
         } else {
             currentWork = type.maxWork
@@ -63,7 +100,7 @@ open class CrafterBlock(override val type: CrafterBlockType, xTile: Int, yTile: 
     }
 
     override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
-        if (type == PressType.PRESSED && button == Input.Buttons.LEFT) {
+        if (type == PressType.PRESSED && !shift && !ctrl && !alt && button == Input.Buttons.LEFT) {
             this.type.guiPool!!.toggle(this)
         }
     }

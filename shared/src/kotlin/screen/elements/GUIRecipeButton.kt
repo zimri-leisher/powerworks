@@ -36,6 +36,10 @@ class GUIRecipeButton(parent: RootGUIElement,
         }
     }
 
+    override fun onClose() {
+        waitingForRecipeSelection = false
+    }
+
     override fun update() {
         if (waitingForRecipeSelection) {
             val selected = RecipeSelectorGUI.selected
@@ -49,6 +53,9 @@ class GUIRecipeButton(parent: RootGUIElement,
 
     override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
         if (type == PressType.PRESSED && button == Input.Buttons.LEFT) {
+            if(RecipeSelectorGUI.open) {
+                RecipeSelectorGUI.open = false
+            }
             RecipeSelectorGUI.open = true
             RecipeSelectorGUI.available = available
             RecipeSelectorGUI.windowGroup.bringToTop(RecipeSelectorGUI)

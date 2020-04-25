@@ -2,20 +2,17 @@ package network
 
 import com.esotericsoftware.kryonet.Client
 import com.esotericsoftware.kryonet.Connection
-import com.esotericsoftware.kryonet.KryoSerialization
 import com.esotericsoftware.kryonet.Listener
 import data.ConcurrentlyModifiableMutableMap
-import level.tube.TubeBlock
 import main.Game
 import main.SERVER_IP
 import main.SERVER_PORT
 import network.packet.*
-import java.lang.ClassCastException
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.thread
 
-object ClientNetworkManager : PacketHandler{
+object ClientNetworkManager : PacketHandler {
     private lateinit var kryoClient: KryoClient
 
     private lateinit var connection: Connection
@@ -41,11 +38,11 @@ object ClientNetworkManager : PacketHandler{
             kryoClient.setName(Game.USER.id.toString())
             kryoClient.addListener(object : Listener() {
                 override fun received(connection: Connection, data: Any?) {
-                    if(connection.id == ClientNetworkManager.connection.id) {
+                    if (connection.id == ClientNetworkManager.connection.id) {
                         if (data is Packet) {
                             data.connectionId = connection.id
                             receivedPackets.add(data)
-                        } else if(data is List<*>) {
+                        } else if (data is List<*>) {
                             try {
                                 data as Collection<Packet>
                                 data.forEach { it.connectionId = connection.id }
@@ -79,7 +76,7 @@ object ClientNetworkManager : PacketHandler{
     }
 
     override fun handleServerPacket(packet: Packet) {
-        if(packet is ServerHandshakePacket) {
+        if (packet is ServerHandshakePacket) {
             val receivedTime = System.currentTimeMillis()
             println("Connected to server at $SERVER_IP:$SERVER_PORT in ${packet.serverTimestamp - packet.clientTimestamp} ms")
             println("Latency: ${receivedTime - packet.serverTimestamp} ms")
@@ -111,7 +108,7 @@ object ClientNetworkManager : PacketHandler{
             }
             receivedPackets.clear()
         }
-        if(hasConnected()) {
+        if (hasConnected()) {
             synchronized(outwardPackets) {
                 for (packet in outwardPackets) {
                     kryoClient.sendTCP(packet)

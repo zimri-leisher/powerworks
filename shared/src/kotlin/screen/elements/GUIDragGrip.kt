@@ -2,7 +2,7 @@ package screen.elements
 
 import graphics.Image
 import graphics.Renderer
-import io.PressType
+import io.*
 import main.Game
 import main.heightPixels
 import main.widthPixels
@@ -15,13 +15,18 @@ class GUIDragGrip(parent: RootGUIElement,
                   layer: Int = parent.layer + 1,
                   val actOn: GUIWindow,
                   var keepInsideWindowBounds: Boolean = true) :
-        GUIElement(parent, name, xAlignment, yAlignment, { WIDTH }, { HEIGHT }, open, layer) {
+        GUIElement(parent, name, xAlignment, yAlignment, { WIDTH }, { HEIGHT }, open, layer),
+ControlPressHandler{
 
     var dragging = false
     var startingXPixel = 0
     var startingYPixel = 0
     var actOnStartingXPixel = 0
     var actOnStartingYPixel = 0
+
+    init {
+        InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.Group.INTERACTION)
+    }
 
     override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
         if (type == PressType.PRESSED) {
@@ -68,8 +73,14 @@ class GUIDragGrip(parent: RootGUIElement,
         }
     }
 
+    override fun handleControlPress(p: ControlPress) {
+        if(p.pressType == PressType.RELEASED && dragging) {
+            dragging = false
+        }
+    }
     companion object {
         val WIDTH = Image.GUI.DRAG_GRIP.widthPixels
         val HEIGHT = Image.GUI.DRAG_GRIP.heightPixels
+
     }
 }

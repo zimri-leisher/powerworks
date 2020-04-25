@@ -1,6 +1,6 @@
 package screen.elements
 
-import java.awt.Rectangle
+import com.badlogic.gdx.math.Rectangle
 
 /**
  * A group of GUIElements. When a child is added, removed or has a dimension change, the dimensions of this get updated
@@ -9,16 +9,9 @@ import java.awt.Rectangle
 open class GUIGroup(parent: RootGUIElement,
                     name: String,
                     xAlignment: Alignment, yAlignment: Alignment,
-                    initializerList: GUIGroup.() -> Unit = {},
                     open: Boolean = false,
                     layer: Int = parent.layer + 1) :
         GUIElement(parent, name, xAlignment, yAlignment, { 0 }, { 0 }, open, layer) {
-
-    var print = true
-
-    init {
-        initializerList()
-    }
 
     override fun onAddChild(child: GUIElement) {
         updateDimensions()
@@ -33,11 +26,15 @@ open class GUIGroup(parent: RootGUIElement,
     }
 
     fun updateDimensions() {
+        children.forEach { it.alignments.updateDimension() }
         val r = Rectangle()
-        children.forEach { r.add(Rectangle(it.alignments.x(), it.alignments.y(), it.alignments.width(), it.alignments.height())) }
-        val width = r.width
-        val height = r.height
-        alignments.width = { width }
-        alignments.height = { height }
+        for (child in children) {
+            r.merge(Rectangle(child.alignments.x().toFloat(), child.alignments.y().toFloat(), child.widthPixels.toFloat(), child.heightPixels.toFloat()))
+        }
+        r.merge(0f, 0f)
+        val thisWidth = r.width.toInt()
+        val thisHeight = r.height.toInt()
+        alignments.width = { thisWidth }
+        alignments.height = { thisHeight }
     }
 }

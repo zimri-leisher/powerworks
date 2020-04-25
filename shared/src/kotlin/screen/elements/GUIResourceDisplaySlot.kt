@@ -6,15 +6,17 @@ import resource.ResourceList
 import screen.mouse.Mouse
 import screen.mouse.Tooltips
 
-class GUIResourceDisplaySlot(parent: RootGUIElement, name: String, xPixel: Int, yPixel: Int, var list: ResourceList, var index: Int, open: Boolean = false, layer: Int = parent.layer + 1) :
+class GUIResourceDisplaySlot(parent: RootGUIElement, name: String, xPixel: Int, yPixel: Int, var list: ResourceList, var index: Int, var displayQuantity: Boolean = true, open: Boolean = false, layer: Int = parent.layer + 1) :
         GUIElement(parent, name, xPixel, yPixel, WIDTH, HEIGHT, open, layer) {
 
     override fun render() {
         val pair = list[index]
         Renderer.renderTexture(Image.GUI.RESOURCE_DISPLAY_SLOT, xPixel, yPixel)
         if (pair != null) {
-            pair.first.icon.render(xPixel, yPixel, WIDTH, HEIGHT, true)
-            Renderer.renderText(pair.second, xPixel, yPixel)
+            pair.key.icon.render(xPixel, yPixel, WIDTH, HEIGHT, true)
+            if(displayQuantity) {
+                Renderer.renderText(pair.value, xPixel, yPixel)
+            }
         }
     }
 
@@ -27,7 +29,7 @@ class GUIResourceDisplaySlot(parent: RootGUIElement, name: String, xPixel: Int, 
                 if (it is GUIResourceDisplaySlot) {
                     val pair = it.list[it.index]
                     if (pair != null)
-                        return@addScreenTooltipTemplate "${pair.first.name} * ${pair.second}"
+                        return@addScreenTooltipTemplate "${pair.key.name} * ${pair.value}"
                 }
                 return@addScreenTooltipTemplate null
             }, 0)

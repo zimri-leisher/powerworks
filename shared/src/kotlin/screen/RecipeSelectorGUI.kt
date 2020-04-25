@@ -31,7 +31,7 @@ object RecipeSelectorGUI : GUIWindow("Recipe selector", 20, 20, 100,
         override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
             if (isAvailable()) {
                 if (type == PressType.PRESSED && button == Input.Buttons.LEFT) {
-                    RecipeSelectorGUI.selected = recipeDisplay.recipe
+                    selected = recipeDisplay.recipe
                     recipeDisplay.background.localRenderParams.brightness = 0.9f
                     recipeDisplay.background.localRenderParams.rotation = 180f
                 } else if (type == PressType.RELEASED) {
@@ -40,7 +40,7 @@ object RecipeSelectorGUI : GUIWindow("Recipe selector", 20, 20, 100,
             }
         }
 
-        fun isAvailable() = RecipeSelectorGUI.available(recipe)
+        fun isAvailable() = available(recipe)
 
         override fun render() {
             if (!isAvailable()) {
@@ -113,22 +113,29 @@ object RecipeSelectorGUI : GUIWindow("Recipe selector", 20, 20, 100,
                     Image.Misc.ERROR
                 }
                 tagTexts.add(TextManager.parseTags("<size=40><img=${ResourceManager.getIdentifier(textureRegion)}>"))
-                val tabHeight = Numbers.ceil(category.size.toFloat() / RECIPES_PER_ROW) * GUIRecipeDisplay.HEIGHT + 4
 
-                GUIGroup(this, "recipe category background $i", { 0 }, { RecipeSelectorGUI.heightPixels - GUITabList.TAB_HEIGHT - tabHeight }, open = i == 0).apply {
+                GUIGroup(this, "recipe category background $i", { 0 }, { 0 }, open = i == 0).apply {
 
-                    matchParentOpening = false
-                    for ((recipeIndex, recipe) in category.iterator().withIndex()) {
+                    GUIDefaultTextureRectangle(this, "Recipe $category display reverse background", { 2 }, { 2 }, {this@RecipeSelectorGUI.widthPixels - 4}, {this@RecipeSelectorGUI.heightPixels - GUITabList.TAB_HEIGHT - 4}, open = open).apply {
+                        localRenderParams.brightness = 0.7f
+                        localRenderParams.rotation = 180f
+                        for ((recipeIndex, recipe) in category.iterator().withIndex()) {
 
-                        GUIRecipeSelectionButton(this, "Recipe $recipeIndex display", { (recipeIndex % RECIPES_PER_ROW) * GUIRecipeDisplay.WIDTH + 2 }, { heightPixels - ((recipeIndex / RECIPES_PER_ROW) + 1) * GUIRecipeDisplay.HEIGHT }, recipe, open)
+                            GUIRecipeSelectionButton(this, "Recipe $recipeIndex display",
+                                    { (recipeIndex % RECIPES_PER_ROW) * GUIRecipeDisplay.WIDTH + 2 },
+                                    { heightPixels - 2 - ((recipeIndex / RECIPES_PER_ROW) + 1) * GUIRecipeDisplay.HEIGHT },
+                                    recipe, open)
+
+                        }
 
                     }
+                    matchParentOpening = false
                     tabList.add(this)
                 }
                 i++
             }
             tabs = tabList.toTypedArray()
-            GUITabList(this, "tab list of recipe categories", { 0 }, { RecipeSelectorGUI.heightPixels - GUITabList.TAB_HEIGHT },
+            GUITabList(this, "tab list of recipe categories", { 2 }, { RecipeSelectorGUI.heightPixels - GUITabList.TAB_HEIGHT - 2 },
                     tagTexts.mapIndexed { index, taggedText -> Tab("$index", taggedText, RecipeCategory.values()[index].categoryName) }.toTypedArray(), { id ->
                 val index = id.toInt()
                 tabs.forEachIndexed { i, tab -> tab.open = i == index }

@@ -4,6 +4,7 @@ import resource.ResourceCategory
 import resource.ResourceType
 import fluid.MoltenOreFluidType
 import graphics.*
+import item.weapon.WeaponItemType
 import level.block.*
 import level.entity.EntityType
 import level.entity.robot.RobotType
@@ -27,7 +28,9 @@ open class ItemType(initializer: ItemType.() -> Unit = {}) : ResourceType() {
     companion object {
         val ALL = mutableListOf<ItemType>()
 
-        val ERROR = ItemType()
+        val ERROR = ItemType {
+            hidden = true
+        }
 
         init {
             EntityItemType
@@ -35,6 +38,7 @@ open class ItemType(initializer: ItemType.() -> Unit = {}) : ResourceType() {
             BlockItemType
             OreItemType
             IngotItemType
+            WeaponItemType
         }
 
         val CIRCUIT = ItemType {
@@ -61,10 +65,6 @@ open class EntityItemType(initializer: EntityItemType.() -> Unit = {}) : ItemTyp
 
     companion object {
         val ALL = mutableListOf<EntityItemType>()
-    }
-
-    companion object {
-
     }
 }
 
@@ -119,9 +119,9 @@ class BlockItemType(initializer: BlockItemType.() -> Unit): ItemType() {
         }
 
         val TUBE = BlockItemType {
-            name = "Item Transport Tube"
+            name = "Item Pipe"
             icon = Texture(Image.Item.TUBE)
-            placedBlock = BlockType.TUBE
+            placedBlock = PipeBlockType.ITEM_PIPE
             maxStack = 50
         }
 
@@ -152,9 +152,9 @@ class BlockItemType(initializer: BlockItemType.() -> Unit): ItemType() {
         }
 
         val PIPE = BlockItemType {
-            name = "Fluid Transport Pipe"
+            name = "Fluid Pipe"
             icon = Texture(Image.Item.PIPE)
-            placedBlock = BlockType.PIPE
+            placedBlock = PipeBlockType.FLUID_PIPE
             maxStack = 50
         }
 

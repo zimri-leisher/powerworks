@@ -48,6 +48,8 @@ object Image {
     }
 
     object GUI {
+        val MINUS = ResourceManager.getAtlasTexture("gui/minus")
+        val PLUS = ResourceManager.getAtlasTexture("gui/plus")
         val VIEW_SELECTOR_CLOSE_BUTTON = ResourceManager.getAtlasTexture("gui/view_selector_close")
         val VIEW_SELECTOR_CLOSE_BUTTON_HIGHLIGHT = ResourceManager.getAtlasTexture("gui/view_selector_close_highlight")
         val VIEW_SELECTOR_OPEN_BUTTON = ResourceManager.getAtlasTexture("gui/view_selector_open")

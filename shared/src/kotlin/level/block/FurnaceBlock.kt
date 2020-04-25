@@ -1,15 +1,11 @@
 package level.block
 
+import com.badlogic.gdx.Input
 import fluid.FluidTank
 import io.*
 import item.Inventory
 import item.OreItemType
-import resource.ResourceContainer
-import resource.ResourceContainerChangeListener
-import resource.ResourceType
-import screen.FurnaceBlockGUI
-import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag
-import resource.output
+import resource.*
 import serialization.Id
 
 class FurnaceBlock(type: MachineBlockType<FurnaceBlock>, xTile: Int, yTile: Int, rotation: Int = 0) : MachineBlock(type, xTile, yTile, rotation), ResourceContainerChangeListener {
@@ -33,11 +29,19 @@ class FurnaceBlock(type: MachineBlockType<FurnaceBlock>, xTile: Int, yTile: Int,
         }
     }
 
-    override fun onContainerChange(container: ResourceContainer, resource: ResourceType, quantity: Int) {
+    override fun onAddToContainer(container: ResourceContainer, resources: ResourceList) {
         if (container == queue) {
-            resource as OreItemType
             if (currentlySmelting == null) {
-                currentlySmelting = resource
+                currentlySmelting = resources[0]!!.key as OreItemType
+                on = true
+            }
+        }
+    }
+
+    override fun onRemoveFromContainer(container: ResourceContainer, resources: ResourceList) {
+        if (container == queue) {
+            if (currentlySmelting == null) {
+                currentlySmelting = resources[0]!!.key as OreItemType
                 on = true
             }
         }
@@ -52,16 +56,15 @@ class FurnaceBlock(type: MachineBlockType<FurnaceBlock>, xTile: Int, yTile: Int,
     }
 
     override fun onFinishWork() {
-        if (tank.canAdd(currentlySmelting!!.moltenForm, 1)) {
+        if (tank.canAdd(ResourceList(currentlySmelting!!.moltenForm to 1))) {
             if (queue.remove(currentlySmelting!!, 1)) {
                 tank.add(currentlySmelting!!.moltenForm, 1, checkIfAble = false)
-                nodes.output(currentlySmelting!!.moltenForm, 1)
             }
         }
         if (queue.totalQuantity > 0) {
             // start smelting another item
             if (queue.getQuantity(currentlySmelting!!) == 0) {
-                currentlySmelting = queue.resourceList()[0]!!.first as OreItemType
+                currentlySmelting = queue.toResourceList()[0]!!.key as OreItemType
             }
             // do nothing, old item still has quantity
         } else {
@@ -71,7 +74,7 @@ class FurnaceBlock(type: MachineBlockType<FurnaceBlock>, xTile: Int, yTile: Int,
     }
 
     override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
-        if (type == PressType.RELEASED) {
+        if (type == PressType.RELEASED && !shift && !ctrl && !alt && button == Input.Buttons.LEFT) {
             this.type.guiPool!!.toggle(this)
         }
     }

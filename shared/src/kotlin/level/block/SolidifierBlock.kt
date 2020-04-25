@@ -1,14 +1,13 @@
 package level.block
 
-import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag
+import com.badlogic.gdx.Input
 import fluid.FluidTank
 import fluid.MoltenOreFluidType
 import io.PressType
 import item.Inventory
 import resource.ResourceContainer
 import resource.ResourceContainerChangeListener
-import resource.ResourceType
-import resource.output
+import resource.ResourceList
 import serialization.Id
 
 class SolidifierBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(MachineBlockType.SOLIDIFIER, xTile, yTile, rotation), ResourceContainerChangeListener {
@@ -26,7 +25,19 @@ class SolidifierBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(Mach
         containers.forEach { it.listeners.add(this) }
     }
 
-    override fun onContainerChange(container: ResourceContainer, resource: ResourceType, quantity: Int) {
+    override fun onAddToContainer(container: ResourceContainer, resources: ResourceList) {
+        if (container == tank) {
+            if (tank.currentAmount > 0) {
+                currentlySolidifying = tank.currentFluidType!! as MoltenOreFluidType
+                on = true
+            } else {
+                on = false
+                currentWork = 0
+            }
+        }
+    }
+
+    override fun onRemoveFromContainer(container: ResourceContainer, resources: ResourceList) {
         if (container == tank) {
             if (tank.currentAmount > 0) {
                 currentlySolidifying = tank.currentFluidType!! as MoltenOreFluidType
@@ -47,20 +58,17 @@ class SolidifierBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(Mach
     }
 
     override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
-        if (type == PressType.RELEASED) {
+        if (type == PressType.RELEASED && !shift && !ctrl && !alt && button == Input.Buttons.LEFT) {
             this.type.guiPool!!.toggle(this)
         }
     }
 
     override fun onFinishWork() {
         if (out.add(currentlySolidifying!!.ingot)) {
-            if (tank.remove(currentlySolidifying!!)) {
-                nodes.output(currentlySolidifying!!.ingot, 1)
-            }
+            tank.remove(currentlySolidifying!!)
         }
         if (tank.currentAmount == 0) {
             currentlySolidifying = null
         }
     }
-
 }

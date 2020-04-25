@@ -32,7 +32,7 @@ object Tooltips {
 
     fun update() {
         var s: String? = null
-        val screen = ScreenManager.getHighestElement(Mouse.xPixel, Mouse.yPixel, ScreenManager.getHighestWindow(Mouse.xPixel, Mouse.yPixel, { !it.transparentToInteraction }), { !it.transparentToInteraction })
+        val screen = ScreenManager.elementUnderMouse
         if (screen != null) {
             for (v in screenTooltipTemplates.values) {
                 for (f in v) {

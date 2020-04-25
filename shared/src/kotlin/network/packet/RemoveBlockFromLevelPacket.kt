@@ -17,9 +17,11 @@ class RemoveBlockFromLevelPacket(
         val xTile: Int,
         @Id(3)
         val yTile: Int,
+        @Id(6)
+        val blockId: UUID,
         @Id(5)
         val levelId: UUID,
         @Id(4)
         val owner: Player) : Packet(PacketType.REMOVE_BLOCK) {
-    private constructor() : this(0, 0, UUID.randomUUID(), Player(User(UUID.randomUUID(), ""), LevelManager.EMPTY_LEVEL.id, UUID.randomUUID()))
+    private constructor() : this(0, 0, UUID.randomUUID(), UUID.randomUUID(), Player(User(UUID.randomUUID(), ""), LevelManager.EMPTY_LEVEL.id, UUID.randomUUID()))
 }

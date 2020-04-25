@@ -18,6 +18,7 @@ class State(val activate: () -> Unit, val deactivate: () -> Unit) {
 
         val INGAME = State({
             IngameGUI.open = true
+            TestGUI
             // the mouse listens to changes so that if there are no more items of the selected type in the main inventory, then it will switch the type to null
             PlayerManager.localPlayer.brainRobot.inventory.listeners.add(Mouse)
 

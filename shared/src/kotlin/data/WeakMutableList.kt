@@ -53,6 +53,22 @@ class WeakMutableList<T> {
         }
     }
 
+    fun forEachBackwards(f: (T) -> Unit) {
+        check()
+        list.reversed().forEach {
+            // prevents GC from removing while iterating
+            val o = it.get()
+            try {
+                o!!
+            } catch (e: KotlinNullPointerException) {
+                println("GC'd 1")
+            }
+            if (o != null) {
+                f(o)
+            }
+        }
+    }
+
     fun clear() {
         list.clear()
     }
@@ -122,7 +138,7 @@ class WeakMutableList<T> {
 
     fun stream(): Stream<T> {
         check()
-        return list.map { it.get()!! }.stream() as Stream<T>
+        return list.map { it.get()!! }.stream()
     }
 
     fun filter(f: (T) -> Boolean) = list.filter { if (it.get() == null) false else f(it.get()!!) }.map { it.get()!! }
@@ -134,11 +150,11 @@ class WeakMutableList<T> {
 
     fun <R : Comparable<R>> sortedBy(f: (T) -> R?): List<T> {
         check()
-        return list.filter { it.get() != null }.map { it.get()!! }.sortedBy(f)
+        return list.map { it.get()!! }.sortedBy(f)
     }
 
     fun joinToString(): String {
         check()
-        return list.joinToString { it.get().toString() + ", " }
+        return list.joinToString { it.get().toString() }
     }
 }

@@ -1,5 +1,8 @@
 package screen.elements
 
+import com.badlogic.gdx.math.Rectangle
+import misc.PixelCoord
+
 /**
  * A group of GUIElements. The dimensions of this are automatically adjusted to be the smallest square surrounding
  * all child elements. When a child is added, it is given a position determined by the separation, width, height and
@@ -11,93 +14,95 @@ class AutoFormatGUIGroup(parent: RootGUIElement,
                          open: Boolean = false,
                          layer: Int = parent.layer + 1,
                          /**
-                          * Run inside the closure of this AutoFormatGUIGroup. This is handy to create elements at
-                          * instantiation-time, meaning that all dimensions will be correct from the start. There is no
-                          * difference between creating an element in here with this as its parent and creating an
-                          * element outside of here but adding that element to this's child list (or setting that
-                          * element's parent to this)
+                          * The amount to separate each element
                           */
-                         initializerList: (GUIGroup.() -> Unit)? = null,
-                         /**
-                          * The amount to separate each element on the x axis - note, this doesn't include width or height
-                          */
-                         var xPixelSeparation: Int = 0,
-                         /**
-                          * The amount to separate each element on the y axis - note, this doesn't include width or height
-                          */
-                         var yPixelSeparation: Int = 0,
-                         /**
-                          * Whether or not to separate elements by width (in addition to the xPixelSeparation)
-                          */
-                         var accountForChildWidth: Boolean = false,
-                         /**
-                          * Whether or not to separate elements by height (in addition to the yPixelSeparation)
-                          */
-                         var accountForChildHeight: Boolean = false,
-                         /**
-                          * Whether to reverse the x axis. Elements will be added starting from the right and going in
-                          * the negative to the left
-                          */
-                         var flipX: Boolean = false,
-                         /**
-                          * Whether to reverse the y axis. Elements will be added starting from the top and going in
-                          * the negative to the bottom
-                          */
-                         var flipY: Boolean = false) :
-        GUIGroup(parent, name, xAlignment, yAlignment, {}, open, layer) {
+                         var padding: Int = 2,
+                         var dir: Int = 0) :
+        GUIGroup(parent, name, xAlignment, yAlignment, open, layer) {
 
+    private val originalXAlignment = xAlignment
+    private val originalYAlignment = yAlignment
+
+    /**
+     * A group of GUIElements. The dimensions of this are automatically adjusted to be the smallest square surrounding
+     * all child elements
+     */
     constructor(parent: RootGUIElement,
                 name: String,
-                relXPixel: Int, relYPixel: Int,
+                xPixel: Int, yPixel: Int,
                 open: Boolean = false,
                 layer: Int = parent.layer + 1,
-                initializerList: (GUIGroup.() -> Unit)? = null,
-                xPixelSeparation: Int = 0,
-                yPixelSeparation: Int = 0,
-                accountForChildWidth: Boolean = false,
-                accountForChildHeight: Boolean = false,
-                flipX: Boolean = false,
-                flipY: Boolean = false) :
-            this(parent, name, { relXPixel }, { relYPixel }, open, layer, initializerList, xPixelSeparation, yPixelSeparation, accountForChildWidth, accountForChildHeight, flipX, flipY)
+                spacing: Int = 2,
+                dir: Int = 0) :
+            this(parent, name, { xPixel }, { yPixel }, open, layer, spacing, dir)
 
     private var nextXPixel = 0
     private var nextYPixel = 0
 
-    init {
-        if (initializerList != null)
-            initializerList()
-        updateDimensions()
+    fun reformat() {
+        nextXPixel = 0
+        nextYPixel = 0
+        val positions = mutableListOf<Pair<GUIElement, PixelCoord>>()
+        for (child in children) {
+            val childX = getChildX(child)
+            val childY = getChildY(child)
+            positions.add(child to PixelCoord(childX, childY))
+        }
+        val r = Rectangle()
+        for ((child, position) in positions) {
+            r.merge(Rectangle(position.xPixel.toFloat(), position.yPixel.toFloat(), child.widthPixels.toFloat(), child.heightPixels.toFloat()))
+        }
+        val thisX = r.x.toInt()
+        val thisY = r.y.toInt()
+        val thisWidth = r.width.toInt()
+        val thisHeight = r.height.toInt()
+        alignments.x = { originalXAlignment() + thisX }
+        alignments.y = { originalYAlignment() + thisY }
+        alignments.width = { thisWidth }
+        alignments.height = { thisHeight }
+        for ((child, position) in positions) {
+            val childX = position.xPixel
+            val childY = position.yPixel
+            child.alignments.x = { childX + if (dir == 3) thisWidth else 0 }
+            child.alignments.y = { childY + if (dir == 2) thisHeight else 0 }
+        }
     }
 
-    /**
-     * Removes all children. The next child will go to the default position
-     */
-    fun clear() {
-        children.clear()
-        nextXPixel = 0
-        nextXPixel = 0
+    private fun getChildX(child: GUIElement): Int {
+        var x = nextXPixel
+        if (dir == 1) {
+            // elements should be added on the right of this element
+            nextXPixel += padding + child.widthPixels
+        } else if (dir == 3) {
+            // elements should be added on the left of this element
+            x -= child.widthPixels
+            nextXPixel -= padding + child.widthPixels
+        }
+        return x
+    }
+
+    private fun getChildY(child: GUIElement): Int {
+        var y = nextYPixel
+        if (dir == 0) {
+            // elements should be added on the top of this element
+            nextYPixel += padding + child.heightPixels
+        } else if (dir == 2) {
+            // elements should be added on the bottom of this element
+            y -= child.heightPixels
+            nextYPixel -= padding + child.heightPixels
+        }
+        return y
+    }
+
+    override fun onRemoveChild(child: GUIElement) {
+        reformat()
     }
 
     override fun onAddChild(child: GUIElement) {
-        var x = nextXPixel
-        var y = nextYPixel
-        val xDiff = xPixelSeparation + if(accountForChildWidth) child.widthPixels else 0
-        val yDiff = yPixelSeparation + if(accountForChildHeight) child.heightPixels else 0
-        if(flipY) {
-            y -= child.heightPixels
-            nextYPixel -= yDiff
-        } else {
-            nextYPixel += yDiff
-        }
-        if(flipX) {
-            x -= child.widthPixels
-            nextXPixel -= xDiff
-        } else {
-            nextXPixel += xDiff
-        }
-        child.alignments.x = { x }
-        child.alignments.y = { y }
-        child.layer = layer + 1
-        super.onAddChild(child)
+        reformat()
+    }
+
+    override fun onChildDimensionChange(child: GUIElement) {
+        reformat()
     }
 }

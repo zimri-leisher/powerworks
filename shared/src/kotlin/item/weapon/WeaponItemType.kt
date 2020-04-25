@@ -16,9 +16,7 @@ class WeaponItemType(initializer: WeaponItemType.() -> Unit = {}) : ItemType() {
 
         val ALL = mutableListOf<WeaponItemType>()
 
-        val MACHINE_GUN = WeaponItemType {
-
-        }
+        val ERROR = WeaponItemType { hidden = true }
     }
 }
 

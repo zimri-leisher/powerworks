@@ -1,25 +1,27 @@
 package level.block
 
 import audio.Sound
+import com.badlogic.gdx.graphics.g2d.TextureRegion
 import crafting.Crafter
 import fluid.FluidTank
-import fluid.MoltenOreFluidType
 import graphics.Animation
 import graphics.Image
+import graphics.ImageCollection
 import graphics.Texture
 import item.Inventory
-import item.OreItemType
 import level.Hitbox
 import level.LevelManager
 import level.LevelObjectTextures
 import level.LevelObjectType
+import level.block.BlockType.BlockNodesTemplate
+import level.pipe.FluidPipeBlock
+import level.pipe.ItemPipeBlock
 import level.pipe.PipeBlock
-import level.tube.TubeBlock
+import level.pipe.PipeState
 import misc.Geometry
 import misc.Geometry.rotate
-import resource.ResourceContainer
-import resource.ResourceNode
-import routing.RoutingLanguage
+import resource.*
+import routing.script.RoutingLanguage
 import screen.*
 import screen.elements.BlockGUI
 
@@ -51,18 +53,22 @@ open class BlockType<T : Block>(initializer: BlockType<T>.() -> Unit = {}) : Lev
      * The user-friendly name of this [BlockType]. This will be displayed in in inventories and other GUIs
      */
     var name = "Error"
+
     /**
      * How many tiles wide the base of this [BlockType] will be
      */
     var widthTiles = 1
+
     /**
      * How many tiles high the base of this [BlockType] will be
      */
     var heightTiles = 1
+
     /**
      * The template that defines [ResourceNode] placement and [ResourceContainer]s. See [BlockNodesTemplate]
      */
     var nodesTemplate = BlockNodesTemplate()
+
     /**
      * The [BlockGUIPool] for [Block]s of this [BlockType]. This is meant for [Block]s which have a single, standard
      * [BlockGUI] across all instances, and is usually accessed in the [Block.onInteractOn] method (e.g. `guiPool.open(this)`)
@@ -93,18 +99,6 @@ open class BlockType<T : Block>(initializer: BlockType<T>.() -> Unit = {}) : Lev
             FluidTankBlockType
             ChestBlockType
         }
-
-        val TUBE = BlockType<TubeBlock> {
-            name = "Tube"
-            textures = LevelObjectTextures(Image.Block.TUBE_2_WAY_VERTICAL)
-            instantiate = { xPixel, yPixel, _ -> TubeBlock(xPixel shr 4, yPixel shr 4) }
-        }
-
-        val PIPE = BlockType<PipeBlock> {
-            name = "Pipe"
-            textures = LevelObjectTextures(Image.Block.PIPE_2_WAY_VERTICAL)
-            instantiate = { xPixel, yPixel, _ -> PipeBlock(xPixel shr 4, yPixel shr 4) }
-        }
     }
 
     /**
@@ -132,15 +126,15 @@ open class BlockType<T : Block>(initializer: BlockType<T>.() -> Unit = {}) : Lev
         fun node(xOffset: Int = 0, yOffset: Int = 0,
                  dir: Int = 0,
                  attachedContainer: ResourceContainer,
-                 allowIn: String = "false", allowOut: String = "false",
-                 forceIn: String = "false", forceOut: String = "false",
+                 allowIn: String = "false", allowInTypes: List<ResourceType> = listOf(), allowOut: String = "false", allowOutTypes: List<ResourceType> = listOf(),
+                 forceIn: String = "false", forceInTypes: List<ResourceType> = listOf(), forceOut: String = "false", forceOutTypes: List<ResourceType> = listOf(),
                  allowBehaviorModification: Boolean = false): ResourceNode {
             val r = ResourceNode(xOffset, yOffset, dir, attachedContainer.resourceCategory, attachedContainer, LevelManager.EMPTY_LEVEL)
             with(r.behavior) {
-                this.allowIn.setStatement(RoutingLanguage.parse(allowIn), null)
-                this.allowOut.setStatement(RoutingLanguage.parse(allowOut), null)
-                this.forceIn.setStatement(RoutingLanguage.parse(forceIn), null)
-                this.forceOut.setStatement(RoutingLanguage.parse(forceOut), null)
+                this.allowIn.setStatement(RoutingLanguage.parse(allowIn), allowInTypes)
+                this.allowOut.setStatement(RoutingLanguage.parse(allowOut), allowOutTypes)
+                this.forceIn.setStatement(RoutingLanguage.parse(forceIn), forceInTypes)
+                this.forceOut.setStatement(RoutingLanguage.parse(forceOut), forceOutTypes)
                 this.allowModification = allowBehaviorModification
             }
             if (containers.none { it === attachedContainer }) {
@@ -169,6 +163,66 @@ open class BlockType<T : Block>(initializer: BlockType<T>.() -> Unit = {}) : Lev
     }
 }
 
+class PipeBlockType<T : PipeBlock>(initializer: PipeBlockType<T>.() -> Unit = {}) : BlockType<T>() {
+    var images: Map<PipeState, TextureRegion> = mapOf()
+    var category = ResourceCategory.ITEM
+
+    init {
+        initializer()
+    }
+
+    companion object {
+        val FLUID_PIPE = PipeBlockType<FluidPipeBlock> {
+            category = ResourceCategory.FLUID
+            name = "Pipe"
+            textures = LevelObjectTextures(Image.Block.PIPE_2_WAY_VERTICAL)
+            instantiate = { xPixel, yPixel, _ -> FluidPipeBlock(xPixel shr 4, yPixel shr 4) }
+            images = mapOf(
+                    PipeState.ALL to Image.Block.PIPE_4_WAY,
+                    PipeState.NONE to Image.Block.PIPE_2_WAY_VERTICAL,
+                    PipeState.UP_DOWN to Image.Block.PIPE_2_WAY_VERTICAL,
+                    PipeState.DOWN_ONLY to Image.Block.PIPE_2_WAY_VERTICAL,
+                    PipeState.UP_ONLY to Image.Block.PIPE_2_WAY_VERTICAL,
+                    PipeState.RIGHT_LEFT to Image.Block.PIPE_2_WAY_HORIZONTAL,
+                    PipeState.LEFT_ONLY to Image.Block.PIPE_2_WAY_HORIZONTAL,
+                    PipeState.RIGHT_ONLY to Image.Block.PIPE_2_WAY_HORIZONTAL,
+                    PipeState.UP_RIGHT to ImageCollection.PIPE_CORNER[0],
+                    PipeState.RIGHT_DOWN to ImageCollection.PIPE_CORNER[1],
+                    PipeState.DOWN_LEFT to ImageCollection.PIPE_CORNER[2],
+                    PipeState.LEFT_UP to ImageCollection.PIPE_CORNER[3],
+                    PipeState.LEFT_UP_RIGHT to ImageCollection.PIPE_3_WAY[0],
+                    PipeState.UP_RIGHT_DOWN to ImageCollection.PIPE_3_WAY[1],
+                    PipeState.RIGHT_DOWN_LEFT to ImageCollection.PIPE_3_WAY[2],
+                    PipeState.DOWN_LEFT_UP to ImageCollection.PIPE_3_WAY[3]
+            )
+        }
+        val ITEM_PIPE = PipeBlockType<ItemPipeBlock> {
+            category = ResourceCategory.ITEM
+            name = "Tube"
+            textures = LevelObjectTextures(Image.Block.TUBE_2_WAY_VERTICAL)
+            instantiate = { xPixel, yPixel, _ -> ItemPipeBlock(xPixel shr 4, yPixel shr 4) }
+            images = mapOf(
+                    PipeState.ALL to Image.Block.TUBE_4_WAY,
+                    PipeState.NONE to Image.Block.TUBE_2_WAY_VERTICAL,
+                    PipeState.UP_DOWN to Image.Block.TUBE_2_WAY_VERTICAL,
+                    PipeState.DOWN_ONLY to Image.Block.TUBE_2_WAY_VERTICAL,
+                    PipeState.UP_ONLY to Image.Block.TUBE_2_WAY_VERTICAL,
+                    PipeState.RIGHT_LEFT to Image.Block.TUBE_2_WAY_HORIZONTAL,
+                    PipeState.LEFT_ONLY to Image.Block.TUBE_2_WAY_HORIZONTAL,
+                    PipeState.RIGHT_ONLY to Image.Block.TUBE_2_WAY_HORIZONTAL,
+                    PipeState.UP_RIGHT to ImageCollection.TUBE_CORNER[0],
+                    PipeState.RIGHT_DOWN to ImageCollection.TUBE_CORNER[1],
+                    PipeState.DOWN_LEFT to ImageCollection.TUBE_CORNER[2],
+                    PipeState.LEFT_UP to ImageCollection.TUBE_CORNER[3],
+                    PipeState.LEFT_UP_RIGHT to ImageCollection.TUBE_3_WAY[0],
+                    PipeState.UP_RIGHT_DOWN to ImageCollection.TUBE_3_WAY[1],
+                    PipeState.RIGHT_DOWN_LEFT to ImageCollection.TUBE_3_WAY[2],
+                    PipeState.DOWN_LEFT_UP to ImageCollection.TUBE_3_WAY[3]
+            )
+        }
+    }
+}
+
 /**
  * A [BlockType] for [MachineBlock]s. Defines various things related to work speed and efficiency, as well as [Sound]s to
  * be played
@@ -178,18 +232,22 @@ open class MachineBlockType<T : MachineBlock>(initializer: MachineBlockType<T>.(
      * Power consumption multiplier, inverse of this
      */
     var efficiency = 1f
+
     /**
      * [maxWork] multiplier, inverse of this
      */
     var speed = 1f
+
     /**
      * The amount of game ticks this takes to complete. Can be modified by [speed]
      */
     var maxWork = 200
+
     /**
      * Whether [MachineBlock]s of this type should automatically start work once they finish
      */
     var loop = true
+
     /**
      * The sound this plays while on
      */
@@ -215,10 +273,11 @@ open class MachineBlockType<T : MachineBlock>(initializer: MachineBlockType<T>.(
             heightTiles = 2
             hitbox = Hitbox.TILE2X2
             defaultOn = true
-            val internalInventory = Inventory(1, 1)
             nodeTemplate {
-                node(0, 1, 0, internalInventory, allowOut = "true", forceOut = "total quantity > 0")
+                val internalInventory = Inventory(1, 1)
+                node(0, 1, 0, internalInventory, allowOut = "true", forceOut = "true")
             }
+            guiPool = BlockGUIPool({ MinerBlockGUI(it as MinerBlock) }, 3)
         }
 
         val FURNACE = MachineBlockType<FurnaceBlock> {
@@ -232,9 +291,8 @@ open class MachineBlockType<T : MachineBlock>(initializer: MachineBlockType<T>.(
             nodeTemplate {
                 val internalInventory = Inventory(1, 1)
                 val internalTank = FluidTank(1)
-                internalInventory.typeRule = { it is OreItemType }
-                node(0, 0, 0, internalInventory, "true", "false")
-                node(1, 0, 2, internalTank, "false", "true").outputToLevel = false
+                node(0, 0, 0, internalInventory, "true", ResourceTypeGroup.ORE_ITEMS.types, "false")
+                node(1, 0, 2, internalTank, allowIn = "false", allowOut = "true", forceOut = "true").outputToLevel = false
             }
             guiPool = BlockGUIPool({ FurnaceBlockGUI(it as FurnaceBlock) }, 3)
         }
@@ -248,10 +306,10 @@ open class MachineBlockType<T : MachineBlock>(initializer: MachineBlockType<T>.(
             hitbox = Hitbox.TILE2X2
             nodeTemplate {
                 val tank = FluidTank(10)
-                tank.typeRule = { it is MoltenOreFluidType }
+                // TODO only allow in molten ore fluid types
                 val out = Inventory(1, 1)
-                node(1, 1, 0, tank, "true", "false")
-                node(1, 0, 2, out, "false", "true")
+                node(1, 1, 0, tank, "true", ResourceTypeGroup.MOLTEN_ORE_FLUIDS.types, "false")
+                node(1, 0, 2, out, "false", allowOut = "true", forceOut = "true")
             }
             guiPool = BlockGUIPool({ SolidifierBlockGUI(it as SolidifierBlock) }, 3)
         }
@@ -279,9 +337,10 @@ class CrafterBlockType(initializer: CrafterBlockType.() -> Unit) : MachineBlockT
             instantiate = { xPixel, yPixel, rotation -> CrafterBlock(this, xPixel shr 4, yPixel shr 4, rotation) }
             textures = LevelObjectTextures(Image.Block.CRAFTER)
             nodeTemplate {
-                val internalInventory = Inventory(internalStorageSize, 1)
-                node(0, 1, 0, internalInventory, "true", "false")
-                node(1, 0, 2, internalInventory, "false", "true")
+                val input = Inventory(internalStorageSize, 1)
+                node(0, 1, 0, input, "true", allowOut = "false")
+                val output = Inventory(1, 1)
+                node(1, 0, 2, output, "false", allowOut = "true", forceOut = "true")
             }
         }
 
@@ -295,9 +354,10 @@ class CrafterBlockType(initializer: CrafterBlockType.() -> Unit) : MachineBlockT
             hitbox = Hitbox.TILE3X3
             nodeTemplate {
                 val internalInventory = Inventory(1, 1)
-                node(0, 1, 3, internalInventory, "true", "false")
-                node(2, 1, 1, internalInventory, "true", "false")
-                node(1, 0, 2, internalInventory, "false", "true")
+                node(0, 1, 3, internalInventory, "true", allowOut = "false")
+                node(2, 1, 1, internalInventory, "true", allowOut = "false")
+                val output = Inventory(1, 1)
+                node(1, 0, 2, output, "false", allowOut = "true", forceOut = "true")
             }
         }
     }
@@ -312,10 +372,10 @@ class FluidTankBlockType(initializer: FluidTankBlockType.() -> Unit) : BlockType
         instantiate = { xPixel, yPixel, rotation -> FluidTankBlock(this, xPixel shr 4, yPixel shr 4, rotation) }
         nodeTemplate {
             val storage = FluidTank(maxAmount)
-            node(0, 0, 0, storage, "true", "true")
-            node(0, 0, 1, storage, "true", "true")
-            node(0, 0, 2, storage, "true", "true")
-            node(0, 0, 3, storage, "true", "true")
+            node(0, 0, 0, storage, "true", allowOut = "true")
+            node(0, 0, 1, storage, "true", allowOut = "true")
+            node(0, 0, 2, storage, "true", allowOut = "true")
+            node(0, 0, 3, storage, "true", allowOut = "true")
         }
         guiPool = BlockGUIPool({ FluidTankBlockGUI(it as FluidTankBlock) }, 3)
         initializer()
@@ -341,10 +401,10 @@ class ChestBlockType(initializer: ChestBlockType.() -> Unit) : BlockType<ChestBl
         initializer()
         nodeTemplate {
             val storage = Inventory(invWidth, invHeight)
-            node(0, 0, 0, storage, "true", "true")
-            node(0, 0, 1, storage, "true", "true")
-            node(0, 0, 2, storage, "true", "true")
-            node(0, 0, 3, storage, "true", "true")
+            node(0, 0, 0, storage, "true", allowOut = "true")
+            node(0, 0, 1, storage, "true", allowOut = "true")
+            node(0, 0, 2, storage, "true", allowOut = "true")
+            node(0, 0, 3, storage, "true", allowOut = "true")
         }
     }
 

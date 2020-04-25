@@ -10,6 +10,7 @@ import java.awt.FontFormatException
 import java.awt.Rectangle
 import java.io.IOException
 import java.util.regex.Pattern
+import kotlin.math.ceil
 
 data class FontInfo(val font: BitmapFont, val charWidth: Float, val charHeight: Float)
 
@@ -127,7 +128,7 @@ object TextManager {
             return Rectangle(0, 0)
         val lines = s.split("\n")
         val f = getFont(size, style)
-        return Rectangle((lines.maxBy { it.length }!!.length * f.charWidth).toInt(), (lines.size * f.charHeight).toInt())
+        return Rectangle(ceil(lines.maxBy { it.length }!!.length * f.charWidth).toInt(), ceil(lines.size * f.charHeight).toInt())
     }
 
     /**
@@ -138,7 +139,7 @@ object TextManager {
             return 0
         val lines = s.split("\n")
         val f = getFont(size, style)
-        return (lines.maxBy { it.length }!!.length * f.charWidth).toInt()
+        return ceil((lines.maxBy { it.length }!!.length * f.charWidth)).toInt()
     }
 
     /**
@@ -149,7 +150,7 @@ object TextManager {
             return 0
         val lines = s.split("\n")
         val f = getFont(size, style)
-        return (lines.size * f.charHeight).toInt()
+        return ceil((lines.size * f.charHeight)).toInt()
     }
 
     /**

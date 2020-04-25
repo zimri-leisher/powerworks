@@ -12,7 +12,7 @@ class ChestBlock(override val type: ChestBlockType, xTile: Int, yTile: Int, rota
     val inv = containers.filterIsInstance<Inventory>().first()
 
     override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
-        if (type == PressType.PRESSED) {
+        if (type == PressType.PRESSED && !shift && !ctrl && !alt) {
             if (button == Input.Buttons.LEFT) {
                 this.type.guiPool!!.toggle(this)
             }

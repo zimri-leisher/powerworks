@@ -19,12 +19,11 @@ open class AutoFormatGUIWindow(name: String,
                                open: Boolean = false, layer: Int = 0) :
         GUIWindow(name, xAlignment, yAlignment, { 0 }, { 0 }, windowGroup, open, layer) {
 
-    val group = AutoFormatGUIGroup(this, name + " element group", { WIDTH_PADDING }, { 0 }, open, flipY = true, yPixelSeparation = 2, accountForChildHeight = true)
+    val group = AutoFormatGUIGroup(this, name + " element group", { EDGE_PADDING }, { heightPixels - EDGE_PADDING }, open, dir = 2)
 
     init {
-        group.alignments.y = { group.alignments.height() + HEIGHT_PADDING }
-        alignments.width = { group.alignments.width() + 2 * WIDTH_PADDING }
-        alignments.height = { group.alignments.height() + 2 * HEIGHT_PADDING }
+        alignments.width = { group.alignments.width() + 2 * EDGE_PADDING}
+        alignments.height = { group.alignments.height() + 2 * EDGE_PADDING }
     }
 
     /**
@@ -45,5 +44,6 @@ open class AutoFormatGUIWindow(name: String,
     companion object {
         const val WIDTH_PADDING = 2
         const val HEIGHT_PADDING = 2
+        const val EDGE_PADDING = 2
     }
 }

@@ -22,22 +22,27 @@ interface ControlPressHandler {
 enum class ControlPressHandlerType {
     /** Anywhere, no matter what */
     GLOBAL,
+
     /**
      * Only when this [LevelObject] is under the mouse
      */
     LEVEL_THIS_UNDER_MOUSE,
+
     /**
      * Only when this [LevelObject] is the last [LevelObject] interacted with (clicked on)
      */
     LEVEL_THIS_LAST_SELECTED,
+
     /**
      * Only when there is a [Level] under the mouse
      */
     LEVEL_ANY_UNDER_MOUSE,
+
     /**
      * Only when the [State.CURRENT_STATE] is [State.INGAME]
      */
     INGAME_ONLY,
+
     /**
      * Only this object on the screen
      */
@@ -177,7 +182,11 @@ object InputManager : InputProcessor {
 
         for ((k, v) in inputEvent) {
             if ((v == PressType.PRESSED && !inputsBeingPressed.contains(k)) || (v == PressType.RELEASED && inputsBeingPressed.contains(k))) {
-                map.translate(k, inputsBeingPressed.filter { it != k }.toMutableSet()).forEach { queue.add(ControlPress(it, v)); if (v == PressType.RELEASED) queue.remove(ControlPress(it, PressType.REPEAT)) }
+                map.translate(k, inputsBeingPressed.filter { it != k }.toMutableSet()).forEach {
+                    queue.add(ControlPress(it, v))
+                    if (v == PressType.RELEASED)
+                        queue.remove(ControlPress(it, PressType.REPEAT))
+                }
                 //println(k + ", " + inputsBeingPressed.filter { it != k }.toMutableSet())
                 if (v == PressType.PRESSED &&
                         /* Wheels are not able to be held down, so you shouldn't add them to the repeat */

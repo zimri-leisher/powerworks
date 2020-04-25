@@ -8,7 +8,7 @@ object Numbers {
 
     fun sign(num: Int) = if(num < 0) -1 else if(num == 0) 0 else 1
 
-    fun ceil(f: Float) = f.toInt() + 1
+    fun ceil(f: Float) = kotlin.math.ceil(f).toInt()
 
     fun square(i: Int) = i * i
 

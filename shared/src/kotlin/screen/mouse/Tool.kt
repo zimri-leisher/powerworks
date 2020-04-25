@@ -10,7 +10,6 @@ import graphics.TextureRenderParams
 import io.*
 import item.BlockItemType
 import item.EntityItemType
-import item.Inventory
 import level.*
 import level.block.Block
 import level.block.BlockType
@@ -20,11 +19,12 @@ import main.Game
 import main.toColor
 import misc.Geometry
 import network.ClientNetworkManager
-import network.packet.*
+import network.packet.Packet
+import network.packet.PacketHandler
+import network.packet.PacketType
+import network.packet.RemoveBlockFromLevelPacket
 import player.PlayerManager
-import resource.ResourceCategory
 import resource.ResourceNode
-import routing.RoutingLanguage
 import screen.RoutingLanguageEditor
 import screen.ScreenManager
 import screen.elements.GUIMouseOverRegion
@@ -55,7 +55,7 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
 
     init {
         ALL.add(this)
-        if(!Game.IS_SERVER) {
+        if (!Game.IS_SERVER) {
             InputManager.registerControlPressHandler(this, ControlPressHandlerType.LEVEL_ANY_UNDER_MOUSE, *use)
         }
     }
@@ -317,7 +317,7 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
                         rotation = (rotation + 1) % 4
                     }
                 }
-                if (type == PressType.RELEASED) {
+                if(type == PressType.RELEASED) {
                     if (control == Control.PLACE_BLOCK) {
                         if (canPlace) {
                             val blockType = this.type!!.placedBlock
@@ -339,6 +339,8 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
             }
 
             override fun update() {
+                if (LevelManager.levelUnderMouse == null)
+                    return
                 xTile = ((LevelManager.mouseLevelXPixel) shr 4) - type!!.placedBlock.widthTiles / 2
                 yTile = ((LevelManager.mouseLevelYPixel) shr 4) - type!!.placedBlock.heightTiles / 2
                 canPlace = LevelManager.levelUnderMouse!!.canAdd(type!!.placedBlock, xTile shl 4, yTile shl 4)
@@ -391,7 +393,7 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
             }
 
             override fun handleServerPacket(packet: Packet) {
-                if(packet is RemoveBlockFromLevelPacket) {
+                if (packet is RemoveBlockFromLevelPacket) {
                     // TODO
                 }
             }

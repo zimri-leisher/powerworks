@@ -23,7 +23,7 @@ annotation class Id(val id: Int)
  * To set a class type to use a serializer, input the serializer as an argument to any of the [Registration.register] methods.
  *
  * If [useDefaultConstructorInstantiation] is true, two things will happen. One,
- * the [onChangeType] method will find and cache an appropriate default [Constructor]s for the [type], and two, the [instantiate] method will
+ * the [onChangeType] method will find and cache an appropriate default [Constructor] for the [type], and two, the [instantiate] method will
  * use that default constructor to create new instances of the class when it is called. See the method specific documentation
  * for more details
  *
@@ -57,7 +57,7 @@ open class Serializer<R : Any>(var useDefaultConstructorInstantiation: Boolean =
      */
     open fun onChangeType() {
         if (useDefaultConstructorInstantiation) {
-            if(type.isInterface || Modifier.isAbstract(type.modifiers)) {
+            if (type.isInterface || Modifier.isAbstract(type.modifiers)) {
                 // default won't happen with either of these because for any instance of these the actual type will be something else
                 return
             }
@@ -182,7 +182,15 @@ open class Serializer<R : Any>(var useDefaultConstructorInstantiation: Boolean =
 
             val fields = getFields(type)
             val taggedFields = fields.filter { it.isAnnotationPresent(Id::class.java) }
-            cachedTaggedFields = taggedFields.map { TaggedField(it, it.getAnnotation(Id::class.java).id) }
+            val cachedTaggedFieldsTemp = mutableListOf<TaggedField>()
+            for(taggedField in taggedFields) {
+                val id = taggedField.getAnnotation(Id::class.java).id
+                if(cachedTaggedFields.any { it.id == id }) {
+                    throw RegistrationException("Two fields in class $type have the same id ($id)")
+                }
+                cachedTaggedFieldsTemp.add(TaggedField(taggedField, id))
+            }
+            cachedTaggedFields = cachedTaggedFieldsTemp
             if (cachedTaggedFields.isNotEmpty()) {
                 debugln("Found tagged fields:")
                 for (field in cachedTaggedFields) {
@@ -226,10 +234,10 @@ open class Serializer<R : Any>(var useDefaultConstructorInstantiation: Boolean =
         override fun read(newInstance: Any, input: Input) {
             newInstance as R
             val supposedSize = input.readInt()
-            if(supposedSize > cachedTaggedFields.size) {
+            if (supposedSize > cachedTaggedFields.size) {
                 // there were more but now there are less, that is ok, no cause for crashing, we just need to make sure that
                 // the stream ends up reading them all so that the next call to read doesn't read one of the parameters
-            } else if(supposedSize < cachedTaggedFields.size){
+            } else if (supposedSize < cachedTaggedFields.size) {
                 // we don't want this because that means there will be a tagged field in the class that won't get assigned a value
                 // i suppose this could be better handled by trying to create an instance of it with default constructor but that's just not a great idea
                 throw ReadException("Encountered a tagged field in $type that is supposed to have only $supposedSize tagged fields according to the file, but actually has ${cachedTaggedFields.size}")
@@ -237,7 +245,7 @@ open class Serializer<R : Any>(var useDefaultConstructorInstantiation: Boolean =
             for (i in 0 until supposedSize) {
                 val fieldId = input.readInt()
                 val field = cachedTaggedFields.firstOrNull { it.id == fieldId }?.field
-                if(field == null) {
+                if (field == null) {
                     // we found a field that exists in the file but not in our class
                     // read the next thing anyways so that we make a complete read of the object
                     debugln("Found a tagged field @Id($fieldId) in the file that does not exist in the class")
@@ -323,28 +331,28 @@ open class Serializer<R : Any>(var useDefaultConstructorInstantiation: Boolean =
             newInstance as R
             val supposedSize = input.readInt()
             debugln("Supposed number of fields: $supposedSize")
-            if(supposedSize < cachedFields.size) {
+            if (supposedSize < cachedFields.size) {
                 throw ReadException("Instance in file does not have enough fields to cover all of class $type ($supposedSize in file vs ${cachedFields.size} needed)")
-            } else if(supposedSize > cachedFields.size) {
+            } else if (supposedSize > cachedFields.size) {
                 // if it is bigger, just with Serializer.Tagged, no cause for crashing, we just need to make sure that
                 // this reads all the fields and doesn't leave the next one to be discovered by the next called of
                 // input.read
             }
             // collect all name/value pairs
             val nameToValue = mutableMapOf<String, Any?>()
-            for(i in 0 until supposedSize) {
+            for (i in 0 until supposedSize) {
                 val fieldName = input.readUTF()
                 val fieldValue = input.readUnknownNullable()
                 nameToValue.put(fieldName, fieldValue)
             }
             val missingField = cachedFields.firstOrNull { it.name !in nameToValue.keys }
-            if(missingField != null) {
+            if (missingField != null) {
                 // uh oh
                 throw ReadException("A field with name ${missingField.name} in $type was not in the file. File contains names: \n${nameToValue.keys.joinToString(separator = "\n")}")
             }
-            for((name, value) in nameToValue) {
+            for ((name, value) in nameToValue) {
                 val field = cachedFields.firstOrNull { it.name == name }
-                if(field == null) {
+                if (field == null) {
                     // the field existed in a previous version of the class but no longer does,
                     // that is ok because that just means it is no longer necessary
                     debugln("Found a field $name in the file that does not exist in the class $type")
@@ -370,6 +378,20 @@ open class Serializer<R : Any>(var useDefaultConstructorInstantiation: Boolean =
             }
         }
     }
+}
+
+class EmptyListSerializer : Serializer<Collection<Nothing>>() {
+
+    override fun write(obj: Any, output: Output) {
+    }
+
+    override fun instantiate(input: Input): Collection<Nothing> {
+        return emptyList()
+    }
+
+    override fun read(newInstance: Any, input: Input) {
+    }
+
 }
 
 /**
@@ -496,7 +518,8 @@ open class IDSerializer<R : Any>(val getAllPossibleValues: (type: Class<*>) -> L
 
     override fun instantiate(input: Input): R {
         val id = input.readUnknown()
-        return values.firstOrNull { getId(it as R) == id } as R? ?: throw ReadException("Encountered a $type with id $id in the file, but none exists in $values")
+        return values.firstOrNull { getId(it as R) == id } as R?
+                ?: throw ReadException("Encountered a $type with id $id in the file, but none exists in $values")
     }
 
     override fun read(newInstance: Any, input: Input) {

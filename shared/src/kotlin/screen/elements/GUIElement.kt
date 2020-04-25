@@ -36,18 +36,11 @@ sealed class RootGUIElement(name: String, xAlignment: Alignment, yAlignment: Ali
                 else if (this is GUIWindow) {
                     ScreenManager.openWindows.add(this)
                     if (openAtMouse) {
-                        var x = Mouse.xPixel
-                        if (x + widthPixels > Game.WIDTH)
-                            x = Game.WIDTH - widthPixels
-                        else if (x < 0)
-                            x = 0
-                        var y = Mouse.yPixel - heightPixels
-                        if (y + heightPixels > Game.HEIGHT)
-                            y = Game.HEIGHT - heightPixels
-                        else if (y < 0)
-                            y = 0
+                        val x = Mouse.xPixel
+                        val y = Mouse.yPixel - heightPixels
                         alignments.x = { x }
                         alignments.y = { y }
+                        keepInScreen()
                     }
                 }
                 onOpen()
@@ -182,6 +175,7 @@ sealed class RootGUIElement(name: String, xAlignment: Alignment, yAlignment: Ali
      * TODO this should be the combination of the parent's totalRenderParams and this's localRenderParams
      */
     var totalRenderParams = TextureRenderParams()
+
     /**
      * The parameters used for all rendering done by this element.
      */
@@ -243,10 +237,13 @@ sealed class RootGUIElement(name: String, xAlignment: Alignment, yAlignment: Ali
     /* Settings */
     /** Open when the parent opens */
     var matchParentOpening = true
+
     /** Close when the parent closes */
     var matchParentClosing = true
+
     /** Send interactions to the parent */
     var transparentToInteraction = false
+
     /** When this gets a new parent, change this's layer to one above the parent */
     var matchParentLayer = true
 
@@ -296,7 +293,7 @@ sealed class RootGUIElement(name: String, xAlignment: Alignment, yAlignment: Ali
     open fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
     }
 
-    open fun onInteractOff(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+    open fun onInteractOff(xPixel: Int, yPixel: Int, type: PressType, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
 
     }
 
@@ -326,6 +323,21 @@ sealed class RootGUIElement(name: String, xAlignment: Alignment, yAlignment: Ali
 
     /** When one of the ElementAlignments changes */
     open fun onAlignmentChange(x: Boolean = false, y: Boolean = false, width: Boolean = false, height: Boolean = false) {
+    }
+
+    fun keepInScreen() {
+        var x = xPixel
+        if (x + widthPixels > Game.WIDTH)
+            x = Game.WIDTH - widthPixels
+        else if (x < 0)
+            x = 0
+        var y = yPixel
+        if (y + heightPixels > Game.HEIGHT)
+            y = Game.HEIGHT - heightPixels
+        else if (y < 0)
+            y = 0
+        alignments.x = { x }
+        alignments.y = { y }
     }
 
     override fun equals(other: Any?): Boolean {
@@ -494,15 +506,17 @@ open class GUIWindow(name: String, xAlignment: Alignment, yAlignment: Alignment,
             field = value
         }
 
-    var topLeftGroup = AutoFormatGUIGroup(this, name + " top left group", { 1 }, { this.heightPixels - 6 }, open = open, xPixelSeparation = 6)
-    var topRightGroup = AutoFormatGUIGroup(this, name + " top right group", { this.widthPixels - 6 }, { this.heightPixels - 6 }, open = open, xPixelSeparation = -6)
-    var bottomRightGroup = AutoFormatGUIGroup(this, name + " bottom right group", { this.widthPixels - 6 }, { 1 }, open = open, xPixelSeparation = -6)
-    var bottomLeftGroup = AutoFormatGUIGroup(this, name + " bottom left group", { 1 }, { 1 }, open = open, xPixelSeparation = 6)
+    var topLeftGroup = AutoFormatGUIGroup(this, name + " top left group", { 1 }, { this.heightPixels - 6 }, open = open, padding = 1, dir = 1)
+    var topRightGroup = AutoFormatGUIGroup(this, name + " top right group", { this.widthPixels - 1 }, { this.heightPixels - 6 }, open = open, padding = 1, dir = 3)
+    var bottomRightGroup = AutoFormatGUIGroup(this, name + " bottom right group", { this.widthPixels - 1 }, { 1 }, open = open, padding = 1, dir = 3)
+    var bottomLeftGroup = AutoFormatGUIGroup(this, name + " bottom left group", { 1 }, { 1 }, open = open, padding = 1, dir = 1)
 
     /* Settings */
 
     /** If this should, when opened, move as near to the mouse as possible (but not beyond the screen) */
     var openAtMouse = false
+
+    var allowEscapeToClose = false
 
     init {
         windowGroup.windows.add(this)
@@ -515,22 +529,24 @@ open class GUIWindow(name: String, xAlignment: Alignment, yAlignment: Alignment,
     /* Util */
     /**
      * @param pos 0 - top left, 1 - top right, 2 - bottom right, 3 - bottom left
+     * Automatically turns on [allowEscapeToClose] too
      */
-    fun generateCloseButton(layer: Int = this.layer + 1, pos: Int = 1): GUICloseButton {
+    fun generateCloseButton(layer: Int = this.layer + 2, pos: Int = 1): GUICloseButton {
+        allowEscapeToClose = true
         return GUICloseButton(getGroup(pos), name + " close button", { 0 }, { 0 }, open, layer, this)
     }
 
     /**
      * @param pos 0 - top left, 1 - top right, 2 - bottom right, 3 - bottom left
      */
-    fun generateDragGrip(layer: Int = this.layer + 1, pos: Int = 1): GUIDragGrip {
+    fun generateDragGrip(layer: Int = this.layer + 2, pos: Int = 1): GUIDragGrip {
         return GUIDragGrip(getGroup(pos), name + " drag grip", { 0 }, { 0 }, open, layer, this)
     }
 
     /**
      * @param pos 0 - top left, 1 - top right, 2 - bottom right, 3 - bottom left
      */
-    fun generateDimensionDragGrip(layer: Int = this.layer + 1, pos: Int = 1): GUIDimensionDragGrip {
+    fun generateDimensionDragGrip(layer: Int = this.layer + 2, pos: Int = 1): GUIDimensionDragGrip {
         return GUIDimensionDragGrip(getGroup(pos), name + " dimension drag grip", { 0 }, { 0 }, open, layer, this)
     }
 
@@ -548,15 +564,6 @@ open class GUIWindow(name: String, xAlignment: Alignment, yAlignment: Alignment,
     }
 
     override fun update() {
-
-        fun updateChild(c: RootGUIElement) {
-            c.children.forEach {
-                it.update()
-                updateChild(it)
-            }
-        }
-
-        updateChild(this)
     }
 
     override fun toString() = "$name window at $xPixel, $yPixel absolute, ${alignments.x()}, ${alignments.y()} relative, w: ${widthPixels}, h: ${heightPixels}, l: $layer"

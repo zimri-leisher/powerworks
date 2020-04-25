@@ -1,36 +1,15 @@
 package screen
 
-import graphics.Animation
-import graphics.Renderer
-import graphics.TextureRenderParams
-import main.Game
-import screen.elements.GUIElement
-import screen.elements.GUIText
+import screen.elements.GUIDefaultTextureRectangle
+import screen.elements.GUIResourceTypeSelection
 import screen.elements.GUIWindow
 
-internal object TestGUI : GUIWindow("Testing GUI", 0, 0, Game.WIDTH, Game.HEIGHT, windowGroup = ScreenManager.Groups.BACKGROUND) {
-
-    lateinit var text: GUIText
+internal object TestGUI : GUIWindow("Testing GUI", 0, 0, 60, 70, windowGroup = ScreenManager.Groups.INVENTORY) {
 
     init {
-
-
-
-        /*
-        GUITexturePane(this, "Test GUI background", { 0 }, { 0 }, Image.GUI.MAIN_MENU_BACKGROUND, { Math.max(Game.WIDTH, Image.GUI.MAIN_MENU_BACKGROUND.widthPixels) }, { Math.max(Game.HEIGHT, Image.GUI.MAIN_MENU_BACKGROUND.heightPixels) }).run {
-            GUIButton(this, "Test GUI back button", 1, 1, "Back to Main Menu", onRelease = {
-                this@TestGUI.open = false
-                MainMenuGUI.open = true
-            })
-            text = GUIText(this, "text", 40, 80, "|italics|t", allowTags = true).apply {
-                GUIOutline(this, "fasdfasdf")
-            }
-            GUITextInputField(this, "test", { 40 }, { 40 }, 50, 2, onPressEnter = { currentText ->
-                this@TestGUI.text.text = currentText
-            }).apply {
-                autocompleteMenu.options.addAll(listOf("<color=", "<style=", "<italic>", "<corlasdf>"))
-            }
+        GUIDefaultTextureRectangle(this, "test").apply {
+            GUIResourceTypeSelection(this, "tester", { 1 }, { 54 }, allowRowGrowth = true)
         }
-        */
+        generateDragGrip(layer = 5)
     }
 }

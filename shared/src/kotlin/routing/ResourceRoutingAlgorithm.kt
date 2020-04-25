@@ -1,19 +1,20 @@
 package routing
 
-import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag
-import level.tube.TubeBlock
+import level.pipe.ItemPipeBlock
+import level.pipe.PipeBlock
 import misc.Geometry
 import misc.PixelCoord
 import resource.ResourceNode
 import serialization.Id
+import kotlin.math.absoluteValue
 
 /**
  * @param input the internal network node that the package will start at
  * @param output the internal network node that the package will end at
  */
-fun route(input: ResourceNode, output: ResourceNode, network: TubeRoutingNetwork) = route(input.xTile shl 4, input.yTile shl 4, output, network)
+fun route(input: ResourceNode, output: ResourceNode, network: PipeRoutingNetwork) = route(input.xTile shl 4, input.yTile shl 4, Geometry.getOppositeAngle(input.dir), output, network)
 
-fun route(startXPixel: Int, startYPixel: Int, output: ResourceNode, network: TubeRoutingNetwork): PackageRoute? {
+fun route(startXPixel: Int, startYPixel: Int, startDir: Int, output: ResourceNode, network: PipeRoutingNetwork): PackageRoute? {
     val startXTile = startXPixel shr 4
     val startYTile = startYPixel shr 4
     if (startXTile == output.xTile && startYTile == output.yTile) {
@@ -24,9 +25,9 @@ fun route(startXPixel: Int, startYPixel: Int, output: ResourceNode, network: Tub
         return PackageRoute(instructions.toTypedArray())
     }
     val initialConnections = network.findConnections(startXTile, startYTile)
-    val outputTube = network.tubes.first { it.xTile == output.xTile && it.yTile == output.yTile }
+    val outputTube = network.pipes.first { it.xTile == output.xTile && it.yTile == output.yTile }
     val outputIntersection = network.getIntersection(outputTube)!!
-    val startNode = AStarRoutingNode(null, startXTile, startYTile, initialConnections, outputIntersection, -1, 0, 0)
+    val startNode = AStarRoutingNode(null, startXTile, startYTile, initialConnections, outputIntersection, -1, 0, heuristic(startXTile, startYTile, outputIntersection.xTile, outputIntersection.yTile))
 
     val possibleNextNodes = mutableListOf<AStarRoutingNode>()
     val alreadyUsedNodes = mutableListOf<AStarRoutingNode>()
@@ -38,66 +39,82 @@ fun route(startXPixel: Int, startYPixel: Int, output: ResourceNode, network: Tub
         // next can't be null because it's not empty
         val nextNode = possibleNextNodes.minBy { it.f }!!
 
-        possibleNextNodes.remove(nextNode)
-
-        val nodeChildren = nextNode.calculateChildren()
-        for (nodeChild in nodeChildren) {
-            if (nodeChild.xTile == outputIntersection.tubeBlock.xTile && nodeChild.yTile == outputIntersection.tubeBlock.yTile) {
-                finalNode = nodeChild
-                break@main
-            }
-            // there's a better path to here
-            if (possibleNextNodes.any { it.xTile == nodeChild.xTile && it.yTile == nodeChild.yTile && it.f < nodeChild.f }) {
-                continue
-            }
-            // this node has already been moved to in a better path
-            if (alreadyUsedNodes.any { it.xTile == nodeChild.xTile && it.yTile == nodeChild.yTile && it.f < nodeChild.f }) {
-                continue
-            }
-            possibleNextNodes.add(nodeChild)
+        // if we're at the destination
+        if (nextNode.xTile == outputIntersection.xTile && nextNode.yTile == outputIntersection.yTile) {
+            finalNode = nextNode
+            break@main
         }
+
+        val nodeNeighbors = nextNode.getNeighbors()
+        for (newNode in nodeNeighbors) {
+            // already been moved to
+            if (alreadyUsedNodes.any { it.xTile == newNode.xTile && it.yTile == newNode.yTile }) {
+                continue
+            }
+            val alreadyExistingPossibility = possibleNextNodes.firstOrNull { it.xTile == newNode.xTile && it.yTile == newNode.yTile }
+            if (alreadyExistingPossibility != null) {
+                if (alreadyExistingPossibility.g < newNode.g) {
+                    // don't care about this newNode because there's a better path to it
+                    continue
+                } else if (alreadyExistingPossibility.g > newNode.g) {
+                    // the already existing possibility is worse, update it to essentially be the new possibility
+                    alreadyExistingPossibility.g = newNode.g
+                    alreadyExistingPossibility.h = newNode.h
+                    alreadyExistingPossibility.parent = newNode.parent
+                    alreadyExistingPossibility.directionFromParent = newNode.directionFromParent
+                }
+            } else {
+                possibleNextNodes.add(newNode)
+            }
+        }
+        possibleNextNodes.remove(nextNode)
         alreadyUsedNodes.add(nextNode)
     }
     if (finalNode != null) {
         val instructions = mutableListOf<RouteStep>()
-        val endXTile = output.xTile + Geometry.getXSign(output.dir)
-        val endYTile = output.yTile + Geometry.getYSign(output.dir)
-        instructions.add(RouteStep(PixelCoord(endXTile shl 4, endYTile shl 4), -1))
+        val endXPixel = (output.xTile shl 4) + 8 * Geometry.getXSign(output.dir)
+        val endYPixel = (output.yTile shl 4) + 8 * Geometry.getYSign(output.dir)
+        // move inside the end block
+        instructions.add(RouteStep(PixelCoord(endXPixel, endYPixel), -1))
+        // add the last step (cuz it gets skipped by the while loop below)
         instructions.add(RouteStep(PixelCoord(finalNode.xTile shl 4, finalNode.yTile shl 4), output.dir))
         while (finalNode!!.parent != null) {
             instructions.add(RouteStep(PixelCoord(finalNode.parent!!.xTile shl 4, finalNode.parent!!.yTile shl 4), finalNode.directionFromParent))
             finalNode = finalNode.parent
         }
-        val firstNodeXPixel = finalNode.xTile shl 4
-        val firstNodeYPixel = finalNode.yTile shl 4
-        instructions.add(RouteStep(PixelCoord(startXPixel, startYPixel), Geometry.getDir(firstNodeXPixel - startXPixel, firstNodeYPixel - startYPixel)))
+        // come out from the start block
+        instructions.add(RouteStep(PixelCoord(startXPixel - 8 * Geometry.getXSign(startDir), startYPixel - 8 * Geometry.getYSign(startDir)), startDir))
         instructions.reverse()
         return PackageRoute(instructions.toTypedArray())
     }
     return null
 }
 
+private fun heuristic(xTile: Int, yTile: Int, goalXTile: Int, goalYTile: Int): Int {
+    return (xTile - goalXTile).absoluteValue + (yTile - goalYTile).absoluteValue
+}
+
 data class Intersection(
         @Id(1)
-        val tubeBlock: TubeBlock,
+        val pipeBlock: PipeBlock,
         @Id(2)
         var connections: Connections) {
 
-    private constructor() : this(TubeBlock(0, 0), Connections())
+    private constructor() : this(ItemPipeBlock(0, 0), Connections())
 
-    val xTile get() = tubeBlock.xTile
-    val yTile get() = tubeBlock.yTile
+    val xTile get() = pipeBlock.xTile
+    val yTile get() = pipeBlock.yTile
 
     override fun equals(other: Any?): Boolean {
-        return other is Intersection && other.tubeBlock == tubeBlock
+        return other is Intersection && other.pipeBlock == pipeBlock
     }
 
     override fun hashCode(): Int {
-        return tubeBlock.hashCode()
+        return pipeBlock.hashCode()
     }
 
     override fun toString(): String {
-        return "Intersection at ${tubeBlock.xTile}, ${tubeBlock.yTile}"
+        return "Intersection at ${pipeBlock.xTile}, ${pipeBlock.yTile}"
     }
 }
 
@@ -136,11 +153,11 @@ data class Connections(
 val Pair<Intersection, Int>.intersection get() = first
 val Pair<Intersection, Int>.dist get() = second
 
-class AStarRoutingNode(val parent: AStarRoutingNode? = null, val xTile: Int, val yTile: Int, val connections: Connections, val goal: Intersection, val directionFromParent: Int, val g: Int, val h: Int) {
+class AStarRoutingNode(var parent: AStarRoutingNode? = null, val xTile: Int, val yTile: Int, var connections: Connections, var goal: Intersection, var directionFromParent: Int, var g: Int, var h: Int) {
 
     val f = h + g
 
-    fun calculateChildren(): List<AStarRoutingNode> {
+    fun getNeighbors(): List<AStarRoutingNode> {
         val l = mutableListOf<AStarRoutingNode>()
         for (i in 0 until 4) {
             if (connections[i] != null) {
@@ -149,7 +166,7 @@ class AStarRoutingNode(val parent: AStarRoutingNode? = null, val xTile: Int, val
                 l.add(AStarRoutingNode(this, newIntersection.xTile, newIntersection.yTile, newIntersection.connections, goal,
                         i,
                         g + dist,
-                        Math.abs(goal.tubeBlock.xTile - newIntersection.tubeBlock.xTile) + Math.abs(goal.tubeBlock.yTile - newIntersection.tubeBlock.yTile)))
+                        heuristic(newIntersection.xTile, newIntersection.yTile, goal.xTile, goal.yTile)))
             }
         }
         return l
@@ -190,6 +207,8 @@ class PackageRoute(
         return steps[i]
     }
 
+    fun indexOf(step: RouteStep) = steps.indexOf(step)
+
     fun withIndex() = steps.withIndex()
 
     operator fun iterator() = steps.iterator()
@@ -201,7 +220,7 @@ class PackageRoute(
 
 data class RouteStep(
         @Id(1)
-        val loc: PixelCoord,
+        val position: PixelCoord,
         @Id(2)
         val nextDir: Int) {
     private constructor() : this(PixelCoord(0, 0), 0)

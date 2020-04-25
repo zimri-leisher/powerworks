@@ -2,7 +2,6 @@ package screen
 
 import data.ConcurrentlyModifiableMutableList
 import data.ConcurrentlyModifiableWeakMutableList
-import data.WeakMutableList
 import io.*
 import main.DebugCode
 import main.Game
@@ -90,14 +89,15 @@ object ScreenManager : ControlPressHandler {
         openWindows.forEach { it.update() }
         updateMouseOn()
         if (Game.currentDebugCode == DebugCode.SCREEN_INFO) {
-            printHierarchy()
+            //printHierarchy()
         }
     }
 
     private fun updateMouseOn() {
+        windows.forEach { it.mouseOn = it.open && isMouseOn(it) }
         forEachElement({ it.mouseOn = isMouseOn(it) }, { it.open })
         windowUnderMouse = getHighestWindow(Mouse.xPixel, Mouse.yPixel, { !it.transparentToInteraction })
-        elementUnderMouse = getHighestElement(Mouse.xPixel, Mouse.yPixel, windowUnderMouse, { !it.transparentToInteraction })
+        elementUnderMouse = getHighestElement(Mouse.xPixel, Mouse.yPixel, { !it.transparentToInteraction })
     }
 
     fun isMouseOn(e: RootGUIElement): Boolean {
@@ -120,10 +120,26 @@ object ScreenManager : ControlPressHandler {
     }
 
     /** @return the highest [GUIElement], [layer][GUIElement.layer]-wise, that intersects the point ([xPixel], [yPixel]) and matches the [predicate] */
-    fun getHighestElement(xPixel: Int, yPixel: Int, window: GUIWindow? = getHighestWindow(xPixel, yPixel), predicate: (GUIElement) -> Boolean = { true }): GUIElement? {
-        return window?.openChildren?.stream()?.filter {
+    fun getHighestElement(xPixel: Int, yPixel: Int, window: GUIWindow, predicate: (GUIElement) -> Boolean = { true }): GUIElement? {
+        return window.openChildren.stream().filter {
             intersectsElement(xPixel, yPixel, it) && predicate(it)
         }?.max { o1, o2 -> o1.layer.compareTo(o2.layer) }?.orElseGet { null }
+    }
+
+    fun getHighestElement(xPixel: Int, yPixel: Int, predicate: (GUIElement) -> Boolean = { true }): GUIElement? {
+        var highestElement: GUIElement? = null
+        windowGroups.forEach {
+            it.windows.forEachBackwards {
+                if (highestElement == null) {
+                    it.openChildren.forEach {
+                        if (predicate(it) && intersectsElement(xPixel, yPixel, it) && it.layer > highestElement?.layer ?: Int.MIN_VALUE) {
+                            highestElement = it
+                        }
+                    }
+                }
+            }
+        }
+        return highestElement
     }
 
     fun screenSizeChange() {
@@ -136,6 +152,7 @@ object ScreenManager : ControlPressHandler {
         InputManager.currentScreenHandlers.clear()
         if (windowUnderMouse != null) {
             windowLastInteractedWith = windowUnderMouse!!
+            windowLastInteractedWith.windowGroup.bringToTop(windowLastInteractedWith)
             if (windowLastInteractedWith is ControlPressHandler) {
                 InputManager.currentScreenHandlers.add(windowLastInteractedWith as ControlPressHandler)
             }
@@ -178,7 +195,8 @@ object ScreenManager : ControlPressHandler {
                 val control = InputManager.inputsBeingPressed.contains("CONTROL")
                 val alt = InputManager.inputsBeingPressed.contains("ALT")
                 elementUnderMouse?.onInteractOn(t, x, y, b, shift, control, alt)
-                forEachElement({ it.onInteractOff(t, x, y, b, shift, control, alt) }, { it != elementUnderMouse && it.open })
+                windowUnderMouse?.onInteractOn(t, x, y, b, shift, control, alt)
+                forEachElement({ it.onInteractOff(x, y, t, b, shift, control, alt) }, { it != elementUnderMouse && it.open })
             }
         }
     }

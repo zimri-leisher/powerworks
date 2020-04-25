@@ -2,6 +2,7 @@ package level
 
 import item.BlockItemType
 import item.ItemType
+import level.moving.MovingObjectType
 import main.Game
 import network.ServerNetworkManager
 import network.packet.*
@@ -12,7 +13,7 @@ open class ActualLevel(id: UUID, info: LevelInfo) : Level(id, info), PacketHandl
 
     init {
         if (Game.IS_SERVER) {
-            ServerNetworkManager.registerClientPacketHandler(this, PacketType.ADD_MOVING_TO_LEVEL, PacketType.REQUEST_CHUNK_DATA, PacketType.REQUEST_LEVEL_DATA, PacketType.ADD_BLOCK_TO_LEVEL, PacketType.REMOVE_BLOCK, PacketType.REQUEST_JOIN_LEVEL)
+            ServerNetworkManager.registerClientPacketHandler(this, PacketType.REMOVE_MOVING_FROM_LEVEL, PacketType.ADD_DROPPED_ITEM_TO_LEVEL, PacketType.ADD_MOVING_TO_LEVEL, PacketType.REQUEST_CHUNK_DATA, PacketType.REQUEST_LEVEL_DATA, PacketType.ADD_BLOCK_TO_LEVEL, PacketType.REMOVE_BLOCK, PacketType.REQUEST_JOIN_LEVEL)
         }
         loaded = true
     }
@@ -48,7 +49,7 @@ open class ActualLevel(id: UUID, info: LevelInfo) : Level(id, info), PacketHandl
                 var success = false
                 val blockToRemove = getBlockAt(packet.xTile, packet.yTile)
                 if(blockToRemove == null) {
-                    println("Server said to remove a block at ${packet.xTile}, ${packet.yTile} in $this but there was none there")
+                    println("Client said to remove a block at ${packet.xTile}, ${packet.yTile} in $this but there was none there")
                 } else {
                     // if within reasonable range
                     val itemType = ItemType.ALL.first { it is BlockItemType && it.placedBlock == blockToRemove.type }
@@ -70,6 +71,37 @@ open class ActualLevel(id: UUID, info: LevelInfo) : Level(id, info), PacketHandl
                     add(moving)
                     success = true
                     ServerNetworkManager.sendToClients(packet)
+                }
+                ServerNetworkManager.sendToClient(AcknowledgeLevelModificationPacket(id, packet.id, success), packet.connectionId)
+            }
+        } else if(packet is AddDroppedItemToLevel) {
+            if(packet.levelId == id) {
+                var success = false
+                if(canAdd(MovingObjectType.DROPPED_ITEM, packet.xPixel, packet.yPixel)) {
+                    val droppedItem = DroppedItem(packet.xPixel, packet.yPixel, packet.itemType, packet.quantity)
+                    println("added dropped item at ${packet.xPixel} ${packet.yPixel}")
+                    add(droppedItem)
+                    success = true
+                    ServerNetworkManager.sendToClients(packet)
+                }
+                ServerNetworkManager.sendToClient(AcknowledgeLevelModificationPacket(id, packet.id, success), packet.connectionId)
+            }
+        } else if(packet is RemoveMovingFromLevelPacket) {
+            if(packet.levelId == id) {
+                var success = false
+                val chunk = getChunkFromPixel(packet.xPixel, packet.yPixel)
+                val potentialMovings = chunk.data.moving + chunk.data.movingOnBoundary
+                println(potentialMovings.joinToString())
+                if(potentialMovings.isNotEmpty()) {
+                    val movingToRemove = potentialMovings.firstOrNull { it.id == packet.movingId }
+                    println("moving object to remove: $movingToRemove")
+                    if(movingToRemove != null) {
+                        if(super.remove(movingToRemove)) {
+                            success = true
+                            println("success")
+                            ServerNetworkManager.sendToClients(packet)
+                        }
+                    }
                 }
                 ServerNetworkManager.sendToClient(AcknowledgeLevelModificationPacket(id, packet.id, success), packet.connectionId)
             }

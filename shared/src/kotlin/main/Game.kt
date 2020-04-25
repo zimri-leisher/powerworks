@@ -1,7 +1,6 @@
 package main
 
 import audio.AudioManager
-import behavior.Behavior
 import com.badlogic.gdx.ApplicationAdapter
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application
@@ -10,34 +9,22 @@ import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.esotericsoftware.kryo.Kryo
-import com.esotericsoftware.minlog.Log
-import com.esotericsoftware.minlog.Log.*
 import data.FileManager
 import data.FileSystem
 import data.ResourceManager
 import graphics.Animation
-import graphics.Image
 import graphics.Renderer
 import graphics.text.TextManager
 import io.*
-import item.ItemType
-import item.OreItemType
 import level.LevelManager
 import level.RemoteLevel
-import level.block.BlockType
-import level.generator.LevelType
-import level.tile.OreTileType
-import level.tile.TileType
 import network.ClientNetworkManager
 import network.User
 import network.packet.*
 import player.PlayerManager
 import screen.IngameGUI
-import screen.MainMenuGUI
 import screen.ScreenManager
-import screen.elements.GUICloseButton
 import screen.mouse.Mouse
-import screen.mouse.Tool
 import screen.mouse.Tooltips
 import serialization.Registration
 import serialization.Serialization
@@ -77,7 +64,7 @@ fun Color.toWhite() = this.set(1f, 1f, 1f, 1f)
 
 fun <K, V> Map<K, V>.joinToString() = toList().joinToString()
 
-const val SERVER_IP = "72.79.52.121"
+const val SERVER_IP = "127.0.0.1"
 const val SERVER_PORT = 9412
 
 fun main(args: Array<String>) {
@@ -118,10 +105,12 @@ object Game : ApplicationAdapter(), ControlPressHandler, PacketHandler {
      * Frames since the beginning of this execution
      */
     var framesCount = 0
+
     /**
      * Updates since the beginning of this execution
      */
     var updatesCount = 0
+
     /**
      * Seconds since the beginning of this execution
      */
@@ -244,10 +233,13 @@ object Game : ApplicationAdapter(), ControlPressHandler, PacketHandler {
                 Control.SCREEN_INFO -> currentDebugCode = DebugCode.SCREEN_INFO
                 Control.POSITION_INFO -> currentDebugCode = DebugCode.POSITION_INFO
                 Control.ESCAPE -> {
-                    ScreenManager.openWindows.sortedBy { it.layer }.firstOrNull { window ->
-                        window.windowGroup != ScreenManager.Groups.BACKGROUND && window.windowGroup != ScreenManager.Groups.VIEW &&
-                                window.anyChild { it is GUICloseButton && it.open == true && it.actOn == window }
-                    }?.open = false
+                    for(group in ScreenManager.windowGroups) {
+                        val highestCloseableWindow = group.windows.sortedBy { it.layer }.firstOrNull { it.allowEscapeToClose && it.open }
+                        if(highestCloseableWindow != null) {
+                            highestCloseableWindow.open = false
+                            break
+                        }
+                    }
                 }
                 Control.TOGGLE_INVENTORY -> {
                     if (State.CURRENT_STATE != State.INGAME)
@@ -262,7 +254,7 @@ object Game : ApplicationAdapter(), ControlPressHandler, PacketHandler {
     }
 
     override fun handleServerPacket(packet: Packet) {
-        if(packet is LoadGamePacket) {
+        if (packet is LoadGamePacket) {
             PlayerManager.localPlayer = packet.localPlayer
             val localLevel = RemoteLevel(packet.localPlayer.homeLevelId, packet.currentLevelInfo)
             ClientNetworkManager.sendToServer(RequestLevelDataPacket(localLevel.id))

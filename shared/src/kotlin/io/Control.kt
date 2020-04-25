@@ -65,6 +65,10 @@ enum class Control {
         SCROLL(SCROLL_DOWN, SCROLL_UP);
 
         operator fun contains(c: Control): Boolean = controls.contains(c)
+
+        override fun toString(): String {
+            return controls.joinToString()
+        }
     }
 
 }

@@ -8,63 +8,63 @@ import com.esotericsoftware.kryo.io.Output
 import graphics.Image
 import graphics.ImageCollection
 
-enum class PipeState(val texture: TextureRegion, val connections: Array<Boolean>, val closedEnds: Array<Boolean> = arrayOf(false, false, false, false)) {
-    NONE(Image.Block.PIPE_2_WAY_VERTICAL, arrayOf(
+enum class PipeState(val connections: Array<Boolean>, val closedEnds: Array<Boolean> = arrayOf(false, false, false, false)) {
+    NONE(arrayOf(
             false, false, false, false
     ), arrayOf(
             true, false, true, false
     )),
-    UP_ONLY(Image.Block.PIPE_2_WAY_VERTICAL, arrayOf(
+    UP_ONLY(arrayOf(
             true, false, false, false
     ), arrayOf(
             false, false, true, false
     )),
-    RIGHT_ONLY(Image.Block.PIPE_2_WAY_HORIZONTAL, arrayOf(
+    RIGHT_ONLY(arrayOf(
             false, true, false, false
     ), arrayOf(
             false, false, false, true
     )),
-    DOWN_ONLY(Image.Block.PIPE_2_WAY_VERTICAL, arrayOf(
+    DOWN_ONLY(arrayOf(
             false, false, true, false
     ), arrayOf(
             true, false, false, false
     )),
-    LEFT_ONLY(Image.Block.PIPE_2_WAY_HORIZONTAL, arrayOf(
+    LEFT_ONLY(arrayOf(
             false, false, false, true
     ), arrayOf(
             false, true, false, false
     )),
-    UP_DOWN(Image.Block.PIPE_2_WAY_VERTICAL, arrayOf(
+    UP_DOWN(arrayOf(
             true, false, true, false
     )),
-    RIGHT_LEFT(Image.Block.PIPE_2_WAY_HORIZONTAL, arrayOf(
+    RIGHT_LEFT(arrayOf(
             false, true, false, true
     )),
-    UP_RIGHT(ImageCollection.PIPE_CORNER[0], arrayOf(
+    UP_RIGHT(arrayOf(
             true, true, false, false
     )),
-    RIGHT_DOWN(ImageCollection.PIPE_CORNER[1], arrayOf(
+    RIGHT_DOWN(arrayOf(
             false, true, true, false
     )),
-    DOWN_LEFT(ImageCollection.PIPE_CORNER[2], arrayOf(
+    DOWN_LEFT(arrayOf(
             false, false, true, true
     )),
-    LEFT_UP(ImageCollection.PIPE_CORNER[3], arrayOf(
+    LEFT_UP(arrayOf(
             true, false, false, true
     )),
-    LEFT_UP_RIGHT(ImageCollection.PIPE_3_WAY[0], arrayOf(
+    LEFT_UP_RIGHT(arrayOf(
             true, true, false, true
     )),
-    UP_RIGHT_DOWN(ImageCollection.PIPE_3_WAY[1], arrayOf(
+    UP_RIGHT_DOWN(arrayOf(
             true, true, true, false
     )),
-    RIGHT_DOWN_LEFT(ImageCollection.PIPE_3_WAY[2], arrayOf(
+    RIGHT_DOWN_LEFT(arrayOf(
             false, true, true, true
     )),
-    DOWN_LEFT_UP(ImageCollection.PIPE_3_WAY[3], arrayOf(
+    DOWN_LEFT_UP(arrayOf(
             true, false, true, true
     )),
-    ALL(Image.Block.PIPE_4_WAY, arrayOf(
+    ALL(arrayOf(
             true, true, true, true
     ));
 
@@ -103,15 +103,4 @@ enum class PipeState(val texture: TextureRegion, val connections: Array<Boolean>
             return values().first { it.connections.contentEquals(dirs) }
         }
     }
-}
-
-class PipeStateSerializer : Serializer<PipeState>() {
-    override fun write(kryo: Kryo, output: Output, `object`: PipeState) {
-        output.writeString(`object`.name)
-    }
-
-    override fun read(kryo: Kryo, input: Input, type: Class<out PipeState>): PipeState {
-        return PipeState.valueOf(input.readString())
-    }
-
 }

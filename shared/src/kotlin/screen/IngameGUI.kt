@@ -157,15 +157,3 @@ object NewViewSelectorGUI : GUIWindow("in game view controls", { 0 }, { 0 }, { 0
         }
     }
 }
-
-object NewIngameGUI : GUIWindow("in game window", { 0 }, { 0 }, { Game.WIDTH }, { Game.HEIGHT }, ScreenManager.Groups.BACKGROUND) {
-    init {
-        GUITexturePane(this, "In game gui background", { 0 }, { 0 }, Image.GUI.GREY_FILLER, { Game.WIDTH }, { Game.HEIGHT })
-        GUIGroup(this, "view controls", { 0 }, { 0 }, {
-            GUITabList(this, "view tab list", { 0 }, { 0 },
-                    arrayOf(Tab("1"), Tab("2"), Tab("3"), Tab("4")),
-                    { }
-            )
-        })
-    }
-}

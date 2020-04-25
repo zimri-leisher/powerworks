@@ -2,6 +2,7 @@ package misc
 
 import level.Level
 import serialization.Id
+import java.lang.Math.abs
 
 data class PixelCoord(
         @Id(1)
@@ -10,6 +11,10 @@ data class PixelCoord(
         var yPixel: Int) {
 
     private constructor() : this(0, 0)
+
+    fun manhattanDistance(other: PixelCoord): Int {
+        return abs(xPixel - other.xPixel) + abs(yPixel - other.yPixel)
+    }
 
     fun toTile() = TileCoord(xPixel shr 4, yPixel shr 4)
 

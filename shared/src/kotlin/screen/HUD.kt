@@ -8,6 +8,7 @@ import item.ItemType
 import main.State
 import player.PlayerManager
 import resource.*
+import routing.InvalidFunctionCallException
 import screen.elements.GUIItemSlot
 import screen.elements.GUITexturePane
 import screen.elements.GUIWindow
@@ -40,6 +41,7 @@ object HUD {
             ResourceContainerChangeListener {
 
         internal val items = HotbarInventory()
+
         /**
          * The selected slot
          * When it is -1, that means the currently held item isn't on the hotbar, usually indicating it is from an inventory
@@ -58,12 +60,15 @@ object HUD {
 
         internal class HotbarInventory : ResourceContainer(ResourceCategory.ITEM) {
 
-            override fun expect(resource: ResourceType, quantity: Int): Boolean {
-                return false
+            override val expected: ResourceList
+                get() = throw InvalidFunctionCallException("Hotbar inventory cannot expect items")
+
+            override fun expect(resources: ResourceList): Boolean {
+                throw InvalidFunctionCallException("Hotbar inventory cannot expect items")
             }
 
-            override fun cancelExpectation(resource: ResourceType, quantity: Int): Boolean {
-                return false
+            override fun cancelExpectation(resources: ResourceList): Boolean {
+                throw InvalidFunctionCallException("Hotbar inventory cannot expect items")
             }
 
             override val totalQuantity: Int
@@ -71,15 +76,16 @@ object HUD {
 
             val items = arrayOfNulls<ItemType>(HOTBAR_SIZE)
 
-            override fun add(resource: ResourceType, quantity: Int, from: ResourceNode?, checkIfAble: Boolean): Boolean {
+            override fun add(resources: ResourceList, from: ResourceNode?, checkIfAble: Boolean): Boolean {
                 if (checkIfAble)
-                    if (!canAdd(resource, quantity))
+                    if (!canAdd(resources))
                         return false
-                resource as ItemType
-                for (i in items.indices) {
-                    if (items[i] == null) {
-                        items[i] = resource
-                        return true
+                list@ for ((resource, _) in resources) {
+                    for (i in items.indices) {
+                        if (items[i] == null) {
+                            items[i] = resource as ItemType
+                            continue@list
+                        }
                     }
                 }
                 return true
@@ -94,15 +100,17 @@ object HUD {
                 return true
             }
 
-            override fun remove(resource: ResourceType, quantity: Int, to: ResourceNode?, checkIfAble: Boolean): Boolean {
+            override fun remove(resources: ResourceList, to: ResourceNode?, checkIfAble: Boolean): Boolean {
                 if (checkIfAble)
-                    if (!canRemove(resource, quantity))
+                    if (!canRemove(resources))
                         return false
-                for (i in items.indices) {
-                    if (items[i] != null) {
-                        if (items[i]!! == resource) {
-                            items[i] = null
-                            return true
+                list@ for ((resource, _) in resources) {
+                    for (i in items.indices) {
+                        if (items[i] != null) {
+                            if (items[i]!! == resource) {
+                                items[i] = null
+                                continue@list
+                            }
                         }
                     }
                 }
@@ -110,8 +118,8 @@ object HUD {
             }
 
             override fun contains(list: ResourceList): Boolean {
-                for((resource, _) in list) {
-                    if(items.none { it == resource }) {
+                for ((resource, _) in list) {
+                    if (items.none { it == resource }) {
                         return false
                     }
                 }
@@ -135,7 +143,7 @@ object HUD {
 
             operator fun get(i: Int) = items[i]
 
-            override fun resourceList(): ResourceList {
+            override fun toResourceList(): ResourceList {
                 val map = mutableMapOf<ResourceType, Int>()
                 for (i in items) {
                     if (i != null) {
@@ -144,8 +152,6 @@ object HUD {
                 }
                 return ResourceList(map)
             }
-
-            override fun typeList() = items.mapNotNull { it }.toSet()
         }
 
         private val selectOverlay = GUITexturePane(this, "Hotbar slot selected overlay", { selected * GUIItemSlot.WIDTH }, { 0 }, textureRegion = Image.GUI.HOTBAR_SELECTED_SLOT, layer = layer + 2)
@@ -181,7 +187,14 @@ object HUD {
         override fun onContainerClear(container: ResourceContainer) {
         }
 
-        override fun onContainerChange(container: ResourceContainer, resource: ResourceType, quantity: Int) {
+        override fun onAddToContainer(container: ResourceContainer, resources: ResourceList) {
+            if (container == PlayerManager.localPlayer.brainRobot.inventory) {
+                if (selected != -1 && items[selected] != null && PlayerManager.localPlayer.brainRobot.inventory.getQuantity(items[selected]!!) > 0)
+                    Mouse.heldItemType = items[selected]
+            }
+        }
+
+        override fun onRemoveFromContainer(container: ResourceContainer, resources: ResourceList) {
             if (container == PlayerManager.localPlayer.brainRobot.inventory) {
                 if (selected != -1 && items[selected] != null && PlayerManager.localPlayer.brainRobot.inventory.getQuantity(items[selected]!!) > 0)
                     Mouse.heldItemType = items[selected]

@@ -43,10 +43,6 @@ open class InventoryGUI(name: String,
 
     override fun render() {
         var index = 0
-        for((resource, quantity) in inv.expected) {
-            resource.icon.render(xPixel, yPixel, GUIItemSlot.WIDTH, GUIItemSlot.HEIGHT, true)
-            Renderer.renderText(quantity, xPixel, yPixel)
-        }
     }
 
     companion object {

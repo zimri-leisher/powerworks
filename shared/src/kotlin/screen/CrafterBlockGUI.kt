@@ -17,6 +17,7 @@ class CrafterBlockGUI(block: CrafterBlock) :
     private val progressBar: GUIProgressBar
     private val recipeButton: GUIRecipeButton
     private val containers: List<GUIResourceContainerDisplay>
+
     init {
         openAtMouse = true
 
@@ -26,6 +27,8 @@ class CrafterBlockGUI(block: CrafterBlock) :
                 { this.block.recipe = it },
                 { it.validCrafterTypes != null && it.validCrafterTypes.contains(this.block.crafterType) && it.consume.size <= this.block.type.internalStorageSize })
 
+        GUIText(group, "Container text", 0, 0, "Ingredients:")
+
         containers = mutableListOf()
 
         for (container in block.containers) {
@@ -34,23 +37,29 @@ class CrafterBlockGUI(block: CrafterBlock) :
 
         progressBar = GUIProgressBar(group, "Crafting block container progress bar", { 0 }, { 0 }, { this.widthPixels - 4 }, { 6 }, block.type.maxWork)
 
-        generateCloseButton(group.layer + 2)
-        generateDragGrip(group.layer + 2)
+        generateCloseButton()
+        generateDragGrip()
     }
 
     override fun canDisplayBlock(newBlock: Block): Boolean {
-        if(newBlock.containers.size != block.containers.size)
+        if (newBlock.containers.size != block.containers.size)
             return false
         return newBlock is CrafterBlock
     }
 
+    override fun onClose() {
+        if(recipeButton.waitingForRecipeSelection) {
+            RecipeSelectorGUI.open = false
+        }
+    }
+
     override fun displayBlock(newBlock: Block): Boolean {
-        if(!canDisplayBlock(newBlock))
+        if (!canDisplayBlock(newBlock))
             return false
         block = newBlock as CrafterBlock
         recipeButton.recipe = newBlock.recipe
         containers.forEachIndexed { index, it ->
-            it.width = newBlock.type.internalStorageSize
+            it.columns = newBlock.type.internalStorageSize
             it.container = newBlock.containers[index]
         }
         progressBar.maxProgress = newBlock.type.maxWork

@@ -1,5 +1,9 @@
 package serialization
 
+import level.LevelManager
+import level.pipe.FluidPipeBlock
+import resource.ResourceCategory
+import routing.ResourceRoutingNetwork
 import serialization.Registration.REFERENCE_ID
 import serialization.Registration.getId
 import serialization.Registration.getRegistry
@@ -50,7 +54,7 @@ object Serialization {
     }
 
     fun warmup() {
-        val byteOutput = ByteArrayOutputStream(32)
+        val byteOutput = ByteArrayOutputStream(1028)
         val output = Output(byteOutput)
         output.write(WarmupObject())
         output.close()
@@ -59,7 +63,7 @@ object Serialization {
         input.close()
     }
 
-    fun makeTypeNice(type: Class<*>) = tryConvertPrimitiveToWrapper(tryDetypeArray(type))
+    fun makeTypeNice(type: Class<*>) = tryGetLambdaClass(tryConvertPrimitiveToWrapper(tryDetypeArray(type)))
 
     fun tryConvertPrimitiveToWrapper(type: Class<*>): Class<*> {
         return when (type) {
@@ -78,6 +82,18 @@ object Serialization {
     fun tryDetypeArray(type: Class<*>): Class<*> {
         if (type.isArray) {
             return Array<out Any?>::class.java
+        }
+        return type
+    }
+
+    fun tryGetLambdaClass(type: Class<*>): Class<*> {
+        val lambdaSuperClass = {0}::class.java.superclass
+        when(type) {
+            Function1::class.java, Function2::class.java, Function3::class.java,
+            Function4::class.java, Function5::class.java, Function6::class.java -> return lambdaSuperClass
+        }
+        if(type.superclass == lambdaSuperClass) {
+            return lambdaSuperClass
         }
         return type
     }
@@ -239,11 +255,15 @@ class Input(inputStream: InputStream) : DataInputStream(inputStream) {
         if (nonPrimitiveType != type) {
             debugln("(Converted type from Java primitive type to Java wrapper primitive type)")
         }
-        val actualType = Serialization.tryDetypeArray(nonPrimitiveType)
-        if (actualType != nonPrimitiveType) {
+        val nonSpecificArrayType = Serialization.tryDetypeArray(nonPrimitiveType)
+        if (nonSpecificArrayType != nonPrimitiveType) {
             debugln("(Converted type from a specific array to generic Object array)")
         }
-        return actualType
+        val nonSpecificLambdaType = Serialization.tryGetLambdaClass(nonSpecificArrayType)
+        if(nonSpecificLambdaType != nonSpecificArrayType) {
+            debugln("(Converted type from a specific lambda to a generic one)")
+        }
+        return nonSpecificLambdaType
     }
 
     private fun verifyType(desiredType: Class<*>, supposedClassId: Int): Class<*> {
@@ -256,7 +276,7 @@ class Input(inputStream: InputStream) : DataInputStream(inputStream) {
                 // in this situation the supposedClassType should be a child class of the supertype
                 if (!desiredType.isAssignableFrom(supposedClassType)) {
                     // verify that it is
-                    throw ReadException("Class id in file ($supposedClassId) does not match id of class trying to be read ${getId(desiredType)}")
+                    throw ReadException("Class type in file ($supposedClassType) does not match class trying to be read ${desiredType}")
                 }
             }
         }
@@ -308,7 +328,7 @@ class Output(outputStream: OutputStream) : DataOutputStream(outputStream) {
 
     private fun makeTypeNice(type: Class<*>): Class<*> {
         val lambdaSuperClass = {0}::class.java.superclass
-        if(type.superclass == lambdaSuperClass) {
+        if(type.superclass == lambdaSuperClass || type.superclass == Function::class.java) {
             return lambdaSuperClass
         }
         return type

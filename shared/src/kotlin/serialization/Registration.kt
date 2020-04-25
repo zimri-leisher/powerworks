@@ -32,15 +32,14 @@ import level.generator.OpenSimplexNoise
 import level.moving.MovingObject
 import level.moving.MovingObjectType
 import level.particle.ParticleType
+import level.pipe.FluidPipeBlock
+import level.pipe.ItemPipeBlock
 import level.pipe.PipeBlock
-import level.pipe.PipeBlockGroup
 import level.pipe.PipeState
 import level.tile.OreTile
 import level.tile.OreTileType
 import level.tile.Tile
 import level.tile.TileType
-import level.tube.TubeBlock
-import level.tube.TubeState
 import main.DebugCode
 import main.Version
 import misc.PixelCoord
@@ -50,6 +49,7 @@ import network.packet.*
 import player.Player
 import resource.*
 import routing.*
+import routing.script.*
 import screen.Camera
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
@@ -69,12 +69,9 @@ object Registration {
 
     fun registerAll() {
 
-        // max 157
-        /* LAMBDAS */
-        val lambdaClass = { 0 }::class.java.superclass as Class<Any>
-        register(lambdaClass, LambdaSerializer(), 155)
-
+        // max 189
         /* COLLECTIONS */
+        register(emptyList<Nothing>()::class, EmptyListSerializer(), 160)
         val immutableListClass = Class.forName("java.util.Arrays${'$'}ArrayList") as Class<Collection<Any?>>
         register<Collection<Any?>>(immutableListClass, CollectionSerializer { listOf(*it.toTypedArray()) }, 141)
         register(ArrayList::class, MutableCollectionSerializer<ArrayList<Any?>>(), 142)
@@ -125,7 +122,6 @@ object Registration {
         register(Animation::class, IDSerializer({ Animation.ALL }, { it.id }), 102)
 
         /* IO */
-        //register(MouseMovementListener::class, 63)
 
         /* ITEM */
         register(ToolItemType::class, IDSerializer({ ToolItemType.ALL }, { it.id }), 15)
@@ -149,8 +145,6 @@ object Registration {
         register(LevelData::class, 57)
         register(LevelInfo::class, 58)
         register(LevelObjectTextures::class, 60)
-        //register(MouseLevelMovementListener::class, 61)
-        //register(MovementListener::class, 62)
         register(RemoteLevel::class, LevelSerializer<RemoteLevel>(), 64)
         register(ChunkData::class, 146)
 
@@ -160,6 +154,7 @@ object Registration {
         register(CrafterBlockType::class, LevelObjectTypeSerializer(), 120)
         register(FluidTankBlockType::class, LevelObjectTypeSerializer(), 121)
         register(ChestBlockType::class, LevelObjectTypeSerializer(), 122)
+        register(PipeBlockType::class, LevelObjectTypeSerializer(), 188)
 
         setSerializerFactory { LevelObjectSerializer<LevelObject>() }
 
@@ -172,6 +167,7 @@ object Registration {
         register(MachineBlock::class, 29)
         register(MinerBlock::class, 30)
         register(SolidifierBlock::class, 31)
+        register(PipeBlock::class, 189)
 
         /* /ENTITY */
         register(Entity::class, 32)
@@ -197,20 +193,15 @@ object Registration {
         register(ParticleType::class, IDSerializer({ ParticleType.ALL }, { it.id }), 43)
 
         /* /PIPE */
-        register(PipeBlock::class, LevelObjectSerializer<PipeBlock>(), 44)
-        register(PipeBlockGroup::class, 45)
+        register(FluidPipeBlock::class, LevelObjectSerializer<FluidPipeBlock>(), 44)
+        register(ItemPipeBlock::class, LevelObjectSerializer<ItemPipeBlock>(), 186)
         register(PipeState::class, EnumSerializer<PipeState>(), 46)
-        register(PipeBlockGroup.PipeBlockInternalStorage::class, 133)
 
         /* /TILE */
         register(OreTile::class, 47)
         register(OreTileType::class, IDSerializer({ OreTileType.ALL }, { it.id }), 108)
         register(Tile::class, 48)
         register(TileType::class, IDSerializer({ TileType.ALL }, { it.id }), 49)
-
-        /* /TUBE */
-        register(TubeBlock::class, LevelObjectSerializer<TubeBlock>(), 50)
-        register(TubeState::class, EnumSerializer<TubeState>(), 51)
 
         /* MAIN */
         register(DebugCode::class, EnumSerializer<DebugCode>(), 65)
@@ -243,6 +234,8 @@ object Registration {
         register(RequestLoadGamePacket::class, 135)
         register(AcknowledgeLevelModificationPacket::class, 156)
         register(AddMovingObjectToLevel::class, 157)
+        register(RemoveMovingFromLevelPacket::class, 158)
+        register(AddDroppedItemToLevel::class, 159)
 
         /* PLAYER */
         register(Player::class, 85)
@@ -263,8 +256,40 @@ object Registration {
         register(RouteStep::class, 97)
         register(ResourceRoutingNetwork::class, 98)
         register(RoutingLanguageStatement::class, RoutingLanguageStatementSerializer(), 99)
-        register(TubeRoutingNetwork::class, 100)
-        register(TubeRoutingNetwork.TubeRoutingPackage::class, 101)
+        register(ItemPipeRoutingNetwork::class, 100)
+        register(PipeRoutingNetwork.PipeRoutingPackage::class, 101)
+        register(FluidPipeRoutingNetwork::class, 187)
+
+        register(TokenType::class.java, EnumSerializer<TokenType>(), 184)
+        register(Token::class.java, 185)
+
+        setSerializerFactory { NodeSerializer() }
+
+        register(BooleanLiteral::class, 161)
+        register(IntLiteral::class, 162)
+        register(DoubleLiteral::class, 163)
+        register(ResourceTypeLiteral::class, 164)
+        register(TotalQuantity::class, 165)
+        register(TotalNetworkQuantity::class, 166)
+        register(Not::class, 167)
+        register(QuantityOf::class, 168)
+        register(NetworkQuantityOf::class, 169)
+        register(Implies::class, 170)
+        register(IfAndOnlyIf::class, 171)
+        register(ExclusiveOr::class, 172)
+        register(Or::class, 173)
+        register(And::class, 174)
+        register(Plus::class, 175)
+        register(Minus::class, 176)
+        register(Multiply::class, 177)
+        register(Divide::class, 178)
+        register(GreaterThan::class, 179)
+        register(GreaterThanOrEqual::class, 180)
+        register(LessThan::class, 181)
+        register(LessThanOrEqual::class, 182)
+        register(Equal::class, 183)
+
+        setSerializerFactory { Serializer.Tagged<Any>() }
 
         /* SCREEN */
         register(Camera::class, LevelObjectSerializer<Camera>(), 131)
@@ -310,6 +335,7 @@ object Registration {
     fun registerClass(type: Class<*>, id: Int = nextId++, registry: ClassRegistry<*>) {
         if (Serialization.isPrimitive(id)) throw RegistrationException("Cannot reregister a primitive id ($id)")
         if (id < 0) throw RegistrationException("Cannot register an id less than 0 (tried to register $id)")
+        if (Function::class.java.isAssignableFrom(type)) throw RegistrationException("Cannot register lambdas")
         if (registries.putIfAbsent(type, registry) != null) {
             throw RegistrationException("Cannot reregister $type)")
         } else {
@@ -381,7 +407,7 @@ fun test() {
     println("now read new thing: ${measureTimeMillis {
         val statement = input.readUnknown()
         println(statement)
-        
+
     }}")
     input.close()
 }

@@ -60,7 +60,7 @@ fun ResourceContainerGroup.take(resource: ResourceType, quantity: Int, to: Resou
  */
 fun ResourceContainerGroup.toResourceList(): ResourceList {
     val list = ResourceList()
-    forEach { list.addAll(it.resourceList()) }
+    forEach { list.addAll(it.toResourceList()) }
     return list
 }
 

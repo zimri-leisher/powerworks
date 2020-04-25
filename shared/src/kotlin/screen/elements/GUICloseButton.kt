@@ -2,7 +2,7 @@ package screen.elements
 
 import graphics.Image
 import graphics.Renderer
-import io.PressType
+import io.*
 import main.heightPixels
 import main.widthPixels
 
@@ -28,5 +28,6 @@ class GUICloseButton(parent: RootGUIElement,
     companion object {
         val WIDTH = Image.GUI.CLOSE_BUTTON.widthPixels
         val HEIGHT = Image.GUI.CLOSE_BUTTON.heightPixels
+
     }
 }

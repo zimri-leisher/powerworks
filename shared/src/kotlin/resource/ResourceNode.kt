@@ -1,6 +1,5 @@
 package resource
 
-import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag
 import item.Inventory
 import level.Hitbox
 import level.Level
@@ -61,6 +60,7 @@ class ResourceNode(
      */
     @Id(10)
     var network = ResourceRoutingNetwork(resourceCategory, level)
+
     @Id(11)
     var isInternalNetworkNode = false
 
@@ -77,47 +77,53 @@ class ResourceNode(
      * @return if the resource is the right type and this node allows output and the attached container is able to remove the resources.
      * Additionally, if there is an attached node, it must be able to input the resources
      */
-    fun canOutput(type: ResourceType, quantity: Int, mustContainEnough: Boolean = true): Boolean {
-        if (!isRightType(type))
-            return false
-        if (!behavior.allowOut.check(type)) {
+    fun canOutput(resources: ResourceList, mustContainEnough: Boolean = true): Boolean {
+        if (resources.keys.any { !isRightType(it) || !behavior.allowOut.check(it) }) {
             return false
         }
-        if (mustContainEnough)
-            if (!attachedContainer.canRemove(type, quantity))
+        if (mustContainEnough) {
+            if (!attachedContainer.canRemove(resources)) {
                 return false
+            }
+        }
         if (attachedNode != null) {
-            if (!attachedNode!!.canInput(type, quantity))
+            if (!attachedNode!!.canInput(resources)) {
                 return false
+            }
         } else if (attachedNode == null && !outputToLevel) {
             return false
         }
         return true
     }
 
+    fun canOutput(type: ResourceType, quantity: Int, mustContainEnough: Boolean = true) = canOutput(ResourceList(type to quantity), mustContainEnough)
+
     /**
      * @param mustHaveSpace whether or not to check if the attached container has enough space. Set to false if you know
      * it does or don't care if it doesn't. This means it will only check the type and behavior of the node (the behavior
      * may still check for space)
+     * @param accountForExpected whether or not to include the expected resources when checking for space. Does nothing if [mustHaveSpace] is false
      * @return if the resource is the right type and this node allows input and the attached container can add the resources
      */
-    fun canInput(type: ResourceType, quantity: Int, mustHaveSpace: Boolean = true): Boolean {
-        if (!isRightType(type))
+    fun canInput(resources: ResourceList, mustHaveSpace: Boolean = true, accountForExpected: Boolean = false): Boolean {
+        if (resources.keys.any { !isRightType(it) || !behavior.allowIn.check(it) })
             return false
-        if (!behavior.allowIn.check(type)) {
-            return false
-        }
         if (mustHaveSpace) {
-            if (!attachedContainer.canAdd(type, quantity))
-                return false
+            if (accountForExpected) {
+                if (!attachedContainer.canAdd(resources + attachedContainer.expected))
+                    return false
+            } else {
+                if (!attachedContainer.canAdd(resources))
+                    return false
+            }
         }
         return true
     }
 
+    fun canInput(type: ResourceType, quantity: Int, mustHaveSpace: Boolean = true, accountForExpected: Boolean = false) = canInput(ResourceList(type to quantity), mustHaveSpace, accountForExpected)
+
     /**
      * Outputs the resources either directly to the level or into a connected node
-     * @param type the resource type to be outputted. Will only output ones that match the resource category
-     * @param quantity the amount of resources to be outputted
      * @param checkIfAble whether or not to check if the node is able to output. This should be false only
      * to avoid redundant checks to the attached container or node (i.e., for performance). Setting it to false without being
      * sure about the ability of the attached node to input and the attached container to remove has an undefined behavior
@@ -125,50 +131,54 @@ class ResourceNode(
      * @param mustContainEnough this specifies whether or not the check for ability to output should check if the attached container
      * contains enough resources. Does nothing if checkIfAble is false
      */
-    fun output(type: ResourceType, quantity: Int, checkIfAble: Boolean = true, mustContainEnough: Boolean = true): Boolean {
+    fun output(resources: ResourceList, checkIfAble: Boolean = true, mustContainEnough: Boolean = true): Boolean {
         if (checkIfAble) {
-            if (!canOutput(type, quantity, mustContainEnough))
+            if (!canOutput(resources, mustContainEnough))
                 return false
         }
         if (attachedNode != null) {
             // we already checked if we were able to, everything here is under the assumption it is successful
-            attachedNode!!.input(type, quantity, false)
+            attachedNode!!.input(resources, false)
         } else if (outputToLevel && inLevel) {
-            // TODO make this better some time, have it actually spawn in the center
-            val xSign = Geometry.getXSign(dir)
-            val ySign = Geometry.getYSign(dir)
-            level.add(((xTile shl 4) + 7) + (8 + Hitbox.DROPPED_ITEM.width) * xSign, ((yTile shl 4) + 7) + (8 + Hitbox.DROPPED_ITEM.height) * ySign, type, quantity)
+            for ((type, quantity) in resources) {
+                // TODO make this better some time, have it actually spawn in the center
+                val xSign = Geometry.getXSign(dir)
+                val ySign = Geometry.getYSign(dir)
+                level.add(((xTile shl 4) + 7) + (8 + Hitbox.DROPPED_ITEM.width) * xSign, ((yTile shl 4) + 7) + (8 + Hitbox.DROPPED_ITEM.height) * ySign, type, quantity)
+            }
         }
-        attachedContainer.remove(type, quantity, this, false)
+        attachedContainer.remove(resources, this, false)
         return true
     }
 
+    fun output(type: ResourceType, quantity: Int, checkIfAble: Boolean = true, mustContainEnough: Boolean = true) = output(ResourceList(type to quantity), checkIfAble, mustContainEnough)
+
     /**
      * Inputs the resources into the attached container
-     * @param type the resource type to be inputted. Will only input ones that match the resource category
-     * @param quantity the amount of resources to be inputted
      * @param checkIfAble whether or not to check if the node is able to input. This should be false only
      * to avoid redundant checks to the attached container (i.e., for performance). Setting it to false without being
      * sure about the ability of the attached container to add has an undefined behavior and will probably result in duplications or crashes.
      * @param mustHaveSpace this specifies whether or not the check for ability to input should check if the attached container
      * has enough space. Does nothing if checkIfAble is false
      */
-    fun input(type: ResourceType, quantity: Int, checkIfAble: Boolean = true, mustHaveSpace: Boolean = true): Boolean {
+    fun input(resources: ResourceList, checkIfAble: Boolean = true, mustHaveSpace: Boolean = true): Boolean {
         if (checkIfAble) {
-            if (!canInput(type, quantity, mustHaveSpace))
+            if (!canInput(resources, mustHaveSpace))
                 return false
         }
-        attachedContainer.add(type, quantity, this, false)
+        attachedContainer.add(resources, this, false)
         return true
     }
 
+    fun input(type: ResourceType, quantity: Int, checkIfAble: Boolean = true, mustHaveSpace: Boolean = true) = input(ResourceList(type to quantity), checkIfAble, mustHaveSpace)
+
     fun update() {
-        for (type in attachedContainer.typeList()) {
+        for ((type, quantity) in attachedContainer.toResourceList()) {
             if (behavior.forceIn.check(type)) {
-                network.forceSendTo(this, type, 1)
+                network.forceSendTo(this, type, quantity)
             }
             if (behavior.forceOut.check(type)) {
-                network.forceTakeFrom(this, type, 1)
+                network.forceTakeFrom(this, type, quantity)
             }
         }
     }
@@ -184,7 +194,7 @@ class ResourceNode(
                 this.outputToLevel = outputToLevel
             }
 
-    override fun toString() = "Resource node at $xTile, $yTile, dir: $dir, behavior: \n$behavior"
+    override fun toString() = "Resource node at $xTile, $yTile, dir: $dir"
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

@@ -42,7 +42,7 @@ class GUIDimensionDragGrip(parent: RootGUIElement,
         }
     }
 
-    override fun onInteractOff(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+    override fun onInteractOff(xPixel: Int, yPixel: Int, type: PressType, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
         if (dragging && type == PressType.RELEASED) {
             dragging = false
             if (keepInsideWindowBounds) {

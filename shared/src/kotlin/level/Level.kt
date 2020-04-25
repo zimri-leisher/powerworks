@@ -10,15 +10,19 @@ import level.entity.robot.BrainRobot
 import level.generator.EmptyLevelGenerator
 import level.moving.MovingObject
 import level.particle.Particle
+import level.pipe.PipeBlock
 import level.tile.Tile
 import main.DebugCode
 import main.Game
+import main.toColor
 import misc.Geometry
 import network.ClientNetworkManager
 import network.ServerNetworkManager
 import resource.ResourceNode
+import routing.PipeRoutingNetwork
 import routing.ResourceRoutingNetwork
 import screen.elements.GUILevelView
+import screen.mouse.Mouse
 import screen.mouse.Tool
 import serialization.Input
 import serialization.Output
@@ -143,9 +147,6 @@ abstract class Level(
             if (l.hitbox != Hitbox.NONE) {
                 l.intersectingChunks.forEach { it.data.movingOnBoundary.add(l) }
                 if (l is DroppedItem) {
-                    if (l.hitbox != Hitbox.NONE) {
-                        l.intersectingChunks.forEach { it.data.movingOnBoundary.add(l) }
-                    }
                     getChunkAt(l.xChunk, l.yChunk).addDroppedItem(l)
                 }
             }
@@ -234,7 +235,7 @@ abstract class Level(
         if (previousNode != null) {
             remove(previousNode)
         }
-        if(!c.addResourceNode(r)) {
+        if (!c.addResourceNode(r)) {
             return false
         }
         r.level = this
@@ -258,7 +259,7 @@ abstract class Level(
         if (!r.inLevel || r.level != this)
             return false
         val c = getChunkFromTile(r.xTile, r.yTile)
-        if(!c.removeResourceNode(r)) {
+        if (!c.removeResourceNode(r)) {
             return false
         }
         r.inLevel = false
@@ -347,16 +348,15 @@ abstract class Level(
                 for (n in nList) {
                     val xSign = Geometry.getXSign(n.dir)
                     val ySign = Geometry.getYSign(n.dir)
-                    if (n.behavior.allowOut.possible() == null) {
+                    if (n.behavior.allowOut.possible() != null) {
                         Renderer.renderTexture(Image.Misc.THIN_ARROW, (n.xTile shl 4) + 4 + 8 * xSign, (n.yTile shl 4) + 4 + 8 * ySign, TextureRenderParams(rotation = 90f * n.dir))
                     }
-                    if (n.behavior.allowIn.possible() == null) {
+                    if (n.behavior.allowIn.possible() != null) {
                         Renderer.renderTexture(Image.Misc.THIN_ARROW, (n.xTile shl 4) + 4 + 8 * xSign, (n.yTile shl 4) + 4 + 8 * ySign, TextureRenderParams(rotation = 90f * Geometry.getOppositeAngle(n.dir)))
                     }
                 }
             }
         }
-
         if (Game.currentDebugCode == DebugCode.CHUNK_INFO) {
             for (c in chunksInTileRectangle) {
                 Renderer.renderEmptyRectangle(c.xTile shl 4, c.yTile shl 4, CHUNK_SIZE_PIXELS, CHUNK_SIZE_PIXELS)
@@ -365,6 +365,23 @@ abstract class Level(
                                 "updates required: ${c.data.updatesRequired.size}\n" +
                                 "moving objects: ${c.data.moving.size} (${c.data.movingOnBoundary.size} on boundary)",
                         c.xTile shl 4, c.yTile shl 4)
+            }
+        } else if (Game.currentDebugCode == DebugCode.TUBE_INFO) {
+            val pipeUnderMouse = LevelManager.levelObjectUnderMouse as? PipeBlock
+            if (pipeUnderMouse != null) {
+                val group = pipeUnderMouse.network
+                for (pipe in group.pipes) {
+                    Renderer.renderFilledRectangle(pipe.xPixel + 4, pipe.yPixel + 4, 8, 8, TextureRenderParams(color = toColor(r = 1f, g = 0f, b = 0f)))
+                }
+            }
+            val nodeUnderMouse = getResourceNodesAt(LevelManager.mouseLevelXTile, LevelManager.mouseLevelYTile).firstOrNull()
+            if (nodeUnderMouse != null) {
+                val network = nodeUnderMouse.network
+                if (network is PipeRoutingNetwork) {
+                    for (pipe in network.pipes) {
+                        Renderer.renderFilledRectangle(pipe.xPixel + 4, pipe.yPixel + 4, 8, 8, TextureRenderParams(color = toColor(r = 1f, g = 0f, b = 0f)))
+                    }
+                }
             }
         }
 

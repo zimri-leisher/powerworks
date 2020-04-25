@@ -1,12 +1,12 @@
 package resource
 
-import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag
 import item.Inventory
 import level.LevelManager
 import level.updateResourceNodeAttachments
 import main.State
 import main.joinToString
-import routing.RoutingLanguageStatement
+import routing.script.RoutingLanguage
+import routing.script.RoutingLanguageStatement
 import serialization.Id
 
 private fun <K, V> MutableMap<K, V>.copy(): MutableMap<K, V> {
@@ -31,14 +31,17 @@ class ResourceNodeBehavior(
     @Id(2)
     var allowIn = RoutingLanguageIORule(this)
         private set
+
     @Id(3)
     var allowOut = RoutingLanguageIORule(this)
         private set
+
     @Id(4)
-    var forceIn = RoutingLanguageIORule(this, RoutingLanguageStatement.FALSE)
+    var forceIn = RoutingLanguageIORule(this, RoutingLanguage.FALSE)
         private set
+
     @Id(5)
-    var forceOut = RoutingLanguageIORule(this, RoutingLanguageStatement.FALSE)
+    var forceOut = RoutingLanguageIORule(this, RoutingLanguage.FALSE)
         private set
 
     @Id(6)
@@ -50,11 +53,11 @@ class ResourceNodeBehavior(
         }
     }
 
-    private fun copy(statements: MutableMap<RoutingLanguageStatement, List<ResourceType>?>): MutableMap<RoutingLanguageStatement, List<ResourceType>?> {
-        val new = mutableMapOf<RoutingLanguageStatement, List<ResourceType>?>()
-        for((statement, types) in statements) {
-            val newTypes = if(types == null) null else mutableListOf<ResourceType>()
-            types?.forEach { newTypes?.add(it) }
+    private fun copy(statements: MutableMap<RoutingLanguageStatement, List<ResourceType>>): MutableMap<RoutingLanguageStatement, List<ResourceType>> {
+        val new = mutableMapOf<RoutingLanguageStatement, List<ResourceType>>()
+        for ((statement, types) in statements) {
+            val newTypes = mutableListOf<ResourceType>()
+            types.forEach { newTypes.add(it) }
             new.put(statement, newTypes)
         }
         return new
@@ -107,17 +110,17 @@ class RoutingLanguageIORule(
         @Id(1)
         val parent: ResourceNodeBehavior,
         @Id(2)
-        val statements: MutableMap<RoutingLanguageStatement, List<ResourceType>?>) {
+        val statements: MutableMap<RoutingLanguageStatement, List<ResourceType>>) {
     private constructor() : this(ResourceNodeBehavior.EMPTY_BEHAVIOR, mutableMapOf())
-    constructor(parent: ResourceNodeBehavior, statement: RoutingLanguageStatement) : this(parent, mutableMapOf<RoutingLanguageStatement, List<ResourceType>?>(statement to null))
+    constructor(parent: ResourceNodeBehavior, statement: RoutingLanguageStatement) : this(parent, mutableMapOf<RoutingLanguageStatement, List<ResourceType>>(statement to listOf()))
     constructor(parent: ResourceNodeBehavior) : this(parent, mutableMapOf())
 
     /**
      * Adds a statement and type pair to the IO rule.
      * @param statement the [RoutingLanguageStatement] that, when evaluated to true, will allow the [types]
-     * @param types the list of [ResourceType] to allow when the [statement] is true. If null, it will allow all types
+     * @param types the list of [ResourceType] to allow when the [statement] is true. If empty, it will allow all types
      */
-    fun addStatement(statement: RoutingLanguageStatement, types: List<ResourceType>?) {
+    fun addStatement(statement: RoutingLanguageStatement, types: List<ResourceType> = listOf()) {
         if (parent.allowModification) {
             statements.put(statement, types)
             parent.updateAttachments()
@@ -137,32 +140,41 @@ class RoutingLanguageIORule(
     /**
      * Removes all other statements and adds the specified one to the IO rule
      * @param statement the [RoutingLanguageStatement] that, when evaluated to true, will allow the [types]
-     * @param types the list of [ResourceType] to allow when the [statement] is true. If null, it will allow all types
+     * @param types the list of [ResourceType] to allow when the [statement] is true. If empty, it will allow all types
      */
-    fun setStatement(statement: RoutingLanguageStatement, types: List<ResourceType>? = null) {
+    fun setStatement(statement: RoutingLanguageStatement, types: List<ResourceType> = listOf()) {
         clearStatements()
         addStatement(statement, types)
     }
 
     /**
-     * Checks whether this resource type passes any of the statements. If there are no statements, it returns true
+     * Checks whether this resource type passes any of the statements. If there are no statements, it returns false
      */
     fun check(type: ResourceType): Boolean {
-        return statements.isEmpty() || statements.filterValues { it == null || type in it }.any { it.key.evaluate(parent.node) }
+        if (statements.isEmpty()) {
+            return false
+        }
+        if (statements.filterValues { it.isEmpty() || type in it }.any { it.key.evaluate(parent.node) }) {
+            return true
+        }
+        return false
     }
 
     /**
-     * @return a list of ResourceTypes that match statements that are currently true, or null if a statement that
-     * allows for any ResourceType is currently true
+     * @return a list of ResourceTypes that match statements that are currently true, or an empty list if a statement that
+     * allows for any ResourceType is currently true, or null if none are allowed to be true
      */
     fun possible(): List<ResourceType>? {
         val trueStatements = statements.filterKeys { it.evaluate(parent.node) }
         val types = mutableListOf<ResourceType>()
         for (typeList in trueStatements.values) {
-            if (typeList == null) {
-                return null
+            if (typeList.isEmpty()) {
+                return listOf()
             }
             types.addAll(typeList)
+        }
+        if(types.isEmpty()) {
+            return null
         }
         return types
     }
@@ -175,12 +187,12 @@ class RoutingLanguageIORule(
 
         other as RoutingLanguageIORule
 
-        if(other.statements.size != statements.size)
+        if (other.statements.size != statements.size)
             return false
 
         for ((statement, types) in statements) {
             val otherTypes = other.statements[statement]
-            if(otherTypes != types)
+            if (otherTypes != types)
                 return false
         }
 

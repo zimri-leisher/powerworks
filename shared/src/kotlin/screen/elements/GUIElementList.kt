@@ -4,16 +4,15 @@ import graphics.Renderer
 
 /**
  * A list of GUIElements that is scrollable. To add elements, either create them inside of the initializerList closure
- * or use the add(GUIElement) method. Note - adding elements to this element's children won't add them to the list
+ * or use the [add] method. Note - adding elements to this element's children won't add them to the list
  */
 class GUIElementList(parent: RootGUIElement, name: String,
                      xAlignment: Alignment, yAlignment: Alignment,
                      widthAlignment: Alignment, heightAlignment: Alignment,
-                     initializerList: GUIGroup.() -> Unit = {},
                      open: Boolean = false, layer: Int = parent.layer + 1) :
         GUIElement(parent, name, xAlignment, yAlignment, widthAlignment, heightAlignment, open, layer), VerticalScrollable {
 
-    private val elements = AutoFormatGUIGroup(this, name + " auto format group", 0, heightPixels, initializerList = initializerList, accountForChildHeight = true, yPixelSeparation = 2, flipY = true)
+    private val elements = AutoFormatGUIGroup(this, name + " auto format group", 0, heightPixels, dir = 2)
 
     private var scrollBar = GUIVerticalScrollBar(this, name + " scroll bar", { widthPixels - GUIVerticalScrollBar.WIDTH }, { 0 }, { heightPixels }, open, layer + 2)
 
@@ -30,7 +29,7 @@ class GUIElementList(parent: RootGUIElement, name: String,
     }
 
     /**
-     * Adds an element to the list, at the bottom
+     * Adds an element to the list at the bottom
      */
     fun add(el: GUIElement) {
         elements.children.add(el)
