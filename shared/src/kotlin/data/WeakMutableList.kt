@@ -1,6 +1,7 @@
 package data
 
 import java.lang.ref.WeakReference
+import java.util.*
 import java.util.stream.Stream
 
 class WeakMutableList<T> {
@@ -30,9 +31,18 @@ class WeakMutableList<T> {
 
     private fun check() {
         val i = list.iterator()
-        for (t in i) {
-            if (t.get() == null) {
-                i.remove()
+        var retry = true
+        while (retry) {
+            retry = false
+            try {
+                for (t in i) {
+                    if (t.get() == null) {
+                        i.remove()
+                    }
+                }
+            } catch (e: ConcurrentModificationException) {
+                println("Concurrent modification exception in weak mutable list")
+                retry = true
             }
         }
     }

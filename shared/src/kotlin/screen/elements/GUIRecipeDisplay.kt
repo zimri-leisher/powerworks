@@ -58,7 +58,7 @@ class GUIRecipeDisplay(parent: RootGUIElement, name: String, xAlignment: Alignme
                 transparentToInteraction = true
                 matchParentOpening = false
 
-                mouseOverArea = GUIMouseOverPopupArea(this, name + " mouse over info", { 0 }, { 0 }, this.alignments.width, this.alignments.height, open = open).apply {
+                mouseOverArea = GUIMouseOverPopupArea(this, name + " mouse over info", { 0 }, { 0 }, this.alignments.width, this.alignments.height, childrenKeepThisOpen = false, open = open).apply {
 
                     val mouseOver = this
 

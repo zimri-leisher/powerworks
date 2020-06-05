@@ -185,7 +185,7 @@ open class Serializer<R : Any>(var useDefaultConstructorInstantiation: Boolean =
             val cachedTaggedFieldsTemp = mutableListOf<TaggedField>()
             for(taggedField in taggedFields) {
                 val id = taggedField.getAnnotation(Id::class.java).id
-                if(cachedTaggedFields.any { it.id == id }) {
+                if(cachedTaggedFieldsTemp.any { it.id == id }) {
                     throw RegistrationException("Two fields in class $type have the same id ($id)")
                 }
                 cachedTaggedFieldsTemp.add(TaggedField(taggedField, id))
@@ -469,19 +469,50 @@ class ArraySerializer : Serializer<Array<out Any?>>() {
 
     override fun write(obj: Any, output: Output) {
         obj as Array<*>
-        output.writeShort(obj.size)
+        output.writeInt(obj.size)
         output.writeInt(Registration.getId(obj::class.java.componentType))
-        for (element in obj) {
-            output.write(element)
+        var index = 0
+        while(index <= obj.lastIndex) {
+            val element = obj[index]
+            if(element == null) {
+                // simplify writing lots of nulls
+                var nullIndicies = 1
+                while(index + nullIndicies <= obj.lastIndex) {
+                    if(obj[index + nullIndicies] == null) {
+                        nullIndicies++
+                    } else {
+                        break
+                    }
+                }
+                debugln("$nullIndicies nulls in a row")
+                output.writeShort(Primitive.NULL.id)
+                output.writeInt(nullIndicies)
+                index += nullIndicies
+            } else {
+                output.write(element)
+                index++
+            }
         }
     }
 
     override fun instantiate(input: Input): Array<Any?> {
-        val size = input.readUnsignedShort()
+        val size = input.readInt()
         val type = Registration.getType(input.readInt())
         val array = java.lang.reflect.Array.newInstance(type, size) as Array<Any?>
-        for (i in 0 until size) {
-            array[i] = input.readUnknownNullable()
+        var i = 0
+        while(i < size) {
+            val element = input.readUnknownNullable()
+            if(element == null) {
+                val nullCount = input.readInt()
+                debugln("$nullCount null elements in a row")
+                for(nullIndex in i until (i + nullCount)) {
+                    array[nullIndex] = null
+                }
+                i += nullCount
+            } else {
+                array[i] = element
+                i++
+            }
         }
         return array
     }

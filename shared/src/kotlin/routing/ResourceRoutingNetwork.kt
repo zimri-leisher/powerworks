@@ -101,6 +101,8 @@ open class ResourceRoutingNetwork(category: ResourceCategory,
         return true
     }
 
+    override fun getSpaceForType(type: ResourceType) = attachedNodes.getAttachedContainers().sumBy { it.getSpaceForType(type) }
+
     override fun copy(): ResourceContainer {
         return ResourceRoutingNetwork(resourceCategory, level)
     }

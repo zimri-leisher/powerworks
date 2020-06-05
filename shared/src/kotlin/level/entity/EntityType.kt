@@ -1,5 +1,6 @@
 package level.entity
 
+import item.EntityItemType
 import level.moving.MovingObjectType
 
 open class EntityType<T : Entity>(initializer: () -> Unit = {}) : MovingObjectType<T>() {

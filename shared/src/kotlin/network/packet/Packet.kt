@@ -1,6 +1,6 @@
 package network.packet
 
-import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag
+import main.Game
 import network.ServerNetworkManager
 import serialization.Id
 import java.util.*
@@ -10,6 +10,9 @@ open class Packet(
         val type: PacketType) {
 
     private constructor() : this(PacketType.UNKNOWN)
+
+    @Id(-1)
+    val updateTime = Game.updatesCount
 
     @Id(0)
     val id = UUID.randomUUID()

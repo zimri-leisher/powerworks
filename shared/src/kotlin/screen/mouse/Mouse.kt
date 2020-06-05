@@ -174,14 +174,14 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
     }
 
     override fun onAddToContainer(container: ResourceContainer, resources: ResourceList) {
-        if (container == PlayerManager.localPlayer.brainRobot.inventory && heldItemType != null) {
+        if (container.id == PlayerManager.localPlayer.brainRobot.inventory.id && heldItemType != null) {
             if (PlayerManager.localPlayer.brainRobot.inventory.getQuantity(heldItemType!!) == 0)
                 heldItemType = null
         }
     }
 
     override fun onRemoveFromContainer(container: ResourceContainer, resources: ResourceList) {
-        if (container == PlayerManager.localPlayer.brainRobot.inventory && heldItemType != null) {
+        if (container.id == PlayerManager.localPlayer.brainRobot.inventory.id && heldItemType != null) {
             if (PlayerManager.localPlayer.brainRobot.inventory.getQuantity(heldItemType!!) == 0)
                 heldItemType = null
         }

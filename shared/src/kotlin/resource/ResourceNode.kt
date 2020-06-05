@@ -8,6 +8,7 @@ import level.add
 import misc.Geometry
 import routing.ResourceRoutingNetwork
 import serialization.Id
+import java.util.*
 
 /**
  * A node that allows for movement of resources between places on the level. This is not a subclass of LevelObject.
@@ -15,7 +16,7 @@ import serialization.Id
  * An example of a place where they appear is the MinerBlock, which uses one to produce the ore it mines
  * from the ground and either put it into the connected inventory or place it on the ground.
  */
-class ResourceNode(
+class ResourceNode constructor(
         @Id(1)
         val xTile: Int,
         @Id(2)
@@ -69,7 +70,15 @@ class ResourceNode(
      */
     @Id(12)
     var behavior = ResourceNodeBehavior(this)
-        private set
+        set(value) {
+            if(field != value) {
+                field = value
+                field.node = this
+            }
+        }
+
+    @Id(13)
+    val id = UUID.randomUUID()
 
     /**
      * @param mustContainEnough whether or not to check if the attached container has enough resources. Set to false if
@@ -204,8 +213,6 @@ class ResourceNode(
         if (yTile != other.yTile) return false
         if (dir != other.dir) return false
         if (resourceCategory != other.resourceCategory) return false
-        if (attachedContainer != other.attachedContainer) return false
-        if (inLevel != other.inLevel) return false
         if (behavior != other.behavior) return false
         return true
     }
@@ -215,8 +222,6 @@ class ResourceNode(
         result = 31 * result + yTile
         result = 31 * result + dir
         result = 31 * result + resourceCategory.hashCode()
-        result = 31 * result + attachedContainer.hashCode()
-        result = 31 * result + inLevel.hashCode()
         return result
     }
 

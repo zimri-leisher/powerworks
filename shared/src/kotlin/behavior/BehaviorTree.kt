@@ -1,14 +1,8 @@
 package behavior
 
 import behavior.composites.Sequence
-import com.esotericsoftware.kryo.Kryo
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import level.entity.Entity
-import serialization.Input
-import serialization.Output
-import serialization.Serializer
-import java.io.DataInputStream
-import java.io.DataOutputStream
 
 object Behavior {
 
@@ -17,23 +11,30 @@ object Behavior {
         Offense
     }
 
+    val ERROR = BehaviorTree {
+    }
+
     object Movement {
         val PATH_TO_MOUSE = BehaviorTree {
             followPath(findPath(getMouseLevelPosition(), useCoroutines = false))
+        }
+
+        val PATH_TO_ARG = BehaviorTree {
+            followPath(findPath(DefaultVariable.ARGUMENT))
         }
     }
 
     object Offense {
         @ExperimentalCoroutinesApi
         val ATTACK_NEAREST = BehaviorTree {
-            followPath(findPath(getNearestLevelObject()))
+            sequence {
+                followPath(findPath(getNearestLevelObject()))
+            }
         }
     }
 }
 
 class DecoratorWithoutChildException(message: String) : Exception(message)
-class NoSuchDataNameException(message: String) : Exception(message)
-class DataCastException(message: String) : Exception(message)
 
 private var nextId = 0
 
@@ -50,7 +51,7 @@ private var nextId = 0
 class BehaviorTree(initializer: CompositeContext.() -> Unit = {}) {
 
     /**
-     * The identifier number of this [BehaviorTree]. Because behavior trees are generic to all entities, so they only need
+     * The identifier number of this [BehaviorTree]. Because behavior trees are generic to all entities, they only need
      * to be instantiated at the start of the program when defining the actual behavior
      */
     val id = nextId++
@@ -71,6 +72,7 @@ class BehaviorTree(initializer: CompositeContext.() -> Unit = {}) {
     val data = VariableData()
 
     init {
+        ALL.add(this)
         CompositeContext(base).initializer()
     }
 
@@ -132,16 +134,19 @@ enum class NodeState {
      * Defines a node which has not finished its task
      */
     RUNNING,
+
     /**
      * Defines a node which has finished its task successfully. The definition of success is arbitrary and decided by the
      * node
      */
     SUCCESS,
+
     /**
      * Defines a node which has finished its task unsuccessfully. The definition of failure is arbitrary and decided by the
      * node
      */
     FAILURE,
+
     /**
      * A node which has this state was stopped by something and should halt functioning
      */
@@ -158,10 +163,12 @@ enum class CompositeOrder {
      * for the given entity object
      */
     RANDOM,
+
     /**
      * The children of this composite will be executed in the order they are defined
      */
     ORDERED,
+
     /**
      * The children of this composite will be executed all at the same time
      */

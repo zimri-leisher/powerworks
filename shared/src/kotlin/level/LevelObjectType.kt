@@ -1,6 +1,7 @@
 package level
 
 import graphics.Image
+import item.ItemType
 import screen.Camera
 import serialization.Input
 import serialization.Output
@@ -19,6 +20,7 @@ open class LevelObjectType<T : LevelObject>(initializer: LevelObjectType<T>.() -
     var hitbox = Hitbox.NONE
     var requiresUpdate = false
     var textures = LevelObjectTextures(Image.Misc.ERROR)
+    var itemForm: ItemType? = null
 
     init {
         initializer()

@@ -23,14 +23,14 @@ class FurnaceBlock(type: MachineBlockType<FurnaceBlock>, xTile: Int, yTile: Int,
     }
 
     override fun onContainerClear(container: ResourceContainer) {
-        if (container == queue) {
+        if (container.id == queue.id) {
             currentlySmelting = null
             on = false
         }
     }
 
     override fun onAddToContainer(container: ResourceContainer, resources: ResourceList) {
-        if (container == queue) {
+        if (container.id == queue.id) {
             if (currentlySmelting == null) {
                 currentlySmelting = resources[0]!!.key as OreItemType
                 on = true
@@ -39,7 +39,7 @@ class FurnaceBlock(type: MachineBlockType<FurnaceBlock>, xTile: Int, yTile: Int,
     }
 
     override fun onRemoveFromContainer(container: ResourceContainer, resources: ResourceList) {
-        if (container == queue) {
+        if (container.id == queue.id) {
             if (currentlySmelting == null) {
                 currentlySmelting = resources[0]!!.key as OreItemType
                 on = true

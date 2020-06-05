@@ -1,6 +1,7 @@
 package level.moving
 
 import graphics.Image
+import item.EntityItemType
 import item.ItemType
 import level.DroppedItem
 import level.Hitbox

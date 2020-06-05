@@ -17,7 +17,7 @@ class GUITabList(parent: RootGUIElement, name: String, xAlignment: Alignment, yA
                  val onSelectTab: (tabID: String) -> Unit = {}, open: Boolean = false, layer: Int = parent.layer + 1) :
         GUIElement(parent, name, xAlignment, yAlignment, { 0 }, { TAB_HEIGHT }, open, layer) {
 
-    private var selectedTabIndex = 0
+    var selectedTabIndex = 0
     private val tabWidths: Array<Int>
     var selectedTab = tabs[0]
 

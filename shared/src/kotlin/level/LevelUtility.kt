@@ -1,16 +1,26 @@
 package level
 
 import item.ItemType
-import item.weapon.Projectile
 import level.block.Block
-import level.entity.robot.BrainRobot
 import level.moving.MovingObject
-import level.particle.Particle
+import level.tile.Tile
 import misc.Geometry
 import resource.ResourceNode
 import resource.ResourceType
 import kotlin.math.max
 import kotlin.math.min
+
+fun Level.isChunkWithinBounds(xChunk: Int, yChunk: Int) = isTileWithinBounds(xChunk shl CHUNK_TILE_EXP, yChunk shl CHUNK_TILE_EXP)
+
+fun Level.isTileWithinBounds(xTile: Int, yTile: Int) = isPixelWithinBounds(xTile shl 4, yTile shl 4)
+
+fun Level.isPixelWithinBounds(xPixel: Int, yPixel: Int): Boolean {
+    if (xPixel < 0 || yPixel < 0)
+        return false
+    if (xPixel >= widthPixels || yPixel >= heightPixels)
+        return false
+    return true
+}
 
 /**
  * Gets collisions between the [levelObj] and [Block]s in this [Level]
@@ -43,6 +53,10 @@ fun Level.getBlockCollisions(hitbox: Hitbox, xPixel: Int, yPixel: Int, predicate
  * it is just the area in which other [Block]s are unable to be placed
  */
 fun Level.getBlockAt(xTile: Int, yTile: Int): Block? {
+    if (!isTileWithinBounds(xTile, yTile)) {
+        println("out of bounds")
+        return null
+    }
     return getChunkFromTile(xTile, yTile).getBlock(xTile, yTile)
 }
 
@@ -127,6 +141,7 @@ fun Level.getMovingObjectCollisions(hitbox: Hitbox, xPixel: Int, yPixel: Int, pr
     for (chunk in chunks) {
         set.addAll(getCollisionsWith(chunk.data.moving, hitbox, xPixel, yPixel, predicate))
         set.addAll(getCollisionsWith(chunk.data.movingOnBoundary, hitbox, xPixel, yPixel, predicate))
+        set.addAll(getCollisionsWith(data.ghostObjects, hitbox, xPixel, yPixel, predicate))
     }
     return set as Set<MovingObject>
 }
@@ -153,6 +168,7 @@ fun Level.getCollisionsWith(hitbox: Hitbox, xPixel: Int, yPixel: Int, predicate:
     val set = mutableSetOf<LevelObject>()
     set.addAll(getMovingObjectCollisions(hitbox, xPixel, yPixel, predicate))
     set.addAll(getBlockCollisions(hitbox, xPixel, yPixel, predicate))
+    set.addAll(getCollisionsWith(data.ghostObjects, hitbox, xPixel, yPixel, predicate))
     return set
 }
 
@@ -246,6 +262,8 @@ fun Level.getMovingObjectCollisionsInSquareCenteredOn(xPixel: Int, yPixel: Int, 
  */
 fun Level.getMovingObjectCollisionsWithPoint(xPixel: Int, yPixel: Int, predicate: (MovingObject) -> Boolean = { true }): Set<MovingObject> {
     val set = mutableSetOf<MovingObject>()
+    if (!isPixelWithinBounds(xPixel, yPixel))
+        return emptySet()
     val chunk = getChunkFromPixel(xPixel, yPixel)
     set.addAll(getCollisionsWith(chunk.data.moving, xPixel, yPixel, 0, 0, predicate))
     set.addAll(getCollisionsWith(chunk.data.movingOnBoundary, xPixel, yPixel, 0, 0, predicate))
@@ -259,9 +277,9 @@ fun Level.updateResourceNodeAttachments(node: ResourceNode) {
     val attached = getResourceNodesAt(node.xTile + Geometry.getXSign(node.dir), node.yTile + Geometry.getYSign(node.dir), { it.resourceCategory == node.resourceCategory })
             .filter { it.dir == Geometry.getOppositeAngle(node.dir) }.firstOrNull()
     node.attachedNode = attached
-    if(attached != null && node.network != attached.network) {
+    if (attached != null && node.network.id != attached.network.id) {
         // merge networks
-        if(node.network.attachedNodes.size >= attached.network.attachedNodes.size) {
+        if (node.network.attachedNodes.size >= attached.network.attachedNodes.size) {
             node.network.mergeIntoThis(attached.network)
         } else {
             attached.network.mergeIntoThis(node.network)
@@ -275,6 +293,8 @@ fun Level.updateResourceNodeAttachments(node: ResourceNode) {
  */
 fun Level.getResourceNodesAt(xTile: Int, yTile: Int, predicate: (ResourceNode) -> Boolean = { true }): Set<ResourceNode> {
     val set = mutableSetOf<ResourceNode>()
+    if (!isTileWithinBounds(xTile, yTile))
+        return emptySet()
     val chunk = getChunkFromTile(xTile, yTile)
     chunk.data.resourceNodes.forEach { it.filter { predicate(it) && it.xTile == xTile && it.yTile == yTile }.forEach { set.add(it) } }
     return set
@@ -295,7 +315,11 @@ fun Level.getDroppedItemCollisionsInSquareCenteredOn(xPixel: Int, yPixel: Int, r
 /**
  * @return the [Tile] at [xTile], [yTile]
  */
-fun Level.getTileAt(xTile: Int, yTile: Int) = getChunkFromTile(xTile, yTile).getTile(xTile, yTile)
+fun Level.getTileAt(xTile: Int, yTile: Int): Tile {
+    if (!isTileWithinBounds(xTile, yTile))
+        throw Exception("No tile at $xTile, $yTile in $this")
+    return getChunkFromTile(xTile, yTile).getTile(xTile, yTile)
+}
 
 /**
  * Gets the [LevelObject]s at [xPixel], [yPixel] matching the given [predicate] (defaults to { true })
@@ -312,12 +336,10 @@ fun Level.getLevelObjectsAt(xPixel: Int, yPixel: Int, predicate: (LevelObject) -
 }
 
 fun Level.getChunkAt(xChunk: Int, yChunk: Int): Chunk {
-    try {
-        return data.chunks[xChunk + yChunk * widthChunks]
-    } catch(e: ArrayIndexOutOfBoundsException) {
-        System.err.println("Level: $this")
-        throw e
+    if (!isChunkWithinBounds(xChunk, yChunk)) {
+        throw Exception("No chunk at $xChunk, $yChunk in $this")
     }
+    return data.chunks[xChunk + yChunk * widthChunks]
 }
 
 fun Level.getChunkFromTile(xTile: Int, yTile: Int) =
@@ -366,6 +388,10 @@ fun Level.canAdd(type: LevelObjectType<*>, xPixel: Int, yPixel: Int) = canAdd(ty
 fun Level.canAdd(hitbox: Hitbox, xPixel: Int, yPixel: Int): Boolean {
     // TODO check rotation too
     return hitbox == Hitbox.NONE || getCollisionsWith(hitbox, xPixel, yPixel).isEmpty()
+}
+
+fun Level.canRemove(l: LevelObject): Boolean {
+    return l.inLevel && l.level == this
 }
 
 /**

@@ -19,13 +19,10 @@ abstract class Entity(type: EntityType<out Entity>, xPixel: Int, yPixel: Int, ro
 
     @Id(24)
     val behaviors = mutableMapOf<BehaviorTree, Int>()
-
     @Id(25)
     private val _toAdd = mutableMapOf<BehaviorTree, Int>()
-
     @Id(26)
     private val _toRemove = mutableListOf<BehaviorTree>()
-
     @Id(27)
     private var traversing = false
 

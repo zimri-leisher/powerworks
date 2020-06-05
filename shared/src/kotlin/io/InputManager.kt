@@ -54,6 +54,8 @@ data class ControlPress(val control: Control, val pressType: PressType)
 
 enum class PressType { PRESSED, REPEAT, RELEASED }
 
+// TODO aliases, repeat delays, double presses
+
 object InputManager : InputProcessor {
     var map = ControlMap.DEFAULT
 

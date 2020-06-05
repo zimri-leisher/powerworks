@@ -16,7 +16,7 @@ open class ItemType(initializer: ItemType.() -> Unit = {}) : ResourceType() {
 
     override val category
         get() = ResourceCategory.ITEM
-    var maxStack = 10
+    var maxStack = 100
 
     init {
         initializer()
@@ -61,6 +61,7 @@ open class EntityItemType(initializer: EntityItemType.() -> Unit = {}) : ItemTyp
     init {
         initializer()
         ALL.add(this)
+        spawnedEntity.itemForm = this
     }
 
     companion object {
@@ -74,6 +75,7 @@ class RobotItemType(initializer: RobotItemType.() -> Unit) : EntityItemType() {
         maxStack = 100
         initializer()
         ALL.add(this)
+        spawnedEntity.itemForm = this
     }
 
     companion object {
@@ -94,6 +96,7 @@ class BlockItemType(initializer: BlockItemType.() -> Unit): ItemType() {
     init {
         initializer()
         ALL.add(this)
+        placedBlock.itemForm = this
     }
 
     companion object {
@@ -118,11 +121,11 @@ class BlockItemType(initializer: BlockItemType.() -> Unit): ItemType() {
             placedBlock = CrafterBlockType.ROBOT_FACTORY
         }
 
-        val TUBE = BlockItemType {
+        val ITEM_PIPE = BlockItemType {
             name = "Item Pipe"
             icon = Texture(Image.Item.TUBE)
             placedBlock = PipeBlockType.ITEM_PIPE
-            maxStack = 50
+            maxStack = 100
         }
 
         val CHEST_SMALL = BlockItemType {
@@ -151,7 +154,7 @@ class BlockItemType(initializer: BlockItemType.() -> Unit): ItemType() {
             placedBlock = FluidTankBlockType.SMALL
         }
 
-        val PIPE = BlockItemType {
+        val FLUID_PIPE = BlockItemType {
             name = "Fluid Pipe"
             icon = Texture(Image.Item.PIPE)
             placedBlock = PipeBlockType.FLUID_PIPE

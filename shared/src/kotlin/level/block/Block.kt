@@ -2,9 +2,12 @@ package level.block
 
 import level.*
 import level.particle.ParticleEffect
+import network.BlockReference
+import network.LevelObjectReference
 import resource.ResourceNode
 import resource.getAttachedContainers
 import serialization.Id
+import kotlin.math.abs
 
 abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotation: Int = 0) : LevelObject(type, xTile shl 4, yTile shl 4, rotation) {
 
@@ -46,7 +49,7 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotatio
             for (h in 0 until type.heightTiles) {
                 for (y in -1..1) {
                     for (x in -1..1) {
-                        if (Math.abs(x) != Math.abs(y)) {
+                        if (abs(x) != abs(y)) {
                             val b = level.getBlockAt(xTile + x + w, yTile + y + h)
                             if (b != null && b != this)
                                 adjacent.add(b)
@@ -71,7 +74,7 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotatio
             for (h in 0 until type.heightTiles) {
                 for (y in -1..1) {
                     for (x in -1..1) {
-                        if (Math.abs(x) != Math.abs(y)) {
+                        if (abs(x) != abs(y)) {
                             val b = level.getBlockAt(xTile + x + w, yTile + y + h)
                             if (b != null && b != this)
                                 adjacent.add(b)
@@ -124,19 +127,43 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotatio
         return set
     }
 
+    override fun toReference(): LevelObjectReference {
+        return BlockReference(this)
+    }
+
     override fun toString(): String {
-        return "Block at $xTile, $yTile, type: $type"
+        return "${javaClass.simpleName} at $xTile, $yTile, type: $type"
     }
 
     override fun equals(other: Any?): Boolean {
-        return other != null && other.javaClass == this.javaClass && other is Block && other.inLevel == inLevel && other.xTile == xTile && other.yTile == yTile && other.type == type
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        if (!super.equals(other)) return false
+
+        other as Block
+
+        if (textures != other.textures) return false
+        if (nodes.size != other.nodes.size) return false
+        for (node in nodes) {
+            if (node !in other.nodes) {
+                return false
+            }
+        }
+        if (containers.size != other.containers.size) return false
+        for (container in containers) {
+            if (container !in other.containers) {
+                return false
+            }
+        }
+
+        return true
     }
 
     override fun hashCode(): Int {
-        var result = type.hashCode()
-        result = 31 * result + rotation
-        result = 31 * result + xTile
-        result = 31 * result + yTile
+        var result = super.hashCode()
+        result = 31 * result + textures.hashCode()
+        result = 31 * result + nodes.hashCode()
+        result = 31 * result + containers.hashCode()
         return result
     }
 }

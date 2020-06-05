@@ -1,9 +1,14 @@
 package level.moving
 
-import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag
 import level.*
-import misc.Numbers
+import main.Game
+import network.LevelObjectReference
+import network.MovingObjectReference
+import network.ServerNetworkManager
 import serialization.Id
+import kotlin.math.IEEErem
+import kotlin.math.absoluteValue
+import kotlin.math.sign
 
 abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: Int, yPixel: Int, rotation: Int = 0) : LevelObject(type, xPixel, yPixel, rotation, true) {
     override val type = type
@@ -15,8 +20,11 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: In
             field = value
             xTile = value shr 4
             xChunk = xTile shr CHUNK_TILE_EXP
+            xPixelRemainder = 0.0
             onMove(old, yPixel)
         }
+
+    private var xPixelRemainder = 0.0
 
     final override var yPixel = yPixel
         set(value) {
@@ -24,8 +32,11 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: In
             field = value
             yTile = value shr 4
             yChunk = yTile shr CHUNK_TILE_EXP
+            yPixelRemainder = 0.0
             onMove(xPixel, old)
         }
+
+    private var yPixelRemainder = 0.0
 
     final override var xTile = xPixel shr 4
         private set
@@ -42,21 +53,27 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: In
     // tags start here because of superclass tags
 
     @Id(17)
-    var xVel = 0
+    var xVel = 0.0
         set(value) {
-            if (value > type.maxSpeed || value < -type.maxSpeed)
-                field = type.maxSpeed * Numbers.sign(value)
-            else
+            if (value > type.maxSpeed || value < -type.maxSpeed) {
+                field = type.maxSpeed.toDouble() * value.sign
+            } else if (value.absoluteValue < EPSILON) {
+                field = 0.0
+            } else {
                 field = value
+            }
         }
 
     @Id(18)
-    var yVel = 0
+    var yVel = 0.0
         set(value) {
-            if (value > type.maxSpeed || value < -type.maxSpeed)
-                field = type.maxSpeed * Numbers.sign(value)
-            else
+            if (value > type.maxSpeed || value < -type.maxSpeed) {
+                field = type.maxSpeed.toDouble() * value.sign
+            } else if (value.absoluteValue < EPSILON) {
+                field = 0.0
+            } else {
                 field = value
+            }
         }
 
     /**
@@ -104,7 +121,7 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: In
     }
 
     open fun move() {
-        if (xVel != 0 || yVel != 0) {
+        if (xVel.absoluteValue > EPSILON || yVel.absoluteValue > EPSILON) {
             if (yVel > 0)
                 rotation = 0
             else if (xVel > 0)
@@ -115,8 +132,15 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: In
                 rotation = 3
             val pXPixel = xPixel
             val pYPixel = yPixel
-            val nXPixel = xPixel + xVel
-            val nYPixel = yPixel + yVel
+            // add fractional part of velocity
+            xPixelRemainder += xVel - xVel.toInt()
+            yPixelRemainder += yVel - yVel.toInt()
+            // add integer of velocity and integer of remainder
+            val nXPixel = xPixel + xVel.toInt() + xPixelRemainder.toInt()
+            val nYPixel = yPixel + yVel.toInt() + yPixelRemainder.toInt()
+            // remove integer of remainder
+            xPixelRemainder -= xPixelRemainder.toInt()
+            yPixelRemainder -= yPixelRemainder.toInt()
             var collisions: MutableSet<LevelObject>? = null
             val g = getCollisions(nXPixel, nYPixel).toMutableSet()
             var xPixelOk = false
@@ -151,6 +175,9 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: In
                 yPixel = nYPixel
             }
             if (pXPixel != xPixel || pYPixel != yPixel) {
+                if(Game.IS_SERVER) {
+                    //ServerNetworkManager.sendToClients(MovingObjectPositonUpdatePacket(MovingObjectReference(this), xPixel, yPixel))
+                }
                 onMove(pXPixel, pYPixel)
             }
             xVel /= type.drag
@@ -178,5 +205,13 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: In
                 intersectingChunks = newIntersectingChunks
             }
         }
+    }
+
+    override fun toReference(): LevelObjectReference {
+        return MovingObjectReference(this)
+    }
+
+    companion object {
+        const val EPSILON = 1e-10
     }
 }

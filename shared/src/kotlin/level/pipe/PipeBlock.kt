@@ -60,7 +60,7 @@ abstract class PipeBlock(override val type: PipeBlockType<out PipeBlock>, xTile:
 
     fun onPipeConnectionChange(pipe: PipeBlock?) {
         if (pipe != null) {
-            if (pipe.network == network)
+            if (pipe.network.id == network.id)
                 return
             if (pipe.network.size > network.size) {
                 pipe.network.mergeIntoThis(network)

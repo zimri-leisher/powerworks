@@ -83,6 +83,10 @@ class Inventory(
         return ret
     }
 
+    override fun getSpaceForType(type: ResourceType): Int {
+        return 0
+    }
+
     override fun getQuantity(resource: ResourceType) = items.filter { it?.type == resource }.sumBy { it?.quantity ?: 0 }
 
     fun indexOf(resource: ItemType): Int {
@@ -234,7 +238,7 @@ class Inventory(
 
     override fun toString() = "Inventory width: $width, height: $height, $totalQuantity items"
 
-    fun contentEquals(other: Any?): Boolean {
+    override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
         if (!super.equals(other)) return false
@@ -250,7 +254,7 @@ class Inventory(
         return true
     }
 
-    fun contentHashCode(): Int {
+    override fun hashCode(): Int {
         var result = super.hashCode()
         result = 31 * result + width
         result = 31 * result + height

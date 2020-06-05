@@ -1,6 +1,7 @@
 package level
 
 import audio.AudioManager
+import crafting.Recipe
 import data.DirectoryChangeWatcher
 import data.FileManager
 import data.GameDirectoryIdentifier
@@ -8,6 +9,7 @@ import data.WeakMutableList
 import io.ControlPressHandler
 import io.InputManager
 import io.MouseMovementListener
+import level.block.CrafterBlock
 import level.entity.robot.Robot
 import level.entity.robot.RobotType
 import level.generator.LevelType
@@ -231,14 +233,16 @@ object LevelManager : DirectoryChangeWatcher, MouseMovementListener, CameraMovem
             updateLevelAndViewInformation()
             updateChunksBeingRendered()
         }
-        if (InputManager.inputsBeingPressed.contains("SPACE"))
-            levelUnderMouse?.add(Robot(RobotType.STANDARD, mouseLevelXPixel, mouseLevelYPixel))
         loadedLevels.forEach { it.update() }
     }
 
     override fun onDirectoryChange(dir: Path) {
         if (dir == FileManager.fileSystem.getPath(GameDirectoryIdentifier.SAVES)) {
         }
+    }
+
+    fun onCrafterRecipeChange(block: CrafterBlock, newRecipe: Recipe?) {
+
     }
 
     fun saveLevels() {

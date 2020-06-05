@@ -9,7 +9,9 @@ class LevelDataPacket(
         @Id(3)
         val levelId: UUID,
         @Id(4)
-        val data: LevelData) : Packet(PacketType.LEVEL_DATA) {
+        val data: LevelData,
+        @Id(5)
+        val updatesCount: Int) : Packet(PacketType.LEVEL_DATA) {
 
-    private constructor() : this(UUID.randomUUID(), LevelData(ConcurrentlyModifiableMutableList(), mutableListOf(), arrayOf(), mutableListOf()))
+    private constructor() : this(UUID.randomUUID(), LevelData(ConcurrentlyModifiableMutableList(), mutableListOf(), arrayOf(), mutableListOf()), 0)
 }

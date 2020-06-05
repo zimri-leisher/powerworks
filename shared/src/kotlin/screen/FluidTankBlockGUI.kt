@@ -22,5 +22,5 @@ class FluidTankBlockGUI(block: FluidTankBlock) : FluidTankGUI(block.tank), Block
         return true
     }
 
-    override fun isDisplayingBlock(block: Block) = block == this.block
+    override fun isDisplayingBlock(block: Block) = block.id == this.block.id
 }

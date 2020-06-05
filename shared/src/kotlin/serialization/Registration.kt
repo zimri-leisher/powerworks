@@ -2,6 +2,7 @@ package serialization
 
 import audio.AudioManager
 import audio.Sound
+import behavior.Behavior
 import behavior.BehaviorTree
 import behavior.VariableData
 import com.badlogic.gdx.graphics.g2d.TextureRegion
@@ -44,9 +45,9 @@ import main.DebugCode
 import main.Version
 import misc.PixelCoord
 import misc.TileCoord
-import network.User
+import network.*
 import network.packet.*
-import player.Player
+import player.*
 import resource.*
 import routing.*
 import routing.script.*
@@ -69,8 +70,10 @@ object Registration {
 
     fun registerAll() {
 
-        // max 189
+        // max 230
         /* COLLECTIONS */
+        val singletonList = listOf(1)
+        register(singletonList::class, CollectionSerializer {it.toList()}, 209)
         register(emptyList<Nothing>()::class, EmptyListSerializer(), 160)
         val immutableListClass = Class.forName("java.util.Arrays${'$'}ArrayList") as Class<Collection<Any?>>
         register<Collection<Any?>>(immutableListClass, CollectionSerializer { listOf(*it.toTypedArray()) }, 141)
@@ -95,6 +98,7 @@ object Registration {
         register(Sound::class, EnumSerializer<Sound>(), 111)
 
         /* BEHAVIOR */
+        Behavior
         register(BehaviorTree::class, IDSerializer({ BehaviorTree.ALL }, { it.id }), 112)
         register(VariableData::class, 113)
 
@@ -147,6 +151,13 @@ object Registration {
         register(LevelObjectTextures::class, 60)
         register(RemoteLevel::class, LevelSerializer<RemoteLevel>(), 64)
         register(ChunkData::class, 146)
+        register(GhostLevelObject::class, 201)
+        register(AddObject::class, 222)
+        register(RemoveObject::class, 223)
+        register(DefaultLevelModification::class, 226)
+        register(LevelModificationType::class, EnumSerializer<LevelModificationType>(), 227)
+        register(SelectCrafterRecipe::class, 229)
+        register(ModifyBrainRobotInv::class, 230)
 
         /* /BLOCK */
         register(BlockType::class, LevelObjectTypeSerializer(), 22)
@@ -168,6 +179,7 @@ object Registration {
         register(MinerBlock::class, 30)
         register(SolidifierBlock::class, 31)
         register(PipeBlock::class, 189)
+        register(RobotFactoryBlock::class, 217)
 
         /* /ENTITY */
         register(Entity::class, 32)
@@ -222,23 +234,30 @@ object Registration {
         register(LevelInfoPacket::class, 74)
         register(Packet::class, 75)
         register(PacketType::class, EnumSerializer<PacketType>(), 77)
-        register(AddBlockToLevelPacket::class, 78)
         register(PlayerDataPacket::class, 79)
         register(RequestChunkDataPacket::class, 80)
         register(RequestLevelDataPacket::class, 81)
         register(RequestLevelInfoPacket::class, 82)
         register(RequestPlayerDataPacket::class, 83)
         register(ServerHandshakePacket::class, 84)
-        register(RemoveBlockFromLevelPacket::class, 123)
         register(LoadGamePacket::class, 134)
         register(RequestLoadGamePacket::class, 135)
-        register(AcknowledgeLevelModificationPacket::class, 156)
-        register(AddMovingObjectToLevel::class, 157)
-        register(RemoveMovingFromLevelPacket::class, 158)
-        register(AddDroppedItemToLevel::class, 159)
+        register(PlayerActionPacket::class, 192)
+        register(AcknowledgePlayerActionPacket::class, 196)
+        register(BlockReference::class, NetworkReferenceSerializer(), 197)
+        register(MovingObjectReference::class, NetworkReferenceSerializer(), 198)
+        register(ResourceNodeReference::class, NetworkReferenceSerializer(), 199)
+        register(DroppedItemReference::class, NetworkReferenceSerializer(), 216)
+        register(LevelModificationPacket::class, 228)
 
         /* PLAYER */
         register(Player::class, 85)
+        register(PlaceLevelObject::class, 202)
+        register(RemoveLevelObjectAction::class, 203)
+        register(SelectCrafterRecipeAction::class, 206)
+        register(ControlEntityAction::class, 207)
+        register(EditResourceNodeBehaviorAction::class, 208)
+        register(PickUpDroppedItemAction::class, 215)
 
         /* RESOURCE */
         register(ResourceCategory::class, EnumSerializer<ResourceCategory>(), 86)

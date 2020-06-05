@@ -32,7 +32,7 @@ open class OreTileType(textures: ImageCollection = ImageCollection.GRASS_COPPER_
                 OreItemType.IRON_ORE,
                 TileType.GRASS,
                 5,
-                .1)
+                .2)
 
         val GRASS_COPPER_ORE = OreTileType(ImageCollection.GRASS_COPPER_ORE_TILE, "Grass and copper ore",
                 5000,
@@ -40,7 +40,7 @@ open class OreTileType(textures: ImageCollection = ImageCollection.GRASS_COPPER_
                 OreItemType.COPPER_ORE,
                 TileType.GRASS,
                 3,
-                .07)
+                .2)
     }
 }
 

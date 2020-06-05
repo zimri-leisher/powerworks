@@ -32,7 +32,7 @@ class LevelViewWindow(name: String,
     private val controls = mutableListOf<GUIElement>()
 
     init {
-        InputManager.registerControlPressHandler(this, ControlPressHandlerType.SCREEN_THIS, Control.CAMERA_UP, Control.CAMERA_DOWN, Control.CAMERA_LEFT, Control.CAMERA_RIGHT)
+        InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.CAMERA_UP, Control.CAMERA_DOWN, Control.CAMERA_LEFT, Control.CAMERA_RIGHT)
         nameText.transparentToInteraction = true
         controls.add(generateDimensionDragGrip(2))
         controls.add(generateDragGrip(2))
@@ -45,6 +45,9 @@ class LevelViewWindow(name: String,
     override fun handleControlPress(p: ControlPress) {
         // eventually check if this was the last selected gui level view
         if (p.control in Control.Group.CAMERA && p.pressType != PressType.RELEASED && camera is MovingObject) {
+            if(!open) {
+                return
+            }
             val c = p.control
             val m = camera as MovingObject
             if (c == Control.CAMERA_UP) {

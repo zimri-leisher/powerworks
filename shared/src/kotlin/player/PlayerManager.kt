@@ -1,30 +1,43 @@
 package player
 
+import data.ConcurrentlyModifiableWeakMutableList
 import data.FileManager
 import data.GameDirectoryIdentifier
-import data.WeakMutableList
 import item.ItemType
 import level.ActualLevel
 import level.LevelManager
-import level.add
 import level.entity.robot.BrainRobot
+import main.Game
+import network.ClientNetworkManager
+import network.ServerNetworkManager
 import network.User
-import serialization.SerializerDebugger
+import network.packet.*
 import java.util.*
 
-object PlayerManager {
+object PlayerManager : PacketHandler {
     lateinit var localPlayer: Player
 
-    val allPlayers = WeakMutableList<Player>()
+    val allPlayers = ConcurrentlyModifiableWeakMutableList<Player>()
+
+    val actionsAwaitingAck = mutableListOf<PlayerActionPacket>()
 
     fun isLocalPlayerLoaded() = ::localPlayer.isInitialized
 
-    fun getPlayer(user: User): Player {
+    init {
+        ServerNetworkManager.registerClientPacketHandler(this, PacketType.PLAYER_ACTION)
+        ClientNetworkManager.registerServerPacketHandler(this, PacketType.ACK_PLAYER_ACTION)
+    }
 
-        val alreadyExistingPlayer = allPlayers.filter { it.user == user }.firstOrNull()
+    fun getPlayer(user: User): Player {
+        var alreadyExistingPlayer: Player? = null
+        allPlayers.forEach {
+            if (it.user == user) {
+                alreadyExistingPlayer = it
+            }
+        }
         if (alreadyExistingPlayer != null) {
             // player has already been loaded this server session
-            return alreadyExistingPlayer
+            return alreadyExistingPlayer!!
         } else {
             var player = tryLoadPlayer(user.id)
             if (player == null) {
@@ -34,13 +47,12 @@ object PlayerManager {
             } else {
                 // player has connected before but not this session
                 // preload the players level if it is not already
-                if(LevelManager.allLevels.none {it.id == player.homeLevelId}) {
+                if (LevelManager.allLevels.none { it.id == player.homeLevelId }) {
                     ActualLevel(player.homeLevelId, LevelManager.tryLoadLevelInfo(player.homeLevelId)!!)
                 }
             }
             return player
         }
-
     }
 
     fun tryLoadPlayer(id: UUID) = FileManager.tryLoadObject(GameDirectoryIdentifier.PLAYERS, "$id.player", Player::class.java)
@@ -49,7 +61,7 @@ object PlayerManager {
         val level = ActualLevel(LevelManager.newLevelId(), LevelManager.newLevelInfoFor(forUser))
         val player = Player(forUser, level.id, UUID.randomUUID())
         val brainRobot = BrainRobot(level.widthPixels / 2, level.heightPixels / 2, 0, player)
-        for(type in ItemType.ALL) {
+        for (type in ItemType.ALL) {
             brainRobot.inventory.add(type, type.maxStack)
         }
         level.add(brainRobot)
@@ -63,5 +75,63 @@ object PlayerManager {
 
     fun savePlayers() {
         allPlayers.forEach { savePlayer(it) }
+    }
+
+    fun takeAction(action: PlayerAction) {
+        if (Game.IS_SERVER) {
+            if (action.verify()) {
+                action.act()
+            }
+        } else {
+            val packet = PlayerActionPacket(action)
+            actionsAwaitingAck.add(packet)
+            ClientNetworkManager.sendToServer(packet)
+            action.actTransient()
+        }
+    }
+
+    override fun handleClientPacket(packet: Packet) {
+        if (packet.type != PacketType.PLAYER_ACTION)
+            return
+        packet as PlayerActionPacket
+        var ownerShouldBe: Player? = null
+        allPlayers.forEach {
+            if (it.user == packet.fromUser) {
+                ownerShouldBe = it
+            }
+        }
+        if (ownerShouldBe == null) {
+            println("Received an action from a user whose player has not been loaded yet")
+            return
+        }
+        if (ownerShouldBe != packet.action.owner) {
+            println("Received an action but the owner was incorrect--suspicious client")
+            return
+        }
+        if (!packet.action.verify()) {
+            ServerNetworkManager.sendToClient(AcknowledgePlayerActionPacket(packet.id, false), packet.connectionId)
+        } else {
+            ServerNetworkManager.sendToClient(AcknowledgePlayerActionPacket(packet.id, true), packet.connectionId)
+            if(!packet.action.act()) {
+                println("Incongruity between verify and act requirements")
+            }
+        }
+    }
+
+    override fun handleServerPacket(packet: Packet) {
+        if (packet.type == PacketType.ACK_PLAYER_ACTION) {
+            packet as AcknowledgePlayerActionPacket
+            val ackdPacket = actionsAwaitingAck.firstOrNull { it.id == packet.ackPacketId }
+            if (ackdPacket == null) {
+                println("Received acknowledgement for a packet that wasn't being waited on")
+            } else {
+                println("received server acknowledgement for ${ackdPacket.action}")
+                ackdPacket.action.cancelActTransient()
+                actionsAwaitingAck.remove(ackdPacket)
+                if (!packet.success) {
+                    println("Server denied ${ackdPacket.action}")
+                }
+            }
+        }
     }
 }

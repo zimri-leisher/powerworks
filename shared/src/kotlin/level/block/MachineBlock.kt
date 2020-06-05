@@ -42,7 +42,7 @@ abstract class MachineBlock(override val type: MachineBlockType<out MachineBlock
 
     override fun update() {
         if (on) {
-            currentWork++
+            currentWork += 1
             onWork()
             if (currentWork >= (type.maxWork / type.speed).toInt()) {
                 currentWork = 0

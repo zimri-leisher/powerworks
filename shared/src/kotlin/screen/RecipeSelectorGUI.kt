@@ -19,68 +19,16 @@ private const val RECIPES_PER_ROW = 6
  * A handy little thing that any class can open up and accept a choice from
  * The best way to get the choice is calling getSelected() in your update method
  */
-object RecipeSelectorGUI : GUIWindow("Recipe selector", 20, 20, 100,
+object RecipeSelectorGUI : GUIWindow("Recipe selector", 0, 0, 100,
         GUITabList.TAB_HEIGHT + 3 * GUIRecipeDisplay.HEIGHT + 2,
         ScreenManager.Groups.PLAYER_UTIL) {
 
-    private class GUIRecipeSelectionButton(parent: RootGUIElement, name: String, xAlignment: Alignment, yAlignment: Alignment, val recipe: Recipe, open: Boolean = false, layer: Int = parent.layer + 1) :
-            GUIElement(parent, name, xAlignment, yAlignment, { GUIRecipeDisplay.WIDTH }, { GUIRecipeDisplay.HEIGHT }, open, layer + 2) {
-
-        private val recipeDisplay = GUIRecipeDisplay(this, "Recipe (icon: ${recipe.iconType}) display", { 0 }, { 0 }, recipe, layer = layer - 1, open = open).apply { transparentToInteraction = true }
-
-        override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
-            if (isAvailable()) {
-                if (type == PressType.PRESSED && button == Input.Buttons.LEFT) {
-                    selected = recipeDisplay.recipe
-                    recipeDisplay.background.localRenderParams.brightness = 0.9f
-                    recipeDisplay.background.localRenderParams.rotation = 180f
-                } else if (type == PressType.RELEASED) {
-                    recipeDisplay.background.localRenderParams.brightness = 1.1f
-                }
-            }
-        }
-
-        fun isAvailable() = available(recipe)
-
-        override fun render() {
-            if (!isAvailable()) {
-                Renderer.renderTexture(Image.GUI.WHITE_FILLER, xPixel, yPixel, widthPixels, heightPixels, TextureRenderParams(color = toColor(r = 1f, g = 0f, b = 0f, a = 0.3f)))
-            }
-        }
-
-        override fun onMouseEnter() {
-            if (isAvailable()) {
-                recipeDisplay.background.localRenderParams.brightness = 1.1f
-            }
-        }
-
-        override fun onMouseLeave() {
-            if (isAvailable()) {
-                recipeDisplay.background.localRenderParams.brightness = 1f
-                recipeDisplay.background.localRenderParams.rotation = 0f
-            }
-        }
-
-        companion object {
-            init {
-                Tooltips.addScreenTooltipTemplate({
-                    if (it is GUIRecipeSelectionButton && !it.isAvailable()) {
-                        return@addScreenTooltipTemplate "Not available!"
-                    } else {
-                        return@addScreenTooltipTemplate null
-                    }
-                })
-            }
-        }
-
-    }
 
     private val tabs: Array<GUIGroup>
 
     var available: (Recipe) -> Boolean = { true }
 
     var selected: Recipe? = null
-        private set
         /**
          * Gets the last selected recipe
          *
@@ -94,6 +42,8 @@ object RecipeSelectorGUI : GUIWindow("Recipe selector", 20, 20, 100,
             }
             return null
         }
+
+    private var guiTabList: GUITabList
 
     init {
         openAtMouse = true
@@ -114,7 +64,7 @@ object RecipeSelectorGUI : GUIWindow("Recipe selector", 20, 20, 100,
                 }
                 tagTexts.add(TextManager.parseTags("<size=40><img=${ResourceManager.getIdentifier(textureRegion)}>"))
 
-                GUIGroup(this, "recipe category background $i", { 0 }, { 0 }, open = i == 0).apply {
+                GUIGroup(this, "recipe category background $i", { 0 }, { 0 }).apply {
 
                     GUIDefaultTextureRectangle(this, "Recipe $category display reverse background", { 2 }, { 2 }, {this@RecipeSelectorGUI.widthPixels - 4}, {this@RecipeSelectorGUI.heightPixels - GUITabList.TAB_HEIGHT - 4}, open = open).apply {
                         localRenderParams.brightness = 0.7f
@@ -127,7 +77,6 @@ object RecipeSelectorGUI : GUIWindow("Recipe selector", 20, 20, 100,
                                     recipe, open)
 
                         }
-
                     }
                     matchParentOpening = false
                     tabList.add(this)
@@ -135,7 +84,7 @@ object RecipeSelectorGUI : GUIWindow("Recipe selector", 20, 20, 100,
                 i++
             }
             tabs = tabList.toTypedArray()
-            GUITabList(this, "tab list of recipe categories", { 2 }, { RecipeSelectorGUI.heightPixels - GUITabList.TAB_HEIGHT - 2 },
+            guiTabList = GUITabList(this, "tab list of recipe categories", { 2 }, { RecipeSelectorGUI.heightPixels - GUITabList.TAB_HEIGHT - 2 },
                     tagTexts.mapIndexed { index, taggedText -> Tab("$index", taggedText, RecipeCategory.values()[index].categoryName) }.toTypedArray(), { id ->
                 val index = id.toInt()
                 tabs.forEachIndexed { i, tab -> tab.open = i == index }
@@ -147,5 +96,58 @@ object RecipeSelectorGUI : GUIWindow("Recipe selector", 20, 20, 100,
 
     override fun onOpen() {
         tabs[0].open = true
+        guiTabList.selectedTabIndex = 0
     }
+}
+
+private class GUIRecipeSelectionButton(parent: RootGUIElement, name: String, xAlignment: Alignment, yAlignment: Alignment, val recipe: Recipe, open: Boolean = false, layer: Int = parent.layer + 1) :
+        GUIElement(parent, name, xAlignment, yAlignment, { GUIRecipeDisplay.WIDTH }, { GUIRecipeDisplay.HEIGHT }, open, layer + 2) {
+
+    private val recipeDisplay = GUIRecipeDisplay(this, "Recipe (icon: ${recipe.iconType}) display", { 0 }, { 0 }, recipe, layer = layer - 1, open = open).apply { transparentToInteraction = true }
+
+    override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+        if (isAvailable()) {
+            if (type == PressType.PRESSED && button == Input.Buttons.LEFT) {
+                RecipeSelectorGUI.selected = recipeDisplay.recipe
+                recipeDisplay.background.localRenderParams.brightness = 0.9f
+                recipeDisplay.background.localRenderParams.rotation = 180f
+            } else if (type == PressType.RELEASED) {
+                recipeDisplay.background.localRenderParams.brightness = 1.1f
+            }
+        }
+    }
+
+    fun isAvailable() = RecipeSelectorGUI.available(recipe)
+
+    override fun render() {
+        if (!isAvailable()) {
+            Renderer.renderTexture(Image.GUI.WHITE_FILLER, xPixel, yPixel, widthPixels, heightPixels, TextureRenderParams(color = toColor(r = 1f, g = 0f, b = 0f, a = 0.3f)))
+        }
+    }
+
+    override fun onMouseEnter() {
+        if (isAvailable()) {
+            recipeDisplay.background.localRenderParams.brightness = 1.1f
+        }
+    }
+
+    override fun onMouseLeave() {
+        if (isAvailable()) {
+            recipeDisplay.background.localRenderParams.brightness = 1f
+            recipeDisplay.background.localRenderParams.rotation = 0f
+        }
+    }
+
+    companion object {
+        init {
+            Tooltips.addScreenTooltipTemplate({
+                if (it is GUIRecipeSelectionButton && !it.isAvailable()) {
+                    return@addScreenTooltipTemplate "Not available!"
+                } else {
+                    return@addScreenTooltipTemplate null
+                }
+            })
+        }
+    }
+
 }

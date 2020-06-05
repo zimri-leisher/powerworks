@@ -19,7 +19,7 @@ class GUIResourceContainerDisplay(parent: RootGUIElement, name: String,
 
     var container = container
         set(value) {
-            if (field != value) {
+            if (field.id != value.id) {
                 field.listeners.remove(this)
                 field = value
                 value.listeners.add(this)

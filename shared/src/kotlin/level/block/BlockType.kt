@@ -269,6 +269,7 @@ open class MachineBlockType<T : MachineBlock>(initializer: MachineBlockType<T>.(
             name = "Miner"
             instantiate = { xPixel, yPixel, rotation -> MinerBlock(xPixel shr 4, yPixel shr 4, rotation) }
             textures = LevelObjectTextures(Animation.MINER)
+            maxWork = 350
             widthTiles = 2
             heightTiles = 2
             hitbox = Hitbox.TILE2X2
@@ -330,6 +331,17 @@ class CrafterBlockType(initializer: CrafterBlockType.() -> Unit) : MachineBlockT
     }
 
     companion object {
+
+        val ERROR = CrafterBlockType {
+            instantiate = { xPixel, yPixel, rotation -> CrafterBlock(this, xPixel shr 4, yPixel shr 4, rotation) }
+            nodeTemplate {
+                val input = Inventory(internalStorageSize, 1)
+                node(0, 1, 0, input, "true", allowOut = "false")
+                val output = Inventory(1, 1)
+                node(1, 0, 2, output, "false", allowOut = "true", forceOut = "true")
+            }
+        }
+
         val ITEM_CRAFTER = CrafterBlockType {
             name = "Crafter"
             crafterType = Crafter.Type.ITEM
@@ -347,13 +359,14 @@ class CrafterBlockType(initializer: CrafterBlockType.() -> Unit) : MachineBlockT
         val ROBOT_FACTORY = CrafterBlockType {
             name = "Robot Factory"
             crafterType = Crafter.Type.ROBOT
-            instantiate = { xPixel, yPixel, rotation -> CrafterBlock(this, xPixel shr 4, yPixel shr 4, rotation) }
+            instantiate = { xPixel, yPixel, rotation -> RobotFactoryBlock(xPixel shr 4, yPixel shr 4, rotation) }
             widthTiles = 3
             heightTiles = 3
+            internalStorageSize = 3
             textures = LevelObjectTextures(Texture(Image.Block.ROBOT_CRAFTER, xPixelOffset = -8))
             hitbox = Hitbox.TILE3X3
             nodeTemplate {
-                val internalInventory = Inventory(1, 1)
+                val internalInventory = Inventory(internalStorageSize, 1)
                 node(0, 1, 3, internalInventory, "true", allowOut = "false")
                 node(2, 1, 1, internalInventory, "true", allowOut = "false")
                 val output = Inventory(1, 1)

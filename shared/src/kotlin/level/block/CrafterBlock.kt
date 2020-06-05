@@ -44,10 +44,10 @@ open class CrafterBlock(override val type: CrafterBlockType, xTile: Int, yTile: 
     private val inputNodes = nodes.filter { it.behavior.allowIn.possible()?.isEmpty() == true } // nodes that start out allowing all types out
 
     @Id(26)
-    private val inputContainer = inputNodes.getAttachedContainers().first()
+    protected val inputContainer = inputNodes.getAttachedContainers().first()
 
     @Id(27)
-    private val outputContainer = nodes.filter { it.behavior.allowOut.possible()?.isEmpty() == true }.getAttachedContainers().first()
+    protected val outputContainer = nodes.filter { it.behavior.allowOut.possible()?.isEmpty() == true }.getAttachedContainers().first()
 
     init {
         inputContainer.listeners.add(this)

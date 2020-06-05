@@ -119,7 +119,7 @@ class GUIItemSlot(parent: RootGUIElement, name: String, xPixel: Int, yPixel: Int
                     return@addScreenTooltipTemplate "${it.currentItem!!.type.name} * ${it.currentItem!!.quantity}"
                 }
                 return@addScreenTooltipTemplate null
-            }, 0)
+            }, 1)
         }
     }
 }

@@ -6,9 +6,10 @@ import graphics.Renderer
 import graphics.TextureRenderParams
 import item.weapon.Projectile
 import level.block.Block
-import level.entity.robot.BrainRobot
+import level.block.BlockType
 import level.generator.EmptyLevelGenerator
 import level.moving.MovingObject
+import level.moving.MovingObjectType
 import level.particle.Particle
 import level.pipe.PipeBlock
 import level.tile.Tile
@@ -22,7 +23,6 @@ import resource.ResourceNode
 import routing.PipeRoutingNetwork
 import routing.ResourceRoutingNetwork
 import screen.elements.GUILevelView
-import screen.mouse.Mouse
 import screen.mouse.Tool
 import serialization.Input
 import serialization.Output
@@ -81,6 +81,8 @@ abstract class Level(
             }
         }
 
+    var updatesCount = 0
+
     init {
         if (generator !is EmptyLevelGenerator) {
             LevelManager.allLevels.forEach {
@@ -92,112 +94,29 @@ abstract class Level(
         }
     }
 
+    fun canModify(modification: LevelModification) = modification.canAct(this)
+
+    open fun modify(modification: LevelModification, transient: Boolean = false): Boolean {
+        if (!canModify(modification)) {
+            return false
+        }
+        modification.act(this)
+        return true
+    }
+
     /**
      * Does everything necessary to put the object to the level, if possible. If this is already in another
      * [Level], it will remove it from that level first.
      * @return true if the object was not already present and the object was added successfully
      */
-    open fun add(l: LevelObject): Boolean {
-        if (!canAdd(l)) {
-            return false
-        }
-        if (l.level != this && l.inLevel) { // if already in another level
-            l.level.remove(l)
-        }
-        if (l is Block) {
-            for (x in 0 until l.type.widthTiles) {
-                for (y in 0 until l.type.heightTiles) {
-                    getChunkFromTile(l.xTile + x, l.yTile + y).setBlock(l, l.xTile + x, l.yTile + y, (x == 0 && y == 0))
-                }
-            }
-            l.level = this
-            l.inLevel = true
-            return true
-        } else if (l is MovingObject) {
-            if (l.hitbox != Hitbox.NONE) {
-                l.intersectingChunks.forEach { it.data.movingOnBoundary.add(l) }
-            }
-            l.level = this
-            l.inLevel = true
-            if (l is BrainRobot) {
-                data.brainRobots.add(l)
-            }
-            return true
-        }
-        return false
-    }
-
-    /**
-     * Forcibly adds [l] to the level, ignoring collisions and removing things that are in its place. This will always call
-     * [LevelObject.onAddToLevel], regardless of whether it is already in the [Level] or not. If this is already in another
-     * [Level], it will remove it from that level first
-     */
-    fun forceAdd(l: LevelObject) {
-        if (l.level != this && l.inLevel) { // if already in another level
-            l.level.remove(l)
-        }
-        if (l is Block) {
-            l.getCollisions(l.xPixel, l.yPixel, level = this).forEach { remove(it) }
-            for (x in 0 until l.type.widthTiles) {
-                for (y in 0 until l.type.heightTiles) {
-                    getChunkFromTile(l.xTile + x, l.yTile + y).setBlock(l, l.xTile + x, l.yTile + y, (x == 0 && y == 0))
-                }
-            }
-        } else if (l is MovingObject) {
-            if (l.hitbox != Hitbox.NONE) {
-                l.intersectingChunks.forEach { it.data.movingOnBoundary.add(l) }
-                if (l is DroppedItem) {
-                    getChunkAt(l.xChunk, l.yChunk).addDroppedItem(l)
-                }
-            }
-            if (l is BrainRobot) {
-                data.brainRobots.add(l)
-            }
-        }
-        if (!l.inLevel) {
-            l.level = this
-            l.inLevel = true
-        } else {
-            if (l.level == this) {
-                l.onAddToLevel()
-            } else {
-                l.level = this
-            }
-        }
-    }
+    open fun add(l: LevelObject) = modify(AddObject(l))
 
     /**
      * Does everything necessary to remove [l] from this level
      *
      * @return true if [l] was in this level before calling this method, and now is no longer
      */
-    open fun remove(l: LevelObject): Boolean {
-        if (l.inLevel && l.level == this) {
-            if (l is Block) {
-                for (x in 0 until l.type.widthTiles) {
-                    for (y in 0 until l.type.heightTiles) {
-                        getChunkFromTile(l.xTile + x, l.yTile + y).removeBlock(l, l.xTile + x, l.yTile + y, (x == 0 && y == 0))
-                    }
-                }
-                l.inLevel = false
-                return true
-            } else if (l is MovingObject) {
-                val chunk = getChunkAt(l.xChunk, l.yChunk)
-                if (l is DroppedItem) {
-                    chunk.removeDroppedItem(l)
-                }
-                if (l.hitbox != Hitbox.NONE)
-                    l.intersectingChunks.forEach { it.data.movingOnBoundary.remove(l) }
-                chunk.removeMoving(l)
-                l.inLevel = false
-                if (l is BrainRobot) {
-                    data.brainRobots.remove(l)
-                }
-            }
-            return true
-        }
-        return false
-    }
+    open fun remove(l: LevelObject) = modify(RemoveObject(l))
 
     /**
      * Adds a particle to the level. Particles are temporary and purely decorative, they do not get saved
@@ -216,57 +135,56 @@ abstract class Level(
     }
 
     /**
-     * Tries to add a resource node to the level. If [r] was already in another level before addition, it will remove it from
+     * Tries to add a resource node to the level. If [node] was already in another level before addition, it will remove it from
      * that level first.
      * If there was already a node at the same position with the same direction, attached container and resource
      * category, it will remove the previous one before finishing addition.
      *
      * @return true if the node was added successfully (is now in this level)
      */
-    open fun add(r: ResourceNode): Boolean {
-        if (r.inLevel && r.level != this) {
-            r.level.remove(r)
+    open fun add(node: ResourceNode): Boolean {
+        if (node.inLevel && node.level != this) {
+            node.level.remove(node)
         }
-        val c = getChunkFromTile(r.xTile, r.yTile)
+        val c = getChunkFromTile(node.xTile, node.yTile)
         val previousNode: ResourceNode?
-        previousNode = c.data.resourceNodes[r.resourceCategory.ordinal].firstOrNull {
-            it.xTile == r.xTile && it.yTile == r.yTile && it.dir == r.dir && it.attachedContainer == r.attachedContainer
+        previousNode = c.data.resourceNodes[node.resourceCategory.ordinal].firstOrNull {
+            it.xTile == node.xTile && it.yTile == node.yTile && it.dir == node.dir && it.attachedContainer.id == node.attachedContainer.id
         }
         if (previousNode != null) {
             remove(previousNode)
         }
-        if (!c.addResourceNode(r)) {
-            return false
-        }
-        r.level = this
-        r.inLevel = true
-        updateResourceNodeAttachments(r)
+        c.addResourceNode(node)
+        node.level = this
+        node.inLevel = true
+        updateResourceNodeAttachments(node)
         for (x in -1..1) {
             for (y in -1..1) {
                 if (Math.abs(x) != Math.abs(y))
-                    getResourceNodesAt(r.xTile + x, r.yTile + y).forEach { updateResourceNodeAttachments(it) }
+                    getResourceNodesAt(node.xTile + x, node.yTile + y).forEach { updateResourceNodeAttachments(it) }
             }
         }
         return true
     }
 
     /**
-     * Tries to remove a resource node [r] from the level. Does nothing if [r] was in a different level or not in one at all.
+     * Tries to remove a resource node [node] from the level. Does nothing if [node] was in a different level or not in one at all.
      *
-     * @return true if, at the start, [r] was in this level and now it is not
+     * @return true if, at the start, [node] was in this level and now it is not
      */
-    open fun remove(r: ResourceNode): Boolean {
-        if (!r.inLevel || r.level != this)
-            return false
-        val c = getChunkFromTile(r.xTile, r.yTile)
-        if (!c.removeResourceNode(r)) {
+    open fun remove(node: ResourceNode): Boolean {
+        if (node.level != this || !node.inLevel) {
             return false
         }
-        r.inLevel = false
+        val c = getChunkFromTile(node.xTile, node.yTile)
+        if (!c.removeResourceNode(node)) {
+            return false
+        }
+        node.inLevel = false
         for (x in -1..1) {
             for (y in -1..1) {
                 if (Math.abs(x) != Math.abs(y))
-                    getResourceNodesAt(r.xTile + x, r.yTile + y).forEach { updateResourceNodeAttachments(it) }
+                    getResourceNodesAt(node.xTile + x, node.yTile + y).forEach { updateResourceNodeAttachments(it) }
             }
         }
         return true
@@ -291,7 +209,10 @@ abstract class Level(
         ResourceRoutingNetwork.update()
         data.chunks.forEach { it.update() }
         data.particles.forEach { it.update() }
-        Tool.update()
+        if (!Game.IS_SERVER) {
+            Tool.update()
+        }
+        updatesCount++
     }
 
     fun render(view: GUILevelView) {
@@ -319,22 +240,36 @@ abstract class Level(
         data.particles.forEach {
             it.render()
         }
+        val noGhostObjects = data.ghostObjects.isEmpty()
+        val ghostBlocks = if (noGhostObjects) emptyList() else data.ghostObjects.filter { it.type is BlockType<*> }
+        val ghostMovings = if (noGhostObjects) emptyList() else data.ghostObjects.filter { it.type is MovingObjectType<*> }
         for (y in (maxY - 1) downTo minY) {
             val yChunk = y shr CHUNK_TILE_EXP
             // Render the line of blocks
             for (x in minX until maxX) {
                 val c = getChunkAt(x shr CHUNK_TILE_EXP, yChunk)
+                if (!noGhostObjects) {
+                    ghostBlocks.filter { it.xTile == x && it.yTile == y }.forEach { it.render() }
+                }
                 c.getBlock(x, y)?.render()
             }
             // Render the moving objects in sorted order
             for (xChunk in (minX shr CHUNK_TILE_EXP)..(maxX shr CHUNK_TILE_EXP)) {
                 val c = getChunkAt(xChunk, yChunk)
-                if (c.data.moving.size > 0)
+                if (c.data.moving.isNotEmpty()) {
                     c.data.moving.forEach {
                         if (it.yTile >= y && it.yTile < y + 1) {
                             it.render()
                         }
                     }
+                }
+                if (!noGhostObjects) {
+                    ghostMovings.forEach {
+                        if (it.yTile >= y && it.yTile < y + 1) {
+                            it.render()
+                        }
+                    }
+                }
             }
         }
 

@@ -2,6 +2,7 @@ package level.block
 
 import com.badlogic.gdx.Input
 import io.PressType
+import level.getChunkFromTile
 import level.getTileAt
 import level.tile.OreTile
 import resource.give
@@ -22,11 +23,12 @@ class MinerBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(MachineBl
                     if (output.add(tile.type.minedItem, 1)) {
                         tile.amount -= 1
                         return
+                    } else {
+                        currentWork = type.maxWork
                     }
                 }
             }
         }
-        currentWork = type.maxWork
     }
 
     override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {

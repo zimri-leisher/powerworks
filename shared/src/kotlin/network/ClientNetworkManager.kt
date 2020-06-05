@@ -11,6 +11,7 @@ import network.packet.*
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.thread
+import kotlin.math.pow
 
 object ClientNetworkManager : PacketHandler {
     private lateinit var kryoClient: KryoClient
@@ -33,7 +34,7 @@ object ClientNetworkManager : PacketHandler {
         registerServerPacketHandler(this, PacketType.SERVER_HANDSHAKE)
         running.set(true)
         thread = thread(isDaemon = true) {
-            kryoClient = Client(1048576, 1048576, NetworkSerializationPlug())
+            kryoClient = Client(2.0.pow(21.0).toInt(), 2.0.pow(21.0).toInt(), NetworkSerializationPlug())
             kryoClient.start()
             kryoClient.setName(Game.USER.id.toString())
             kryoClient.addListener(object : Listener() {

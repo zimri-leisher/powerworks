@@ -6,9 +6,12 @@ import graphics.TextureRenderParams
 import io.PressType
 import main.DebugCode
 import main.Game
+import network.LevelObjectReference
 import screen.mouse.Tool.Companion.Interactor
-import serialization.*
-import java.lang.reflect.Field
+import serialization.Id
+import serialization.Input
+import serialization.Output
+import serialization.Serializer
 import java.util.*
 
 abstract class LevelObject protected constructor(
@@ -27,7 +30,7 @@ abstract class LevelObject protected constructor(
     open val type = type
 
     @Id(5)
-    val id = UUID.randomUUID()!!
+    var id = UUID.randomUUID()!!
 
     @Id(6)
     var level: Level = LevelManager.EMPTY_LEVEL
@@ -191,6 +194,8 @@ abstract class LevelObject protected constructor(
      */
     open fun onMouseLeave() {
     }
+
+    abstract fun toReference(): LevelObjectReference
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

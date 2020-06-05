@@ -113,8 +113,8 @@ class GUILevelView(parent: RootGUIElement,
             x = (viewXPixel * Game.SCALE).toFloat()
             y = (viewYPixel * Game.SCALE).toFloat()
         }
-        moveListeners.forEach { it.onCameraMove(this, camera.xPixel, camera.yPixel) }
         cameraMatrix.update()
+        moveListeners.forEach { it.onCameraMove(this, camera.xPixel, camera.yPixel) }
     }
 
     private fun updateViewRectangle() {

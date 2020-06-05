@@ -9,9 +9,11 @@ import main.*
 import network.packet.*
 import serialization.SerializerDebugger
 import java.lang.Exception
+import java.lang.Math.pow
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.thread
+import kotlin.math.pow
 
 typealias KryoServer = com.esotericsoftware.kryonet.Server
 typealias KryoClient = com.esotericsoftware.kryonet.Client
@@ -27,7 +29,7 @@ object ServerNetworkManager : PacketHandler {
 
     private val connections = Collections.synchronizedList(mutableListOf<Connection>())
 
-    private val clientInfos = Collections.synchronizedMap(mutableMapOf<Int, ClientInfo>())
+    val clientInfos = Collections.synchronizedMap(mutableMapOf<Int, ClientInfo>())
 
     private val receivedPackets = Collections.synchronizedList(mutableListOf<Packet>())
 
@@ -41,7 +43,7 @@ object ServerNetworkManager : PacketHandler {
         running.set(true)
         thread = thread(isDaemon = true) {
             try {
-                kryoServer = KryoServer(1048576, 1048576, NetworkSerializationPlug())
+                kryoServer = KryoServer(2.0.pow(21.0).toInt(), 2.0.pow(21.0).toInt(), NetworkSerializationPlug())
                 println("Opening server at $SERVER_IP:$SERVER_PORT")
                 kryoServer.bind(SERVER_PORT)
                 kryoServer.start()
@@ -155,7 +157,14 @@ object ServerNetworkManager : PacketHandler {
                     // verify the connectionId is accepted
                     if(isAccepted(connectionId)) {
                         // send to client
-                        packets.forEach { kryoServer.sendToTCP(connectionId, it) }
+
+                        packets.forEach {
+                            try {
+                                kryoServer.sendToTCP(connectionId, it)
+                            }catch (e: Exception) {
+                                System.err.println("Exception while sending packet $it:")
+                            }
+                        }
                         packets.forEach { it.onSend(it) }
                         iterator.remove()
                     }

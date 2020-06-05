@@ -54,5 +54,5 @@ class FurnaceBlockGUI(block: FurnaceBlock) : AutoFormatGUIWindow("Furnace block 
         return true
     }
 
-    override fun isDisplayingBlock(block: Block) = block == this.block
+    override fun isDisplayingBlock(block: Block) = block.id == this.block.id
 }

@@ -71,6 +71,10 @@ object HUD {
                 throw InvalidFunctionCallException("Hotbar inventory cannot expect items")
             }
 
+            override fun getSpaceForType(type: ResourceType): Int {
+                return 0
+            }
+
             override val totalQuantity: Int
                 get() = items.sumBy { if (it != null) 1 else 0 }
 
@@ -179,7 +183,7 @@ object HUD {
                     Control.SLOT_6 -> selected = 5
                     Control.SLOT_7 -> selected = 6
                     Control.SLOT_8 -> selected = 7
-                    Control.GIVE_TEST_ITEM -> PlayerManager.localPlayer.brainRobot.inventory.add(Item(BlockItemType.TUBE))
+                    Control.GIVE_TEST_ITEM -> PlayerManager.localPlayer.brainRobot.inventory.add(Item(BlockItemType.ITEM_PIPE))
                 }
             }
         }
@@ -188,14 +192,14 @@ object HUD {
         }
 
         override fun onAddToContainer(container: ResourceContainer, resources: ResourceList) {
-            if (container == PlayerManager.localPlayer.brainRobot.inventory) {
+            if (container.id == PlayerManager.localPlayer.brainRobot.inventory.id) {
                 if (selected != -1 && items[selected] != null && PlayerManager.localPlayer.brainRobot.inventory.getQuantity(items[selected]!!) > 0)
                     Mouse.heldItemType = items[selected]
             }
         }
 
         override fun onRemoveFromContainer(container: ResourceContainer, resources: ResourceList) {
-            if (container == PlayerManager.localPlayer.brainRobot.inventory) {
+            if (container.id == PlayerManager.localPlayer.brainRobot.inventory.id) {
                 if (selected != -1 && items[selected] != null && PlayerManager.localPlayer.brainRobot.inventory.getQuantity(items[selected]!!) > 0)
                     Mouse.heldItemType = items[selected]
             }

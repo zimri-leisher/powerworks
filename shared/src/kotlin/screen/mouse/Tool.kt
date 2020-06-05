@@ -18,13 +18,18 @@ import level.moving.MovingObject
 import main.Game
 import main.toColor
 import misc.Geometry
-import network.ClientNetworkManager
+import misc.PixelCoord
+import network.BlockReference
+import network.MovingObjectReference
 import network.packet.Packet
 import network.packet.PacketHandler
-import network.packet.PacketType
-import network.packet.RemoveBlockFromLevelPacket
+import player.ControlEntityAction
+import player.PlaceLevelObject
 import player.PlayerManager
+import player.RemoveLevelObjectAction
 import resource.ResourceNode
+import screen.HUD
+import screen.IngameGUI
 import screen.RoutingLanguageEditor
 import screen.ScreenManager
 import screen.elements.GUIMouseOverRegion
@@ -163,9 +168,7 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
             override fun onUse(control: Control, type: PressType, mouseLevelXPixel: Int, mouseLevelYPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
                 if (type == PressType.RELEASED && control == Control.SPAWN_ENTITY) {
                     if (canSpawn) {
-                        if (LevelManager.levelUnderMouse!!.add(this.type!!.spawnedEntity.instantiate(mouseLevelXPixel, mouseLevelYPixel, 0))) {
-                            PlayerManager.localPlayer.brainRobot.inventory.remove(this.type!!)
-                        }
+                        PlayerManager.takeAction(PlaceLevelObject(PlayerManager.localPlayer, this.type!!.spawnedEntity, mouseLevelXPixel, mouseLevelYPixel, 0, LevelManager.levelUnderMouse!!))
                     }
                 }
             }
@@ -213,7 +216,7 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
                     background = GUITexturePane(this, "Entity controller background", 0, 0, Image.GUI.ENTITY_CONTROLLER_MENU)
                     background.apply {
                         GUIMouseOverRegion(this, "move command mouse region", { 20 }, { 38 }, { 14 }, { 14 }, onEnter = {
-                            currentlyHoveringCommand = Behavior.Movement.PATH_TO_MOUSE
+                            currentlyHoveringCommand = Behavior.Movement.PATH_TO_ARG
                             background.renderable = Texture(Image.GUI.ENTITY_CONTROLLER_MENU_MOVE_SELECTED)
                         }, onLeave = {
                             currentlyHoveringCommand = null
@@ -269,7 +272,9 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
                 } else if (control == Control.USE_ENTITY_COMMAND) {
                     if (type == PressType.RELEASED && !Selector.dragging) {
                         if (selectedCommand != null && !ControllerMenu.open) {
-                            Selector.selected.filterIsInstance<Entity>().forEach { it.runBehavior(selectedCommand!!) }
+                            PlayerManager.takeAction(ControlEntityAction(PlayerManager.localPlayer,
+                                    Selector.selected.filterIsInstance<Entity>().map { MovingObjectReference(it) },
+                                    selectedCommand!!, PixelCoord(LevelManager.mouseLevelXPixel, LevelManager.mouseLevelYPixel)))
                         }
                     }
                 }
@@ -280,23 +285,20 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
             }
         }
 
-        object BlockRemover : Tool(Control.REMOVE_SELECTED_BLOCKS) {
+        object BlockRemover : Tool(Control.REMOVE_BLOCK) {
             override fun updateCurrentlyActive() {
-                currentlyActive = LevelManager.levelObjectUnderMouse != null
+                currentlyActive = LevelManager.levelObjectUnderMouse != null && LevelManager.levelObjectUnderMouse is Block
             }
 
             override fun onUse(control: Control, type: PressType, mouseLevelXPixel: Int, mouseLevelYPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
                 if (type == PressType.PRESSED) {
-                    if (control == Control.REMOVE_SELECTED_BLOCKS) {
-                        if (Selector.selected.isNotEmpty()) {
-                            Selector.selected.filterIsInstance<Block>().forEach {
-                                it.level.remove(it)
-                            }
-                        } else {
-                            val o = LevelManager.levelObjectUnderMouse!!
-                            if (o is Block) {
-                                o.level.remove(o)
-                            }
+                    if (control == Control.REMOVE_BLOCK) {
+                        val toRemove = if (Selector.selected.isNotEmpty())
+                            Selector.selected.filterIsInstance<Block>()
+                        else
+                            listOf(LevelManager.levelObjectUnderMouse!!)
+                        if (toRemove.isNotEmpty()) {
+                            PlayerManager.takeAction(RemoveLevelObjectAction(PlayerManager.localPlayer, toRemove.map { BlockReference(it as Block) }))
                         }
                     }
                 }
@@ -317,13 +319,11 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
                         rotation = (rotation + 1) % 4
                     }
                 }
-                if(type == PressType.RELEASED) {
-                    if (control == Control.PLACE_BLOCK) {
-                        if (canPlace) {
-                            val blockType = this.type!!.placedBlock
-                            val block = blockType.instantiate(xTile shl 4, yTile shl 4, rotation)
-                            LevelManager.levelUnderMouse?.add(block)
-                        }
+                if (control == Control.PLACE_BLOCK && type != PressType.RELEASED) {
+                    if (canPlace) {
+                        val blockType = this.type!!.placedBlock
+                        PlayerManager.takeAction(PlaceLevelObject(PlayerManager.localPlayer, blockType, xTile shl 4, yTile shl 4, rotation, LevelManager.levelUnderMouse!!))
+                        canPlace = false
                     }
                 }
             }
@@ -341,8 +341,8 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
             override fun update() {
                 if (LevelManager.levelUnderMouse == null)
                     return
-                xTile = ((LevelManager.mouseLevelXPixel) shr 4) - type!!.placedBlock.widthTiles / 2
-                yTile = ((LevelManager.mouseLevelYPixel) shr 4) - type!!.placedBlock.heightTiles / 2
+                xTile = (LevelManager.mouseLevelXTile) - type!!.placedBlock.widthTiles / 2
+                yTile = (LevelManager.mouseLevelYTile) - type!!.placedBlock.heightTiles / 2
                 canPlace = LevelManager.levelUnderMouse!!.canAdd(type!!.placedBlock, xTile shl 4, yTile shl 4)
             }
 
@@ -378,6 +378,7 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
 
             private const val SELECTION_START_THRESHOLD = 2
 
+            var startPress = false
             var dragging = false
             var dragStartXPixel = 0
             var dragStartYPixel = 0
@@ -388,14 +389,8 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
 
             var selected = mutableSetOf<LevelObject>()
 
-            init {
-                ClientNetworkManager.registerServerPacketHandler(this, PacketType.REMOVE_BLOCK)
-            }
 
             override fun handleServerPacket(packet: Packet) {
-                if (packet is RemoveBlockFromLevelPacket) {
-                    // TODO
-                }
             }
 
             override fun handleClientPacket(packet: Packet) {
@@ -406,7 +401,7 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
             }
 
             override fun updateCurrentlyActive() {
-                currentlyActive = true
+                currentlyActive = Mouse.heldItemType == null
             }
 
             override fun onUse(control: Control, type: PressType, mouseLevelXPixel: Int, mouseLevelYPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
@@ -416,23 +411,27 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
                     Control.START_SELECTION_MOVING_ONLY -> mode = SelectorMode.MOVING_ONLY
                 }
                 if (type == PressType.PRESSED) {
+                    startPress = true
                     selected = mutableSetOf()
                     dragStartXPixel = mouseLevelXPixel
                     dragStartYPixel = mouseLevelYPixel
                     currentDragXPixel = mouseLevelXPixel
                     currentDragYPixel = mouseLevelYPixel
                 } else if (type == PressType.REPEAT) {
-                    currentDragXPixel = mouseLevelXPixel
-                    currentDragYPixel = mouseLevelYPixel
-                    if (Math.abs(dragStartXPixel - currentDragXPixel) > SELECTION_START_THRESHOLD || Math.abs(dragStartYPixel - currentDragYPixel) > SELECTION_START_THRESHOLD) {
-                        dragging = true
-                        updateSelected()
+                    if(startPress) {
+                        currentDragXPixel = mouseLevelXPixel
+                        currentDragYPixel = mouseLevelYPixel
+                        if (Math.abs(dragStartXPixel - currentDragXPixel) > SELECTION_START_THRESHOLD || Math.abs(dragStartYPixel - currentDragYPixel) > SELECTION_START_THRESHOLD) {
+                            dragging = true
+                            updateSelected()
+                        }
                     }
                 } else if (type == PressType.RELEASED) {
                     if (dragging) {
                         updateSelected()
                         dragging = false
                     }
+                    startPress = false
                 }
             }
 
@@ -478,10 +477,6 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
             override fun onUse(control: Control, type: PressType, mouseLevelXPixel: Int, mouseLevelYPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
                 if (type == PressType.PRESSED) {
                     val obj = LevelManager.levelObjectUnderMouse
-                    if (obj != null) {
-                        //println(JSON.unquoted.stringify(obj.serialize(), obj))
-                    }
-
                 }
             }
 

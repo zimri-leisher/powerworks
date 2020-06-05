@@ -26,7 +26,7 @@ class SolidifierBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(Mach
     }
 
     override fun onAddToContainer(container: ResourceContainer, resources: ResourceList) {
-        if (container == tank) {
+        if (container.id == tank.id) {
             if (tank.currentAmount > 0) {
                 currentlySolidifying = tank.currentFluidType!! as MoltenOreFluidType
                 on = true
@@ -38,7 +38,7 @@ class SolidifierBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(Mach
     }
 
     override fun onRemoveFromContainer(container: ResourceContainer, resources: ResourceList) {
-        if (container == tank) {
+        if (container.id == tank.id) {
             if (tank.currentAmount > 0) {
                 currentlySolidifying = tank.currentFluidType!! as MoltenOreFluidType
                 on = true
@@ -50,7 +50,7 @@ class SolidifierBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(Mach
     }
 
     override fun onContainerClear(container: ResourceContainer) {
-        if (container == tank) {
+        if (container.id == tank.id) {
             currentlySolidifying = null
             on = false
             currentWork = 0
@@ -66,6 +66,8 @@ class SolidifierBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(Mach
     override fun onFinishWork() {
         if (out.add(currentlySolidifying!!.ingot)) {
             tank.remove(currentlySolidifying!!)
+        } else {
+            currentWork = type.maxWork
         }
         if (tank.currentAmount == 0) {
             currentlySolidifying = null

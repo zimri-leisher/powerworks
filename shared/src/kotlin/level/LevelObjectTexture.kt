@@ -20,4 +20,18 @@ class LevelObjectTextures(
     }
 
     operator fun get(i: Int) = textures[i]
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as LevelObjectTextures
+
+        if (!textures.contentEquals(other.textures)) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return textures.contentHashCode()
+    }
 }

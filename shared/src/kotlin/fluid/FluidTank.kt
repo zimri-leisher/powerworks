@@ -9,8 +9,10 @@ class FluidTank(
 
     private constructor() : this(0)
 
+    @Id(8)
     var currentFluidType: FluidType? = null
 
+    @Id(9)
     var currentAmount = 0
         set(value) {
             field = value
@@ -19,10 +21,13 @@ class FluidTank(
             }
         }
 
+    @Id(10)
     var expectedFluidType: FluidType? = null
+
+    @Id(11)
     var expectedAmount = 0
 
-    override val expected get() = if(expectedFluidType == null) ResourceList() else ResourceList(expectedFluidType!! to expectedAmount)
+    override val expected get() = if (expectedFluidType == null) ResourceList() else ResourceList(expectedFluidType!! to expectedAmount)
 
     override val totalQuantity: Int
         get() = currentAmount
@@ -31,7 +36,7 @@ class FluidTank(
         if (checkIfAble)
             if (!canAdd(resources))
                 return false
-        list@for((resource, quantity) in resources) {
+        list@ for ((resource, quantity) in resources) {
             if (currentFluidType == null)
                 currentFluidType = resource as FluidType
             currentAmount += quantity
@@ -49,6 +54,16 @@ class FluidTank(
         return currentFluidType == null || (resource == currentFluidType && currentAmount + quantity <= maxAmount)
     }
 
+    override fun getSpaceForType(type: ResourceType): Int {
+        if (currentFluidType == null) {
+            return maxAmount
+        }
+        if (type == currentFluidType) {
+            return maxAmount - currentAmount
+        }
+        return 0
+    }
+
     override fun remove(resources: ResourceList, to: ResourceNode?, checkIfAble: Boolean): Boolean {
         if (checkIfAble)
             if (!canRemove(resources))
@@ -62,8 +77,8 @@ class FluidTank(
     }
 
     override fun expect(resources: ResourceList): Boolean {
-        val currentExpected = if(expectedFluidType == null) resources else resources + ResourceList(expectedFluidType!! to expectedAmount)
-        if(!canAdd(currentExpected)) {
+        val currentExpected = if (expectedFluidType == null) resources else resources + ResourceList(expectedFluidType!! to expectedAmount)
+        if (!canAdd(currentExpected)) {
             return false
         }
         expectedFluidType = resources[0]!!.key as FluidType
@@ -108,4 +123,28 @@ class FluidTank(
     }
 
     override fun toResourceList() = if (currentFluidType == null || currentAmount == 0) ResourceList() else ResourceList(currentFluidType!! to currentAmount)
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as FluidTank
+
+        if (maxAmount != other.maxAmount) return false
+        if (currentFluidType != other.currentFluidType) return false
+        if (currentAmount != other.currentAmount) return false
+        if (expectedFluidType != other.expectedFluidType) return false
+        if (expectedAmount != other.expectedAmount) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = maxAmount
+        result = 31 * result + (currentFluidType?.hashCode() ?: 0)
+        result = 31 * result + currentAmount
+        result = 31 * result + (expectedFluidType?.hashCode() ?: 0)
+        result = 31 * result + expectedAmount
+        return result
+    }
 }

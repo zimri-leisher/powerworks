@@ -11,7 +11,7 @@ abstract class ResourceContainer(
     private constructor() : this(ResourceCategory.ITEM)
 
     @Id(2)
-    val id = UUID.randomUUID()
+    var id: UUID = UUID.randomUUID()
 
     /**
      * Mutator methods should send appropriate calls to these
@@ -50,10 +50,11 @@ abstract class ResourceContainer(
     open fun spaceFor(resource: ResourceType, quantity: Int = 1) = spaceFor(ResourceList(resource to quantity))
 
     /**
-     * If this is able to accept the specified resources. Doesn't take into account expected resources because
-     * they aren't yet present
+     * If this is able to accept the specified resources. Doesn't take into account expected resources
      */
-    abstract fun spaceFor(list: ResourceList): Boolean
+     abstract fun spaceFor(list: ResourceList): Boolean
+
+     abstract fun getSpaceForType(type: ResourceType): Int
 
     /**
      * Removes the specified resource with the specified quantity from this container, and notifies listeners of this event
@@ -159,8 +160,6 @@ abstract class ResourceContainer(
         if (javaClass != other?.javaClass) return false
 
         other as ResourceContainer
-
-        if (id != other.id) return false
 
         return true
     }

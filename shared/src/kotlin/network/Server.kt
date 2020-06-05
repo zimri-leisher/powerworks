@@ -4,24 +4,17 @@ import com.badlogic.gdx.ApplicationAdapter
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration
 import com.esotericsoftware.minlog.Log
-import data.FileManager
 import data.FileSystem
 import data.ResourceManager
-import graphics.Image
 import graphics.text.TextManager
 import level.LevelManager
-import level.generator.LevelType
-import level.tile.OreTileType
-import level.tile.TileType
 import main.Game
 import main.State
 import network.packet.*
 import player.PlayerManager
-import screen.mouse.Tool
 import serialization.Registration
 import serialization.Serialization
-import serialization.SerializerDebugger
-import serialization.test
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.system.measureTimeMillis
 
 fun main(args: Array<String>) {
@@ -40,6 +33,8 @@ object Server : ApplicationAdapter(), PacketHandler {
     private var frameCount = 0
     private var updateCount = 0
 
+    val updating = AtomicBoolean(false)
+
     override fun create() {
         // order matters with some of these!
         ResourceManager.registerAtlas("textures/all.atlas")
@@ -51,6 +46,7 @@ object Server : ApplicationAdapter(), PacketHandler {
     }
 
     override fun render() {
+        updating.set(true)
         val now = System.nanoTime().toDouble()
         var updates = 0
         while (now - lastUpdateTime > Game.NS_PER_UPDATE && updates < Game.MAX_UPDATES_BEFORE_RENDER) {
@@ -74,14 +70,13 @@ object Server : ApplicationAdapter(), PacketHandler {
             frameCount = 0
             updateCount = 0
         }
+        updating.set(false)
     }
 
     fun update() {
         FileSystem.update()
         ServerNetworkManager.update()
-        if (State.CURRENT_STATE == State.INGAME) {
-            LevelManager.update()
-        }
+        LevelManager.update()
         State.update()
     }
 

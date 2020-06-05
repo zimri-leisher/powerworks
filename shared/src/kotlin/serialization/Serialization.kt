@@ -63,6 +63,18 @@ object Serialization {
         input.close()
     }
 
+    val copyBuffer = ByteArrayOutputStream(512)
+    val copyOutputStream = Output(copyBuffer)
+
+    fun <T> copy(obj: T): T {
+        debugln("Copying object $obj")
+        copyOutputStream.write(obj)
+        val input = Input(ByteArrayInputStream(copyBuffer.toByteArray()))
+        copyBuffer.reset()
+        copyOutputStream.clearReferences()
+        return input.readUnknownNullable() as T
+    }
+
     fun makeTypeNice(type: Class<*>) = tryGetLambdaClass(tryConvertPrimitiveToWrapper(tryDetypeArray(type)))
 
     fun tryConvertPrimitiveToWrapper(type: Class<*>): Class<*> {

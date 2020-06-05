@@ -17,6 +17,9 @@ data class LevelData(
         @Id(4)
         val brainRobots: MutableList<BrainRobot>) {
 
+    // transient, client side only
+    val ghostObjects = mutableListOf<GhostLevelObject>()
+
     private constructor() : this(ConcurrentlyModifiableMutableList(), mutableListOf(), arrayOf(), mutableListOf())
 
     override fun equals(other: Any?): Boolean {

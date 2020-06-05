@@ -47,6 +47,16 @@ object Geometry {
         return 0
     }
 
+    fun getDegrees(angle: Int): Float {
+        return when(angle % 4) {
+            0 -> 90f
+            1 -> 0f
+            2 -> -90f
+            3 -> 180f
+            else -> 0f
+        }
+    }
+
     fun distance(x1: Int, y1: Int, x1b: Int, y1b: Int, x2: Int, y2: Int, x2b: Int, y2b: Int): Double { // credit to Maxim on SO im a lazy fuck
         val left = x2b < x1
         val right = x1b < x2

@@ -2,6 +2,9 @@ package screen
 
 import level.block.Block
 import level.block.CrafterBlock
+import network.BlockReference
+import player.PlayerManager
+import player.SelectCrafterRecipeAction
 import screen.elements.*
 
 /**
@@ -24,7 +27,9 @@ class CrafterBlockGUI(block: CrafterBlock) :
         GUIText(group, "Recipe text", 0, 0, "Recipe:")
 
         recipeButton = GUIRecipeButton(group, "Recipe choice button", { 0 }, { 0 }, block.recipe,
-                { this.block.recipe = it },
+                {
+                    PlayerManager.takeAction(SelectCrafterRecipeAction(PlayerManager.localPlayer, BlockReference(this.block), it))
+                },
                 { it.validCrafterTypes != null && it.validCrafterTypes.contains(this.block.crafterType) && it.consume.size <= this.block.type.internalStorageSize })
 
         GUIText(group, "Container text", 0, 0, "Ingredients:")
@@ -48,7 +53,7 @@ class CrafterBlockGUI(block: CrafterBlock) :
     }
 
     override fun onClose() {
-        if(recipeButton.waitingForRecipeSelection) {
+        if (recipeButton.waitingForRecipeSelection) {
             RecipeSelectorGUI.open = false
         }
     }
@@ -71,5 +76,5 @@ class CrafterBlockGUI(block: CrafterBlock) :
         progressBar.currentProgress = block.currentWork
     }
 
-    override fun isDisplayingBlock(block: Block) = block == this.block
+    override fun isDisplayingBlock(block: Block) = block.id == this.block.id
 }

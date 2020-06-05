@@ -24,7 +24,7 @@ private fun <K, V> MutableMap<K, V>.copy(): MutableMap<K, V> {
  */
 class ResourceNodeBehavior(
         @Id(1)
-        val node: ResourceNode) {
+        var node: ResourceNode) {
 
     private constructor() : this(ResourceNode(0, 0, 0, ResourceCategory.ITEM, Inventory(0, 0), LevelManager.EMPTY_LEVEL))
 

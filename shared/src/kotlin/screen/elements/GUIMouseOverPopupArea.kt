@@ -7,7 +7,7 @@ class GUIMouseOverPopupArea(parent: RootGUIElement, name: String,
                             xAlignment: Alignment = { 0 }, yAlignment: Alignment = { 0 },
                             widthAlignment: Alignment, heightAlignment: Alignment,
                             initializerList: GUIMouseOverPopupArea.() -> Unit = {},
-                            var autoClose: Boolean = true,
+                            var childrenKeepThisOpen: Boolean = true,
                             open: Boolean = false,
                             layer: Int = parent.layer + 1) :
         GUIElement(parent, name, xAlignment, yAlignment, widthAlignment, heightAlignment, open, layer) {
@@ -27,7 +27,7 @@ class GUIMouseOverPopupArea(parent: RootGUIElement, name: String,
         if (mouseOn && !childrenOpen) {
             children.forEach { it.open = true }
             childrenOpen = true
-        } else if (!mouseOn && childrenOpen && !children.any { it.mouseOn }) {
+        } else if (!mouseOn && (!childrenKeepThisOpen || childrenOpen && !children.any { it.mouseOn })) {
             children.forEach { it.open = false }
             childrenOpen = false
         }

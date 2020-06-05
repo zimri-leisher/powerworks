@@ -1,6 +1,5 @@
 package player
 
-import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag
 import level.LevelManager
 import network.User
 import serialization.Id

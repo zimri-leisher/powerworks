@@ -6,7 +6,11 @@ import misc.Geometry
 import misc.Numbers
 import misc.PixelCoord
 import misc.TileCoord
+import java.lang.Math.PI
 import java.lang.Math.floor
+import kotlin.math.atan
+import kotlin.math.cos
+import kotlin.math.sin
 
 class MoveTo(parent: BehaviorTree, val goalVar: Variable,
              val goalThreshold: Int = 5,
@@ -60,10 +64,9 @@ class MoveTo(parent: BehaviorTree, val goalVar: Variable,
         if (parent.hasPriority(entity)) {
             val xDist = goal.xPixel - entity.xPixel
             val yDist = goal.yPixel - entity.yPixel
-            val xSign = Numbers.sign(xDist)
-            val ySign = Numbers.sign(yDist)
-            entity.xVel += xSign
-            entity.yVel += ySign
+            val angle = atan(yDist.toDouble() / xDist) + if(xDist < 0) PI else 0.0
+            entity.xVel += entity.type.moveSpeed * cos(angle)
+            entity.yVel += entity.type.moveSpeed * sin(angle)
             if (failAfter != -1) {
                 val ticksMoving: Int = getData(DefaultVariable.MOVE_TO_TICKS_MOVING)!!
                 setData(DefaultVariable.MOVE_TO_TICKS_MOVING, ticksMoving + 1)
