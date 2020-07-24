@@ -3,10 +3,12 @@ package routing
 import data.ConcurrentlyModifiableWeakMutableList
 import level.Level
 import level.LevelManager
+import level.pipe.PipeBlock
 import misc.Geometry
 import resource.*
 import routing.script.RoutingLanguage
 import serialization.Id
+import java.util.*
 
 class InvalidFunctionCallException(message: String) : Exception(message)
 
@@ -151,10 +153,10 @@ open class ResourceRoutingNetwork(category: ResourceCategory,
         return takeFromAttached?.attachedNode
     }
 
-    fun attachNode(node: ResourceNode) {
+    fun attachNode(node: ResourceNode, fromBlock: PipeBlock) {
         node.network = this
         attachedNodes.add(node)
-        addCorrespondingInternalNode(node)
+        addCorrespondingInternalNode(node, fromBlock.id)
     }
 
     fun disattachNode(node: ResourceNode) {
@@ -163,17 +165,22 @@ open class ResourceRoutingNetwork(category: ResourceCategory,
         removeCorrespondingInternalNode(node)
     }
 
-    fun addCorrespondingInternalNode(node: ResourceNode) {
+    fun addCorrespondingInternalNode(node: ResourceNode, seedId: UUID) {
         val newNode = ResourceNode(
                 node.xTile + Geometry.getXSign(node.dir),
                 node.yTile + Geometry.getYSign(node.dir),
                 Geometry.getOppositeAngle(node.dir),
                 node.resourceCategory,
                 this, level)
+        val random = Random(seedId.mostSignificantBits)
+        val byteArray = ByteArray(36)
+        random.nextBytes(byteArray)
+        val nodeId = UUID.nameUUIDFromBytes(byteArray)
         newNode.behavior.allowOut.setStatement(RoutingLanguage.TRUE)
         newNode.behavior.allowIn.setStatement(RoutingLanguage.TRUE)
         newNode.network = this
         newNode.isInternalNetworkNode = true
+        newNode.id = nodeId
         level.add(newNode)
         internalNodes.add(newNode)
     }

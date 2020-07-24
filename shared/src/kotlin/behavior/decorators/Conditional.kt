@@ -17,13 +17,13 @@ class Conditional(parent: BehaviorTree, child: Node, val conditionVar: Variable)
         }
     }
 
-    override fun updateState(entity: Entity) {
+    override fun updateState(entity: Entity): NodeState {
         currentCondition = getData<Boolean>(conditionVar) ?: false
         if(currentCondition) {
-            child.updateState(entity)
-            state = child.state
+            child.updateAndSetState(entity)
+            return child.state
         } else {
-            state = NodeState.FAILURE
+            return NodeState.FAILURE
         }
     }
 

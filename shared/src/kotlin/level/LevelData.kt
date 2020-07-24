@@ -11,7 +11,7 @@ data class LevelData(
         @Id(1)
         val particles: ConcurrentlyModifiableMutableList<Particle>,
         @Id(2)
-        val projectiles: MutableList<Projectile>,
+        val projectiles: ConcurrentlyModifiableMutableList<Projectile>,
         @Id(3)
         val chunks: Array<Chunk>,
         @Id(4)
@@ -20,7 +20,7 @@ data class LevelData(
     // transient, client side only
     val ghostObjects = mutableListOf<GhostLevelObject>()
 
-    private constructor() : this(ConcurrentlyModifiableMutableList(), mutableListOf(), arrayOf(), mutableListOf())
+    private constructor() : this(ConcurrentlyModifiableMutableList(), ConcurrentlyModifiableMutableList(), arrayOf(), mutableListOf())
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

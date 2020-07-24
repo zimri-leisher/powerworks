@@ -12,6 +12,7 @@ interface Crafter {
     enum class Type {
         DEFAULT,
         ITEM,
-        ROBOT
+        ROBOT,
+        WEAPON
     }
 }

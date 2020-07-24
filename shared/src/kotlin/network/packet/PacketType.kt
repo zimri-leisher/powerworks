@@ -13,6 +13,7 @@ enum class PacketType {
     ACK_PLAYER_ACTION,
 
     UPDATE_BLOCK,
-    LEVEL_UPDATE
+    LEVEL_UPDATE,
 
+    LEVEL_LOADED_SUCCESS
 }

@@ -20,10 +20,10 @@ import misc.Geometry
 import network.ClientNetworkManager
 import network.ServerNetworkManager
 import resource.ResourceNode
-import routing.PipeRoutingNetwork
+import routing.PipeNetwork
 import routing.ResourceRoutingNetwork
 import screen.elements.GUILevelView
-import screen.mouse.Tool
+import screen.mouse.tool.Tool
 import serialization.Input
 import serialization.Output
 import serialization.Serializer
@@ -80,6 +80,8 @@ abstract class Level(
                 }
             }
         }
+
+    var paused = false
 
     var updatesCount = 0
 
@@ -205,12 +207,16 @@ abstract class Level(
      */
     open fun remove(projectile: Projectile) = data.projectiles.remove(projectile)
 
-    fun update() {
+    open fun update() {
+        if(paused) {
+            return
+        }
         ResourceRoutingNetwork.update()
+        data.projectiles.forEach { it.update() }
         data.chunks.forEach { it.update() }
         data.particles.forEach { it.update() }
         if (!Game.IS_SERVER) {
-            Tool.update()
+            Tool.update() // TODO should this be here?
         }
         updatesCount++
     }
@@ -312,7 +318,7 @@ abstract class Level(
             val nodeUnderMouse = getResourceNodesAt(LevelManager.mouseLevelXTile, LevelManager.mouseLevelYTile).firstOrNull()
             if (nodeUnderMouse != null) {
                 val network = nodeUnderMouse.network
-                if (network is PipeRoutingNetwork) {
+                if (network is PipeNetwork) {
                     for (pipe in network.pipes) {
                         Renderer.renderFilledRectangle(pipe.xPixel + 4, pipe.yPixel + 4, 8, 8, TextureRenderParams(color = toColor(r = 1f, g = 0f, b = 0f)))
                     }

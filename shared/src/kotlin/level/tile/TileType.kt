@@ -26,20 +26,20 @@ open class OreTileType(textures: ImageCollection = ImageCollection.GRASS_COPPER_
     companion object {
         val ALL = mutableListOf<OreTileType>()
 
-        val GRASS_IRON_ORE = OreTileType(ImageCollection.GRASS_IRON_ORE_TILE, "Grass and iron ore",
+        val ROCK_IRON_ORE = OreTileType(ImageCollection.ROCK_IRON_ORE_TILE, "Rock and iron ore",
                 9000,
                 3000,
                 OreItemType.IRON_ORE,
                 TileType.GRASS,
-                5,
+                0,
                 .2)
 
-        val GRASS_COPPER_ORE = OreTileType(ImageCollection.GRASS_COPPER_ORE_TILE, "Grass and copper ore",
+        val ROCK_COPPER_ORE = OreTileType(ImageCollection.ROCK_COPPER_ORE_TILE, "Rock and copper ore",
                 5000,
                 3000,
                 OreItemType.COPPER_ORE,
                 TileType.GRASS,
-                3,
+                0,
                 .2)
     }
 }
@@ -72,6 +72,6 @@ open class TileType(val name: String, val textures: Array<TextureRegion>) {
     companion object {
         val ALL = mutableListOf<TileType>()
 
-        val GRASS = TileType("Grass", ImageCollection.GRASS_TILE)
+        val GRASS = TileType("Grass", ImageCollection.ROCK_TILE)
     }
 }

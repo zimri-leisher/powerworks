@@ -1,13 +1,11 @@
 package behavior.leaves
 
-import level.entity.Entity
 import behavior.*
+import level.entity.Entity
 import misc.Geometry
-import misc.Numbers
 import misc.PixelCoord
 import misc.TileCoord
 import java.lang.Math.PI
-import java.lang.Math.floor
 import kotlin.math.atan
 import kotlin.math.cos
 import kotlin.math.sin
@@ -29,42 +27,37 @@ class MoveTo(parent: BehaviorTree, val goalVar: Variable,
             state = NodeState.FAILURE
             return
         }
-        if(nullableGoal is TileCoord) {
+        if (nullableGoal is TileCoord) {
             goal = nullableGoal.toPixel()
-        } else if(nullableGoal is PixelCoord){
+        } else if (nullableGoal is PixelCoord) {
             goal = nullableGoal
         }
     }
 
-    override fun updateState(entity: Entity) {
-        val nullableGoal = getData<Any?>(goalVar)
-        if (nullableGoal == null) {
-            state = NodeState.FAILURE
-            return
-        }
-        if(nullableGoal is TileCoord) {
+    override fun updateState(entity: Entity): NodeState {
+        val nullableGoal = getData<Any?>(goalVar) ?: return NodeState.FAILURE
+        if (nullableGoal is TileCoord) {
             goal = nullableGoal.toPixel()
-        } else if(nullableGoal is PixelCoord) {
+        } else if (nullableGoal is PixelCoord) {
             goal = nullableGoal
         }
         val distance = Geometry.distance(entity.xPixel, entity.yPixel, goal.xPixel, goal.yPixel)
         if (distance <= goalThreshold) {
-            state = NodeState.SUCCESS
+            return NodeState.SUCCESS
         } else if (failAfter != -1) {
             val ticksMoving: Int = getData(DefaultVariable.MOVE_TO_TICKS_MOVING)!!
             if (ticksMoving >= failAfter) {
-                state = NodeState.FAILURE
+                return NodeState.FAILURE
             }
-        } else {
-            state = NodeState.RUNNING
         }
+        return NodeState.RUNNING
     }
 
     override fun execute(entity: Entity) {
         if (parent.hasPriority(entity)) {
             val xDist = goal.xPixel - entity.xPixel
             val yDist = goal.yPixel - entity.yPixel
-            val angle = atan(yDist.toDouble() / xDist) + if(xDist < 0) PI else 0.0
+            val angle = atan(yDist.toDouble() / xDist) + if (xDist < 0) PI else 0.0
             entity.xVel += entity.type.moveSpeed * cos(angle)
             entity.yVel += entity.type.moveSpeed * sin(angle)
             if (failAfter != -1) {

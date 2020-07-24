@@ -7,7 +7,6 @@ import io.PressType
 import main.DebugCode
 import main.Game
 import network.LevelObjectReference
-import screen.mouse.Tool.Companion.Interactor
 import serialization.Id
 import serialization.Input
 import serialization.Output

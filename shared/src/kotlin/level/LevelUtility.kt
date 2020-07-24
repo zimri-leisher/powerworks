@@ -117,6 +117,15 @@ fun Level.getBlockCollisionsInSquareCenteredOn(xPixel: Int, yPixel: Int, radius:
     return l
 }
 
+fun Level.getBlockCollisionsWithPoint(xPixel: Int, yPixel: Int, predicate: (Block) -> Boolean = { true }): Set<Block> {
+    val set = mutableSetOf<Block>()
+    if (!isPixelWithinBounds(xPixel, yPixel))
+        return emptySet()
+    val chunk = getChunkFromPixel(xPixel, yPixel)
+    set.addAll(getCollisionsWith(chunk.data.blocks.filterNotNull(), xPixel, yPixel, 0, 0, predicate))
+    return set
+}
+
 /**
  * Gets collisions between the [levelObj] and [MovingObject]s in this [Level]
  *
@@ -201,7 +210,7 @@ fun <L : LevelObject> Level.getCollisionsWith(possibleColliders: Collection<L>, 
  * @param predicate the selector for [L]s to consider collisions with
  * @return a set of [L]s intersecting the [hitbox]
  */
-fun <L : LevelObject> Level.getCollisionsWith(possibleColliders: Collection<L>, xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int, predicate: (L) -> Boolean = { true }): Set<L> {
+fun <L : LevelObject> Level.getCollisionsWith(possibleColliders: Collection<L>, xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int, predicate: (L) -> Boolean = { _: LevelObject -> true }): Set<L> {
     val set = mutableSetOf<L>()
     for (l in possibleColliders) {
         if (l.hitbox != Hitbox.NONE) {
@@ -212,6 +221,10 @@ fun <L : LevelObject> Level.getCollisionsWith(possibleColliders: Collection<L>, 
         }
     }
     return set
+}
+
+fun Level.getCollisionsWithPoint(xPixel: Int, yPixel: Int, predicate: (LevelObject) -> Boolean = { true }): Set<LevelObject> {
+    return getBlockCollisionsWithPoint(xPixel, yPixel, predicate) + getMovingObjectCollisionsWithPoint(xPixel, yPixel, predicate)
 }
 
 /**
@@ -250,8 +263,8 @@ fun Level.getMovingObjectCollisionsFromPixelRectangle(xPixel: Int, yPixel: Int, 
 fun Level.getMovingObjectCollisionsInSquareCenteredOn(xPixel: Int, yPixel: Int, radius: Int, predicate: (MovingObject) -> Boolean = { true }): Set<MovingObject> {
     val set = mutableSetOf<MovingObject>()
     for (chunk in getChunksFromPixelRectangle(xPixel - radius, yPixel - radius, radius * 2, radius * 2)) {
-        set.addAll(getCollisionsWith(chunk.data.moving, xPixel, yPixel, widthPixels, heightPixels, predicate))
-        set.addAll(getCollisionsWith(chunk.data.movingOnBoundary, xPixel, yPixel, widthPixels, heightPixels, predicate))
+        set.addAll(getCollisionsWith(chunk.data.moving, xPixel - radius, yPixel - radius, radius * 2, radius * 2, predicate))
+        set.addAll(getCollisionsWith(chunk.data.movingOnBoundary, xPixel - radius, yPixel - radius, radius * 2, radius * 2, predicate))
     }
     return set
 }
@@ -400,6 +413,7 @@ fun Level.canRemove(l: LevelObject): Boolean {
  * @return the quantity of the resource that was able to be materialized
  */
 fun Level.add(xPixel: Int, yPixel: Int, r: ResourceType, quantity: Int): Int {
+    // TODO make this materialize it within a certain range so the coords dont have to be precise
     if (r is ItemType) {
         if (!add(DroppedItem(xPixel, yPixel, r, quantity)))
             return 0

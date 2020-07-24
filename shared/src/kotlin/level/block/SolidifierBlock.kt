@@ -64,6 +64,9 @@ class SolidifierBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(Mach
     }
 
     override fun onFinishWork() {
+        if(currentlySolidifying == null) {
+            return
+        }
         if (out.add(currentlySolidifying!!.ingot)) {
             tank.remove(currentlySolidifying!!)
         } else {

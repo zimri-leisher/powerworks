@@ -13,6 +13,7 @@ class RobotType<T : Robot>(initializer: RobotType<T>.() -> Unit) : EntityType<T>
 
     init {
         initializer()
+        mass = hitbox.width * hitbox.height * density
     }
 
     companion object {
@@ -23,7 +24,7 @@ class RobotType<T : Robot>(initializer: RobotType<T>.() -> Unit) : EntityType<T>
         }
 
         val BRAIN = RobotType<BrainRobot> {
-            instantiate = { xPixel, yPixel, rotation -> BrainRobot(xPixel, yPixel, rotation, Player(User(UUID.randomUUID(), ""), LevelManager.EMPTY_LEVEL.id, UUID.randomUUID())) }
+            instantiate = { xPixel, yPixel, rotation -> BrainRobot(xPixel, yPixel, rotation, User(UUID.randomUUID(), "")) }
             textures = LevelObjectTextures(ImageCollection.ROBOT)
             hitbox = Hitbox.STANDARD_ROBOT
         }

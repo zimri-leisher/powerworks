@@ -7,13 +7,13 @@ import main.DebugCode
 import main.Game
 import main.heightPixels
 import main.widthPixels
-import routing.FluidPipeRoutingNetwork
-import routing.PipeRoutingNetwork
+import routing.FluidPipeNetwork
+import routing.PipeNetwork
 import serialization.Id
 
 class FluidPipeBlock(xTile: Int, yTile: Int) : PipeBlock(PipeBlockType.FLUID_PIPE, xTile, yTile) {
     @Id(25)
-    override var network: PipeRoutingNetwork = FluidPipeRoutingNetwork(level)
+    override var network: PipeNetwork = FluidPipeNetwork(level)
 
     override fun render() {
         Renderer.renderTexture(type.images[state]!!, xPixel, yPixel + 1)

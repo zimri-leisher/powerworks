@@ -5,6 +5,7 @@ import audio.Sound
 import behavior.Behavior
 import behavior.BehaviorTree
 import behavior.VariableData
+import behavior.leaves.EntityPath
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.esotericsoftware.kryonet.FrameworkMessage
 import crafting.Recipe
@@ -16,13 +17,10 @@ import fluid.MoltenOreFluidType
 import graphics.*
 import item.*
 import item.tool.ToolItemType
-import item.weapon.Projectile
-import item.weapon.WeaponItem
-import item.weapon.WeaponItemType
+import item.weapon.*
 import level.*
 import level.block.*
-import level.entity.Entity
-import level.entity.EntityType
+import level.entity.*
 import level.entity.robot.BrainRobot
 import level.entity.robot.Robot
 import level.entity.robot.RobotType
@@ -52,6 +50,7 @@ import resource.*
 import routing.*
 import routing.script.*
 import screen.Camera
+import java.awt.Polygon
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.util.*
@@ -70,10 +69,10 @@ object Registration {
 
     fun registerAll() {
 
-        // max 230
+        // max 252
         /* COLLECTIONS */
         val singletonList = listOf(1)
-        register(singletonList::class, CollectionSerializer {it.toList()}, 209)
+        register(singletonList::class, CollectionSerializer { it.toList() }, 209)
         register(emptyList<Nothing>()::class, EmptyListSerializer(), 160)
         val immutableListClass = Class.forName("java.util.Arrays${'$'}ArrayList") as Class<Collection<Any?>>
         register<Collection<Any?>>(immutableListClass, CollectionSerializer { listOf(*it.toTypedArray()) }, 141)
@@ -83,6 +82,7 @@ object Registration {
         register(kotlin.Pair::class, PairSerializer(), 154)
         register(LinkedHashMap::class, MutableMapSerializer<LinkedHashMap<Any?, Any?>>(), 140)
         register(Set::class.java, MutableCollectionSerializer<LinkedHashSet<Any?>>(), 153)
+        register(Polygon::class, Serializer.AllFields<Polygon>(), 251)
 
         FrameworkMessage.RegisterTCP::class.register(147, Serializer.AllFields<FrameworkMessage.RegisterTCP>())
         FrameworkMessage.RegisterUDP::class.register(148, Serializer.AllFields<FrameworkMessage.RegisterUDP>())
@@ -101,6 +101,7 @@ object Registration {
         Behavior
         register(BehaviorTree::class, IDSerializer({ BehaviorTree.ALL }, { it.id }), 112)
         register(VariableData::class, 113)
+        register(EntityPath::class, 236)
 
         /* CRAFTING */
         register(Recipe::class, IDSerializer({ Recipe.ALL }, { it.id }), 106)
@@ -124,13 +125,16 @@ object Registration {
         register(Renderable::class, 13)
         register(Texture::class, TextureSerializer(), 14)
         register(Animation::class, IDSerializer({ Animation.ALL }, { it.id }), 102)
+        register(AnimationCollection::class, IDSerializer({AnimationCollection.ALL}, {it}), 252)
 
         /* IO */
 
         /* ITEM */
         register(ToolItemType::class, IDSerializer({ ToolItemType.ALL }, { it.id }), 15)
         register(Projectile::class, 16)
+        register(ProjectileType::class, 248)
         register(WeaponItem::class, 17)
+        register(Weapon::class, 249)
         register(WeaponItemType::class, IDSerializer({ WeaponItemType.ALL }, { it.id }), 18)
         register(Inventory::class, 19)
         register(Item::class, 20)
@@ -158,6 +162,14 @@ object Registration {
         register(LevelModificationType::class, EnumSerializer<LevelModificationType>(), 227)
         register(SelectCrafterRecipe::class, 229)
         register(ModifyBrainRobotInv::class, 230)
+        register(ModifyBlockContainer::class, 231)
+        register(TransferThroughResourceNode::class, 232)
+        register(MachineBlockFinishWork::class, 233)
+        register(SetEntityPath::class, 237)
+        register(UpdateEntityPathPosition::class, 238)
+        register(AddEntititesToGroup::class, 242)
+        register(SetEntityFormation::class, 243)
+        register(SetEntityTarget::class, 246)
 
         /* /BLOCK */
         register(BlockType::class, LevelObjectTypeSerializer(), 22)
@@ -180,10 +192,15 @@ object Registration {
         register(SolidifierBlock::class, 31)
         register(PipeBlock::class, 189)
         register(RobotFactoryBlock::class, 217)
+        register(ArmoryBlock::class, 247)
 
         /* /ENTITY */
         register(Entity::class, 32)
         register(EntityType::class, LevelObjectTypeSerializer(), 36)
+        register(EntityBehavior::class, Serializer.Tagged<EntityBehavior>(), 234)
+        register(EntityGroup::class, Serializer.Tagged<EntityGroup>(), 240)
+        register(Formation::class, Serializer.Tagged<Formation>(), 244)
+        register(DefaultEntity::class, 235)
 
         /* //ROBOT */
         register(BrainRobot::class, 33)
@@ -235,7 +252,6 @@ object Registration {
         register(Packet::class, 75)
         register(PacketType::class, EnumSerializer<PacketType>(), 77)
         register(PlayerDataPacket::class, 79)
-        register(RequestChunkDataPacket::class, 80)
         register(RequestLevelDataPacket::class, 81)
         register(RequestLevelInfoPacket::class, 82)
         register(RequestPlayerDataPacket::class, 83)
@@ -249,6 +265,7 @@ object Registration {
         register(ResourceNodeReference::class, NetworkReferenceSerializer(), 199)
         register(DroppedItemReference::class, NetworkReferenceSerializer(), 216)
         register(LevelModificationPacket::class, 228)
+        register(LevelLoadedSuccessPacket::class, 239)
 
         /* PLAYER */
         register(Player::class, 85)
@@ -258,6 +275,8 @@ object Registration {
         register(ControlEntityAction::class, 207)
         register(EditResourceNodeBehaviorAction::class, 208)
         register(PickUpDroppedItemAction::class, 215)
+        register(CreateEntityGroup::class, 241)
+        register(TransferItemsBetweenBlock::class, 245)
 
         /* RESOURCE */
         register(ResourceCategory::class, EnumSerializer<ResourceCategory>(), 86)
@@ -275,9 +294,9 @@ object Registration {
         register(RouteStep::class, 97)
         register(ResourceRoutingNetwork::class, 98)
         register(RoutingLanguageStatement::class, RoutingLanguageStatementSerializer(), 99)
-        register(ItemPipeRoutingNetwork::class, 100)
-        register(PipeRoutingNetwork.PipeRoutingPackage::class, 101)
-        register(FluidPipeRoutingNetwork::class, 187)
+        register(ItemPipeNetwork::class, 100)
+        register(PipeNetwork.PipeRoutingPackage::class, 101)
+        register(FluidPipeNetwork::class, 187)
 
         register(TokenType::class.java, EnumSerializer<TokenType>(), 184)
         register(Token::class.java, 185)

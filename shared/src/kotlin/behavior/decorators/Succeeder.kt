@@ -9,7 +9,7 @@ import level.entity.Entity
 class Succeeder(parent: BehaviorTree, child: Node) : Decorator(parent, child) {
     override fun init(entity: Entity) {
         child.init(entity)
-        if(child.state != NodeState.RUNNING) {
+        if (child.state != NodeState.RUNNING) {
             state = NodeState.SUCCESS
         } else {
             state = NodeState.RUNNING
@@ -17,12 +17,12 @@ class Succeeder(parent: BehaviorTree, child: Node) : Decorator(parent, child) {
         }
     }
 
-    override fun updateState(entity: Entity) {
-        child.updateState(entity)
+    override fun updateState(entity: Entity): NodeState {
+        child.updateAndSetState(entity)
         if (child.state != NodeState.RUNNING) {
-            state = NodeState.SUCCESS
+            return NodeState.SUCCESS
         } else {
-            state = NodeState.RUNNING
+            return NodeState.RUNNING
         }
     }
 

@@ -7,7 +7,7 @@ import level.entity.Entity
 
 class GetPriority(parent: BehaviorTree, val priorityVar: Variable) : DataLeaf(parent) {
     override fun run(entity: Entity): Boolean {
-        val priority = entity.getPriority(parent)
+        val priority = entity.behavior.getPriority(parent)
         if(priority != -1) {
             setData(priorityVar, priority)
             return true

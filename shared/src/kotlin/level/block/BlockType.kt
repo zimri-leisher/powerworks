@@ -24,6 +24,7 @@ import resource.*
 import routing.script.RoutingLanguage
 import screen.*
 import screen.elements.BlockGUI
+import java.util.*
 
 /**
  * A type of [Block]. All [Block]s have a type, and they define constants between each of their instances. For example,
@@ -129,33 +130,64 @@ open class BlockType<T : Block>(initializer: BlockType<T>.() -> Unit = {}) : Lev
                  allowIn: String = "false", allowInTypes: List<ResourceType> = listOf(), allowOut: String = "false", allowOutTypes: List<ResourceType> = listOf(),
                  forceIn: String = "false", forceInTypes: List<ResourceType> = listOf(), forceOut: String = "false", forceOutTypes: List<ResourceType> = listOf(),
                  allowBehaviorModification: Boolean = false): ResourceNode {
-            val r = ResourceNode(xOffset, yOffset, dir, attachedContainer.resourceCategory, attachedContainer, LevelManager.EMPTY_LEVEL)
-            with(r.behavior) {
+            val newNode = ResourceNode(xOffset, yOffset, dir, attachedContainer.resourceCategory, attachedContainer, LevelManager.EMPTY_LEVEL)
+            with(newNode.behavior) {
                 this.allowIn.setStatement(RoutingLanguage.parse(allowIn), allowInTypes)
                 this.allowOut.setStatement(RoutingLanguage.parse(allowOut), allowOutTypes)
                 this.forceIn.setStatement(RoutingLanguage.parse(forceIn), forceInTypes)
                 this.forceOut.setStatement(RoutingLanguage.parse(forceOut), forceOutTypes)
                 this.allowModification = allowBehaviorModification
             }
-            if (containers.none { it === attachedContainer }) {
-                containers.add(attachedContainer)
+            if (containers.none { it === newNode.attachedContainer }) {
+                containers.add(newNode.attachedContainer)
             }
-            nodes.add(r)
-            return r
+            nodes.add(newNode)
+            return newNode
         }
 
-        private fun instantiateContainers() = containers.associateWith { it.copy() }
+        fun container(container: ResourceContainer): ResourceContainer {
+            if (containers.none { it === container }) {
+                containers.add(container)
+            }
+            return container
+        }
 
-        fun instantiate(xTile: Int, yTile: Int, dir: Int): List<ResourceNode> {
+        private fun instantiateContainers(id: UUID): Map<ResourceContainer, ResourceContainer> {
+            val rand = Random(id.leastSignificantBits)
+            val byteArray = ByteArray(36)
+            // generate id based off of block id
+            // sort by category to lower chance that reordering messes something up
+            containers.sortBy { it.resourceCategory }
+            return containers.associateWith {
+                rand.nextBytes(byteArray)
+                val containerId = UUID.nameUUIDFromBytes(byteArray)
+                it.copy().apply { this.id = containerId }
+            }
+        }
+
+        fun instantiate(xTile: Int, yTile: Int, dir: Int, id: UUID): List<ResourceNode> {
             val ret = mutableListOf<ResourceNode>()
-            val containers = instantiateContainers()
+            val containers = instantiateContainers(id)
+            // we want these to be sorted in an order that doesn't depend on the order of creation
+            // sort it by all the factors that determine a node uniquely.
+            // if two nodes in a template have the same values for these, we could have problems.
+            // TODO not sure if this is always correct.
+            nodes.sortBy { it.xTile }
+            nodes.sortBy { it.yTile }
+            nodes.sortBy { it.dir }
+            nodes.sortBy { it.resourceCategory }
+            val random = Random(id.mostSignificantBits)
+            val byteArray = ByteArray(36)
             for (node in nodes) {
                 val coord = rotate(node.xTile, node.yTile, widthTiles, heightTiles, dir)
                 val newContainer = containers.filter { it.key === node.attachedContainer }.entries.first().value
+                random.nextBytes(byteArray)
+                val nodeId = UUID.nameUUIDFromBytes(byteArray)
                 val newNode = node.copy(coord.xTile + xTile, coord.yTile + yTile, Geometry.addAngles(node.dir, dir), attachedContainer = newContainer)
                 if (node.behavior.forceOut != newNode.behavior.forceOut) {
-                    println("oopps behaviors diff")
+                    println("oops behaviors diff")
                 }
+                newNode.id = nodeId
                 ret.add(newNode)
             }
             return ret
@@ -256,7 +288,7 @@ open class MachineBlockType<T : MachineBlock>(initializer: MachineBlockType<T>.(
     /**
      * Whether [MachineBlock]s of this type should be on by default
      */
-    var defaultOn = false
+    var startOn = false
 
     init {
         requiresUpdate = true
@@ -273,8 +305,9 @@ open class MachineBlockType<T : MachineBlock>(initializer: MachineBlockType<T>.(
             widthTiles = 2
             heightTiles = 2
             hitbox = Hitbox.TILE2X2
-            defaultOn = true
+            startOn = true
             nodeTemplate {
+                // modifying the order these nodes are generated in can potentially
                 val internalInventory = Inventory(1, 1)
                 node(0, 1, 0, internalInventory, allowOut = "true", forceOut = "true")
             }
@@ -314,11 +347,28 @@ open class MachineBlockType<T : MachineBlock>(initializer: MachineBlockType<T>.(
             }
             guiPool = BlockGUIPool({ SolidifierBlockGUI(it as SolidifierBlock) }, 3)
         }
+        val ARMORY = MachineBlockType<ArmoryBlock> {
+            name = "Armory"
+            textures = LevelObjectTextures(Image.Block.ARMORY)
+            instantiate = { xPixel, yPixel, rotation -> ArmoryBlock(xPixel shr 4, yPixel shr 4, rotation) }
+            widthTiles = 2
+            heightTiles = 2
+            loop = true
+            startOn = true
+            hitbox = Hitbox.TILE2X2
+            guiPool = BlockGUIPool({ ArmoryBlockGUI(it as ArmoryBlock) }, 3)
+            nodeTemplate {
+                val inputInv = Inventory(3, 1)
+                node(0, 1, 0, inputInv, "true", allowOut = "false")
+                node(1, 1, 0, inputInv, "true", allowOut = "false")
+                container(Inventory(3, 1))
+            }
+        }
     }
 
 }
 
-class CrafterBlockType(initializer: CrafterBlockType.() -> Unit) : MachineBlockType<CrafterBlock>() {
+class CrafterBlockType<T : CrafterBlock>(initializer: CrafterBlockType<T>.() -> Unit) : MachineBlockType<T>() {
     var crafterType = Crafter.Type.DEFAULT
 
     var internalStorageSize = 3
@@ -332,7 +382,7 @@ class CrafterBlockType(initializer: CrafterBlockType.() -> Unit) : MachineBlockT
 
     companion object {
 
-        val ERROR = CrafterBlockType {
+        val ERROR = CrafterBlockType<CrafterBlock> {
             instantiate = { xPixel, yPixel, rotation -> CrafterBlock(this, xPixel shr 4, yPixel shr 4, rotation) }
             nodeTemplate {
                 val input = Inventory(internalStorageSize, 1)
@@ -342,7 +392,7 @@ class CrafterBlockType(initializer: CrafterBlockType.() -> Unit) : MachineBlockT
             }
         }
 
-        val ITEM_CRAFTER = CrafterBlockType {
+        val ITEM_CRAFTER = CrafterBlockType<CrafterBlock> {
             name = "Crafter"
             crafterType = Crafter.Type.ITEM
             hitbox = Hitbox.TILE2X2
@@ -356,7 +406,7 @@ class CrafterBlockType(initializer: CrafterBlockType.() -> Unit) : MachineBlockT
             }
         }
 
-        val ROBOT_FACTORY = CrafterBlockType {
+        val ROBOT_FACTORY = CrafterBlockType<RobotFactoryBlock> {
             name = "Robot Factory"
             crafterType = Crafter.Type.ROBOT
             instantiate = { xPixel, yPixel, rotation -> RobotFactoryBlock(xPixel shr 4, yPixel shr 4, rotation) }

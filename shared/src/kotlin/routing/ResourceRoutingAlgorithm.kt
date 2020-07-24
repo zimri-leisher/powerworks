@@ -12,9 +12,9 @@ import kotlin.math.absoluteValue
  * @param input the internal network node that the package will start at
  * @param output the internal network node that the package will end at
  */
-fun route(input: ResourceNode, output: ResourceNode, network: PipeRoutingNetwork) = route(input.xTile shl 4, input.yTile shl 4, Geometry.getOppositeAngle(input.dir), output, network)
+fun route(input: ResourceNode, output: ResourceNode, network: PipeNetwork) = route(input.xTile shl 4, input.yTile shl 4, Geometry.getOppositeAngle(input.dir), output, network)
 
-fun route(startXPixel: Int, startYPixel: Int, startDir: Int, output: ResourceNode, network: PipeRoutingNetwork): PackageRoute? {
+fun route(startXPixel: Int, startYPixel: Int, startDir: Int, output: ResourceNode, network: PipeNetwork): PackageRoute? {
     val startXTile = startXPixel shr 4
     val startYTile = startYPixel shr 4
     if (startXTile == output.xTile && startYTile == output.yTile) {

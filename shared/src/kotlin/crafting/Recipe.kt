@@ -4,6 +4,7 @@ import item.BlockItemType
 import item.IngotItemType
 import item.ItemType
 import item.RobotItemType
+import item.weapon.WeaponItemType
 import resource.ResourceList
 import resource.ResourceType
 
@@ -27,7 +28,7 @@ class Recipe(
          * Null means any
          */
         val validCrafterTypes: List<Crafter.Type>? = null,
-        val category: RecipeCategory = RecipeCategory.MISC) {
+        val category: RecipeCategory = RecipeCategory.WEAPONS) {
 
     val id = nextId++
 
@@ -69,13 +70,45 @@ class Recipe(
                 ResourceList(RobotItemType.STANDARD to 1),
                 RobotItemType.STANDARD,
                 listOf(Crafter.Type.ROBOT),
-                RecipeCategory.BOT)
+                RecipeCategory.ROBOTS)
 
-        val CRAFTER = Recipe(
+        val ITEM_CRAFTER = Recipe(
                 ResourceList(IngotItemType.IRON_INGOT to 4, ItemType.CIRCUIT to 8, ItemType.CABLE to 8),
                 ResourceList(BlockItemType.CRAFTER to 1),
                 BlockItemType.CRAFTER,
                 listOf(Crafter.Type.DEFAULT, Crafter.Type.ITEM),
-                RecipeCategory.MACHINE)
+                RecipeCategory.MACHINES)
+
+        val ROBOT_CRAFTER = Recipe(
+                ResourceList(IngotItemType.IRON_INGOT to 16, ItemType.CIRCUIT to 16, ItemType.CABLE to 16),
+                ResourceList(BlockItemType.ROBOT_FACTORY to 1),
+                BlockItemType.ROBOT_FACTORY,
+                listOf(Crafter.Type.DEFAULT, Crafter.Type.ITEM),
+                RecipeCategory.MACHINES
+        )
+
+        val ITEM_PIPE = Recipe(
+                ResourceList(IngotItemType.IRON_INGOT to 2),
+                ResourceList(BlockItemType.ITEM_PIPE to 4),
+                BlockItemType.ITEM_PIPE,
+                listOf(Crafter.Type.DEFAULT, Crafter.Type.ITEM),
+                RecipeCategory.LOGISTICS
+        )
+
+        val FLUID_PIPE = Recipe(
+                ResourceList(IngotItemType.COPPER_INGOT to 2),
+                ResourceList(BlockItemType.FLUID_PIPE to 4),
+                BlockItemType.FLUID_PIPE,
+                listOf(Crafter.Type.DEFAULT, Crafter.Type.ITEM),
+                RecipeCategory.LOGISTICS
+        )
+
+        val MACHIINE_GUN = Recipe(
+                ResourceList(IngotItemType.COPPER_INGOT to 2, IngotItemType.IRON_INGOT to 2),
+                ResourceList(WeaponItemType.MACHINE_GUN to 1),
+                WeaponItemType.MACHINE_GUN,
+                listOf(Crafter.Type.WEAPON),
+                RecipeCategory.WEAPONS
+        )
     }
 }

@@ -4,7 +4,10 @@ import graphics.Renderer
 import graphics.TextureRenderParams
 import level.LevelObject
 import level.entity.Entity
+import level.getCollisionsWithPoint
 import serialization.Id
+import java.awt.Point
+import java.awt.Polygon
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -37,6 +40,23 @@ class Projectile(
     @Id(11)
     var ticksLived = 0
 
+    init {
+        val poly = Polygon()
+        // create verticies
+        val points = listOf(
+                Point(-type.hitbox.width / 2, -type.hitbox.height / 2),
+                Point(type.hitbox.width / 2, -type.hitbox.height / 2),
+                Point(type.hitbox.width / 2, type.hitbox.height / 2),
+                Point(-type.hitbox.width / 2, type.hitbox.height / 2)
+        )
+        // rotate verticies
+        /*
+        val rotatedPoints = points.map {
+            Point(it.x * cos(angle) - it.y * sin(angle), it.x * sin(angle) + it.y * )
+        }
+         */
+    }
+
     fun render() {
         Renderer.renderFilledRectangle(xPixel, yPixel, 8, 4, TextureRenderParams(rotation = Math.toDegrees(angle.toDouble()).toFloat()))
     }
@@ -57,15 +77,20 @@ class Projectile(
         ticksLived++
         if (ticksLived >= type.lifetime) {
             parent?.level?.remove(this)
-        } else {
-            xVel = type.speed * cos(angle)
-            yVel = type.speed * sin(angle)
-            xPixelLeftover += xVel % 1
-            yPixelLeftover += yVel % 1
-            xPixel += xVel.toInt() + xPixelLeftover.toInt()
-            yPixel += yVel.toInt() + yPixelLeftover.toInt()
-            xPixelLeftover %= 1
-            yPixelLeftover %= 1
+            return
+        }
+        xVel = type.speed * cos(angle)
+        yVel = type.speed * sin(angle)
+        xPixelLeftover += xVel % 1
+        yPixelLeftover += yVel % 1
+        xPixel += xVel.toInt() + xPixelLeftover.toInt()
+        yPixel += yVel.toInt() + yPixelLeftover.toInt()
+        xPixelLeftover %= 1
+        yPixelLeftover %= 1
+
+        val collisions = parent?.level?.getCollisionsWithPoint(xPixel, yPixel)
+        if (collisions != null && collisions.isNotEmpty()) {
+            println("teskljajklfsdajkl")
         }
     }
 }

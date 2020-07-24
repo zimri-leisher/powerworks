@@ -5,6 +5,7 @@ import behavior.decorators.Inverter
 import behavior.decorators.Repeater
 import behavior.decorators.Succeeder
 import behavior.leaves.*
+import behavior.leaves.Target
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import level.LevelObject
 
@@ -116,5 +117,27 @@ class CompositeContext(val node: Composite) {
 
     fun reset() {
         leaf(Reset(parent, node))
+    }
+
+    fun getFormationPosition(posDestVar: Variable = DefaultVariable.FORMATION_POSITION): Variable {
+        leaf(GetFormationPosition(parent, posDestVar))
+        return posDestVar
+    }
+
+    fun createFormationAround(aroundVar: Variable, padding: Int = 32) {
+        leaf(CreateFormationAround(parent, aroundVar, padding))
+    }
+
+    fun getCenterOfGroup(destVar: Variable = DefaultVariable.CENTER_OF_GROUP): Variable {
+        leaf(GetCenterOfGroup(parent, destVar))
+        return destVar
+    }
+
+    fun isGroupInFormation() {
+        leaf(IsGroupInFormation(parent))
+    }
+
+    fun target(targetVar: Variable) {
+        leaf(Target(parent, targetVar))
     }
 }

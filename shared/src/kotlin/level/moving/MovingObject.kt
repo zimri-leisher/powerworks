@@ -2,13 +2,11 @@ package level.moving
 
 import level.*
 import main.Game
+import misc.Geometry
 import network.LevelObjectReference
 import network.MovingObjectReference
-import network.ServerNetworkManager
 import serialization.Id
-import kotlin.math.IEEErem
-import kotlin.math.absoluteValue
-import kotlin.math.sign
+import kotlin.math.*
 
 abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: Int, yPixel: Int, rotation: Int = 0) : LevelObject(type, xPixel, yPixel, rotation, true) {
     override val type = type
@@ -20,10 +18,10 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: In
             field = value
             xTile = value shr 4
             xChunk = xTile shr CHUNK_TILE_EXP
-            xPixelRemainder = 0.0
             onMove(old, yPixel)
         }
 
+    @Id(100)
     private var xPixelRemainder = 0.0
 
     final override var yPixel = yPixel
@@ -32,10 +30,10 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: In
             field = value
             yTile = value shr 4
             yChunk = yTile shr CHUNK_TILE_EXP
-            yPixelRemainder = 0.0
             onMove(xPixel, old)
         }
 
+    @Id(101)
     private var yPixelRemainder = 0.0
 
     final override var xTile = xPixel shr 4
@@ -49,8 +47,6 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: In
 
     final override var yChunk = yTile shr CHUNK_TILE_EXP
         private set
-
-    // tags start here because of superclass tags
 
     @Id(17)
     var xVel = 0.0
@@ -67,7 +63,7 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: In
     @Id(18)
     var yVel = 0.0
         set(value) {
-            if (value > type.maxSpeed || value < -type.maxSpeed) {
+            if (value.absoluteValue > type.maxSpeed) {
                 field = type.maxSpeed.toDouble() * value.sign
             } else if (value.absoluteValue < EPSILON) {
                 field = 0.0
@@ -85,16 +81,67 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: In
     @Id(21)
     val moveListeners = mutableListOf<MovementListener>()
 
-    override fun update() {
-        move()
-    }
+    @Id(102)
+    private var gettingUnstuck = false
 
     fun setPosition(xPixel: Int, yPixel: Int) {
         val oXPixel = this.xPixel
         val oYPixel = this.yPixel
         this.xPixel = xPixel
         this.yPixel = yPixel
+        xPixelRemainder = 0.0
+        yPixelRemainder = 0.0
+        val dist = Geometry.distance(oXPixel, oYPixel, xPixel, yPixel)
+        if(dist > 8) {
+            println("TELEPORTING: $dist")
+        }
         onMove(oXPixel, oYPixel)
+    }
+
+    override fun update() {
+        move()
+    }
+
+    fun applyForce(angle: Double, mag: Double) {
+        val accel = mag / type.mass
+        xVel += cos(angle) * accel
+        yVel += sin(angle) * accel
+    }
+
+    private fun isCollidingAlongXAxis(o: LevelObject): Boolean {
+        val range = (yPixel + hitbox.yStart) until (yPixel + hitbox.yStart + hitbox.height)
+        val otherRange = (o.yPixel + o.hitbox.yStart) until (o.yPixel + o.hitbox.yStart + o.hitbox.height)
+        return range.any { it in otherRange }
+    }
+
+    private fun getNewVelocity(thisVel: Double, otherVel: Double, otherMass: Double): Double {
+        val thisMomentum = type.mass * thisVel.absoluteValue
+        val otherMomentum = otherMass * otherVel.absoluteValue
+        val totalMomentum = otherMomentum + thisMomentum
+        if (thisVel.absoluteValue < EPSILON) { // this is at rest
+            // v2f = [2m1/(m1 + m2)]v1i, where this is object 2
+            return (2 * otherMomentum / (totalMomentum)) * otherVel
+        } else {
+            // v1f = [(m1 - m2)/(m1 + m2)]v1i + [2m2/(m1 + m2)]v2, where this is object 1
+            return ((thisMomentum - otherMomentum) / totalMomentum) * thisVel + ((2 * otherMomentum) / totalMomentum) * otherVel
+        }
+    }
+
+    open fun push(other: MovingObject) {
+        // want to find the side of the hitbox that we're colliding with
+        // are we colliding in the x axis or the y axis?
+        // if we're colliding along the x axis, then some of the y values of the range from yStart...yStart + height
+        // should be the same
+        val alongXAxis = isCollidingAlongXAxis(other)
+        if (alongXAxis) {
+            xVel = getNewVelocity(xVel, other.xVel, other.type.mass)
+        } else {
+            yVel = getNewVelocity(yVel, other.yVel, other.type.mass)
+        }
+    }
+
+    override fun onCollide(o: LevelObject) {
+
     }
 
     protected open fun onMove(pXPixel: Int, pYPixel: Int) {
@@ -116,20 +163,41 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: In
         if (level == LevelManager.EMPTY_LEVEL)
             return
         updateIntersectingChunks()
-        oldChunk.removeMoving(this)
+        if(oldChunk !== newChunk) {
+            oldChunk.removeMoving(this)
+        }
         newChunk.addMoving(this)
+    }
+
+    private fun updateRotation() {
+        if (yVel > 0)
+            rotation = 0
+        else if (xVel > 0)
+            rotation = 1
+        else if (yVel < 0)
+            rotation = 2
+        else if (xVel < 0)
+            rotation = 3
     }
 
     open fun move() {
         if (xVel.absoluteValue > EPSILON || yVel.absoluteValue > EPSILON) {
-            if (yVel > 0)
-                rotation = 0
-            else if (xVel > 0)
-                rotation = 1
-            else if (yVel < 0)
-                rotation = 2
-            else if (xVel < 0)
-                rotation = 3
+            val currentCollisions = getCollisions(xPixel, yPixel)
+            if(currentCollisions.isNotEmpty()) {
+                if(!gettingUnstuck) {
+                    // the first time we notice that it's stuck, stop all movement except for getting unstuck
+                    xVel = 0.0
+                    yVel = 0.0
+                }
+                gettingUnstuck = true
+                for(collider in currentCollisions) {
+                    applyForce(atan2(yPixel - collider.yPixel.toDouble(), xPixel - collider.xPixel.toDouble()), type.mass)
+                }
+                println("getting unstuck")
+            } else {
+                gettingUnstuck = false
+            }
+            updateRotation()
             val pXPixel = xPixel
             val pYPixel = yPixel
             // add fractional part of velocity
@@ -141,44 +209,66 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: In
             // remove integer of remainder
             xPixelRemainder -= xPixelRemainder.toInt()
             yPixelRemainder -= yPixelRemainder.toInt()
-            var collisions: MutableSet<LevelObject>? = null
-            val g = getCollisions(nXPixel, nYPixel).toMutableSet()
-            var xPixelOk = false
-            var yPixelOk = false
-            if (g.isEmpty()) {
-                xPixelOk = true
-                yPixelOk = true
-            } else {
-                collisions = g
-                if (nXPixel != xPixel) {
-                    val o = getCollisions(nXPixel, yPixel)
-                    if (o.isEmpty()) {
-                        xPixelOk = true
-                    } else {
-                        collisions.addAll(o)
-                    }
-                }
-                if (nYPixel != yPixel) {
-                    val o = getCollisions(xPixel, nYPixel)
-                    if (o.isEmpty()) {
-                        yPixelOk = true
-                    } else {
-                        collisions.addAll(o)
-                    }
-                }
-            }
-            collisions?.forEach { it.onCollide(this); this.onCollide(it) }
-            if (xPixelOk) {
+            if(gettingUnstuck) {
+                // ignore all collisions
                 xPixel = nXPixel
-            }
-            if (yPixelOk) {
                 yPixel = nYPixel
-            }
-            if (pXPixel != xPixel || pYPixel != yPixel) {
-                if(Game.IS_SERVER) {
-                    //ServerNetworkManager.sendToClients(MovingObjectPositonUpdatePacket(MovingObjectReference(this), xPixel, yPixel))
+                currentCollisions.forEach {
+                    /*
+                    if (it is MovingObject) {
+                        push(it)
+                        it.push(this)
+                    }
+                     */
+                    it.onCollide(this)
+                    this.onCollide(it)
                 }
-                onMove(pXPixel, pYPixel)
+            } else {
+                var collisions: MutableSet<LevelObject>? = null
+                val g = getCollisions(nXPixel, nYPixel).toMutableSet()
+                var xPixelOk = false
+                var yPixelOk = false
+                if (g.isEmpty()) {
+                    xPixelOk = true
+                    yPixelOk = true
+                } else {
+                    collisions = g
+                    if (nXPixel != xPixel) {
+                        val o = getCollisions(nXPixel, yPixel)
+                        if (o.isEmpty()) {
+                            xPixelOk = true
+                        } else {
+                            collisions.addAll(o)
+                        }
+                    }
+                    if (nYPixel != yPixel) {
+                        val o = getCollisions(xPixel, nYPixel)
+                        if (o.isEmpty()) {
+                            yPixelOk = true
+                        } else {
+                            collisions.addAll(o)
+                        }
+                    }
+                }
+                if (xPixelOk) {
+                    xPixel = nXPixel
+                }
+                if (yPixelOk) {
+                    yPixel = nYPixel
+                }
+                if (pXPixel != xPixel || pYPixel != yPixel) {
+                    onMove(pXPixel, pYPixel)
+                }
+                collisions?.forEach {
+                    /*
+                    if (it is MovingObject) {
+                        push(it)
+                        it.push(this)
+                    }
+                     */
+                    it.onCollide(this)
+                    this.onCollide(it)
+                }
             }
             xVel /= type.drag
             yVel /= type.drag
@@ -212,6 +302,6 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: In
     }
 
     companion object {
-        const val EPSILON = 1e-10
+        const val EPSILON = 1e-3
     }
 }

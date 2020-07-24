@@ -6,11 +6,15 @@ import graphics.text.TextRenderParams
 import item.Inventory
 import network.User
 import player.Player
+import player.PlayerManager
 import serialization.Id
+import java.util.*
 
 class BrainRobot(xPixel: Int, yPixel: Int, rotation: Int,
                  @Id(28)
-                 var player: Player) : Robot(RobotType.BRAIN, xPixel, yPixel, rotation) {
+                 var user: User) : Robot(RobotType.BRAIN, xPixel, yPixel, rotation) {
+
+    val player get() = PlayerManager.getPlayer(user)
 
     @Id(29)
     val inventory = Inventory(8, 6)

@@ -11,8 +11,7 @@ object Behavior {
         Offense
     }
 
-    val ERROR = BehaviorTree {
-    }
+    val ERROR = BehaviorTree {}
 
     object Movement {
         val PATH_TO_MOUSE = BehaviorTree {
@@ -22,6 +21,11 @@ object Behavior {
         val PATH_TO_ARG = BehaviorTree {
             followPath(findPath(DefaultVariable.ARGUMENT))
         }
+
+        val PATH_TO_FORMATION = BehaviorTree {
+            createFormationAround(DefaultVariable.ARGUMENT)
+            followPath(findPath(getFormationPosition(), EntityOnly("formationPositionPath")))
+        }
     }
 
     object Offense {
@@ -30,6 +34,10 @@ object Behavior {
             sequence {
                 followPath(findPath(getNearestLevelObject()))
             }
+        }
+
+        val ATTACK_ARG = BehaviorTree {
+            target(DefaultVariable.ARGUMENT)
         }
     }
 }
@@ -93,7 +101,7 @@ class BehaviorTree(initializer: CompositeContext.() -> Unit = {}) {
      */
     fun hasBeenInitialized(entity: Entity) = entity in entities
 
-    fun hasPriority(entity: Entity) = entity.behaviors.values.max() == entity.getPriority(this)
+    fun hasPriority(entity: Entity) = entity.behavior.running.values.max() == entity.behavior.getPriority(this)
 
     /**
      * Updates the [Node]s in this behavior tree for the given [Entity]. This should only be called after [init]
@@ -101,7 +109,7 @@ class BehaviorTree(initializer: CompositeContext.() -> Unit = {}) {
      */
     fun update(entity: Entity) {
         currentEntity = entity
-        base.updateState(entity)
+        base.updateAndSetState(entity)
         if (base.state == NodeState.RUNNING) {
             base.execute(entity)
         } else {
@@ -111,7 +119,7 @@ class BehaviorTree(initializer: CompositeContext.() -> Unit = {}) {
 
     fun reset(entity: Entity) {
         currentEntity = entity
-        entity.finishBehavior(this)
+        entity.behavior.finish(this)
         entities.remove(entity)
         data.deleteCorresponding(entity)
     }
@@ -179,8 +187,7 @@ class DefaultLeaf(parent: BehaviorTree) : Leaf(parent) {
     override fun init(entity: Entity) {
     }
 
-    override fun updateState(entity: Entity) {
-    }
+    override fun updateState(entity: Entity) = NodeState.FAILURE
 
     override fun execute(entity: Entity) {
     }

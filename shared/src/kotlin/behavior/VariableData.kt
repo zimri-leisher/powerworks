@@ -1,6 +1,5 @@
 package behavior
 
-import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer
 import level.entity.Entity
 import main.removeIfKey
 import serialization.Id
@@ -40,6 +39,10 @@ class VariableData {
         return "${getNodeString(node)}-${getEntityString(entity)}-$name"
     }
 
-    fun getNodeString(node: Node?) = if(node != null) node::class.java.simpleName + ":" + node.id else ""
-    fun getEntityString(entity: Entity?) = if(entity != null) entity::class.java.simpleName + ":" + entity.id else ""
+    fun getNodeString(node: Node?) = if (node != null) node::class.java.simpleName + ":" + node.id else ""
+    fun getEntityString(entity: Entity?) = if (entity != null) entity::class.java.simpleName + ":" + entity.id else ""
+
+    override fun toString(): String {
+        return data.entries.joinToString()
+    }
 }

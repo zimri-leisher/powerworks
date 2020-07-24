@@ -27,7 +27,7 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotatio
      * into account, so, for example, if that same block were placed with a rotation of 1 (rotated 90 degrees clockwise), the node would be at (1, 0) relative, pointing right.
      */
     @Id(18)
-    val nodes: MutableList<ResourceNode> = type.nodesTemplate.instantiate(xTile, yTile, rotation).toMutableList()
+    val nodes: MutableList<ResourceNode> = type.nodesTemplate.instantiate(xTile, yTile, rotation, id).toMutableList()
 
     /**
      * The specific local containers as specified by [BlockType.nodesTemplate]

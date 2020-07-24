@@ -2,8 +2,6 @@ package behavior.composites
 
 import level.entity.Entity
 import behavior.*
-import level.LevelManager
-import main.Game
 import java.util.*
 
 /**
@@ -49,15 +47,15 @@ class Selector(parent: BehaviorTree, children: MutableList<Node>, val order: Com
         }
     }
 
-    override fun updateState(entity: Entity) {
+    override fun updateState(entity: Entity): NodeState {
         if (order == CompositeOrder.PARALLEL) {
-            children.forEach { it.updateState(entity) }
+            children.forEach { it.updateAndSetState(entity) }
             if (children.any { it.state == NodeState.SUCCESS }) {
                 state = NodeState.SUCCESS
             } else if (children.all { it.state == NodeState.FAILURE }) {
-                state = NodeState.FAILURE
+                return NodeState.FAILURE
             } else {
-                state = NodeState.RUNNING
+                return NodeState.RUNNING
             }
         } else {
             val failedChildren = getData<MutableList<Node>>(DefaultVariable.SELECTOR_CHILDREN_FAILED)!!
@@ -70,20 +68,18 @@ class Selector(parent: BehaviorTree, children: MutableList<Node>, val order: Com
                         child.init(entity)
                         initializedChildren.add(child)
                     }
-                    child.updateState(entity)
+                    child.updateAndSetState(entity)
                     if (child.state == NodeState.FAILURE) {
                         failedChildren.add(child)
                     } else if (child.state == NodeState.SUCCESS) {
-                        state = NodeState.SUCCESS
-                        return
+                        return NodeState.SUCCESS
                     } else {
-                        state = NodeState.RUNNING
-                        return
+                        return NodeState.RUNNING
                     }
                 }
             }
-            state = NodeState.FAILURE
         }
+        return NodeState.FAILURE
     }
 
     override fun toString(): String {

@@ -2,6 +2,7 @@ package player
 
 import level.LevelManager
 import network.User
+import player.lobby.Lobby
 import serialization.Id
 import java.util.*
 
@@ -16,10 +17,22 @@ class Player(
     private constructor() : this(User(UUID.randomUUID(), ""), UUID.randomUUID(), UUID.randomUUID())
 
     val homeLevel get() = LevelManager.allLevels.first { it.id == homeLevelId }
+
+    // keep on getting crashes here TODO something about loading before the brain robot is loaded?
     val brainRobot get() = LevelManager.allLevels.flatMap { it.data.brainRobots }.first { it.id == brainRobotId }
 
+    var lobby = Lobby()
+
     init {
-        PlayerManager.allPlayers.add(this)
+        var alreadyExists = false
+        PlayerManager.allPlayers.forEach {
+            if(it.user == user) {
+                alreadyExists = true
+            }
+        }
+        if(!alreadyExists) {
+            PlayerManager.allPlayers.add(this)
+        }
     }
 
     override fun equals(other: Any?): Boolean {

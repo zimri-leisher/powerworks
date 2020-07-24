@@ -78,7 +78,7 @@ class ResourceNode constructor(
         }
 
     @Id(13)
-    val id = UUID.randomUUID()
+    var id = UUID.randomUUID()
 
     /**
      * @param mustContainEnough whether or not to check if the attached container has enough resources. Set to false if

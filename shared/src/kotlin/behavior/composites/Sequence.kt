@@ -2,8 +2,6 @@ package behavior.composites
 
 import level.entity.Entity
 import behavior.*
-import level.LevelManager
-import main.Game
 import java.util.*
 
 /**
@@ -49,15 +47,15 @@ class Sequence(parent: BehaviorTree, children: MutableList<Node>, val order: Com
         }
     }
 
-    override fun updateState(entity: Entity) {
+    override fun updateState(entity: Entity): NodeState {
         if (order == CompositeOrder.PARALLEL) {
-            children.forEach { it.updateState(entity) }
+            children.forEach { it.updateAndSetState(entity) }
             if (children.any { it.state == NodeState.FAILURE }) {
-                state = NodeState.FAILURE
+                return NodeState.FAILURE
             } else if (children.all { it.state == NodeState.SUCCESS }) {
-                state = NodeState.SUCCESS
+                return NodeState.SUCCESS
             } else {
-                state = NodeState.RUNNING
+                return NodeState.RUNNING
             }
         } else {
             val successfulChildren = getData<MutableList<Node>>(DefaultVariable.SEQUENCE_CHILDREN_SUCCEEDED)!!
@@ -70,20 +68,19 @@ class Sequence(parent: BehaviorTree, children: MutableList<Node>, val order: Com
                         child.init(entity)
                         initializedChildren.add(child)
                     }
-                    child.updateState(entity)
+                    child.updateAndSetState(entity)
                     if (child.state == NodeState.SUCCESS) {
+                        println("child succeeded")
                         successfulChildren.add(child)
                     } else if (child.state == NodeState.FAILURE) {
-                        state = NodeState.FAILURE
-                        return
+                        return NodeState.FAILURE
                     } else {
-                        state = NodeState.RUNNING
-                        return
+                        return NodeState.RUNNING
                     }
                 }
             }
-            state = NodeState.SUCCESS
         }
+        return NodeState.SUCCESS
     }
 
     override fun toString(): String {

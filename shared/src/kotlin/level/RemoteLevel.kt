@@ -1,6 +1,7 @@
 package level
 
 import data.ConcurrentlyModifiableMutableList
+import main.removeIfKey
 import network.ClientNetworkManager
 import network.ServerNetworkManager
 import network.packet.*
@@ -16,8 +17,8 @@ class RemoteLevel(id: UUID, info: LevelInfo) : Level(id, info), PacketHandler {
 
     override lateinit var data: LevelData
 
-    val outgoingModifications = mutableListOf<LevelModification>()
-    val incomingModifications = mutableListOf<LevelModification>()
+    val outgoingModifications = mutableMapOf<LevelModification, Int>()
+    val incomingModifications = mutableMapOf<LevelModification, Int>()
 
     init {
         val chunks: Array<Chunk?> = arrayOfNulls(widthChunks * heightChunks)
@@ -26,7 +27,7 @@ class RemoteLevel(id: UUID, info: LevelInfo) : Level(id, info), PacketHandler {
                 chunks[x + y * widthChunks] = Chunk(x, y)
             }
         }
-        data = LevelData(ConcurrentlyModifiableMutableList(), mutableListOf(), chunks.requireNoNulls(), mutableListOf())
+        data = LevelData(ConcurrentlyModifiableMutableList(), ConcurrentlyModifiableMutableList(), chunks.requireNoNulls(), mutableListOf())
         ClientNetworkManager.registerServerPacketHandler(this, PacketType.LEVEL_UPDATE, PacketType.CHUNK_DATA, PacketType.LEVEL_DATA, PacketType.UPDATE_BLOCK)
     }
 
@@ -45,18 +46,35 @@ class RemoteLevel(id: UUID, info: LevelInfo) : Level(id, info), PacketHandler {
         if (transient) {
             modification.act(this)
         } else {
-            val equivalent = incomingModifications.filter { it.equivalent(modification) }
+            val equivalent = incomingModifications.keys.filter { it.equivalent(modification) }
             if (equivalent.isEmpty()) {
                 modification.actGhost(this)
-                outgoingModifications.add(modification)
-                println("waiting for ack for $modification")
+                outgoingModifications.put(modification, updatesCount)
             } else {
                 // this has already happened
-                incomingModifications.removeAll(equivalent)
-                println("received a local mod for a previous server mod")
+                incomingModifications.removeIfKey { it in equivalent }
             }
         }
         return true
+    }
+
+    override fun update() {
+        if (paused) {
+            return
+        }
+        super.update()
+        val outgoingIterator = outgoingModifications.iterator()
+        for ((_, time) in outgoingIterator) {
+            if (updatesCount - time > 300) {
+                outgoingIterator.remove()
+            }
+        }
+        val incomingIterator = incomingModifications.iterator()
+        for ((_, time) in incomingIterator) {
+            if (updatesCount - time > 300) {
+                incomingIterator.remove()
+            }
+        }
     }
 
     override fun handleServerPacket(packet: Packet) {
@@ -64,22 +82,17 @@ class RemoteLevel(id: UUID, info: LevelInfo) : Level(id, info), PacketHandler {
             packet as LevelUpdatePacket
             if (packet.level == this) {
                 if (packet is LevelModificationPacket) {
-                    println("received level modification ${packet.modification}")
-                    val equivalentModifications = outgoingModifications.filter {
-                        println("checking $it with ${packet.modification}")
+                    val equivalentModifications = outgoingModifications.keys.filter {
                         it.equivalent(packet.modification)
                     }
                     if (equivalentModifications.isEmpty()) {
                         packet.modification.act(this)
-                        incomingModifications.add(packet.modification)
-                        println("received a server mod before the local mod")
+                        incomingModifications.put(packet.modification, updatesCount)
                     } else {
-                        println("found an equivalent action for ${packet.modification}")
                         val localMod = equivalentModifications.first()
-                        localMod.synchronize(packet.modification)
                         localMod.act(this)
                     }
-                    outgoingModifications.removeAll(equivalentModifications)
+                    outgoingModifications.removeIfKey { it in equivalentModifications }
                 }
             }
         } else if (packet is ChunkDataPacket) {
@@ -102,6 +115,8 @@ class RemoteLevel(id: UUID, info: LevelInfo) : Level(id, info), PacketHandler {
                 }
                 updatesCount = packet.updatesCount
                 loaded = true
+                println("received level data, communicating success")
+                ClientNetworkManager.sendToServer(LevelLoadedSuccessPacket(id))
             }
         } else if (packet is UpdateBlockPacket) {
             if (packet.block.level == this) {

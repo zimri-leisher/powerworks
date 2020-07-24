@@ -183,14 +183,14 @@ open class Serializer<R : Any>(var useDefaultConstructorInstantiation: Boolean =
             val fields = getFields(type)
             val taggedFields = fields.filter { it.isAnnotationPresent(Id::class.java) }
             val cachedTaggedFieldsTemp = mutableListOf<TaggedField>()
-            for(taggedField in taggedFields) {
+            for (taggedField in taggedFields) {
                 val id = taggedField.getAnnotation(Id::class.java).id
-                if(cachedTaggedFieldsTemp.any { it.id == id }) {
+                if (cachedTaggedFieldsTemp.any { it.id == id }) {
                     throw RegistrationException("Two fields in class $type have the same id ($id)")
                 }
                 cachedTaggedFieldsTemp.add(TaggedField(taggedField, id))
             }
-            cachedTaggedFields = cachedTaggedFieldsTemp
+            cachedTaggedFields = cachedTaggedFieldsTemp.sortedBy { it.id }
             if (cachedTaggedFields.isNotEmpty()) {
                 debugln("Found tagged fields:")
                 for (field in cachedTaggedFields) {
@@ -472,13 +472,13 @@ class ArraySerializer : Serializer<Array<out Any?>>() {
         output.writeInt(obj.size)
         output.writeInt(Registration.getId(obj::class.java.componentType))
         var index = 0
-        while(index <= obj.lastIndex) {
+        while (index <= obj.lastIndex) {
             val element = obj[index]
-            if(element == null) {
+            if (element == null) {
                 // simplify writing lots of nulls
                 var nullIndicies = 1
-                while(index + nullIndicies <= obj.lastIndex) {
-                    if(obj[index + nullIndicies] == null) {
+                while (index + nullIndicies <= obj.lastIndex) {
+                    if (obj[index + nullIndicies] == null) {
                         nullIndicies++
                     } else {
                         break
@@ -500,12 +500,12 @@ class ArraySerializer : Serializer<Array<out Any?>>() {
         val type = Registration.getType(input.readInt())
         val array = java.lang.reflect.Array.newInstance(type, size) as Array<Any?>
         var i = 0
-        while(i < size) {
+        while (i < size) {
             val element = input.readUnknownNullable()
-            if(element == null) {
+            if (element == null) {
                 val nullCount = input.readInt()
                 debugln("$nullCount null elements in a row")
-                for(nullIndex in i until (i + nullCount)) {
+                for (nullIndex in i until (i + nullCount)) {
                     array[nullIndex] = null
                 }
                 i += nullCount
@@ -550,7 +550,7 @@ open class IDSerializer<R : Any>(val getAllPossibleValues: (type: Class<*>) -> L
     override fun instantiate(input: Input): R {
         val id = input.readUnknown()
         return values.firstOrNull { getId(it as R) == id } as R?
-                ?: throw ReadException("Encountered a $type with id $id in the file, but none exists in $values")
+                ?: throw ReadException("IDSerializer encountered a $type with id $id in the file, but none exists in $values")
     }
 
     override fun read(newInstance: Any, input: Input) {

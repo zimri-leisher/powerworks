@@ -2,8 +2,6 @@ package behavior.leaves
 
 import level.entity.Entity
 import behavior.*
-import level.LevelManager
-import main.Game
 import misc.PixelCoord
 import java.util.*
 

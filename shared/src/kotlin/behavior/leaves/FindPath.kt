@@ -9,11 +9,14 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import level.entity.Entity
 import main.toColor
-import misc.Geometry
 import misc.PixelCoord
 import misc.TileCoord
+import serialization.Id
 import java.awt.Color
+import kotlin.math.atan2
+import kotlin.math.cos
 import kotlin.math.floor
+import kotlin.math.sin
 
 @ExperimentalCoroutinesApi
 class FindPath(parent: BehaviorTree, val goalVar: Variable, val pathDestVar: Variable, val useCoroutines: Boolean = false) : Leaf(parent) {
@@ -21,6 +24,10 @@ class FindPath(parent: BehaviorTree, val goalVar: Variable, val pathDestVar: Var
     override fun init(entity: Entity) {
         state = NodeState.RUNNING
         val goalAny = getData<Any?>(goalVar)
+        if (goalAny == null) {
+            state = NodeState.SUCCESS
+            return
+        }
         val goal: TileCoord
         if (goalAny is PixelCoord) {
             goal = goalAny.toTile()
@@ -44,26 +51,34 @@ class FindPath(parent: BehaviorTree, val goalVar: Variable, val pathDestVar: Var
         }
     }
 
-    override fun updateState(entity: Entity) {
+    override fun updateState(entity: Entity): NodeState {
         if (useCoroutines) {
             val job = getData<Deferred<EntityPath?>>(DefaultVariable.PATHING_JOB)
             if (job == null) {
-                state = NodeState.FAILURE
+                return NodeState.FAILURE
             } else if (job.isActive) {
-                state = NodeState.RUNNING
+                return NodeState.RUNNING
             } else if (job.isCompleted) {
                 val result = job.getCompleted()
                 if (result != null) {
                     if (getData<EntityPath>(pathDestVar) == null) {
-                        state = NodeState.RUNNING
+                        return NodeState.RUNNING
                     } else {
-                        state = NodeState.SUCCESS
+                        return NodeState.SUCCESS
                     }
                 } else {
-                    state = NodeState.FAILURE
+                    return NodeState.FAILURE
                 }
             }
+        } else {
+            val route = getData<EntityPath>(pathDestVar)
+            if (route != null) {
+                return NodeState.SUCCESS
+            } else {
+                return NodeState.FAILURE
+            }
         }
+        return NodeState.FAILURE
     }
 
     override fun execute(entity: Entity) {
@@ -131,7 +146,7 @@ data class Node(var parent: Node? = null, val pos: TileCoord, val goal: TileCoor
                 val nXTile = xTile + x
                 val nYTile = yTile + y
                 val nCoord = TileCoord(nXTile, nYTile)
-                if ((x != 0 || y != 0) && (nCoord == goal || entity.getCollisions(nXTile shl 4, nYTile shl 4, { it !is Entity }).isEmpty())) {
+                if ((x != 0 || y != 0) && (nCoord == goal || entity.getCollisions(nXTile shl 4, nYTile shl 4, { it !is Entity || (it.xVel == 0.0 && it.yVel == 0.0 && it.group != entity.group) }).isEmpty())) {
                     neighbors.add(Node(this, nCoord, goal, entity, this.g + Math.sqrt(Math.pow(xTile - nXTile.toDouble(), 2.0) + Math.pow(yTile - nYTile.toDouble(), 2.0))))
                 }
             }
@@ -140,13 +155,17 @@ data class Node(var parent: Node? = null, val pos: TileCoord, val goal: TileCoor
     }
 }
 
-data class EntityPath(val goal: PixelCoord, val steps: List<PixelCoord>)
+data class EntityPath(
+        @Id(1) val goal: PixelCoord, @Id(2) val steps: List<PixelCoord>) {
+    private constructor() : this(PixelCoord(0, 0), listOf())
+}
 
 fun heuristic(node: Node): Double {
     return Math.sqrt(Math.pow(node.xTile - node.goal.xTile.toDouble(), 2.0) + Math.pow(node.yTile - node.goal.yTile.toDouble(), 2.0))
 }
 
 fun route(entity: Entity, goal: TileCoord): EntityPath? {
+    val startTime = System.currentTimeMillis()
     if (entity.xTile == goal.xTile && entity.yTile == goal.yTile) {
         return EntityPath(goal.toPixel(), listOf())
     }
@@ -182,7 +201,7 @@ fun route(entity: Entity, goal: TileCoord): EntityPath? {
             if (alreadyThere != null) {
                 if (alreadyThere.g < child.g) {
                     continue
-                } else if(alreadyThere.g > child.g) {
+                } else if (alreadyThere.g > child.g) {
                     alreadyThere.g = child.g
                     alreadyThere.parent = child.parent
                 }
@@ -193,7 +212,7 @@ fun route(entity: Entity, goal: TileCoord): EntityPath? {
         openNodes.remove(nextNode)
         closedNodes.add(nextNode)
         step++
-        if(step > 300) {
+        if (step > 300) {
             // just to stop infinite searches
             return null
         }
@@ -218,7 +237,7 @@ fun route(entity: Entity, goal: TileCoord): EntityPath? {
             FindPath.closedNodes = closedNodes
             FindPath.currentStep = 0
         }
-        return path
+        return smooth(path, entity).also { println("Time taken to pathfind: ${System.currentTimeMillis() - startTime}") }
     } else {
         return null
     }
@@ -232,4 +251,45 @@ fun backtrack(endingNode: Node): List<Node> {
         pathedNodes.add(currentNode!!)
     }
     return pathedNodes.reversed()
+}
+
+fun smooth(path: EntityPath, forEntity: Entity): EntityPath {
+    if (path.steps.size == 2) {
+        return path
+    }
+    val newPathSteps = mutableListOf<PixelCoord>()
+    newPathSteps.addAll(path.steps)
+    var checkPoint = path.steps[0]
+    var currentPointIndex = 1
+    var currentPoint = path.steps[currentPointIndex]
+    while (currentPointIndex + 1 <= path.steps.lastIndex) { // while there is a next step
+        if (traversable(checkPoint, path.steps[currentPointIndex + 1], forEntity)) {
+            val temp = currentPoint
+            currentPoint = path.steps[currentPointIndex + 1]
+            newPathSteps.remove(temp)
+        } else {
+            checkPoint = currentPoint
+            currentPoint = path.steps[currentPointIndex + 1]
+        }
+        currentPointIndex++
+    }
+    return EntityPath(path.goal, newPathSteps)
+}
+
+const val TRAVERSABLE_CHECK_STEP = 4
+
+fun traversable(start: PixelCoord, end: PixelCoord, entity: Entity): Boolean {
+    val pointsToCheck = mutableListOf<PixelCoord>()
+    // generate points from the start to the end with steps between them of TRAVERSABLE_CHECK_STEP
+    val angle = atan2(end.yPixel - start.yPixel.toDouble(), end.xPixel - start.xPixel.toDouble())
+    var currentPoint = start
+    var count = 0
+    while (currentPoint.distance(end) > TRAVERSABLE_CHECK_STEP) {
+        count++
+        currentPoint = PixelCoord(start.xPixel + (TRAVERSABLE_CHECK_STEP * count * cos(angle)).toInt(), start.yPixel + (TRAVERSABLE_CHECK_STEP * count * sin(angle)).toInt())
+        if (entity.getCollisions(currentPoint.xPixel, currentPoint.yPixel).isNotEmpty()) {
+            return false
+        }
+    }
+    return true
 }

@@ -1,12 +1,11 @@
 package behavior
 
+import behavior.composites.Sequence
+import behavior.decorators.Repeater
+import behavior.decorators.Succeeder
+import behavior.leaves.MoveTo
 import level.Level
-import level.LevelObject
 import level.entity.Entity
-import behavior.leaves.*
-import behavior.composites.*
-import behavior.decorators.*
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 private var nextId = 0
 
@@ -36,22 +35,22 @@ sealed class Node(val parent: BehaviorTree) {
     fun <T> getData(node: Node? = null, entity: Entity? = null, name: String): T? = parent.data.get(node, entity, name)
 
     fun <T> getData(variable: Variable): T? = getData(
-            if(variable.nodeSpecific) this else null,
-            if(variable.entitySpecific) parent.currentEntity else null,
+            if (variable.nodeSpecific) this else null,
+            if (variable.entitySpecific) parent.currentEntity else null,
             variable.name)
 
     fun dataExists(node: Node? = null, entity: Entity? = null, name: String) = parent.data.exists(node, entity, name)
 
     fun dataExists(variable: Variable) = dataExists(
-            if(variable.nodeSpecific) this else null,
-            if(variable.entitySpecific) parent.currentEntity else null,
+            if (variable.nodeSpecific) this else null,
+            if (variable.entitySpecific) parent.currentEntity else null,
             variable.name)
 
     fun clearData(node: Node? = null, entity: Entity? = null, name: String) {
         parent.data.deleteCorresponding(node, entity, name)
     }
 
-    fun clearData(variable: Variable) = clearData(if(variable.nodeSpecific) this else null, if(variable.entitySpecific) parent.currentEntity else null, variable.name)
+    fun clearData(variable: Variable) = clearData(if (variable.nodeSpecific) this else null, if (variable.entitySpecific) parent.currentEntity else null, variable.name)
 
     /**
      * Initializes this node for the given [entity].
@@ -65,7 +64,11 @@ sealed class Node(val parent: BehaviorTree) {
      * Because this is called before [execute] and only checks values, it is not necessary to store a [state] value for
      * each [Entity] this [BehaviorTree] is executing for
      */
-    abstract fun updateState(entity: Entity)
+    abstract fun updateState(entity: Entity): NodeState
+
+    fun updateAndSetState(entity: Entity) {
+        state = updateState(entity)
+    }
 
     /**
      * Executes this node for the given [entity]. This should only be called after calling [updateState] with the same
@@ -94,8 +97,7 @@ abstract class DataLeaf(parent: BehaviorTree) : Leaf(parent) {
     final override fun execute(entity: Entity) {
     }
 
-    final override fun updateState(entity: Entity) {
-    }
+    final override fun updateState(entity: Entity) = state
 }
 
 /**

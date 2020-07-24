@@ -3,17 +3,20 @@ package level
 import main.Game
 import network.ServerNetworkManager
 import network.packet.*
+import player.PlayerManager
+import player.lobby.Lobby
 import serialization.Serialization
 import java.util.*
 
 class ActualLevel(id: UUID, info: LevelInfo) : Level(id, info), PacketHandler {
 
     override lateinit var data: LevelData
-    var isLoadedOnClient = false
+
+    var currentLobby: Lobby? = null
 
     init {
         if (Game.IS_SERVER) {
-            ServerNetworkManager.registerClientPacketHandler(this, PacketType.REQUEST_LEVEL_DATA, PacketType.REQUEST_CHUNK_DATA)
+            ServerNetworkManager.registerClientPacketHandler(this, PacketType.REQUEST_LEVEL_DATA, PacketType.REQUEST_CHUNK_DATA, PacketType.LEVEL_LOADED_SUCCESS)
         }
         val loadedData = LevelManager.tryLoadLevelData(id)
         if (loadedData != null) {
@@ -30,8 +33,14 @@ class ActualLevel(id: UUID, info: LevelInfo) : Level(id, info), PacketHandler {
 
     override fun modify(modification: LevelModification, transient: Boolean): Boolean {
         val success = super.modify(modification, transient)
-        if (success && !transient && isLoadedOnClient) {
-            ServerNetworkManager.sendToClients(LevelModificationPacket(modification, this))
+        if (success && !transient) {
+            val playersToSendTo = modification.playersToSendTo
+            if (playersToSendTo == null) {
+                // level gets to decide
+                currentLobby?.sendPacket(LevelModificationPacket(modification, this))
+            } else {
+                ServerNetworkManager.sendToPlayers(LevelModificationPacket(modification, this), playersToSendTo)
+            }
         }
         return true
     }
@@ -39,8 +48,8 @@ class ActualLevel(id: UUID, info: LevelInfo) : Level(id, info), PacketHandler {
     override fun add(l: LevelObject): Boolean {
         val copy = Serialization.copy(l) // TODO add preadding references
         val success = super.modify(AddObject(l), false)
-        if (success && isLoadedOnClient) {
-            ServerNetworkManager.sendToClients(LevelModificationPacket(AddObject(copy), this))
+        if (success) {
+            currentLobby?.sendPacket(LevelModificationPacket(AddObject(copy), this))
         }
         return success
     }
@@ -49,12 +58,17 @@ class ActualLevel(id: UUID, info: LevelInfo) : Level(id, info), PacketHandler {
         if (packet is RequestLevelDataPacket) {
             if (packet.levelId == id) {
                 ServerNetworkManager.sendToClient(LevelDataPacket(id, data, updatesCount), packet.connectionId)
-                isLoadedOnClient = true
             }
-        } else if (packet is RequestChunkDataPacket) {
-            if (packet.levelId == id) {
-                val chunk = data.chunks[packet.xChunk + packet.yChunk * widthChunks]
-                ServerNetworkManager.sendToClient(ChunkDataPacket(id, chunk.xChunk, chunk.yChunk, chunk.data), packet.connectionId)
+        } else if (packet is LevelLoadedSuccessPacket) {
+            println("loaded successfully")
+            // connect player to lobby
+            val player = PlayerManager.getPlayer(ServerNetworkManager.getUser(packet))
+            if (currentLobby == null) {
+                println("new lobby ${player.lobby}")
+                currentLobby = player.lobby
+            } else {
+                println("merging lobbies ${currentLobby!!.players} with ${player.lobby.players}")
+                currentLobby = player.lobby.merge(currentLobby!!)
             }
         }
     }

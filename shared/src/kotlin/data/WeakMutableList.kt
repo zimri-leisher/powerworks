@@ -30,7 +30,7 @@ class WeakMutableList<T> {
     }
 
     private fun check() {
-        val i = list.iterator()
+        var i = list.iterator()
         var retry = true
         while (retry) {
             retry = false
@@ -42,6 +42,7 @@ class WeakMutableList<T> {
                 }
             } catch (e: ConcurrentModificationException) {
                 println("Concurrent modification exception in weak mutable list")
+                i = list.iterator()
                 retry = true
             }
         }

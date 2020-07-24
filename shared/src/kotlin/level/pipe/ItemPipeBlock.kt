@@ -2,19 +2,18 @@ package level.pipe
 
 import graphics.Image
 import graphics.Renderer
-import level.LevelManager
 import level.block.PipeBlockType
 import main.DebugCode
 import main.Game
 import main.heightPixels
 import main.widthPixels
-import routing.ItemPipeRoutingNetwork
-import routing.PipeRoutingNetwork
+import routing.ItemPipeNetwork
+import routing.PipeNetwork
 import serialization.Id
 
 class ItemPipeBlock(xTile: Int, yTile: Int) : PipeBlock(PipeBlockType.ITEM_PIPE, xTile, yTile) {
     @Id(25)
-    override var network: PipeRoutingNetwork = ItemPipeRoutingNetwork(level)
+    override var network: PipeNetwork = ItemPipeNetwork(level)
 
     override fun render() {
         val texture = type.images[state]!!

@@ -56,6 +56,10 @@ class FurnaceBlock(type: MachineBlockType<FurnaceBlock>, xTile: Int, yTile: Int,
     }
 
     override fun onFinishWork() {
+        if(currentlySmelting == null) {
+            // some desync
+            return
+        }
         if (tank.canAdd(ResourceList(currentlySmelting!!.moltenForm to 1))) {
             if (queue.remove(currentlySmelting!!, 1)) {
                 tank.add(currentlySmelting!!.moltenForm, 1, checkIfAble = false)

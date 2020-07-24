@@ -60,7 +60,7 @@ object PlayerManager : PacketHandler {
     fun newPlayer(forUser: User): Player {
         val level = ActualLevel(LevelManager.newLevelId(), LevelManager.newLevelInfoFor(forUser))
         val player = Player(forUser, level.id, UUID.randomUUID())
-        val brainRobot = BrainRobot(level.widthPixels / 2, level.heightPixels / 2, 0, player)
+        val brainRobot = BrainRobot(level.widthPixels / 2, level.heightPixels / 2, 0, player.user)
         for (type in ItemType.ALL) {
             brainRobot.inventory.add(type, type.maxStack)
         }
@@ -86,7 +86,7 @@ object PlayerManager : PacketHandler {
             val packet = PlayerActionPacket(action)
             actionsAwaitingAck.add(packet)
             ClientNetworkManager.sendToServer(packet)
-            action.actTransient()
+            action.actGhost()
         }
     }
 
@@ -112,7 +112,7 @@ object PlayerManager : PacketHandler {
             ServerNetworkManager.sendToClient(AcknowledgePlayerActionPacket(packet.id, false), packet.connectionId)
         } else {
             ServerNetworkManager.sendToClient(AcknowledgePlayerActionPacket(packet.id, true), packet.connectionId)
-            if(!packet.action.act()) {
+            if (!packet.action.act()) {
                 println("Incongruity between verify and act requirements")
             }
         }
@@ -125,8 +125,7 @@ object PlayerManager : PacketHandler {
             if (ackdPacket == null) {
                 println("Received acknowledgement for a packet that wasn't being waited on")
             } else {
-                println("received server acknowledgement for ${ackdPacket.action}")
-                ackdPacket.action.cancelActTransient()
+                ackdPacket.action.cancelActGhost()
                 actionsAwaitingAck.remove(ackdPacket)
                 if (!packet.success) {
                     println("Server denied ${ackdPacket.action}")

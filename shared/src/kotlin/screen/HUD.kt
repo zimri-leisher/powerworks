@@ -161,7 +161,7 @@ object HUD {
         private val selectOverlay = GUITexturePane(this, "Hotbar slot selected overlay", { selected * GUIItemSlot.WIDTH }, { 0 }, textureRegion = Image.GUI.HOTBAR_SELECTED_SLOT, layer = layer + 2)
 
         init {
-            InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.SLOT_1, Control.SLOT_2, Control.SLOT_3, Control.SLOT_4, Control.SLOT_5, Control.SLOT_6, Control.SLOT_7, Control.SLOT_8, Control.GIVE_TEST_ITEM)
+            InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.SLOT_1, Control.SLOT_2, Control.SLOT_3, Control.SLOT_4, Control.SLOT_5, Control.SLOT_6, Control.SLOT_7, Control.SLOT_8, Control.DESELECT_HOTBAR)
             GUITexturePane(this, "hotbar background", -1, 0, Image.GUI.GREY_FILLER, widthPixels + 2, heightPixels + 1, open = true)
             for (i in 0 until HOTBAR_SIZE) {
                 GUIItemSlot(this, "Hotbar slot $i", i * GUIItemSlot.WIDTH, 0, i, items, open = true)
@@ -183,7 +183,10 @@ object HUD {
                     Control.SLOT_6 -> selected = 5
                     Control.SLOT_7 -> selected = 6
                     Control.SLOT_8 -> selected = 7
-                    Control.GIVE_TEST_ITEM -> PlayerManager.localPlayer.brainRobot.inventory.add(Item(BlockItemType.ITEM_PIPE))
+                    Control.DESELECT_HOTBAR -> {
+                        Mouse.heldItemType = null
+                        selected = -1
+                    }
                 }
             }
         }

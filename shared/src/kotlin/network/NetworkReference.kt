@@ -28,7 +28,9 @@ class ResourceNodeReference(
         val id: UUID
 ) : NetworkReference<ResourceNode>() {
 
-    constructor(node: ResourceNode) : this(node.xTile, node.yTile, node.level, node.id)
+    constructor(node: ResourceNode) : this(node.xTile, node.yTile, node.level, node.id) {
+        value = node
+    }
 
     private constructor() : this(0, 0, LevelManager.EMPTY_LEVEL, UUID.randomUUID())
 

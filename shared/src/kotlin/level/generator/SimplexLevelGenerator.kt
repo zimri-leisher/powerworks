@@ -45,7 +45,7 @@ class SimplexLevelGenerator(level: Level) : LevelGenerator(level) {
     private fun generateTile(xTile: Int, yTile: Int, rand: Random): Tile {
         for (t in OreTileType.ALL) {
             val noise = ((oreNoises.get(t)!!.getNoise(xTile.toDouble() / 24.0, yTile.toDouble() / 24.0) / .826) + 1) / 2 // 0 to 1
-            if (noise < t.generationChance && rand.nextInt(t.scatter) == 0)
+            if (noise < t.generationChance)
                 return OreTile(t, xTile, yTile, level)
         }
         return Tile(TileType.GRASS, xTile, yTile, level)

@@ -4,15 +4,20 @@ import item.RobotItemType
 import level.canAdd
 
 class RobotFactoryBlock(xTile: Int, yTile: Int, rotation: Int) : CrafterBlock(CrafterBlockType.ROBOT_FACTORY, xTile, yTile, rotation) {
+
     override fun onFinishWork() {
-        if (inputContainer.contains(recipe!!.consume)) {
-            for (robotItemType in recipe!!.produce.keys.filterIsInstance<RobotItemType>()) {
-                if (level.canAdd(robotItemType.spawnedEntity, xPixel + 24, yPixel - 24)) {
-                    val spawnedRobot = robotItemType.spawnedEntity.instantiate(xPixel + 24, yPixel - 24, 0)
-                    for ((type, quantity) in recipe!!.consume) {
-                        inputContainer.remove(type, quantity)
-                    }
-                    level.add(spawnedRobot)
+        if(recipe == null) {
+            return
+        }
+        if (outputContainer.spaceFor(recipe!!.produce) && inputContainer.contains(recipe!!.consume)) {
+            for ((type, quantity) in recipe!!.consume) {
+                inputContainer.remove(type, quantity)
+            }
+            for ((type, quantity) in recipe!!.produce) {
+                if (type is RobotItemType && level.canAdd(type.spawnedEntity, xPixel + 24, yPixel - 24)) {
+                    level.add(type.spawnedEntity.instantiate(xPixel + 24, yPixel - 24, 0))
+                } else {
+                    outputContainer.add(type, quantity)
                 }
             }
         } else {

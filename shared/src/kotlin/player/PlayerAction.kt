@@ -3,10 +3,12 @@ package player
 import behavior.Behavior
 import behavior.BehaviorTree
 import crafting.Recipe
+import item.ItemType
 import level.*
-import level.block.CrafterBlock
+import level.block.Block
 import level.entity.Entity
 import network.*
+import resource.ResourceList
 import resource.ResourceNodeBehavior
 import serialization.Id
 import java.util.*
@@ -16,8 +18,8 @@ sealed class PlayerAction(
         val owner: Player) {
     abstract fun verify(): Boolean
     abstract fun act(): Boolean
-    abstract fun actTransient()
-    abstract fun cancelActTransient()
+    abstract fun actGhost()
+    abstract fun cancelActGhost()
 }
 
 class ErrorAction : PlayerAction(Player(User(UUID.randomUUID(), ""), UUID.randomUUID(), UUID.randomUUID())) {
@@ -30,11 +32,87 @@ class ErrorAction : PlayerAction(Player(User(UUID.randomUUID(), ""), UUID.random
         return false
     }
 
-    override fun actTransient() {
+    override fun actGhost() {
     }
 
-    override fun cancelActTransient() {
+    override fun cancelActGhost() {
     }
+}
+
+class TransferItemsBetweenBlock(owner: Player,
+                                @Id(2)
+                                val blockReference: BlockReference,
+                                @Id(3)
+                                val add: Boolean,
+                                @Id(4)
+                                val resources: ResourceList,
+                                @Id(5)
+                                val containerId: UUID) : PlayerAction(owner) {
+
+    private constructor() : this(Player(User(UUID.randomUUID(), ""), UUID.randomUUID(), UUID.randomUUID()),
+            BlockReference(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0), false, ResourceList(), UUID.randomUUID())
+
+    override fun verify(): Boolean {
+        val block = blockReference.value!! as Block
+        val container = block.containers.firstOrNull { it.id == containerId } ?: return false
+        if (resources.keys.any { it !is ItemType }) {
+            return false
+        }
+        return if (add) {
+            container.canAdd(resources) && owner.brainRobot.inventory.canRemove(resources)
+        } else {
+            container.canRemove(resources) && owner.brainRobot.inventory.canAdd(resources)
+        }
+    }
+
+    override fun act(): Boolean {
+        blockReference.level.modify(ModifyBlockContainer(blockReference, containerId, resources, add))
+        for ((type, quantity) in resources) {
+            blockReference.level.modify(ModifyBrainRobotInv(owner.brainRobot.toReference() as MovingObjectReference, type as ItemType, quantity))
+        }
+        return true
+    }
+
+    override fun actGhost() {
+    }
+
+    override fun cancelActGhost() {
+    }
+
+}
+
+class CreateEntityGroup(owner: Player,
+                        @Id(2)
+                        val entities: List<MovingObjectReference>) : PlayerAction(owner) {
+
+    private constructor() : this(Player(User(UUID.randomUUID(), ""), UUID.randomUUID(), UUID.randomUUID()), listOf())
+
+    override fun verify(): Boolean {
+        return entities.all { it.value != null }
+    }
+
+    override fun act(): Boolean {
+        if (entities.isEmpty()) {
+            return true
+        }
+        if (entities.any { it.value == null }) {
+            println("Reference to an entity was null")
+            return false
+        }
+        if (entities.map { it.level }.distinct().size != 1) {
+            println("Entities were in more than one level")
+            return false
+        }
+        entities.first().level.modify(AddEntititesToGroup(entities))
+        return true
+    }
+
+    override fun actGhost() {
+    }
+
+    override fun cancelActGhost() {
+    }
+
 }
 
 class PlaceLevelObject(owner: Player,
@@ -74,7 +152,7 @@ class PlaceLevelObject(owner: Player,
             println("Should have been an item form of $levelObjType but wasn't")
             return false
         }
-        val removeItem = ModifyBrainRobotInv(owner.brainRobot.toReference(), levelObjType.itemForm!!, -1)
+        val removeItem = ModifyBrainRobotInv(owner.brainRobot.toReference() as MovingObjectReference, levelObjType.itemForm!!, -1)
         if (!level.modify(removeItem)) {
             println("Should have been able to remove items from brainrobot but wasn't")
             return false
@@ -87,12 +165,12 @@ class PlaceLevelObject(owner: Player,
         return true
     }
 
-    override fun actTransient() {
+    override fun actGhost() {
         temporaryGhostObject = GhostLevelObject(levelObjType, xPixel, yPixel, rotation)
         level.add(temporaryGhostObject!!)
     }
 
-    override fun cancelActTransient() {
+    override fun cancelActGhost() {
         level.remove(temporaryGhostObject!!)
         temporaryGhostObject = null
     }
@@ -122,16 +200,16 @@ class RemoveLevelObjectAction(owner: Player,
             val value = reference.value!!
             value.level.remove(value)
             if (value.type.itemForm != null) {
-                value.level.modify(ModifyBrainRobotInv(owner.brainRobot.toReference(), value.type.itemForm!!, 1))
+                value.level.modify(ModifyBrainRobotInv(owner.brainRobot.toReference() as MovingObjectReference, value.type.itemForm!!, 1))
             }
         }
         return true
     }
 
-    override fun actTransient() {
+    override fun actGhost() {
     }
 
-    override fun cancelActTransient() {
+    override fun cancelActGhost() {
     }
 
     override fun toString(): String {
@@ -164,19 +242,19 @@ class ControlEntityAction(owner: Player,
                 println("Reference should have been able to be resolved, but wasn't")
                 return false
             }
-            if(reference.value !is Entity) {
+            if (reference.value !is Entity) {
                 println("Reference was not to an entity but should have been")
                 return false
             }
-            (reference.value as Entity).runBehavior(behavior, argument = arg)
+            (reference.value as Entity).behavior.run(behavior, argument = arg)
         }
         return true
     }
 
-    override fun actTransient() {
+    override fun actGhost() {
     }
 
-    override fun cancelActTransient() {
+    override fun cancelActGhost() {
     }
 
 }
@@ -201,10 +279,10 @@ class SelectCrafterRecipeAction(owner: Player,
         return true
     }
 
-    override fun actTransient() {
+    override fun actGhost() {
     }
 
-    override fun cancelActTransient() {
+    override fun cancelActGhost() {
     }
 }
 
@@ -228,10 +306,10 @@ class EditResourceNodeBehaviorAction(owner: Player,
         return true
     }
 
-    override fun actTransient() {
+    override fun actGhost() {
     }
 
-    override fun cancelActTransient() {
+    override fun cancelActGhost() {
     }
 
 }
@@ -259,7 +337,7 @@ class PickUpDroppedItemAction(
                 return false
             }
             val value = reference.value!!
-            if(value !is DroppedItem) {
+            if (value !is DroppedItem) {
                 println("Reference should have been to a droppped item but wasn't")
                 return false
             }
@@ -269,9 +347,9 @@ class PickUpDroppedItemAction(
         return true
     }
 
-    override fun actTransient() {
+    override fun actGhost() {
     }
 
-    override fun cancelActTransient() {
+    override fun cancelActGhost() {
     }
 }

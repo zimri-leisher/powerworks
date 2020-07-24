@@ -1,11 +1,12 @@
 package behavior.leaves
 
 import behavior.*
+import level.SetEntityPath
 import level.entity.Entity
+import misc.PixelCoord
+import network.MovingObjectReference
 
 class FollowPath(parent: BehaviorTree, val pathVar: Variable) : Leaf(parent) {
-
-    private val moveTo = MoveTo(parent, Local(DefaultVariable.MOVE_TO_GOAL_POSITION.name), goalThreshold = 16)
 
     override fun init(entity: Entity) {
         state = NodeState.RUNNING
@@ -18,58 +19,33 @@ class FollowPath(parent: BehaviorTree, val pathVar: Variable) : Leaf(parent) {
             return
         }
         setData(DefaultVariable.PATH_BEING_FOLLOWED, path)
-        setData(DefaultVariable.PATH_CURRENT_STEP_INDEX, 0)
-        setData(moveTo, entity, DefaultVariable.MOVE_TO_GOAL_POSITION.name, path.steps[0])
-        moveTo.init(entity)
-        if (moveTo.state == NodeState.FAILURE) {
-            state = NodeState.FAILURE
-        }
+        entity.level.modify(SetEntityPath(entity.toReference() as MovingObjectReference, PixelCoord(entity.xPixel, entity.yPixel), path))
     }
 
-    override fun updateState(entity: Entity) {
+    override fun updateState(entity: Entity): NodeState {
         var path = getData<EntityPath>(DefaultVariable.PATH_BEING_FOLLOWED)
         if (path == null) {
             val recheckPath = getData<EntityPath>(pathVar)
             if (recheckPath == null) {
-                state = NodeState.FAILURE
-                return
-            } else if (recheckPath.steps.isEmpty()) {
-                state = NodeState.SUCCESS
-                return
+                return NodeState.FAILURE
             } else {
                 path = recheckPath
                 setData(DefaultVariable.PATH_BEING_FOLLOWED, path)
-                setData(DefaultVariable.PATH_CURRENT_STEP_INDEX, 0)
-                setData(moveTo, entity, DefaultVariable.MOVE_TO_GOAL_POSITION.name, path.steps[0])
-                moveTo.init(entity)
-                if (moveTo.state == NodeState.FAILURE) {
-                    state = NodeState.FAILURE
+                entity.level.modify(SetEntityPath(entity.toReference() as MovingObjectReference, PixelCoord(entity.xPixel, entity.yPixel), path))
+                if (recheckPath.steps.isEmpty()) {
+                    return NodeState.SUCCESS
                 }
             }
         }
-        val currentStepIndex = getData<Int>(DefaultVariable.PATH_CURRENT_STEP_INDEX)!!
-        moveTo.updateState(entity)
-        if (moveTo.state == NodeState.SUCCESS) {
-            if (currentStepIndex == path.steps.lastIndex) {
-                state = NodeState.SUCCESS
-                return
-            }
-            setData(DefaultVariable.PATH_CURRENT_STEP_INDEX, currentStepIndex + 1)
-            setData(moveTo, entity, DefaultVariable.MOVE_TO_GOAL_POSITION.name, path.steps[currentStepIndex + 1])
-            state = NodeState.RUNNING
-            return
-        } else if (moveTo.state == NodeState.FAILURE) {
-            state = NodeState.FAILURE
-            return
+        if (!entity.behavior.isFollowingPath()) {
+            return NodeState.SUCCESS
         } else {
-            state = NodeState.RUNNING
+            return NodeState.RUNNING
         }
     }
 
     override fun execute(entity: Entity) {
-        if (moveTo.state == NodeState.RUNNING) {
-            moveTo.execute(entity)
-        }
+        // entity already handles following of path
     }
 
     override fun toString() = "FollowPath: (pathVar: $pathVar)"

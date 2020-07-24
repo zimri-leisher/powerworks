@@ -29,6 +29,7 @@ import screen.mouse.Tooltips
 import serialization.Registration
 import serialization.Serialization
 import java.util.*
+import kotlin.system.exitProcess
 import kotlin.system.measureTimeMillis
 
 /* Utility extensions */
@@ -75,7 +76,13 @@ fun main(args: Array<String>) {
     config.setIdleFPS(Game.FRAMES_PER_SECOND / 3)
     config.setTitle("Powerworks Industries")
     config.useVsync(true)
-    Lwjgl3Application(Game, config)
+    try {
+        Lwjgl3Application(Game, config)
+    } catch (t: Throwable) {
+        t.printStackTrace()
+        exitProcess(-1)
+    }
+    exitProcess(1)
 }
 
 object Game : ApplicationAdapter(), ControlPressHandler, PacketHandler {
@@ -233,9 +240,9 @@ object Game : ApplicationAdapter(), ControlPressHandler, PacketHandler {
                 Control.SCREEN_INFO -> currentDebugCode = DebugCode.SCREEN_INFO
                 Control.POSITION_INFO -> currentDebugCode = DebugCode.POSITION_INFO
                 Control.ESCAPE -> {
-                    for(group in ScreenManager.windowGroups) {
+                    for (group in ScreenManager.windowGroups) {
                         val highestCloseableWindow = group.windows.sortedBy { it.layer }.firstOrNull { it.allowEscapeToClose && it.open }
-                        if(highestCloseableWindow != null) {
+                        if (highestCloseableWindow != null) {
                             highestCloseableWindow.open = false
                             break
                         }

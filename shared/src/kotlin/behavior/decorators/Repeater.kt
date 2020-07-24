@@ -15,26 +15,24 @@ class Repeater(parent: BehaviorTree, child: Node, val iterations: Int = -1, val 
         child.init(entity)
     }
 
-    override fun updateState(entity: Entity) {
-        child.updateState(entity)
+    override fun updateState(entity: Entity): NodeState {
+        child.updateAndSetState(entity)
         if (untilFail) {
             if (child.state == NodeState.FAILURE) {
-                state = NodeState.SUCCESS
-                return
+                return NodeState.SUCCESS
             }
         }
         if (untilSucceed) {
             if (child.state == NodeState.SUCCESS) {
-                state = NodeState.SUCCESS
-                return
+                return NodeState.SUCCESS
             }
         }
         if (iterations == -1) {
-            state = NodeState.RUNNING
+            return NodeState.RUNNING
         } else if (currentIteration == iterations - 1) {
-            state = child.state
+            return child.state
         } else {
-            state = NodeState.RUNNING
+            return NodeState.RUNNING
         }
     }
 

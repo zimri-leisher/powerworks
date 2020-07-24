@@ -11,11 +11,12 @@ class RunBehavior(parent: BehaviorTree, val behaviorTree: BehaviorTree, val prio
         state = NodeState.RUNNING
     }
 
-    override fun updateState(entity: Entity) {
+    override fun updateState(entity: Entity): NodeState {
+        return state
     }
 
     override fun execute(entity: Entity) {
-        entity.runBehavior(behaviorTree, priority, if(argumentVar == null) null else getData<Any?>(argumentVar))
+        entity.behavior.run(behaviorTree, priority, if (argumentVar == null) null else getData<Any?>(argumentVar))
         state = NodeState.SUCCESS
     }
 

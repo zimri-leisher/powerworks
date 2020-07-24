@@ -14,6 +14,7 @@ import kotlin.concurrent.thread
 import kotlin.math.pow
 
 object ClientNetworkManager : PacketHandler {
+
     private lateinit var kryoClient: KryoClient
 
     private lateinit var connection: Connection
@@ -80,7 +81,7 @@ object ClientNetworkManager : PacketHandler {
         if (packet is ServerHandshakePacket) {
             val receivedTime = System.currentTimeMillis()
             println("Connected to server at $SERVER_IP:$SERVER_PORT in ${packet.serverTimestamp - packet.clientTimestamp} ms")
-            println("Latency: ${receivedTime - packet.serverTimestamp} ms")
+            println("Latency: ${receivedTime - packet.serverTimestamp} ms TEST ${connection.returnTripTime}")
         }
     }
 

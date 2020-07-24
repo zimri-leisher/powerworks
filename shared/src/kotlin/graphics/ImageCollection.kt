@@ -32,6 +32,9 @@ class ImageCollection(
         val ALL = mutableListOf<ImageCollection>()
 
         val GRASS_TILE = ImageCollection("tile/grass", 4)
+        val ROCK_TILE = ImageCollection("tile/rock", 8)
+        val ROCK_COPPER_ORE_TILE = ImageCollection("tile/rock_copper_ore", 18)
+        val ROCK_IRON_ORE_TILE = ImageCollection("tile/rock_iron_ore", 19)
         val GRASS_IRON_ORE_TILE = ImageCollection("tile/grass_iron_ore", 3)
         val GRASS_COPPER_ORE_TILE = ImageCollection("tile/grass_copper_ore", 4)
         val ROBOT = ImageCollection("robot/robot", 4)

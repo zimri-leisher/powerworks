@@ -6,7 +6,7 @@ import java.util.*
 data class User(
         @Id(1)
         val id: UUID,
-        @Id(2)
+        @Id(2) // todo display name fetched from server
         val displayName: String) {
     private constructor() : this(UUID.randomUUID(), "")
 

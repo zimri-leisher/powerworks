@@ -1,13 +1,13 @@
 package item
 
-import resource.ResourceCategory
-import resource.ResourceType
 import fluid.MoltenOreFluidType
 import graphics.*
 import item.weapon.WeaponItemType
 import level.block.*
 import level.entity.EntityType
 import level.entity.robot.RobotType
+import resource.ResourceCategory
+import resource.ResourceType
 
 open class ItemType(initializer: ItemType.() -> Unit = {}) : ResourceType() {
 
@@ -90,7 +90,7 @@ class RobotItemType(initializer: RobotItemType.() -> Unit) : EntityItemType() {
     }
 }
 
-class BlockItemType(initializer: BlockItemType.() -> Unit): ItemType() {
+class BlockItemType(initializer: BlockItemType.() -> Unit) : ItemType() {
     var placedBlock: BlockType<*> = BlockType.ERROR
 
     init {
@@ -165,6 +165,12 @@ class BlockItemType(initializer: BlockItemType.() -> Unit): ItemType() {
             name = "Molten Ore Solidifier"
             icon = Animation.SOLIDIFIER
             placedBlock = MachineBlockType.SOLIDIFIER
+        }
+
+        val ARMORY = BlockItemType {
+            name = "Armory"
+            icon = Texture(Image.Block.ARMORY)
+            placedBlock = MachineBlockType.ARMORY
         }
     }
 }

@@ -12,14 +12,14 @@ class Inverter(parent: BehaviorTree, child: Node) : Decorator(parent, child) {
         child.init(entity)
     }
 
-    override fun updateState(entity: Entity) {
-        child.updateState(entity)
+    override fun updateState(entity: Entity): NodeState {
+        child.updateAndSetState(entity)
         if (child.state == NodeState.FAILURE) {
-            state = NodeState.SUCCESS
+            return NodeState.SUCCESS
         } else if (child.state == NodeState.SUCCESS) {
-            state = NodeState.FAILURE
+            return NodeState.FAILURE
         } else {
-            state = NodeState.RUNNING
+            return NodeState.RUNNING
         }
     }
 

@@ -12,10 +12,13 @@ import screen.Camera
 open class MovingObjectType<T : MovingObject>(initializer: MovingObjectType<T>.() -> Unit = {}) : LevelObjectType<T>() {
     var maxSpeed = 10
     var drag = 2
+    var density = 1.0
+    var mass = -1.0
 
     init {
         requiresUpdate = true
         initializer()
+        mass = hitbox.width * hitbox.height * density
     }
 
     companion object {

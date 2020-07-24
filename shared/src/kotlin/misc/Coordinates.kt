@@ -12,6 +12,10 @@ data class PixelCoord(
 
     private constructor() : this(0, 0)
 
+    fun distance(other: PixelCoord): Double {
+        return Geometry.distance(xPixel, yPixel, other.xPixel, other.yPixel)
+    }
+
     fun manhattanDistance(other: PixelCoord): Int {
         return abs(xPixel - other.xPixel) + abs(yPixel - other.yPixel)
     }

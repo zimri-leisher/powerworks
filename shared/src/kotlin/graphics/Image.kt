@@ -24,6 +24,7 @@ object Image {
     }
 
     object Block {
+        val ARMORY = ResourceManager.getAtlasTexture("block/armory")
         val CHEST_SMALL = ResourceManager.getAtlasTexture("block/chest_small")
         val CHEST_LARGE = ResourceManager.getAtlasTexture("block/chest_large")
         val CRAFTER = ResourceManager.getAtlasTexture("block/crafter")
@@ -48,6 +49,7 @@ object Image {
     }
 
     object GUI {
+        val SELECT_ENTITIES = ResourceManager.getAtlasTexture("gui/select_entities")
         val MINUS = ResourceManager.getAtlasTexture("gui/minus")
         val PLUS = ResourceManager.getAtlasTexture("gui/plus")
         val VIEW_SELECTOR_CLOSE_BUTTON = ResourceManager.getAtlasTexture("gui/view_selector_close")

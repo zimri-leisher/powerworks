@@ -36,9 +36,15 @@ class NetworkSerializationPlug : Serialization {
     @Synchronized
     override fun read(connection: Connection?, buffer: ByteBuffer?): Any? {
         inputByteBuffer.setBuffer(buffer)
-        val obj = input.readUnknownNullable()
-        input.clearReferences()
-        return obj
+        try {
+            val obj = input.readUnknownNullable()
+            input.clearReferences()
+            return obj
+        } catch (e: Exception) {
+            input.clearReferences()
+            System.err.println("Exception in read packet")
+            throw e
+        }
     }
 
     override fun writeLength(buffer: ByteBuffer, length: Int) {

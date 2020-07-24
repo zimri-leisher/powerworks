@@ -1,6 +1,7 @@
 package level.entity.robot
 
 import io.*
+import item.weapon.Projectile
 import level.LevelObject
 import level.entity.Entity
 import misc.Numbers
@@ -21,18 +22,11 @@ open class Robot(type: RobotType<out Robot>, xPixel: Int, yPixel: Int, rotation:
 
     override fun handleControlPress(p: ControlPress) {
         if(p.pressType == PressType.PRESSED && inLevel) {
-            val xPixel = LevelManager.mouseLevelXPixel
-            val yPixel = LevelManager.mouseLevelYPixel
-            val xDiff = xPixel - this.xPixel
-            val yDiff = yPixel - this.yPixel
-            val angle = atan(yDiff.toDouble() / xDiff) + if(Numbers.sign(xDiff) == -1) PI else 0.0
-            //attack(angle.toFloat())
+            
         }
     }
 
-     fun attack(target: LevelObject) {
-        if(weapon != null) {
-            //Level.add(Projectile(weapon!!.projectileType, xPixel, yPixel, 0, angle, this))
-        }
+    override fun toString(): String {
+        return "Robot at $xPixel, $yPixel"
     }
 }

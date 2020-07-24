@@ -8,7 +8,7 @@ import resource.*
 import routing.script.RoutingLanguage
 import serialization.Id
 
-open class CrafterBlock(override val type: CrafterBlockType, xTile: Int, yTile: Int, rotation: Int) : MachineBlock(type, xTile, yTile, rotation), ResourceContainerChangeListener, Crafter {
+open class CrafterBlock(override val type: CrafterBlockType<*>, xTile: Int, yTile: Int, rotation: Int) : MachineBlock(type, xTile, yTile, rotation), ResourceContainerChangeListener, Crafter {
 
     override val crafterType: Crafter.Type
         get() = type.crafterType
@@ -87,6 +87,9 @@ open class CrafterBlock(override val type: CrafterBlockType, xTile: Int, yTile: 
     private fun enoughToCraft() = currentResources.containsAtLeastAll(recipe!!.consume)
 
     override fun onFinishWork() {
+        if(recipe == null) {
+            return
+        }
         if (outputContainer.spaceFor(recipe!!.produce) && inputContainer.contains(recipe!!.consume)) {
             for ((type, quantity) in recipe!!.consume) {
                 inputContainer.remove(type, quantity)

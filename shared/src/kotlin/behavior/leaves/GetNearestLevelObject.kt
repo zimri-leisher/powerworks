@@ -6,7 +6,6 @@ import behavior.DataLeaf
 import behavior.Variable
 import level.*
 import level.moving.MovingObject
-import main.Game
 import misc.Geometry
 import misc.Numbers
 

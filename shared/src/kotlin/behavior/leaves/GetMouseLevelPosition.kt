@@ -3,7 +3,6 @@ package behavior.leaves
 import level.entity.Entity
 import behavior.*
 import level.LevelManager
-import main.Game
 import misc.PixelCoord
 
 class GetMouseLevelPosition(parent: BehaviorTree, val dest: Variable) : DataLeaf(parent) {

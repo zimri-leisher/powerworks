@@ -1,20 +1,14 @@
 package level.pipe
 
-import graphics.Image
-import graphics.Renderer
 import level.block.Block
 import level.block.PipeBlockType
 import level.getBlockAt
 import level.getResourceNodesAt
-import main.DebugCode
-import main.Game
-import main.heightPixels
-import main.widthPixels
 import misc.Geometry
 import resource.ResourceCategory
 import resource.ResourceNode
 import routing.Intersection
-import routing.PipeRoutingNetwork
+import routing.PipeNetwork
 import serialization.Id
 
 abstract class PipeBlock(override val type: PipeBlockType<out PipeBlock>, xTile: Int, yTile: Int) : Block(type, xTile, yTile, 0) {
@@ -33,7 +27,7 @@ abstract class PipeBlock(override val type: PipeBlockType<out PipeBlock>, xTile:
     val closedEnds: Array<Boolean>
         get() = state.closedEnds
 
-    abstract var network: PipeRoutingNetwork
+    abstract var network: PipeNetwork
 
     @Id(24)
     var intersection: Intersection? = null
@@ -73,7 +67,7 @@ abstract class PipeBlock(override val type: PipeBlockType<out PipeBlock>, xTile:
     }
 
     private fun onNodeConnectionAdd(nodes: List<ResourceNode>) {
-        nodes.forEach { network.attachNode(it) }
+        nodes.forEach { network.attachNode(it, this) }
     }
 
     private fun onNodeConnectionRemove(nodes: List<ResourceNode>) {

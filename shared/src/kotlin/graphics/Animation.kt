@@ -4,9 +4,6 @@ import main.heightPixels
 import main.toColor
 import main.widthPixels
 import misc.PixelCoord
-import serialization.Input
-import serialization.Output
-import serialization.Serializer
 
 sealed class AnimationStep(val stepID: String?) {
 
@@ -33,6 +30,8 @@ sealed class AnimationStep(val stepID: String?) {
      * Prepares this class for another loop
      */
     abstract fun reset()
+
+    abstract fun copy(): AnimationStep
 }
 
 class Frame(val fromFrameIndex: Int, val toFrameIndex: Int, ticks: Int = 0, stepID: String? = "frame $toFrameIndex") : AnimationStep(stepID) {
@@ -58,6 +57,10 @@ class Frame(val fromFrameIndex: Int, val toFrameIndex: Int, ticks: Int = 0, step
         pause.reset()
     }
 
+    override fun copy(): AnimationStep {
+        return Frame(fromFrameIndex, toFrameIndex, pause.ticks, stepID)
+    }
+
     override fun toString() = "Frame step, index: $fromFrameIndex -> $toFrameIndex, progress: ${pause.currentTicks}/${pause.ticks}"
 }
 
@@ -78,6 +81,10 @@ class Pause(val ticks: Int, stepID: String?) : AnimationStep(stepID) {
     override fun reset() {
         currentTicks = 0
     }
+
+    override fun copy(): AnimationStep {
+        return Pause(ticks, stepID)
+    }
 }
 
 class Loop(val numberOfTimes: Int = -1, stepID: String?, closure: StepChain.() -> Unit) : AnimationStep(stepID) {
@@ -93,9 +100,8 @@ class Loop(val numberOfTimes: Int = -1, stepID: String?, closure: StepChain.() -
             currentNumberOfTimes++
             if (currentNumberOfTimes == numberOfTimes) {
                 return true
-            } else if (numberOfTimes == -1) {
-                stepChain.reset()
             }
+            stepChain.reset()
         }
         return false
     }
@@ -103,6 +109,13 @@ class Loop(val numberOfTimes: Int = -1, stepID: String?, closure: StepChain.() -
     override fun reset() {
         currentNumberOfTimes = 0
         stepChain.reset()
+    }
+
+    override fun copy(): AnimationStep {
+        val copy = Loop(numberOfTimes, stepID, {})
+        copy.stepChain.steps.clear()
+        copy.stepChain.steps.addAll(stepChain.steps.map { it.copy() })
+        return copy
     }
 }
 
@@ -117,6 +130,10 @@ class GoToStep(val stepIDToGoTo: String, stepID: String?) : AnimationStep(stepID
 
     override fun reset() {
     }
+
+    override fun copy(): AnimationStep {
+        return GoToStep(stepIDToGoTo, stepID)
+    }
 }
 
 class Stop(stepID: String?) : AnimationStep(stepID) {
@@ -130,6 +147,10 @@ class Stop(stepID: String?) : AnimationStep(stepID) {
 
     override fun reset() {
     }
+
+    override fun copy(): AnimationStep {
+        return Stop(stepID)
+    }
 }
 
 class Reverse(stepID: String?) : AnimationStep(stepID) {
@@ -142,6 +163,9 @@ class Reverse(stepID: String?) : AnimationStep(stepID) {
 
     override fun reset() {}
 
+    override fun copy(): AnimationStep {
+        return Reverse(stepID)
+    }
 }
 
 class StepChain(stepID: String? = null, closure: StepChain.() -> Unit) : AnimationStep(stepID) {
@@ -315,13 +339,20 @@ class StepChain(stepID: String? = null, closure: StepChain.() -> Unit) : Animati
     fun reverse(stepID: String? = null) {
         steps.add(Reverse(stepID))
     }
+
+    override fun copy(): AnimationStep {
+        val copy = StepChain(stepID, {})
+        copy.steps.clear()
+        copy.steps.addAll(steps.map { it.copy() })
+        return copy
+    }
 }
 
 private var nextId = 0
 
 class Animation(path: String,
                 numberOfFrames: Int,
-                startPlaying: Boolean = false,
+                val startPlaying: Boolean = false,
                 val smoothing: Boolean = false,
                 val offsets: List<PixelCoord> = listOf(),
                 closure: StepChain.() -> Unit = {}) : Renderable() {
@@ -486,6 +517,13 @@ class Animation(path: String,
         }
     }
 
+    fun createLocalInstance(): Animation {
+        val local = Animation(frames.identifier, frames.textures.size, startPlaying, smoothing, offsets)
+        local.steps.steps.clear()
+        local.steps.steps.addAll(steps.steps.map { it.copy() })
+        return local
+    }
+
     /**
      * @return the [com.badlogic.gdx.graphics.g2d.TextureRegion] at the given index. This is not the same thing as a step!
      */
@@ -511,9 +549,17 @@ class Animation(path: String,
             }
         }
 
-        val MINER = Animation("block/miner", 5, true, true) {
+        val MINER = Animation("block/miner", 8, true, false) {
             loop {
-                sequence(0 until 5, arrayOf(5, 5, 5, 5, 5))
+                loop(20) {
+                    sequence(0 until 4, arrayOf(5, 5, 5, 5))
+                }
+                toFrame(4)
+                pauseFor(80)
+                loop(20) {
+                    sequence(4 until 8, arrayOf(5, 5, 5, 5))
+                }
+                pauseFor(80)
             }
         }
 

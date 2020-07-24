@@ -23,7 +23,6 @@ object DefaultVariable {
     val MOVE_TO_GOAL_POSITION = NodeOnly("moveToGoalPosition")
     val MOVE_TO_TICKS_MOVING = Local("moveToTicksMoving")
     val PATH_BEING_FOLLOWED = Local("moveToPath")
-    val PATH_CURRENT_STEP_INDEX = Local("moveToPathCurrentStepIndex")
     val SEQUENCE_CHILDREN_INITIALIZED = Local("sequenceChildrenInitialized")
     val SEQUENCE_CHILDREN_SUCCEEDED = Local("sequenceChildrenSucceeded")
     val SEQUENCE_CURRENT_RUNNING_CHILD = Local("sequenceCurrentRunningChild")
@@ -34,4 +33,6 @@ object DefaultVariable {
     val SELECTOR_RANDOM_CHILD_EXECUTION_ORDER = Local("selectorRandomChildExecutionOrder")
     val STACK_DEFAULT = Local("stackDefault")
     val NEAREST_LEVEL_OBJECT = EntityOnly("nearestLevelObject")
+    val FORMATION_POSITION = EntityOnly("formationPosition")
+    val CENTER_OF_GROUP = EntityOnly("centerOfGroup")
 }

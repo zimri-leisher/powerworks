@@ -1,11 +1,15 @@
 package item.weapon
 
+import graphics.Animation
+import graphics.AnimationCollection
+import graphics.Texture
 import item.ItemType
 
 class WeaponItemType(initializer: WeaponItemType.() -> Unit = {}) : ItemType() {
 
     var projectileType = ProjectileType.SMALL_BULLET
-    var fireRate = 10
+    var cooldown = 30
+    var fireAnimations = AnimationCollection.ALL.first()
 
     init {
         initializer()
@@ -17,6 +21,13 @@ class WeaponItemType(initializer: WeaponItemType.() -> Unit = {}) : ItemType() {
         val ALL = mutableListOf<WeaponItemType>()
 
         val ERROR = WeaponItemType { hidden = true }
+
+        val MACHINE_GUN = WeaponItemType {
+            name = "Heavy Kinetic 40 Mk."
+            cooldown = 60
+            icon = Texture(AnimationCollection.MACHINE_GUN.animations[1].frames[2])
+            fireAnimations = AnimationCollection.MACHINE_GUN
+        }
     }
 }
 

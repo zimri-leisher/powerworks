@@ -7,6 +7,7 @@ import io.PressType
 import item.Inventory
 import item.Item
 import player.PlayerManager
+import player.TransferItemsBetweenBlock
 import resource.ResourceContainer
 import screen.HUD
 import screen.InventoryGUI
@@ -83,6 +84,7 @@ class GUIItemSlot(parent: RootGUIElement, name: String, xPixel: Int, yPixel: Int
                     val other = getSecondaryInventory()
                     if (other != null) {
                         val q = inv.getQuantity(i.type)
+                        val add = other !== PlayerManager.localPlayer.brainRobot.inventory
                         other.add(i.type, q)
                         inv.remove(i.type, q)
                     }

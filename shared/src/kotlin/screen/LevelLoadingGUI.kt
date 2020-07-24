@@ -1,6 +1,7 @@
 package screen
 
 import graphics.Image
+import level.LevelManager
 import level.RemoteLevel
 import main.Game
 import main.State
@@ -20,8 +21,10 @@ object LevelLoadingGUI : GUIWindow("Level loading window", { 0 }, { 0 }, { Game.
     }
 
     override fun update() {
-        if(PlayerManager.isLocalPlayerLoaded()) {
-            if(PlayerManager.localPlayer.homeLevel is RemoteLevel && (PlayerManager.localPlayer.homeLevel as RemoteLevel).loaded) {
+        if (PlayerManager.isLocalPlayerLoaded()) {
+            if (((PlayerManager.localPlayer.homeLevel is RemoteLevel && (PlayerManager.localPlayer.homeLevel as RemoteLevel).loaded)
+                    || PlayerManager.localPlayer.homeLevel !is RemoteLevel)
+                    && LevelManager.allLevels.any { it.data.brainRobots.any { it.id == PlayerManager.localPlayer.brainRobotId } }) {
                 open = false
                 State.setState(State.INGAME)
             }

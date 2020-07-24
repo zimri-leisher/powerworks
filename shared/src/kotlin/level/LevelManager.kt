@@ -194,7 +194,7 @@ object LevelManager : DirectoryChangeWatcher, MouseMovementListener, CameraMovem
         }
     }
 
-    fun onInteractWithLevelObject() {
+    fun onInteractWithLevelObjectUnderMouse() {
         levelObjectLastInteractedWith = levelObjectUnderMouse!!
         InputManager.currentLevelHandlers.clear()
         if (levelObjectLastInteractedWith is ControlPressHandler) {
