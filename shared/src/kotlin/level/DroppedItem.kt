@@ -8,18 +8,19 @@ import level.moving.MovingObjectType
 import main.DebugCode
 import main.Game
 import network.DroppedItemReference
+import network.LevelObjectReference
 import player.PickUpDroppedItemAction
 import player.PlayerManager
 import screen.mouse.Tooltips
 import serialization.Id
 
 class DroppedItem(xPixel: Int, yPixel: Int,
-                  @Id(1)
+                  @Id(-10)
                   val itemType: ItemType,
                   quantity: Int = 1) :
-        MovingObject(MovingObjectType.DROPPED_ITEM, xPixel, yPixel, 0) {
+        LevelObject(LevelObjectType.DROPPED_ITEM, xPixel, yPixel, 0) {
 
-    @Id(2)
+    @Id(-20)
     var quantity = quantity
         set(value) {
             if (quantity < 1) {
@@ -44,6 +45,8 @@ class DroppedItem(xPixel: Int, yPixel: Int,
     }
 
     override fun toString() = "Dropped item at $xPixel, $yPixel, type: $type, quantity: $quantity"
+
+    override fun toReference() = DroppedItemReference(this)
 
     companion object {
         init {

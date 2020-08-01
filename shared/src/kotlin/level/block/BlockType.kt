@@ -165,7 +165,7 @@ open class BlockType<T : Block>(initializer: BlockType<T>.() -> Unit = {}) : Lev
             }
         }
 
-        fun instantiate(xTile: Int, yTile: Int, dir: Int, id: UUID): List<ResourceNode> {
+        fun instantiate(xTile: Int, yTile: Int, rotation: Int, id: UUID): List<ResourceNode> {
             val ret = mutableListOf<ResourceNode>()
             val containers = instantiateContainers(id)
             // we want these to be sorted in an order that doesn't depend on the order of creation
@@ -179,11 +179,11 @@ open class BlockType<T : Block>(initializer: BlockType<T>.() -> Unit = {}) : Lev
             val random = Random(id.mostSignificantBits)
             val byteArray = ByteArray(36)
             for (node in nodes) {
-                val coord = rotate(node.xTile, node.yTile, widthTiles, heightTiles, dir)
+                val coord = rotate(node.xTile, node.yTile, widthTiles, heightTiles, rotation)
                 val newContainer = containers.filter { it.key === node.attachedContainer }.entries.first().value
                 random.nextBytes(byteArray)
                 val nodeId = UUID.nameUUIDFromBytes(byteArray)
-                val newNode = node.copy(coord.xTile + xTile, coord.yTile + yTile, Geometry.addAngles(node.dir, dir), attachedContainer = newContainer)
+                val newNode = node.copy(coord.xTile + xTile, coord.yTile + yTile, Geometry.addAngles(node.dir, rotation), attachedContainer = newContainer)
                 if (node.behavior.forceOut != newNode.behavior.forceOut) {
                     println("oops behaviors diff")
                 }
@@ -201,9 +201,13 @@ class PipeBlockType<T : PipeBlock>(initializer: PipeBlockType<T>.() -> Unit = {}
 
     init {
         initializer()
+        ALL.add(this)
     }
 
     companion object {
+
+        val ALL = mutableListOf<PipeBlockType<*>>()
+
         val FLUID_PIPE = PipeBlockType<FluidPipeBlock> {
             category = ResourceCategory.FLUID
             name = "Pipe"
@@ -293,9 +297,12 @@ open class MachineBlockType<T : MachineBlock>(initializer: MachineBlockType<T>.(
     init {
         requiresUpdate = true
         initializer()
+        ALL.add(this)
     }
 
     companion object {
+
+        val ALL = mutableListOf<MachineBlockType<*>>()
 
         val MINER = MachineBlockType<MinerBlock> {
             name = "Miner"
@@ -309,7 +316,7 @@ open class MachineBlockType<T : MachineBlock>(initializer: MachineBlockType<T>.(
             nodeTemplate {
                 // modifying the order these nodes are generated in can potentially
                 val internalInventory = Inventory(1, 1)
-                node(0, 1, 0, internalInventory, allowOut = "true", forceOut = "true")
+                node(0, 0, 2, internalInventory, allowOut = "true", forceOut = "true")
             }
             guiPool = BlockGUIPool({ MinerBlockGUI(it as MinerBlock) }, 3)
         }
@@ -326,7 +333,7 @@ open class MachineBlockType<T : MachineBlock>(initializer: MachineBlockType<T>.(
                 val internalInventory = Inventory(1, 1)
                 val internalTank = FluidTank(1)
                 node(0, 0, 0, internalInventory, "true", ResourceTypeGroup.ORE_ITEMS.types, "false")
-                node(1, 0, 2, internalTank, allowIn = "false", allowOut = "true", forceOut = "true").outputToLevel = false
+                node(0, 0, 2, internalTank, allowIn = "false", allowOut = "true", forceOut = "true").outputToLevel = false
             }
             guiPool = BlockGUIPool({ FurnaceBlockGUI(it as FurnaceBlock) }, 3)
         }
@@ -342,8 +349,8 @@ open class MachineBlockType<T : MachineBlock>(initializer: MachineBlockType<T>.(
                 val tank = FluidTank(10)
                 // TODO only allow in molten ore fluid types
                 val out = Inventory(1, 1)
-                node(1, 1, 0, tank, "true", ResourceTypeGroup.MOLTEN_ORE_FLUIDS.types, "false")
-                node(1, 0, 2, out, "false", allowOut = "true", forceOut = "true")
+                node(0, 1, 0, tank, "true", ResourceTypeGroup.MOLTEN_ORE_FLUIDS.types, "false")
+                node(0, 0, 2, out, "false", allowOut = "true", forceOut = "true")
             }
             guiPool = BlockGUIPool({ SolidifierBlockGUI(it as SolidifierBlock) }, 3)
         }
@@ -378,9 +385,12 @@ class CrafterBlockType<T : CrafterBlock>(initializer: CrafterBlockType<T>.() -> 
         heightTiles = 2
         guiPool = BlockGUIPool({ CrafterBlockGUI(it as CrafterBlock) })
         initializer()
+        ALL.add(this)
     }
 
     companion object {
+
+        val ALL = mutableListOf<CrafterBlockType<*>>()
 
         val ERROR = CrafterBlockType<CrafterBlock> {
             instantiate = { xPixel, yPixel, rotation -> CrafterBlock(this, xPixel shr 4, yPixel shr 4, rotation) }
@@ -388,7 +398,7 @@ class CrafterBlockType<T : CrafterBlock>(initializer: CrafterBlockType<T>.() -> 
                 val input = Inventory(internalStorageSize, 1)
                 node(0, 1, 0, input, "true", allowOut = "false")
                 val output = Inventory(1, 1)
-                node(1, 0, 2, output, "false", allowOut = "true", forceOut = "true")
+                node(0, 0, 2, output, "false", allowOut = "true", forceOut = "true")
             }
         }
 
@@ -402,7 +412,7 @@ class CrafterBlockType<T : CrafterBlock>(initializer: CrafterBlockType<T>.() -> 
                 val input = Inventory(internalStorageSize, 1)
                 node(0, 1, 0, input, "true", allowOut = "false")
                 val output = Inventory(1, 1)
-                node(1, 0, 2, output, "false", allowOut = "true", forceOut = "true")
+                node(0, 0, 2, output, "false", allowOut = "true", forceOut = "true")
             }
         }
 
@@ -442,9 +452,13 @@ class FluidTankBlockType(initializer: FluidTankBlockType.() -> Unit) : BlockType
         }
         guiPool = BlockGUIPool({ FluidTankBlockGUI(it as FluidTankBlock) }, 3)
         initializer()
+        ALL.add(this)
     }
 
     companion object {
+
+        val ALL = mutableListOf<FluidTankBlockType>()
+
         val SMALL = FluidTankBlockType {
             name = "Small Tank"
             maxAmount = 20
@@ -469,9 +483,13 @@ class ChestBlockType(initializer: ChestBlockType.() -> Unit) : BlockType<ChestBl
             node(0, 0, 2, storage, "true", allowOut = "true")
             node(0, 0, 3, storage, "true", allowOut = "true")
         }
+        ALL.add(this)
     }
 
     companion object {
+
+        val ALL = mutableListOf<ChestBlockType>()
+
         val SMALL = ChestBlockType {
             name = "Small chest"
             invName = "Small chest"

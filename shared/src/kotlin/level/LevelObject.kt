@@ -7,6 +7,7 @@ import io.PressType
 import main.DebugCode
 import main.Game
 import network.LevelObjectReference
+import player.team.Team
 import serialization.Id
 import serialization.Input
 import serialization.Output
@@ -90,6 +91,12 @@ abstract class LevelObject protected constructor(
             }
         }
 
+    @Id(991)
+    var health = type.maxHealth
+
+    @Id(992)
+    var team = Team.NEUTRAL
+
     /**
      * If this has been added to a [Level] (one that isn't [LevelManager.EMPTY_LEVEL])
      */
@@ -123,6 +130,9 @@ abstract class LevelObject protected constructor(
 
     open fun render() {
         type.textures.render(this)
+        if (health != type.maxHealth) {
+
+        }
         if (Game.currentDebugCode == DebugCode.RENDER_HITBOXES)
             renderHitbox()
     }
@@ -161,13 +171,13 @@ abstract class LevelObject protected constructor(
     }
 
     /**
-     * @return a set of [LevelObject]s that would collide with this [LevelObject] if it were at [xPixel], [yPixel] in the
-     * given [level] (defaults to [LevelObject.level]). Only considers other [LevelObject]s matching the given [predicate]
+     * @return a sequence of [LevelObject]s that would collide with this [LevelObject] if it were at [xPixel], [yPixel] in the
+     * given [level] (defaults to [LevelObject.level])
      */
-    open fun getCollisions(xPixel: Int, yPixel: Int, predicate: (LevelObject) -> Boolean = { true }, level: Level = this.level): Set<LevelObject> {
+    open fun getCollisions(xPixel: Int, yPixel: Int, level: Level = this.level): Sequence<LevelObject> {
         if (hitbox == Hitbox.NONE)
-            return emptySet()
-        return level.getCollisionsWith(hitbox, xPixel, yPixel, { it != this && predicate(it) })
+            return emptySequence()
+        return level.getCollisionsWith(hitbox, xPixel, yPixel).filter { it !== this }
     }
 
     /**

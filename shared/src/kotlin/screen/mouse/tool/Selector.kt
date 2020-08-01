@@ -12,9 +12,10 @@ import main.toColor
 import network.MovingObjectReference
 import network.packet.Packet
 import network.packet.PacketHandler
-import player.CreateEntityGroup
+import player.EntityCreateGroup
 import player.PlayerManager
 import screen.mouse.Mouse
+import kotlin.math.abs
 
 private enum class SelectorMode {
     ALL, ADD, SUBTRACT
@@ -86,7 +87,7 @@ object Selector : Tool(Control.Group.SELECTOR_TOOLS), PacketHandler {
                 }.toMutableSet()
                 val entitiesSelected = currentSelected.filterIsInstance<Entity>()
                 if (entitiesSelected.isNotEmpty()) {
-                    PlayerManager.takeAction(CreateEntityGroup(PlayerManager.localPlayer, entitiesSelected.map { it.toReference() as MovingObjectReference }))
+                    PlayerManager.takeAction(EntityCreateGroup(PlayerManager.localPlayer, entitiesSelected.map { it.toReference() as MovingObjectReference }))
                 }
                 newlySelected = mutableSetOf()
                 dragging = false
@@ -101,11 +102,11 @@ object Selector : Tool(Control.Group.SELECTOR_TOOLS), PacketHandler {
             val yChange = currentDragYPixel - dragStartYPixel
             val x = if (xChange < 0) currentDragXPixel else dragStartXPixel
             val y = if (yChange < 0) currentDragYPixel else dragStartYPixel
-            val w = Math.abs(xChange)
-            val h = Math.abs(yChange)
+            val w = abs(xChange)
+            val h = abs(yChange)
             newlySelected =
-                    (LevelManager.levelUnderMouse!!.getIntersectingBlocksFromPixelRectangle(x, y, w, h).toList() +
-                            LevelManager.levelUnderMouse!!.getMovingObjectCollisionsFromPixelRectangle(x, y, w, h)).toMutableSet()
+                    (LevelManager.levelUnderMouse!!.getIntersectingBlocksFromPixelRectangle(x, y, w, h).toMutableSet() +
+                            LevelManager.levelUnderMouse!!.getMovingObjectCollisions(x, y, w, h)).toMutableSet()
         }
     }
 

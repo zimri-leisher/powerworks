@@ -1,14 +1,13 @@
 package level.entity.robot
 
-import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag
 import graphics.Renderer
 import graphics.text.TextRenderParams
 import item.Inventory
+import network.BrainRobotReference
+import network.LevelObjectReference
 import network.User
-import player.Player
 import player.PlayerManager
 import serialization.Id
-import java.util.*
 
 class BrainRobot(xPixel: Int, yPixel: Int, rotation: Int,
                  @Id(28)
@@ -22,5 +21,9 @@ class BrainRobot(xPixel: Int, yPixel: Int, rotation: Int,
     override fun render() {
         super.render()
         Renderer.renderText("${player.user.displayName}'s BR/AIN", xPixel - 8, yPixel + 44, params = TextRenderParams(size = 10))
+    }
+
+    override fun toReference(): LevelObjectReference {
+        return BrainRobotReference(this)
     }
 }

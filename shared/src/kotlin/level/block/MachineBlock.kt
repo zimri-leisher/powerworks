@@ -2,7 +2,7 @@ package level.block
 
 import audio.AudioManager
 import audio.AudioManager.SoundSource
-import level.MachineBlockFinishWork
+import level.update.MachineBlockFinishWork
 import network.BlockReference
 import serialization.Id
 
@@ -43,6 +43,7 @@ abstract class MachineBlock(override val type: MachineBlockType<out MachineBlock
     }
 
     override fun update() {
+        super.update()
         if (on) {
             currentWork += 1
             onWork()

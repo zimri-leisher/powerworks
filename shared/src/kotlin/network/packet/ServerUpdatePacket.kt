@@ -1,20 +1,18 @@
 package network.packet
 
-import level.DefaultLevelModification
+import level.update.DefaultLevelUpdate
 import level.Level
 import level.LevelManager
-import level.LevelModification
+import level.update.LevelUpdate
 import serialization.Id
 
 sealed class ServerUpdatePacket(packetType: PacketType) : Packet(packetType)
 
-sealed class LevelUpdatePacket(
-        @Id(2)
-        val level: Level) : ServerUpdatePacket(PacketType.LEVEL_UPDATE) {
+class LevelUpdatePacket(@Id(4) val update: LevelUpdate,
+                        @Id(2)
+                        val level: Level) : ServerUpdatePacket(PacketType.LEVEL_UPDATE) {
+    private constructor() : this(DefaultLevelUpdate(), LevelManager.EMPTY_LEVEL)
+
     @Id(3)
     val levelTimeWhenSent = level.updatesCount
-}
-
-class LevelModificationPacket(@Id(4) val modification: LevelModification, level: Level) : LevelUpdatePacket(level) {
-    private constructor() : this(DefaultLevelModification(), LevelManager.EMPTY_LEVEL)
 }

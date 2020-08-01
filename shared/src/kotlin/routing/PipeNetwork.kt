@@ -10,7 +10,7 @@ import item.Inventory
 import item.ItemType
 import level.Level
 import level.LevelManager
-import level.TransferThroughResourceNode
+import level.update.ResourceNodeTransferThrough
 import level.add
 import level.pipe.PipeBlock
 import main.DebugCode
@@ -231,7 +231,7 @@ abstract class PipeNetwork(resourceCategory: ResourceCategory, level: Level, pri
             if (pack.awaitingRoute || pack.to.attachedNode == null || !pack.to.attachedNode!!.canInput(pack.type, pack.quantity)) {
                 reroutePackage(pack)
             } else if (atDestination(pack)) {
-                level.modify(TransferThroughResourceNode(ResourceNodeReference(pack.to.attachedNode!!),
+                level.modify(ResourceNodeTransferThrough(ResourceNodeReference(pack.to.attachedNode!!),
                         ResourceList(pack.type to pack.quantity), false, false, true))
                 packages.remove(pack)
             } else {

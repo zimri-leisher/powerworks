@@ -1,7 +1,6 @@
 package level.moving
 
 import level.*
-import main.Game
 import misc.Geometry
 import network.LevelObjectReference
 import network.MovingObjectReference
@@ -92,13 +91,14 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: In
         xPixelRemainder = 0.0
         yPixelRemainder = 0.0
         val dist = Geometry.distance(oXPixel, oYPixel, xPixel, yPixel)
-        if(dist > 8) {
+        if (dist > 8) {
             println("TELEPORTING: $dist")
         }
         onMove(oXPixel, oYPixel)
     }
 
     override fun update() {
+        super.update()
         move()
     }
 
@@ -163,34 +163,36 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: In
         if (level == LevelManager.EMPTY_LEVEL)
             return
         updateIntersectingChunks()
-        if(oldChunk !== newChunk) {
+        if (oldChunk !== newChunk) {
             oldChunk.removeMoving(this)
         }
         newChunk.addMoving(this)
     }
 
     private fun updateRotation() {
-        if (yVel > 0)
-            rotation = 0
-        else if (xVel > 0)
-            rotation = 1
-        else if (yVel < 0)
-            rotation = 2
-        else if (xVel < 0)
-            rotation = 3
+        var angle = atan2(yVel, xVel)
+        if (angle < 0) {
+            angle += 2 * PI
+        }
+        rotation = when {
+            angle.absoluteValue < PI / 4 -> 1
+            angle in (PI / 4)..(3 * PI / 4) -> 0
+            angle in (3 * PI / 4)..(5 * PI / 4) -> 3
+            else -> 2
+        }
     }
 
     open fun move() {
         if (xVel.absoluteValue > EPSILON || yVel.absoluteValue > EPSILON) {
             val currentCollisions = getCollisions(xPixel, yPixel)
-            if(currentCollisions.isNotEmpty()) {
-                if(!gettingUnstuck) {
+            if (currentCollisions.any()) {
+                if (!gettingUnstuck) {
                     // the first time we notice that it's stuck, stop all movement except for getting unstuck
                     xVel = 0.0
                     yVel = 0.0
                 }
                 gettingUnstuck = true
-                for(collider in currentCollisions) {
+                for (collider in currentCollisions) {
                     applyForce(atan2(yPixel - collider.yPixel.toDouble(), xPixel - collider.xPixel.toDouble()), type.mass)
                 }
                 println("getting unstuck")
@@ -209,7 +211,7 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: In
             // remove integer of remainder
             xPixelRemainder -= xPixelRemainder.toInt()
             yPixelRemainder -= yPixelRemainder.toInt()
-            if(gettingUnstuck) {
+            if (gettingUnstuck) {
                 // ignore all collisions
                 xPixel = nXPixel
                 yPixel = nYPixel
@@ -235,7 +237,7 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: In
                     collisions = g
                     if (nXPixel != xPixel) {
                         val o = getCollisions(nXPixel, yPixel)
-                        if (o.isEmpty()) {
+                        if (o.none()) {
                             xPixelOk = true
                         } else {
                             collisions.addAll(o)
@@ -243,7 +245,7 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: In
                     }
                     if (nYPixel != yPixel) {
                         val o = getCollisions(xPixel, nYPixel)
-                        if (o.isEmpty()) {
+                        if (o.none()) {
                             yPixelOk = true
                         } else {
                             collisions.addAll(o)
@@ -255,9 +257,6 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: In
                 }
                 if (yPixelOk) {
                     yPixel = nYPixel
-                }
-                if (pXPixel != xPixel || pYPixel != yPixel) {
-                    onMove(pXPixel, pYPixel)
                 }
                 collisions?.forEach {
                     /*
@@ -297,6 +296,10 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: In
         }
     }
 
+    /**
+     * @return this [LevelObject] as a [LevelObjectReference]
+     * @see [LevelObjectReference]
+     */
     override fun toReference(): LevelObjectReference {
         return MovingObjectReference(this)
     }

@@ -22,6 +22,7 @@ object ClientNetworkManager : PacketHandler {
     private lateinit var thread: Thread
 
     private val running = AtomicBoolean(false)
+    val handlingLock = Any()
 
     private val packetHandlers = ConcurrentlyModifiableMutableMap<PacketHandler, MutableList<PacketType>>()
 
@@ -66,10 +67,12 @@ object ClientNetworkManager : PacketHandler {
                     running.set(false)
                 }
             })
-            try {
-                kryoClient.connect(5000, SERVER_IP, SERVER_PORT)
-            } catch (e: Exception) {
-                println("Unable to connect to server at $SERVER_IP:$SERVER_PORT")
+            while(!hasConnected()) {
+                try {
+                    kryoClient.connect(5000, SERVER_IP, SERVER_PORT)
+                } catch (e: Exception) {
+                    println("Unable to connect to server at $SERVER_IP:$SERVER_PORT")
+                }
             }
         }
     }
@@ -98,17 +101,19 @@ object ClientNetworkManager : PacketHandler {
     }
 
     fun update() {
-        synchronized(receivedPackets) {
-            for (packet in receivedPackets) {
-                packetHandlers.beingTraversed = true
-                for ((handler, types) in packetHandlers) {
-                    if (packet.type in types) {
-                        handler.handleServerPacket(packet)
+        synchronized(handlingLock) {
+            synchronized(receivedPackets) {
+                for (packet in receivedPackets) {
+                    packetHandlers.beingTraversed = true
+                    for ((handler, types) in packetHandlers) {
+                        if (packet.type in types) {
+                            handler.handleServerPacket(packet)
+                        }
                     }
+                    packetHandlers.beingTraversed = false
                 }
-                packetHandlers.beingTraversed = false
+                receivedPackets.clear()
             }
-            receivedPackets.clear()
         }
         if (hasConnected()) {
             synchronized(outwardPackets) {

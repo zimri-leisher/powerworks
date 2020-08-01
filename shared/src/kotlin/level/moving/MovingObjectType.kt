@@ -19,20 +19,17 @@ open class MovingObjectType<T : MovingObject>(initializer: MovingObjectType<T>.(
         requiresUpdate = true
         initializer()
         mass = hitbox.width * hitbox.height * density
+        ALL.add(this)
     }
 
     companion object {
+
+        val ALL = mutableListOf<MovingObjectType<*>>()
 
         val ERROR = MovingObjectType<DefaultMovingObject> {
             instantiate = { xPixel, yPixel, rotation -> DefaultMovingObject(this, xPixel, yPixel, rotation) }
             textures = LevelObjectTextures(Image.Misc.ERROR)
             hitbox = Hitbox.NONE
-        }
-
-        val DROPPED_ITEM = MovingObjectType<DroppedItem> {
-            // Instead, instantiate the actual class with the given item type. TODO fix this, this is bad - what to do?
-            instantiate = { xPixel, yPixel, rotation -> DroppedItem(xPixel, yPixel, ItemType.ERROR) }
-            hitbox = Hitbox.DROPPED_ITEM
         }
 
         val CAMERA = MovingObjectType<Camera> {

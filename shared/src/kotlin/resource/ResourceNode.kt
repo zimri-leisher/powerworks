@@ -1,14 +1,18 @@
 package resource
 
+import graphics.Image
+import graphics.Renderer
+import graphics.TextureRenderParams
 import item.Inventory
-import level.Hitbox
-import level.Level
-import level.LevelManager
-import level.add
+import level.*
 import misc.Geometry
+import player.team.Team
 import routing.ResourceRoutingNetwork
 import serialization.Id
+import serialization.Input
+import serialization.Serializer
 import java.util.*
+import kotlin.reflect.jvm.javaField
 
 /**
  * A node that allows for movement of resources between places on the level. This is not a subclass of LevelObject.
@@ -34,6 +38,10 @@ class ResourceNode constructor(
         var level: Level) {
 
     private constructor() : this(0, 0, 0, ResourceCategory.ITEM, Inventory(0, 0), LevelManager.EMPTY_LEVEL)
+
+    @Id(99)
+    val team = if (level == LevelManager.EMPTY_LEVEL) Team.NEUTRAL else level.getBlockAt(xTile, yTile)?.team
+            ?: Team.NEUTRAL
 
     /**
      * If this node is in the level, meaning it is able to interact with other nodes in the level
@@ -71,7 +79,7 @@ class ResourceNode constructor(
     @Id(12)
     var behavior = ResourceNodeBehavior(this)
         set(value) {
-            if(field != value) {
+            if (field != value) {
                 field = value
                 field.node = this
             }
@@ -192,6 +200,17 @@ class ResourceNode constructor(
         }
     }
 
+    fun render(xTile: Int = this.xTile, yTile: Int = this.yTile, rotation: Int = dir) {
+        val xSign = Geometry.getXSign(rotation)
+        val ySign = Geometry.getYSign(rotation)
+        if (behavior.allowOut.possible() != null) {
+            Renderer.renderTexture(Image.Misc.THIN_ARROW, (xTile shl 4) + 4 + 8 * xSign, (yTile shl 4) + 4 + 8 * ySign, TextureRenderParams(rotation = -90f * rotation))
+        }
+        if (behavior.allowIn.possible() != null) {
+            Renderer.renderTexture(Image.Misc.THIN_ARROW, (xTile shl 4) + 4 + 8 * xSign, (yTile shl 4) + 4 + 8 * ySign, TextureRenderParams(rotation = -90f * Geometry.getOppositeAngle(rotation)))
+        }
+    }
+
     /**
      * @return if the resource parameter is of the right resource category
      */
@@ -231,5 +250,4 @@ class ResourceNode constructor(
                     this.behavior = behavior
                 }
     }
-
 }

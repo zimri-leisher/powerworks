@@ -51,7 +51,6 @@ class WeakMutableList<T> {
     fun forEach(f: (T) -> Unit) {
         check()
         list.forEach {
-            // prevents GC from removing while iterating
             val o = it.get()
             try {
                 o!!
@@ -67,12 +66,11 @@ class WeakMutableList<T> {
     fun forEachBackwards(f: (T) -> Unit) {
         check()
         list.reversed().forEach {
-            // prevents GC from removing while iterating
             val o = it.get()
             try {
                 o!!
             } catch (e: KotlinNullPointerException) {
-                println("GC'd 1")
+                println("GC'd -1")
             }
             if (o != null) {
                 f(o)

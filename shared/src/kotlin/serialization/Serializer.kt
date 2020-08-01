@@ -173,7 +173,7 @@ open class Serializer<R : Any>(var useDefaultConstructorInstantiation: Boolean =
         override fun onChangeType() {
 
             fun getFields(type: Class<*>): Array<Field> {
-                var fields = type.declaredFields
+                var fields = type.declaredFields.filter { !Modifier.isStatic(it.modifiers) }.toTypedArray()
                 if (type.superclass != null) {
                     fields += getFields(type.superclass)
                 }
@@ -212,17 +212,22 @@ open class Serializer<R : Any>(var useDefaultConstructorInstantiation: Boolean =
             // write size so that we know if the number has changed (possibly because something was changed, its class was edited, and it wsa reloaded again)
             output.writeInt(cachedTaggedFields.size)
             for (field in cachedTaggedFields) {
-                var wasInaccessible = false
-                if (!field.field.isAccessible) {
-                    wasInaccessible = true
-                    field.field.isAccessible = true
-                }
-                val fieldValue = field.field.get(obj)
-                debugln("Writing tagged field @Id(${field.id}) ${field.field.name}: ${field.field.type.simpleName} = ${fieldValue}")
-                output.writeInt(field.id)
-                output.write(fieldValue)
-                if (wasInaccessible) {
+                synchronized(field) {
+                    if (!field.field.trySetAccessible()) {
+                        throw WriteException("Unable to set accessibility of field ${field.field} from class ${obj::class} to true")
+                    }
+                    try {
+                        val fieldValue = field.field.get(obj)
+                        debugln("Writing tagged field @Id(${field.id}) ${field.field.name}: ${field.field.type.simpleName} = ${fieldValue}")
+                        output.writeInt(field.id)
+                        output.write(fieldValue)
+                    } catch (e: IllegalAccessException) {
+                        System.out.println("Error while getting value of field ${field.field} from class ${obj::class} (accessible: ${field.field.canAccess(obj)}")
+                        throw e
+                    }
                     field.field.isAccessible = false
+                    // this is commented out because i think there are issues in regards to multi-threading that happen when
+                    // this is set to false
                 }
             }
         }
@@ -254,23 +259,31 @@ open class Serializer<R : Any>(var useDefaultConstructorInstantiation: Boolean =
                     continue
                 }
                 debugln("Reading tagged field @Id($fieldId) ${field.name}: ${field.type.simpleName} ")
-                var wasInaccessible = false
-                if (!field.isAccessible) {
-                    wasInaccessible = true
-                    field.isAccessible = true
-                }
-                // set the value of the tagged field by recursively deserializing it
-                val nullable = field.kotlinProperty?.returnType?.isMarkedNullable
-                val newValue: Any?
-                if (nullable == true) {
-                    newValue = input.readNullable(field.type)
-                } else {
-                    newValue = input.read(field.type)
-                }
-                field.set(newInstance, newValue)
-                if (wasInaccessible) {
+                synchronized(field) {
+
+                    // set the value of the tagged field by recursively deserializing it
+                    val nullable = field.kotlinProperty?.returnType?.isMarkedNullable
+                    val newValue: Any?
+                    if (nullable == true) {
+                        newValue = input.readNullable(field.type)
+                    } else {
+                        newValue = input.read(field.type)
+                    }
+                    if (!field.trySetAccessible()) {
+                        throw ReadException("Unable to set accessible of field $field from class ${newInstance::class}")
+                    }
+                    try {
+                        field.set(newInstance, newValue)
+                    } catch (e: IllegalAccessException) {
+                        System.out.println("Error while setting field $field in ${newInstance::class} to $newValue: (accessible: ${field.canAccess(newInstance)})")
+                        throw e
+                    }
                     field.isAccessible = false
                 }
+
+                // this is commented out because i think there are issues in regards to multi-threading that happen when
+                // this is set to false
+                // TODO will this cause security issues?
             }
         }
     }
@@ -287,7 +300,7 @@ open class Serializer<R : Any>(var useDefaultConstructorInstantiation: Boolean =
         override fun onChangeType() {
 
             fun getFields(type: Class<*>): Array<Field> {
-                var fields = type.declaredFields
+                var fields = type.declaredFields.filter { !Modifier.isStatic(it.modifiers) }.toTypedArray()
                 if (type.superclass != null) {
                     fields += getFields(type.superclass)
                 }
@@ -312,16 +325,14 @@ open class Serializer<R : Any>(var useDefaultConstructorInstantiation: Boolean =
             debugln("Writing number of fields: ${cachedFields.size}")
             output.writeInt(cachedFields.size)
             for (field in cachedFields) {
-                var wasInaccessible = false
-                if (!field.isAccessible) {
-                    wasInaccessible = true
-                    field.isAccessible = true
-                }
-                val fieldValue = field.get(obj)
-                debugln("Writing field ${field.name}: ${field.type.simpleName} = ${fieldValue}")
-                output.writeUTF(field.name)
-                output.write(fieldValue)
-                if (wasInaccessible) {
+                synchronized(field) {
+                    if (!field.trySetAccessible()) {
+                        throw WriteException("Unable to set accessible of field $field from class ${obj::class}")
+                    }
+                    val fieldValue = field.get(obj)
+                    debugln("Writing field ${field.name}: ${field.type.simpleName} = ${fieldValue}")
+                    output.writeUTF(field.name)
+                    output.write(fieldValue)
                     field.isAccessible = false
                 }
             }
@@ -360,19 +371,17 @@ open class Serializer<R : Any>(var useDefaultConstructorInstantiation: Boolean =
                     debugln("It had a value of $uselessValue")
                     continue
                 }
-                debugln("Reading field ${field.name}: ${field.type.simpleName} ")
-                var wasInaccessible = false
-                if (!field.isAccessible) {
-                    wasInaccessible = true
-                    field.isAccessible = true
-                }
-                // set the value of the tagged field by recursively deserializing it
-                val nullable = field.kotlinProperty?.returnType?.isMarkedNullable
-                if (nullable == false && value == null) {
-                    throw ReadException("Read a null value on a non-nullable field $name")
-                }
-                field.set(newInstance, value)
-                if (wasInaccessible) {
+                synchronized(field) {
+                    debugln("Reading field ${field.name}: ${field.type.simpleName} ")
+                    if (!field.trySetAccessible()) {
+                        throw ReadException("Unable to set accessible of field $field from class ${newInstance::class}")
+                    }
+                    // set the value of the tagged field by recursively deserializing it
+                    val nullable = field.kotlinProperty?.returnType?.isMarkedNullable
+                    if (nullable == false && value == null) {
+                        throw ReadException("Read a null value on a non-nullable field $name")
+                    }
+                    field.set(newInstance, value)
                     field.isAccessible = false
                 }
             }

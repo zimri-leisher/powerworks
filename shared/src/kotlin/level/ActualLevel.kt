@@ -1,5 +1,7 @@
 package level
 
+import level.update.LevelObjectAdd
+import level.update.LevelUpdate
 import main.Game
 import network.ServerNetworkManager
 import network.packet.*
@@ -31,15 +33,15 @@ class ActualLevel(id: UUID, info: LevelInfo) : Level(id, info), PacketHandler {
         loaded = true
     }
 
-    override fun modify(modification: LevelModification, transient: Boolean): Boolean {
-        val success = super.modify(modification, transient)
+    override fun modify(update: LevelUpdate, transient: Boolean): Boolean {
+        val success = super.modify(update, transient)
         if (success && !transient) {
-            val playersToSendTo = modification.playersToSendTo
+            val playersToSendTo = update.playersToSendTo
             if (playersToSendTo == null) {
                 // level gets to decide
-                currentLobby?.sendPacket(LevelModificationPacket(modification, this))
+                currentLobby?.sendPacket(LevelUpdatePacket(update, this))
             } else {
-                ServerNetworkManager.sendToPlayers(LevelModificationPacket(modification, this), playersToSendTo)
+                ServerNetworkManager.sendToPlayers(LevelUpdatePacket(update, this), playersToSendTo)
             }
         }
         return true
@@ -47,9 +49,9 @@ class ActualLevel(id: UUID, info: LevelInfo) : Level(id, info), PacketHandler {
 
     override fun add(l: LevelObject): Boolean {
         val copy = Serialization.copy(l) // TODO add preadding references
-        val success = super.modify(AddObject(l), false)
+        val success = super.modify(LevelObjectAdd(l), false)
         if (success) {
-            currentLobby?.sendPacket(LevelModificationPacket(AddObject(copy), this))
+            currentLobby?.sendPacket(LevelUpdatePacket(LevelObjectAdd(copy), this))
         }
         return success
     }
@@ -63,6 +65,7 @@ class ActualLevel(id: UUID, info: LevelInfo) : Level(id, info), PacketHandler {
             println("loaded successfully")
             // connect player to lobby
             val player = PlayerManager.getPlayer(ServerNetworkManager.getUser(packet))
+            player.lobby.connectPlayer(player)
             if (currentLobby == null) {
                 println("new lobby ${player.lobby}")
                 currentLobby = player.lobby

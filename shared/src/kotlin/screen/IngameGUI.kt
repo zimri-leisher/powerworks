@@ -3,9 +3,8 @@ package screen
 import graphics.Image
 import graphics.Renderer
 import io.*
-import level.AddObject
+import level.update.LevelObjectAdd
 import level.LevelObject
-import level.add
 import main.Game
 import misc.Geometry
 import player.PlayerManager
@@ -99,7 +98,7 @@ object IngameGUI : GUIWindow("In game gui",
 
     private fun newCamera(): LevelObject {
         val c = Camera(PlayerManager.localPlayer.brainRobot.xPixel, PlayerManager.localPlayer.brainRobot.yPixel)
-        PlayerManager.localPlayer.brainRobot.level.modify(AddObject(c), true)
+        PlayerManager.localPlayer.brainRobot.level.modify(LevelObjectAdd(c), true)
         return c
     }
 

@@ -23,6 +23,7 @@ data class ClientInfo(val user: User, val version: Version, val address: InetSoc
 
 object ServerNetworkManager : PacketHandler {
     private val running = AtomicBoolean(false)
+    val handlingLock = Any()
 
     private lateinit var kryoServer: KryoServer
 
@@ -60,7 +61,7 @@ object ServerNetworkManager : PacketHandler {
 
                     override fun connected(connection: Connection) {
                         println("Client at ${connection.remoteAddressTCP} connected")
-                        if (clientInfos.values.any { it.address.address == connection.remoteAddressTCP.address }) {
+                        if (false && clientInfos.values.any { it.address.address == connection.remoteAddressTCP.address }) {
                             println("Someone has already connected from that address!")
                             connection.close()
                         } else {
@@ -74,7 +75,7 @@ object ServerNetworkManager : PacketHandler {
                     }
                 })
             } catch (e: Throwable) {
-                e.printStackTrace()
+                e.printStackTrace(System.err)
             }
         }
     }
@@ -153,29 +154,33 @@ object ServerNetworkManager : PacketHandler {
     }
 
     fun update() {
-        synchronized(disconnections) {
-            val iterator = disconnections.iterator()
-            for (disconnected in iterator) {
-                onClientDisconnect(disconnected)
-                connections.remove(disconnected)
-                iterator.remove()
-            }
-        }
-        // handle packets received
-        synchronized(receivedPackets) {
-            val iterator = receivedPackets.iterator()
-            for (packet in iterator) {
-                // make sure the client has already been accepted or it is in the process of accepting (and so is sending a ClientHandshakePacket)
-                if (isAccepted(packet.connectionId) || packet is ClientHandshakePacket) {
-                    packetHandlers.beingTraversed = true
-                    // send packet to appropriate handlers
-                    for ((handler, types) in packetHandlers) {
-                        if (packet.type in types) {
-                            handler.handleClientPacket(packet)
-                        }
-                    }
-                    packetHandlers.beingTraversed = false
+        // i kind of suck at threading and i think this is the easiest way to deal with the issues i've encountered
+        synchronized(handlingLock) {
+            synchronized(disconnections) {
+                val iterator = disconnections.iterator()
+                for (disconnected in iterator) {
+                    onClientDisconnect(disconnected)
+                    connections.remove(disconnected)
                     iterator.remove()
+                }
+            }
+
+            // handle packets received
+            synchronized(receivedPackets) {
+                val iterator = receivedPackets.iterator()
+                for (packet in iterator) {
+                    // make sure the client has already been accepted or it is in the process of accepting (and so is sending a ClientHandshakePacket)
+                    if (isAccepted(packet.connectionId) || packet is ClientHandshakePacket) {
+                        packetHandlers.beingTraversed = true
+                        // send packet to appropriate handlers
+                        for ((handler, types) in packetHandlers) {
+                            if (packet.type in types) {
+                                handler.handleClientPacket(packet)
+                            }
+                        }
+                        packetHandlers.beingTraversed = false
+                        iterator.remove()
+                    }
                 }
             }
         }
@@ -197,13 +202,12 @@ object ServerNetworkManager : PacketHandler {
                     // verify the connectionId is accepted
                     if (isAccepted(connectionId)) {
                         // send to client
-
                         packets.forEach {
                             try {
                                 kryoServer.sendToTCP(connectionId, it)
                             } catch (e: Exception) {
                                 System.err.println("Exception while sending packet $it:")
-                                e.printStackTrace()
+                                e.printStackTrace(System.err)
                             }
                         }
                         packets.forEach { it.onSend(it) }

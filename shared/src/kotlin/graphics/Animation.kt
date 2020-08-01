@@ -4,6 +4,9 @@ import main.heightPixels
 import main.toColor
 import main.widthPixels
 import misc.PixelCoord
+import serialization.Input
+import serialization.Output
+import serialization.Serializer
 
 sealed class AnimationStep(val stepID: String?) {
 
@@ -360,6 +363,7 @@ class Animation(path: String,
     private constructor() : this("misc/error", 1)
 
     var id = nextId++
+    var isLocal = false
 
     val frames = ImageCollection(path, numberOfFrames)
 
@@ -521,6 +525,7 @@ class Animation(path: String,
         val local = Animation(frames.identifier, frames.textures.size, startPlaying, smoothing, offsets)
         local.steps.steps.clear()
         local.steps.steps.addAll(steps.steps.map { it.copy() })
+        local.isLocal = true
         return local
     }
 
@@ -572,5 +577,19 @@ class Animation(path: String,
         fun update() {
             ALL.forEach { it.update() }
         }
+    }
+}
+
+class AnimationSerializer : Serializer<Animation>() {
+    override fun write(obj: Any, output: Output) {
+        obj as Animation
+        output.writeInt(obj.id)
+        output.writeBoolean(obj.isLocal)
+    }
+
+    override fun instantiate(input: Input): Animation {
+        val id = input.readInt()
+        val isCopy = input.readBoolean()
+        return Animation.ALL.first { it.id == id }.let { if (isCopy) it.createLocalInstance() else it }
     }
 }

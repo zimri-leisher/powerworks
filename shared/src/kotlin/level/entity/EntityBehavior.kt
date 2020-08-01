@@ -4,8 +4,10 @@ import behavior.BehaviorTree
 import behavior.DefaultVariable
 import behavior.leaves.EntityPath
 import level.LevelObject
-import level.UpdateEntityPathPosition
+import level.update.EntityFireWeapon
+import level.update.EntityPathUpdate
 import main.Game
+import misc.PixelCoord
 import network.MovingObjectReference
 import serialization.Id
 import kotlin.math.*
@@ -58,13 +60,14 @@ class EntityBehavior(
             val target = target!!
             if (target.level != parent.level || !target.inLevel) {
                 this.target = null
-                println("target not in same level")
                 return
             }
-            val xDiff = target.xPixel - parent.xPixel
-            val yDiff = target.yPixel - parent.yPixel
-            val angle = atan2(yDiff.toFloat(), xDiff.toFloat())
-            parent.weapon!!.tryFire(angle)
+            if (parent.weapon?.canFire == true) {
+                val xDiff = target.xPixel + target.hitbox.xStart + target.hitbox.width / 2 - parent.xPixel
+                val yDiff = target.yPixel + target.hitbox.yStart + target.hitbox.height / 2 - parent.yPixel
+                val angle = atan2(yDiff.toFloat(), xDiff.toFloat())
+                parent.level.modify(EntityFireWeapon(PixelCoord(parent.xPixel, parent.yPixel), angle, parent.weapon!!.type.projectileType, parent.toReference() as MovingObjectReference))
+            }
         }
     }
 
@@ -82,7 +85,7 @@ class EntityBehavior(
             if (dist < 1 && timesReachedStep[currentPathStepIndex] == null) { // if we just reached this for the first time
                 // reached step
                 timesReachedStep[currentPathStepIndex] = timeSincePathingStart
-                parent.level.modify(UpdateEntityPathPosition(parent.toReference() as MovingObjectReference, currentPathStepIndex, timeSincePathingStart, path.hashCode()))
+                parent.level.modify(EntityPathUpdate(parent.toReference() as MovingObjectReference, currentPathStepIndex, timeSincePathingStart, path.hashCode()))
                 currentPathStepIndex++
             }
             timeSincePathingStart++

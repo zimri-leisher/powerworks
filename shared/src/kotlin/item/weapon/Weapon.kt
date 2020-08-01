@@ -40,7 +40,7 @@ class Weapon(
         }
         fireAnimation[parent!!.rotation].playFrom("start")
         cooldown = type.cooldown
-        parent!!.level.add(Projectile(type.projectileType, parent!!.xPixel, parent!!.yPixel, angle, parent))
+        parent!!.level.add(Projectile(type.projectileType, parent!!.xPixel, parent!!.yPixel, angle, parent!!))
         return true
     }
 

@@ -146,7 +146,7 @@ data class Node(var parent: Node? = null, val pos: TileCoord, val goal: TileCoor
                 val nXTile = xTile + x
                 val nYTile = yTile + y
                 val nCoord = TileCoord(nXTile, nYTile)
-                if ((x != 0 || y != 0) && (nCoord == goal || entity.getCollisions(nXTile shl 4, nYTile shl 4, { it !is Entity || (it.xVel == 0.0 && it.yVel == 0.0 && it.group != entity.group) }).isEmpty())) {
+                if ((x != 0 || y != 0) && (nCoord == goal || entity.getCollisions(nXTile shl 4, nYTile shl 4).filter { it !is Entity || (it.xVel == 0.0 && it.yVel == 0.0 && it.group != entity.group) }.none())) {
                     neighbors.add(Node(this, nCoord, goal, entity, this.g + Math.sqrt(Math.pow(xTile - nXTile.toDouble(), 2.0) + Math.pow(yTile - nYTile.toDouble(), 2.0))))
                 }
             }
@@ -165,7 +165,6 @@ fun heuristic(node: Node): Double {
 }
 
 fun route(entity: Entity, goal: TileCoord): EntityPath? {
-    val startTime = System.currentTimeMillis()
     if (entity.xTile == goal.xTile && entity.yTile == goal.yTile) {
         return EntityPath(goal.toPixel(), listOf())
     }
@@ -237,7 +236,7 @@ fun route(entity: Entity, goal: TileCoord): EntityPath? {
             FindPath.closedNodes = closedNodes
             FindPath.currentStep = 0
         }
-        return smooth(path, entity).also { println("Time taken to pathfind: ${System.currentTimeMillis() - startTime}") }
+        return smooth(path, entity)
     } else {
         return null
     }
@@ -287,7 +286,7 @@ fun traversable(start: PixelCoord, end: PixelCoord, entity: Entity): Boolean {
     while (currentPoint.distance(end) > TRAVERSABLE_CHECK_STEP) {
         count++
         currentPoint = PixelCoord(start.xPixel + (TRAVERSABLE_CHECK_STEP * count * cos(angle)).toInt(), start.yPixel + (TRAVERSABLE_CHECK_STEP * count * sin(angle)).toInt())
-        if (entity.getCollisions(currentPoint.xPixel, currentPoint.yPixel).isNotEmpty()) {
+        if (entity.getCollisions(currentPoint.xPixel, currentPoint.yPixel).any()) {
             return false
         }
     }

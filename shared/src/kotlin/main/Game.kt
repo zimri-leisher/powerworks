@@ -61,11 +61,9 @@ fun toColor(color: Int = 0xFFFFFF, alpha: Float = 1f): Color {
     return c
 }
 
-fun Color.toWhite() = this.set(1f, 1f, 1f, 1f)
-
 fun <K, V> Map<K, V>.joinToString() = toList().joinToString()
 
-const val SERVER_IP = "127.0.0.1"
+const val SERVER_IP = "72.79.52.121"
 const val SERVER_PORT = 9412
 
 fun main(args: Array<String>) {
@@ -79,7 +77,7 @@ fun main(args: Array<String>) {
     try {
         Lwjgl3Application(Game, config)
     } catch (t: Throwable) {
-        t.printStackTrace()
+        t.printStackTrace(System.err)
         exitProcess(-1)
     }
     exitProcess(1)
@@ -101,9 +99,7 @@ object Game : ApplicationAdapter(), ControlPressHandler, PacketHandler {
 
     val USER = User(UUID.nameUUIDFromBytes(ByteArray(1)), "default_user")
 
-    val VERSION = Version.`0_4_2`
-
-    val KRYO = Kryo().apply { setReferences(true) }
+    val VERSION = Version.`0_5_0`
 
     var IS_SERVER = false
         private set

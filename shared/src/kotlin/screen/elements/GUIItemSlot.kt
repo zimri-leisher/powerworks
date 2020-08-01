@@ -35,7 +35,6 @@ class GUIItemSlot(parent: RootGUIElement, name: String, xPixel: Int, yPixel: Int
                 currentItem = null
             }
         }
-
     }
 
     override fun render() {

@@ -70,7 +70,6 @@ class Sequence(parent: BehaviorTree, children: MutableList<Node>, val order: Com
                     }
                     child.updateAndSetState(entity)
                     if (child.state == NodeState.SUCCESS) {
-                        println("child succeeded")
                         successfulChildren.add(child)
                     } else if (child.state == NodeState.FAILURE) {
                         return NodeState.FAILURE

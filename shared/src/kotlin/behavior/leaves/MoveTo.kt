@@ -12,8 +12,7 @@ import kotlin.math.sin
 
 class MoveTo(parent: BehaviorTree, val goalVar: Variable,
              val goalThreshold: Int = 5,
-             val failAfter: Int = -1,
-             val axisThreshold: Int = 3) : Leaf(parent) {
+             val failAfter: Int = -1) : Leaf(parent) {
 
     lateinit var goal: PixelCoord
 
@@ -67,5 +66,5 @@ class MoveTo(parent: BehaviorTree, val goalVar: Variable,
         }
     }
 
-    override fun toString() = "MoveTo: (goalVar: $goalVar, goalThreshold: $goalThreshold, failAfter: $failAfter, axisThreshold: $axisThreshold)"
+    override fun toString() = "MoveTo: (goalVar: $goalVar, goalThreshold: $goalThreshold, failAfter: $failAfter)"
 }

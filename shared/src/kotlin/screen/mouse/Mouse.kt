@@ -194,7 +194,7 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
                 Control.PICK_UP_DROPPED_ITEMS -> {
                     if (State.CURRENT_STATE == State.INGAME) {
                         val i = LevelManager.levelUnderMouse?.getDroppedItemCollisionsInSquareCenteredOn(LevelManager.mouseLevelXPixel, LevelManager.mouseLevelYPixel, DROPPED_ITEM_PICK_UP_RANGE)
-                        if (i != null && i.isNotEmpty()) {
+                        if (i != null && i.any()) {
                             val g = i.first()
                             if (!PlayerManager.localPlayer.brainRobot.inventory.full) {
                                 PlayerManager.localPlayer.brainRobot.inventory.add(g.itemType, g.quantity)

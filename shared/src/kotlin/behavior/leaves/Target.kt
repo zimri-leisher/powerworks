@@ -4,7 +4,7 @@ import behavior.BehaviorTree
 import behavior.DataLeaf
 import behavior.Variable
 import level.LevelObject
-import level.SetEntityTarget
+import level.update.EntitySetTarget
 import level.entity.Entity
 import network.LevelObjectReference
 import network.MovingObjectReference
@@ -19,6 +19,6 @@ class Target(parent: BehaviorTree, val targetVar: Variable) : DataLeaf(parent) {
             else -> return false
         }
         println("targeting: $actualTarget")
-        return entity.level.modify(SetEntityTarget(entity.toReference() as MovingObjectReference, actualTarget))
+        return entity.level.modify(EntitySetTarget(entity.toReference() as MovingObjectReference, actualTarget))
     }
 }

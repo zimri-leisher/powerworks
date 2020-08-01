@@ -28,6 +28,12 @@ object PlayerManager : PacketHandler {
         ClientNetworkManager.registerServerPacketHandler(this, PacketType.ACK_PLAYER_ACTION)
     }
 
+    /**
+     * Gets the [Player] that corresponds to the given user. If the same player has already been loaded this server session,
+     * returns that instance. Otherwise, if the player has connected before but not on this server session, loads them and their
+     * home level from the disk. Otherwise, creates a new player and saves it to the disk, and creates a new [Level] for them and saves that to
+     * the disk too.
+     */
     fun getPlayer(user: User): Player {
         var alreadyExistingPlayer: Player? = null
         allPlayers.forEach {
@@ -55,33 +61,45 @@ object PlayerManager : PacketHandler {
         }
     }
 
-    fun tryLoadPlayer(id: UUID) = FileManager.tryLoadObject(GameDirectoryIdentifier.PLAYERS, "$id.player", Player::class.java)
+    private fun tryLoadPlayer(id: UUID) = FileManager.tryLoadObject(GameDirectoryIdentifier.PLAYERS, "$id.player", Player::class.java)
 
-    fun newPlayer(forUser: User): Player {
+    private fun newPlayer(forUser: User): Player {
         val level = ActualLevel(LevelManager.newLevelId(), LevelManager.newLevelInfoFor(forUser))
-        val player = Player(forUser, level.id, UUID.randomUUID())
+        val player = Player(forUser, level.id, UUID.nameUUIDFromBytes(ByteArray(1)))
         val brainRobot = BrainRobot(level.widthPixels / 2, level.heightPixels / 2, 0, player.user)
+        brainRobot.team = player.team
         for (type in ItemType.ALL) {
             brainRobot.inventory.add(type, type.maxStack)
         }
         level.add(brainRobot)
-        player.brainRobotId = brainRobot.id
+        brainRobot.id = player.brainRobotId
         LevelManager.saveLevelData(level.id, level.data)
         LevelManager.saveLevelInfo(level.id, level.info)
         return player
     }
 
-    fun savePlayer(player: Player) = FileManager.saveObject(GameDirectoryIdentifier.PLAYERS, "${player.user.id}.player", player)
+    private fun savePlayer(player: Player) = FileManager.saveObject(GameDirectoryIdentifier.PLAYERS, "${player.user.id}.player", player)
 
     fun savePlayers() {
         allPlayers.forEach { savePlayer(it) }
     }
 
+    /**
+     * Tries to take an action as the [Player] specified in the [PlayerAction.owner].
+     * To check if the action is possible, first, [PlayerAction.verify] is called. If it returns `true` and this is the
+     * server, it will act immediately. Note that taking a [PlayerAction] on the server side has no guarantee of acting on
+     * the client side. The way to communicate [PlayerAction]s to the client is to make sure that the [PlayerAction]s
+     * cause [level.LevelUpdate]s, which _will_ get sent to the client.
+     *
+     * Alternatively, if this is the client and the action is successfully verified, it will send a [PlayerActionPacket]
+     * to the server, add the packet to the [actionsAwaitingAck], and call [PlayerAction.actGhost]
+     */
     fun takeAction(action: PlayerAction) {
+        if (!action.verify()) {
+            return
+        }
         if (Game.IS_SERVER) {
-            if (action.verify()) {
-                action.act()
-            }
+            action.act()
         } else {
             val packet = PlayerActionPacket(action)
             actionsAwaitingAck.add(packet)

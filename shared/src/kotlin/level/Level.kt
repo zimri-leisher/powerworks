@@ -1,7 +1,6 @@
 package level
 
 import behavior.leaves.FindPath
-import graphics.Image
 import graphics.Renderer
 import graphics.TextureRenderParams
 import item.weapon.Projectile
@@ -13,10 +12,12 @@ import level.moving.MovingObjectType
 import level.particle.Particle
 import level.pipe.PipeBlock
 import level.tile.Tile
+import level.update.LevelObjectAdd
+import level.update.LevelObjectRemove
+import level.update.LevelUpdate
 import main.DebugCode
 import main.Game
 import main.toColor
-import misc.Geometry
 import network.ClientNetworkManager
 import network.ServerNetworkManager
 import resource.ResourceNode
@@ -96,13 +97,13 @@ abstract class Level(
         }
     }
 
-    fun canModify(modification: LevelModification) = modification.canAct(this)
+    fun canModify(update: LevelUpdate) = update.canAct(this)
 
-    open fun modify(modification: LevelModification, transient: Boolean = false): Boolean {
-        if (!canModify(modification)) {
+    open fun modify(update: LevelUpdate, transient: Boolean = false): Boolean {
+        if (!canModify(update)) {
             return false
         }
-        modification.act(this)
+        update.act(this)
         return true
     }
 
@@ -111,14 +112,14 @@ abstract class Level(
      * [Level], it will remove it from that level first.
      * @return true if the object was not already present and the object was added successfully
      */
-    open fun add(l: LevelObject) = modify(AddObject(l))
+    open fun add(l: LevelObject) = modify(LevelObjectAdd(l))
 
     /**
      * Does everything necessary to remove [l] from this level
      *
      * @return true if [l] was in this level before calling this method, and now is no longer
      */
-    open fun remove(l: LevelObject) = modify(RemoveObject(l))
+    open fun remove(l: LevelObject) = modify(LevelObjectRemove(l))
 
     /**
      * Adds a particle to the level. Particles are temporary and purely decorative, they do not get saved
@@ -262,8 +263,8 @@ abstract class Level(
             // Render the moving objects in sorted order
             for (xChunk in (minX shr CHUNK_TILE_EXP)..(maxX shr CHUNK_TILE_EXP)) {
                 val c = getChunkAt(xChunk, yChunk)
-                if (c.data.moving.isNotEmpty()) {
-                    c.data.moving.forEach {
+                if (c.data.moving.isNotEmpty() || c.data.droppedItems.isNotEmpty()) {
+                    (c.data.moving + c.data.droppedItems).forEach {
                         if (it.yTile >= y && it.yTile < y + 1) {
                             it.render()
                         }
@@ -287,14 +288,7 @@ abstract class Level(
         for (c in chunksInTileRectangle) {
             for (nList in c.data.resourceNodes) {
                 for (n in nList) {
-                    val xSign = Geometry.getXSign(n.dir)
-                    val ySign = Geometry.getYSign(n.dir)
-                    if (n.behavior.allowOut.possible() != null) {
-                        Renderer.renderTexture(Image.Misc.THIN_ARROW, (n.xTile shl 4) + 4 + 8 * xSign, (n.yTile shl 4) + 4 + 8 * ySign, TextureRenderParams(rotation = 90f * n.dir))
-                    }
-                    if (n.behavior.allowIn.possible() != null) {
-                        Renderer.renderTexture(Image.Misc.THIN_ARROW, (n.xTile shl 4) + 4 + 8 * xSign, (n.yTile shl 4) + 4 + 8 * ySign, TextureRenderParams(rotation = 90f * Geometry.getOppositeAngle(n.dir)))
-                    }
+                    n.render()
                 }
             }
         }

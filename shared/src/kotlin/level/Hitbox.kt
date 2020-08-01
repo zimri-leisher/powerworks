@@ -15,6 +15,7 @@ class Hitbox private constructor(
     private constructor() : this(0, 0, 0, 0)
 
     companion object {
+        val BULLET = Hitbox(0, 0, 8, 4)
         val TILE = Hitbox(0, 0, 16, 16)
         val TILE3X3 = Hitbox(0, 0, 48, 48)
         val TILE2X2 = Hitbox(0, 0, 32, 32)

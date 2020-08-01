@@ -125,7 +125,7 @@ class BlockItemType(initializer: BlockItemType.() -> Unit) : ItemType() {
             name = "Item Pipe"
             icon = Texture(Image.Item.TUBE)
             placedBlock = PipeBlockType.ITEM_PIPE
-            maxStack = 100
+            maxStack = 300
         }
 
         val CHEST_SMALL = BlockItemType {
@@ -146,7 +146,7 @@ class BlockItemType(initializer: BlockItemType.() -> Unit) : ItemType() {
             name = "Furnace"
             icon = Texture(Image.Block.FURNACE)
             placedBlock = MachineBlockType.FURNACE
-            maxStack = 10
+            maxStack = 100
         }
 
         val SMALL_FLUID_TANK = BlockItemType {

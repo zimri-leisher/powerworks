@@ -1,6 +1,9 @@
 package level
 
 import data.ConcurrentlyModifiableMutableList
+import level.update.LevelObjectAdd
+import level.update.LevelObjectRemove
+import level.update.LevelUpdate
 import main.removeIfKey
 import network.ClientNetworkManager
 import network.ServerNetworkManager
@@ -17,8 +20,8 @@ class RemoteLevel(id: UUID, info: LevelInfo) : Level(id, info), PacketHandler {
 
     override lateinit var data: LevelData
 
-    val outgoingModifications = mutableMapOf<LevelModification, Int>()
-    val incomingModifications = mutableMapOf<LevelModification, Int>()
+    val outgoingModifications = mutableMapOf<LevelUpdate, Int>()
+    val incomingModifications = mutableMapOf<LevelUpdate, Int>()
 
     init {
         val chunks: Array<Chunk?> = arrayOfNulls(widthChunks * heightChunks)
@@ -32,24 +35,24 @@ class RemoteLevel(id: UUID, info: LevelInfo) : Level(id, info), PacketHandler {
     }
 
     override fun add(l: LevelObject): Boolean {
-        return modify(AddObject(l), l is GhostLevelObject) // transient if l is ghost object
+        return modify(LevelObjectAdd(l), l is GhostLevelObject) // transient if l is ghost object
     }
 
     override fun remove(l: LevelObject): Boolean {
-        return modify(RemoveObject(l), l is GhostLevelObject) // transient if l is ghost object
+        return modify(LevelObjectRemove(l), l is GhostLevelObject) // transient if l is ghost object
     }
 
-    override fun modify(modification: LevelModification, transient: Boolean): Boolean {
-        if (!canModify(modification)) {
+    override fun modify(update: LevelUpdate, transient: Boolean): Boolean {
+        if (!canModify(update)) {
             return false
         }
         if (transient) {
-            modification.act(this)
+            update.act(this)
         } else {
-            val equivalent = incomingModifications.keys.filter { it.equivalent(modification) }
+            val equivalent = incomingModifications.keys.filter { it.equivalent(update) }
             if (equivalent.isEmpty()) {
-                modification.actGhost(this)
-                outgoingModifications.put(modification, updatesCount)
+                update.actGhost(this)
+                outgoingModifications.put(update, updatesCount)
             } else {
                 // this has already happened
                 incomingModifications.removeIfKey { it in equivalent }
@@ -81,19 +84,9 @@ class RemoteLevel(id: UUID, info: LevelInfo) : Level(id, info), PacketHandler {
         if (packet.type == PacketType.LEVEL_UPDATE) {
             packet as LevelUpdatePacket
             if (packet.level == this) {
-                if (packet is LevelModificationPacket) {
-                    val equivalentModifications = outgoingModifications.keys.filter {
-                        it.equivalent(packet.modification)
-                    }
-                    if (equivalentModifications.isEmpty()) {
-                        packet.modification.act(this)
-                        incomingModifications.put(packet.modification, updatesCount)
-                    } else {
-                        val localMod = equivalentModifications.first()
-                        localMod.act(this)
-                    }
-                    outgoingModifications.removeIfKey { it in equivalentModifications }
-                }
+                outgoingModifications.removeIfKey { it.equivalent(packet.update) }
+                packet.update.act(this)
+                incomingModifications.put(packet.update, updatesCount)
             }
         } else if (packet is ChunkDataPacket) {
             if (packet.levelId == id) {

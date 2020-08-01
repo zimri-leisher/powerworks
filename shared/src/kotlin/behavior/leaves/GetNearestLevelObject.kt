@@ -13,9 +13,11 @@ import misc.Numbers
  * Stores the nearest [LevelObject] to the nearest [Entity] for which this is being executed in the [BehaviorTree.data]
  * map. The object must match the given [predicate]
  */
+@Deprecated("Not implemented")
 class GetNearestLevelObject(parent: BehaviorTree, val dest: Variable, val predicate: (LevelObject) -> Boolean) :
         DataLeaf(parent) {
     override fun run(entity: Entity): Boolean {
+        /*
         var radius = 16
         // while the radius doesnt cover the whole level
         // this is going to be a binary search type thing. kind of. in that it's related to powers of two
@@ -48,6 +50,9 @@ class GetNearestLevelObject(parent: BehaviorTree, val dest: Variable, val predic
         }
         setData(dest, closestObject)
         return closestObject != null
+
+         */
+        return false
     }
 
     override fun toString() = "GetNearestLevelObject: (dest: $dest, predicate: $predicate)"

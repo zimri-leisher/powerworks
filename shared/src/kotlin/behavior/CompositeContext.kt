@@ -46,26 +46,45 @@ class CompositeContext(val node: Composite) {
         composite(Selector(parent, mutableListOf(), order), initializer)
     }
 
+    /**
+     * A decorator node that executes its children and returns the opposite of that child's success.
+     * If the child returns [NodeState.SUCCESS], this will return [NodeState.FAILURE], and if the child
+     * returns [NodeState.FAILURE], this will return [NodeState.SUCCESS]
+     */
     fun inverter(initializer: CompositeContext.() -> Unit = {}) {
         decorator(Inverter(parent, DefaultLeaf(parent)), initializer)
     }
 
+    /**
+     * A decorator node that returns [NodeState.SUCCESS] if the child stops running
+     */
     fun alwaysSucceed(initializer: CompositeContext.() -> Unit = {}) {
         decorator(Succeeder(parent, DefaultLeaf(parent)), initializer)
     }
 
+    /**
+     * A decorator node that returns [NodeState.FAILURE] if the child stops running
+     */
     fun alwaysFail(initializer: CompositeContext.() -> Unit = {}) {
         inverter {
             alwaysSucceed(initializer)
         }
     }
 
+    /**
+     * A decorator node that executes its children [iterations] times, or forever if [iterations] is -1. If [untilFail] is
+     * `true`, will stop when the child node fails. If [untilSucceed] is `true`, will stop when the child node succeeds.
+     */
     fun repeater(iterations: Int = -1, untilFail: Boolean = false, untilSucceed: Boolean = false, initializer: CompositeContext.() -> Unit = {}) {
         decorator(Repeater(parent, DefaultLeaf(parent), iterations, untilFail, untilSucceed), initializer)
     }
 
-    fun moveTo(goal: Variable, goalThreshold: Int = 5, failAfter: Int = -1, axisThreshold: Int = 3) {
-        leaf(MoveTo(parent, goal, goalThreshold, failAfter, axisThreshold))
+    /**
+     * A leaf node that moves the [Entity] to the given [goal] until it is within [goalThreshold] pixels.
+     * The goal should be of type [PixelCoord]. Will fail after [failAfter] ticks if [failAfter] `!= -1`
+     */
+    fun moveTo(goal: Variable, goalThreshold: Int = 5, failAfter: Int = -1) {
+        leaf(MoveTo(parent, goal, goalThreshold, failAfter))
     }
 
     fun getRandomPosition(dest: Variable = DefaultVariable.RANDOM_POSITION, xCenter: Int = -1, yCenter: Int = -1, radius: Int = 0): Variable {

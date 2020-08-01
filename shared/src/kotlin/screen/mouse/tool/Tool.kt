@@ -7,18 +7,13 @@ import level.LevelObject
 import main.Game
 import screen.mouse.Mouse
 
-// activate
-// deactivate
-// make active if activator keys are pressed
-//
-
-abstract class Tool2(vararg val activators: Control) : ControlPressHandler {
+abstract class Tool2(vararg val activators: Control, val priority: Int = 0) {
     constructor(activators: Control.Group) : this(*activators.controls)
 
     var currentlyHeldActivators = mutableListOf<Control>()
     var currentlyActive = false
 
-    abstract fun onInteract()
+    abstract fun onUse(control: Control, type: PressType, mouseLevelXPixel: Int, mouseLevelYPixel: Int): Boolean
 
     open fun update() {}
 
@@ -26,14 +21,49 @@ abstract class Tool2(vararg val activators: Control) : ControlPressHandler {
 
     open fun renderAbove() {}
 
-    override fun handleControlPress(p: ControlPress) {
-        if (p.control in activators) {
-            if (p.pressType == PressType.PRESSED) {
-                currentlyHeldActivators.add(p.control)
-            } else if (p.pressType == PressType.RELEASED) {
-                currentlyHeldActivators.remove(p.control)
+    companion object : ControlPressHandler{
+        val ALL = mutableListOf<Tool2>()
+
+        fun addTool(tool: Tool2) {
+            if (!Game.IS_SERVER) {
+                InputManager.registerControlPressHandler(Companion, ControlPressHandlerType.LEVEL_ANY_UNDER_MOUSE, tool.activators.toList() + Control.Group.INTERACTION.controls)
+                ALL.add(tool)
+                ALL.sortByDescending { it.priority }
             }
-            currentlyActive = currentlyHeldActivators.isNotEmpty()
+        }
+
+        fun update() {
+            ALL.forEach { it.update() }
+        }
+
+        fun renderBelow() {
+            ALL.forEach { it.renderBelow() }
+        }
+
+        fun renderAbove() {
+            ALL.forEach { it.renderAbove() }
+        }
+
+        override fun handleControlPress(p: ControlPress) {
+            var blocked = false
+            for(tool in ALL) {
+                if (p.control in tool.activators) {
+                    if (p.pressType == PressType.PRESSED) {
+                        tool.currentlyHeldActivators.add(p.control)
+                    } else if (p.pressType == PressType.RELEASED) {
+                        tool.currentlyHeldActivators.remove(p.control)
+                    }
+                    if(p.pressType != PressType.REPEAT) {
+                        tool.currentlyActive = tool.currentlyHeldActivators.isNotEmpty()
+                    }
+                } else if(p.control in Control.Group.INTERACTION) {
+                    if(tool.currentlyActive && !blocked) {
+                        if(tool.onUse(p.control, p.pressType, LevelManager.mouseLevelXPixel, LevelManager.mouseLevelYPixel)) {
+                            blocked = true
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -118,7 +148,6 @@ abstract class Tool(vararg val use: Control) : ControlPressHandler {
             EntityPlacer
             EntityController
             BlockPicker
-            // todo priority: if onUse returns true and this is the highest priority, none of the other controls will go through
         }
 
         fun renderBelow() {

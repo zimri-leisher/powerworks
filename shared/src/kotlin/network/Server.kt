@@ -93,7 +93,6 @@ object Server : ApplicationAdapter(), PacketHandler {
     override fun handleClientPacket(packet: Packet) {
         if (packet is RequestLoadGamePacket) {
             val player = PlayerManager.getPlayer(packet.forUser)
-            player.lobby.connectPlayer(player)
             ServerNetworkManager.sendToClient(LoadGamePacket(player, player.homeLevel.info), packet.connectionId)
         } else if (packet is GenericPacket) {
         }

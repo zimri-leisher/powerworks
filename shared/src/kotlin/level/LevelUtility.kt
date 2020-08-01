@@ -22,29 +22,15 @@ fun Level.isPixelWithinBounds(xPixel: Int, yPixel: Int): Boolean {
     return true
 }
 
-/**
- * Gets collisions between the [levelObj] and [Block]s in this [Level]
- *
- * @param predicate the selector for [Block]s to consider collisions with. Defaults to { true }
- * @return a set of [Block]s intersecting the [Hitbox] of [levelObj]
- */
-fun Level.getBlockCollisions(levelObj: LevelObject, predicate: (Block) -> Boolean = { true }) =
-        getBlockCollisions(levelObj.hitbox, levelObj.xPixel, levelObj.yPixel, predicate)
+fun Level.isChunkRectangleInBounds(xChunk: Int, yChunk: Int, widthChunks: Int, heightChunks: Int) =
+        isTileRectangleInBounds(xChunk shl CHUNK_TILE_EXP, yChunk shl CHUNK_TILE_EXP, widthTiles shl CHUNK_TILE_EXP, heightChunks shl CHUNK_TILE_EXP)
 
-/**
- * Gets collisions between the [hitbox] at [xPixel], [yPixel] and [Block]s in this [Level]
- *
- * @param hitbox the hitbox to check collisions with
- * @param xPixel the level x pixel of the [hitbox]. [Hitbox.xStart] is added to this to get the true x coordinate of the rectangle
- * @param yPixel the level y pixel of the [hitbox]. [Hitbox.yStart] is added to this to get the true y coordinate of the rectangle
- * @param predicate the selector for [Block]s to consider collisions with. Defaults to { true }
- * @return a set of [Block]s intersecting the [hitbox]
- */
-fun Level.getBlockCollisions(hitbox: Hitbox, xPixel: Int, yPixel: Int, predicate: (Block) -> Boolean = { true }): Set<LevelObject> {
-    // Blocks won't have a hitbox bigger than their width/height tiles
-    val blocks = getIntersectingBlocksFromPixelRectangle(hitbox.xStart + xPixel, hitbox.yStart + yPixel, hitbox.width, hitbox.height)
-    return getCollisionsWith(blocks, hitbox, xPixel, yPixel, predicate)
-}
+fun Level.isTileRectangleInBounds(xTile: Int, yTile: Int, widthTiles: Int, heightTiles: Int) =
+        isPixelRectangleInBounds(xTile shl 4, yTile shl 4, widthTiles shl 4, heightTiles shl 4)
+
+fun Level.isPixelRectangleInBounds(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int) =
+        isPixelWithinBounds(xPixel, yPixel) ||
+                isPixelWithinBounds(xPixel + widthPixels, yPixel + heightPixels)
 
 /**
  * Gets the [Block] at [xTile], [yTile]
@@ -70,99 +56,169 @@ fun Level.getBlockFromPixel(xPixel: Int, yPixel: Int) =
         getBlockAt(xPixel shr 4, yPixel shr 4)
 
 /**
+ * Gets collisions between the [levelObj] and [Block]s in this [Level]
+ *
+ * @return a sequence of [Block]s intersecting the [Hitbox] of [levelObj]
+ */
+fun Level.getBlockCollisions(levelObj: LevelObject) =
+        getBlockCollisions(levelObj.hitbox, levelObj.xPixel, levelObj.yPixel)
+
+/**
+ * Gets collisions between the [hitbox] at [xPixel], [yPixel] and [Block]s in this [Level]
+ *
+ * @param hitbox the hitbox to check collisions with
+ * @param xPixel the level x pixel of the [hitbox]. [Hitbox.xStart] is added to this to get the true x coordinate of the rectangle
+ * @param yPixel the level y pixel of the [hitbox]. [Hitbox.yStart] is added to this to get the true y coordinate of the rectangle
+ * @return a sequence of [Block]s intersecting the [hitbox]
+ */
+fun Level.getBlockCollisions(hitbox: Hitbox, xPixel: Int, yPixel: Int) =
+        getBlockCollisions(xPixel + hitbox.xStart, yPixel + hitbox.yStart, hitbox.width, hitbox.height)
+
+fun Level.getBlockCollisions(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int): Sequence<Block> {
+    // Blocks won't have a hitbox bigger than their width/height tiles
+    return getIntersectingBlocksFromPixelRectangle(xPixel, yPixel, widthPixels, heightPixels).filter {
+        Geometry.intersects(it.xPixel + it.hitbox.xStart, it.yPixel + it.hitbox.yStart, it.hitbox.width, it.hitbox.height,
+                xPixel, yPixel, widthPixels, heightPixels)
+    }
+}
+
+/**
  * Gets [Block]s whose base intersects the rectangle starting at [xPixel], [yPixel] with width [widthPixels] and height [heightPixels]
  *
- * @return a set of [Block]s whose base (not [Hitbox]) intersects the given rectangle and which match the given [predicate] (defaults to { true }).
+ * @return a sequence of [Block]s whose base (not [Hitbox]) intersects the given rectangle.
  * A block base does not necessarily correspond with the block's [Hitbox], it is just the area in which other [Block]s
  * are unable to be placed. To check for [Hitbox] intersections, use [getBlockCollisions]
  */
-fun Level.getIntersectingBlocksFromPixelRectangle(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int, predicate: (Block) -> Boolean = { true }) =
-        getIntersectingBlocksFromTileRectangle(xPixel shr 4, yPixel shr 4, widthPixels shr 4, heightPixels shr 4, predicate)
+fun Level.getIntersectingBlocksFromPixelRectangle(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int) =
+        getIntersectingBlocksFromTileRectangle(xPixel shr 4, yPixel shr 4, widthPixels shr 4, heightPixels shr 4)
 
 /**
  * Gets [Block]s whose base intersects the rectangle starting at [xTile], [yTile] with width [widthTiles] and height [heightTiles]
  *
- * @return a set of [Block]s whose base (not [Hitbox]) intersects the given rectangle and which match the given [predicate] (defaults to { true }).
+ * @return a set of [Block]s whose base (not [Hitbox]) intersects the given rectangle.
  * A block base does not necessarily correspond with the block's [Hitbox], it is just the area in which other [Block]s
  * are unable to be placed. To check for [Hitbox] intersections, use [getBlockCollisions]
  */
-fun Level.getIntersectingBlocksFromTileRectangle(xTile: Int, yTile: Int, widthTiles: Int, heightTiles: Int, predicate: (Block) -> Boolean = { true }): Set<Block> {
-    val m = mutableSetOf<Block>()
-    for (x in xTile..(xTile + widthTiles)) {
-        for (y in yTile..(yTile + heightTiles)) {
-            val b = getBlockAt(x, y)
-            if (b != null && predicate(b))
-                m.add(b)
-        }
+fun Level.getIntersectingBlocksFromTileRectangle(xTile: Int, yTile: Int, widthTiles: Int, heightTiles: Int): Sequence<Block> {
+    if (!isTileRectangleInBounds(xTile, yTile, widthTiles, heightTiles))
+        return emptySequence()
+    return (xTile..(xTile + widthTiles)).asSequence().flatMap { x ->
+        (yTile..(yTile + heightTiles)).asSequence().map { x to it }
     }
-    return m
+            .mapNotNull { getBlockAt(it.first, it.second) }
 }
 
 /**
  * Gets collisions between the square centered on [xPixel], [yPixel] with radius [radius] and [Block]s in this [Level]
  *
  * @return a set of [Block]s whose [Hitbox] intersects the square centered at [xPixel], [yPixel] with the given [radius]
- * (which is the side length / 2), and which match the [predicate] (defaults to { true }). Note this does not check the base (the area other blocks
+ * (which is the side length / 2). Note this does not check the base (the area other blocks
  * cannot be placed in around this block), only the [Hitbox]
  */
-fun Level.getBlockCollisionsInSquareCenteredOn(xPixel: Int, yPixel: Int, radius: Int, predicate: (Block) -> Boolean = { true }): Set<Block> {
-    val l = mutableSetOf<Block>()
-    for (c in getChunksFromPixelRectangle(xPixel - radius, yPixel - radius, radius * 2, radius * 2)) {
-        for (d in c.data.blocks) {
-            if (d != null && predicate(d) && Geometry.intersects(xPixel - radius, yPixel - radius, radius * 2, radius * 2, d.xPixel + d.hitbox.xStart, d.yPixel + d.hitbox.yStart, d.hitbox.width, d.hitbox.height)) {
-                l.add(d)
-            }
-        }
+fun Level.getBlockCollisionsInSquareCenteredOn(xPixel: Int, yPixel: Int, radius: Int): Sequence<Block> {
+    if (!isPixelRectangleInBounds(xPixel - radius, yPixel - radius, radius * 2, radius * 2))
+        return emptySequence()
+    return getChunksFromPixelRectangle(xPixel - radius, yPixel - radius, radius * 2, radius * 2).flatMap {
+        it.data.blocks.asSequence()
+    }.filterNotNull().filter {
+        Geometry.intersects(xPixel - radius, yPixel - radius, radius * 2, radius * 2,
+                it.xPixel + it.hitbox.xStart, it.yPixel + it.hitbox.yStart, it.hitbox.width, it.hitbox.height)
     }
-    return l
 }
 
-fun Level.getBlockCollisionsWithPoint(xPixel: Int, yPixel: Int, predicate: (Block) -> Boolean = { true }): Set<Block> {
-    val set = mutableSetOf<Block>()
+fun Level.getBlockCollisionsWithPoint(xPixel: Int, yPixel: Int): Sequence<Block> {
     if (!isPixelWithinBounds(xPixel, yPixel))
-        return emptySet()
-    val chunk = getChunkFromPixel(xPixel, yPixel)
-    set.addAll(getCollisionsWith(chunk.data.blocks.filterNotNull(), xPixel, yPixel, 0, 0, predicate))
-    return set
+        return emptySequence()
+    return getChunkFromPixel(xPixel, yPixel).data.blocks.asSequence().filterNotNull().filter {
+        it.hitbox != Hitbox.NONE &&
+                Geometry.intersects(it.xPixel + it.hitbox.xStart, it.yPixel + it.hitbox.yStart, it.hitbox.width, it.hitbox.height,
+                        xPixel, yPixel, 0, 0)
+    }
 }
 
 /**
  * Gets collisions between the [levelObj] and [MovingObject]s in this [Level]
  *
- * @param predicate the selector for [MovingObject]s to consider collisions with
  * @return a set of [MovingObject]s intersecting the [Hitbox] of [levelObj]
  */
-fun Level.getMovingObjectCollisions(levelObj: LevelObject, predicate: (LevelObject) -> Boolean = { true }) =
-        getMovingObjectCollisions(levelObj.hitbox, levelObj.xPixel, levelObj.yPixel, predicate)
+fun Level.getMovingObjectCollisions(levelObj: LevelObject) =
+        getMovingObjectCollisions(levelObj.type, levelObj.xPixel, levelObj.yPixel)
+
+fun Level.getMovingObjectCollisions(levelObjType: LevelObjectType<*>, xPixel: Int, yPixel: Int) =
+        getMovingObjectCollisions(levelObjType.hitbox, xPixel, yPixel)
+
+fun Level.getMovingObjectCollisions(hitbox: Hitbox, xPixel: Int, yPixel: Int) =
+        getMovingObjectCollisions(xPixel + hitbox.xStart, yPixel + hitbox.yStart, hitbox.width, hitbox.height)
 
 /**
- * Gets collisions between the [hitbox] at [xPixel], [yPixel] and [MovingObject]s in this [Level]
- *
- * @param hitbox the hitbox to check collisions with
- * @param xPixel the level x pixel of the [hitbox]. [Hitbox.xStart] is added to this to get the true x coordinate of the rectangle
- * @param yPixel the level y pixel of the [hitbox]. [Hitbox.yStart] is added to this to get the true y coordinate of the rectangle
- * @param predicate the selector for [MovingObject]s to consider collisions with
- * @return a set of [MovingObject]s intersecting the [hitbox]
+ * @return a sequence of [MovingObject]s in this [Level] whose [Hitbox] intersects the square centered at [xPixel], [yPixel] with the given [radius]
+ * (which is the side length / 2)
  */
-fun Level.getMovingObjectCollisions(hitbox: Hitbox, xPixel: Int, yPixel: Int, predicate: (LevelObject) -> Boolean = { true }): Set<MovingObject> {
-    val chunks = getChunksFromPixelRectangle(xPixel + hitbox.xStart, yPixel + hitbox.yStart, hitbox.width, hitbox.height)
-    val set = mutableSetOf<LevelObject>()
-    for (chunk in chunks) {
-        set.addAll(getCollisionsWith(chunk.data.moving, hitbox, xPixel, yPixel, predicate))
-        set.addAll(getCollisionsWith(chunk.data.movingOnBoundary, hitbox, xPixel, yPixel, predicate))
-        set.addAll(getCollisionsWith(data.ghostObjects, hitbox, xPixel, yPixel, predicate))
+fun Level.getMovingObjectCollisionsInSquareCenteredOn(xPixel: Int, yPixel: Int, radius: Int) =
+        getMovingObjectCollisions(xPixel - radius, yPixel - radius, radius * 2, radius * 2)
+
+/**
+ * Gets [MovingObject]s whose [Hitbox] intersects the rectangle starting at [xPixel], [yPixel] with width [widthPixels] and height [heightPixels]
+ *
+ * @return a set of [MovingObject]s whose [Hitbox] intersects the given rectangle
+ */
+fun Level.getMovingObjectCollisions(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int): Sequence<MovingObject> {
+    if (!isPixelRectangleInBounds(xPixel, yPixel, widthPixels, heightPixels))
+        return emptySequence()
+    return getChunksFromPixelRectangle(xPixel, yPixel, widthPixels, heightPixels).flatMap {
+        it.data.moving.getCollisionsWith(xPixel, yPixel, widthPixels, heightPixels) +
+                it.data.movingOnBoundary.getCollisionsWith(xPixel, yPixel, widthPixels, heightPixels)
     }
-    return set as Set<MovingObject>
+}
+
+/**
+ * @return a sequence of [MovingObject]s in this [Level] whose [Hitbox] contains the given point
+ */
+fun Level.getMovingObjectCollisionsWithPoint(xPixel: Int, yPixel: Int): Sequence<MovingObject> {
+    if (!isPixelWithinBounds(xPixel, yPixel))
+        return emptySequence()
+    return getChunkFromPixel(xPixel, yPixel).let {
+        it.data.moving.getCollisionsWith(xPixel, yPixel, 0, 0) +
+                it.data.movingOnBoundary.getCollisionsWith(xPixel, yPixel, 0, 0)
+    }
+}
+
+fun Level.getDroppedItemCollisions(levelObj: LevelObject) =
+        getDroppedItemCollisions(levelObj.type, levelObj.xPixel, levelObj.yPixel)
+
+fun Level.getDroppedItemCollisions(levelObjType: LevelObjectType<*>, xPixel: Int, yPixel: Int) =
+        getDroppedItemCollisions(levelObjType.hitbox, xPixel, yPixel)
+
+fun Level.getDroppedItemCollisions(hitbox: Hitbox, xPixel: Int, yPixel: Int) =
+        getDroppedItemCollisions(xPixel + hitbox.xStart, yPixel + hitbox.yStart, hitbox.width, hitbox.height)
+
+fun Level.getDroppedItemCollisions(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int): Sequence<DroppedItem> {
+    if (!isPixelRectangleInBounds(xPixel, yPixel, widthPixels, heightPixels))
+        return emptySequence()
+    return getChunksFromPixelRectangle(xPixel, yPixel, widthPixels, heightPixels).asSequence().flatMap { it.data.droppedItems.getCollisionsWith(xPixel, yPixel, widthPixels, heightPixels) }
+}
+
+/**
+ * @return a sequence of [DroppedItem]s in this [Level] whose [Hitbox] intersects the rectangle at [xPixel], [yPixel] with radius
+ * [radius]
+ */
+fun Level.getDroppedItemCollisionsInSquareCenteredOn(xPixel: Int, yPixel: Int, radius: Int) =
+        getDroppedItemCollisions(xPixel - radius, yPixel - radius, radius * 2, radius * 2)
+
+fun Level.getDroppedItemCollisionsWithPoint(xPixel: Int, yPixel: Int): Sequence<DroppedItem> {
+    if (!isPixelWithinBounds(xPixel, yPixel))
+        return emptySequence()
+    return getChunkFromPixel(xPixel, yPixel).data.droppedItems.getCollisionsWith(xPixel, yPixel, 0, 0)
 }
 
 /**
  * Gets collisions between the [levelObj] and [LevelObject]s in this [Level]
  *
  * @param predicate the selector for [LevelObject]s to consider collisions with
- * @return a set of [LevelObject]s intersecting the [Hitbox] of [levelObj]
+ * @return a sequence of [LevelObject]s intersecting the [Hitbox] of [levelObj]
  */
-fun Level.getCollisionsWith(levelObj: LevelObject, predicate: (LevelObject) -> Boolean = { true }) =
-        getCollisionsWith(levelObj.hitbox, levelObj.xPixel, levelObj.yPixel, predicate)
+fun Level.getCollisionsWith(levelObj: LevelObject) =
+        getCollisionsWith(levelObj.hitbox, levelObj.xPixel, levelObj.yPixel)
 
 /**
  * Gets collisions between the [hitbox] at [xPixel], [yPixel] and [LevelObject]s in this [Level]
@@ -170,61 +226,47 @@ fun Level.getCollisionsWith(levelObj: LevelObject, predicate: (LevelObject) -> B
  * @param hitbox the hitbox to check collisions with
  * @param xPixel the level x pixel of the [hitbox]. [Hitbox.xStart] is added to this to get the true x coordinate of the rectangle
  * @param yPixel the level y pixel of the [hitbox]. [Hitbox.yStart] is added to this to get the true y coordinate of the rectangle
- * @param predicate the selector for [LevelObject]s to consider collisions with
- * @return a set of [LevelObject]s intersecting the [hitbox]
+ * @return a sequence of [LevelObject]s intersecting the [hitbox]
  */
-fun Level.getCollisionsWith(hitbox: Hitbox, xPixel: Int, yPixel: Int, predicate: (LevelObject) -> Boolean = { true }): Set<LevelObject> {
-    val set = mutableSetOf<LevelObject>()
-    set.addAll(getMovingObjectCollisions(hitbox, xPixel, yPixel, predicate))
-    set.addAll(getBlockCollisions(hitbox, xPixel, yPixel, predicate))
-    set.addAll(getCollisionsWith(data.ghostObjects, hitbox, xPixel, yPixel, predicate))
-    return set
-}
+fun Level.getCollisionsWith(hitbox: Hitbox, xPixel: Int, yPixel: Int) =
+        getCollisionsWith(xPixel + hitbox.xStart, yPixel + hitbox.yStart, hitbox.width, hitbox.height)
+
+fun Level.getCollisionsWith(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int): Sequence<LevelObject> =
+        getBlockCollisions(xPixel, yPixel, widthPixels, heightPixels) + getMovingObjectCollisions(xPixel, yPixel, widthPixels, heightPixels) + getDroppedItemCollisions(xPixel, yPixel, widthPixels, heightPixels)
 
 /**
- * Gets collisions between the [levelObj] and all [possibleColliders]
+ * Gets collisions between the [levelObj] and all [this@getCollisionsWith]
  *
- * @param possibleColliders the [L]s to consider when checking collisions
+ * @param this@getCollisionsWith the [L]s to consider when checking collisions
  * @param predicate the selector for [L]s to consider collisions with
- * @return a set of [L]s intersecting the [Hitbox] of [levelObj]
+ * @return a sequence of [L]s intersecting the [Hitbox] of [levelObj]
  */
-fun <L : LevelObject> Level.getCollisionsWith(possibleColliders: Collection<L>, levelObj: LevelObject, predicate: (L) -> Boolean = { true }) =
-        getCollisionsWith(possibleColliders, levelObj.hitbox, levelObj.xPixel, levelObj.yPixel, { it != levelObj && predicate(it) })
+fun <L : LevelObject> Iterable<L>.getCollisionsWith(levelObj: LevelObject) =
+        getCollisionsWith(levelObj.hitbox, levelObj.xPixel, levelObj.yPixel).filter { it != levelObj }
 
 /**
- * Gets collisions between the [hitbox] at [xPixel], [yPixel] and [possibleColliders]
+ * Gets collisions between the [hitbox] at [xPixel], [yPixel] and [this@getCollisionsWith]
  *
  * @param hitbox the hitbox to check collisions with
  * @param xPixel the level x pixel of the [hitbox]. [Hitbox.xStart] is added to this to get the true x coordinate of the rectangle
  * @param yPixel the level y pixel of the [hitbox]. [Hitbox.yStart] is added to this to get the true y coordinate of the rectangle
- * @param predicate the selector for [L]s to consider collisions with
- * @return a set of [L]s intersecting the [hitbox]
+ * @return a sequence of [L]s intersecting the [hitbox]
  */
-fun <L : LevelObject> Level.getCollisionsWith(possibleColliders: Collection<L>, hitbox: Hitbox, xPixel: Int, yPixel: Int, predicate: (L) -> Boolean = { true }) =
-        getCollisionsWith(possibleColliders, xPixel + hitbox.xStart, yPixel + hitbox.yStart, hitbox.width, hitbox.height, predicate)
+fun <L : LevelObject> Iterable<L>.getCollisionsWith(hitbox: Hitbox, xPixel: Int, yPixel: Int) =
+        getCollisionsWith(xPixel + hitbox.xStart, yPixel + hitbox.yStart, hitbox.width, hitbox.height)
 
-/**
- * Gets collisions between the rectangle at [xPixel], [yPixel], [widthPixels], [heightPixels] and [possibleColliders]
- *
- * @param hitbox the hitbox to check collisions with
- * @param predicate the selector for [L]s to consider collisions with
- * @return a set of [L]s intersecting the [hitbox]
- */
-fun <L : LevelObject> Level.getCollisionsWith(possibleColliders: Collection<L>, xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int, predicate: (L) -> Boolean = { _: LevelObject -> true }): Set<L> {
-    val set = mutableSetOf<L>()
-    for (l in possibleColliders) {
-        if (l.hitbox != Hitbox.NONE) {
-            if (predicate(l) && Geometry.intersects(xPixel, yPixel, widthPixels, heightPixels,
-                            l.xPixel + l.hitbox.xStart, l.yPixel + l.hitbox.yStart, l.hitbox.width, l.hitbox.height)) {
-                set.add(l)
-            }
-        }
+fun <L : LevelObject> Iterable<L>.getCollisionsWith(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int): Sequence<L> {
+    if (none()) {
+        return emptySequence()
     }
-    return set
+    return asSequence().filter {
+        it.hitbox != Hitbox.NONE && Geometry.intersects(xPixel, yPixel, widthPixels, heightPixels,
+                it.xPixel + it.hitbox.xStart, it.yPixel + it.hitbox.yStart, it.hitbox.width, it.hitbox.height)
+    }
 }
 
-fun Level.getCollisionsWithPoint(xPixel: Int, yPixel: Int, predicate: (LevelObject) -> Boolean = { true }): Set<LevelObject> {
-    return getBlockCollisionsWithPoint(xPixel, yPixel, predicate) + getMovingObjectCollisionsWithPoint(xPixel, yPixel, predicate)
+fun Level.getCollisionsWithPoint(xPixel: Int, yPixel: Int): Sequence<LevelObject> {
+    return getBlockCollisionsWithPoint(xPixel, yPixel) + getMovingObjectCollisionsWithPoint(xPixel, yPixel) + getDroppedItemCollisionsWithPoint(xPixel, yPixel)
 }
 
 /**
@@ -240,47 +282,6 @@ fun Level.doHitboxesCollide(hitbox1: Hitbox, xPixel1: Int, yPixel1: Int,
                             hitbox2: Hitbox, xPixel2: Int, yPixel2: Int): Boolean {
     return Geometry.intersects(xPixel1 + hitbox1.xStart, yPixel1 + hitbox1.yStart, hitbox1.width, hitbox1.height,
             xPixel2 + hitbox2.xStart, yPixel2 + hitbox2.yStart, hitbox2.width, hitbox2.height)
-}
-
-/**
- * Gets [MovingObject]s whose [Hitbox] intersects the rectangle starting at [xPixel], [yPixel] with width [widthPixels] and height [heightPixels]
- *
- * @return a set of [MovingObject]s whose [Hitbox] intersects the given rectangle and which match the given [predicate] (defaults to { true })
- */
-fun Level.getMovingObjectCollisionsFromPixelRectangle(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int, predicate: (MovingObject) -> Boolean = { true }): Set<MovingObject> {
-    val set = mutableSetOf<LevelObject>()
-    for (chunk in getChunksFromPixelRectangle(xPixel, yPixel, widthPixels, heightPixels)) {
-        set.addAll(getCollisionsWith(chunk.data.moving, xPixel, yPixel, widthPixels, heightPixels, predicate))
-        set.addAll(getCollisionsWith(chunk.data.movingOnBoundary, xPixel, yPixel, widthPixels, heightPixels, predicate))
-    }
-    return set as Set<MovingObject>
-}
-
-/**
- * @return a set of [MovingObject]s in this [Level] whose [Hitbox] intersects the square centered at [xPixel], [yPixel] with the given [radius]
- * (which is the side length / 2), and which match the [predicate] (defaults to { true })
- */
-fun Level.getMovingObjectCollisionsInSquareCenteredOn(xPixel: Int, yPixel: Int, radius: Int, predicate: (MovingObject) -> Boolean = { true }): Set<MovingObject> {
-    val set = mutableSetOf<MovingObject>()
-    for (chunk in getChunksFromPixelRectangle(xPixel - radius, yPixel - radius, radius * 2, radius * 2)) {
-        set.addAll(getCollisionsWith(chunk.data.moving, xPixel - radius, yPixel - radius, radius * 2, radius * 2, predicate))
-        set.addAll(getCollisionsWith(chunk.data.movingOnBoundary, xPixel - radius, yPixel - radius, radius * 2, radius * 2, predicate))
-    }
-    return set
-}
-
-/**
- * @return a set of [MovingObject]s in this [Level] whose [Hitbox] contains the given point, and which match the given
- * [predicate] (defaults to { true })
- */
-fun Level.getMovingObjectCollisionsWithPoint(xPixel: Int, yPixel: Int, predicate: (MovingObject) -> Boolean = { true }): Set<MovingObject> {
-    val set = mutableSetOf<MovingObject>()
-    if (!isPixelWithinBounds(xPixel, yPixel))
-        return emptySet()
-    val chunk = getChunkFromPixel(xPixel, yPixel)
-    set.addAll(getCollisionsWith(chunk.data.moving, xPixel, yPixel, 0, 0, predicate))
-    set.addAll(getCollisionsWith(chunk.data.movingOnBoundary, xPixel, yPixel, 0, 0, predicate))
-    return set
 }
 
 /**
@@ -314,18 +315,6 @@ fun Level.getResourceNodesAt(xTile: Int, yTile: Int, predicate: (ResourceNode) -
 }
 
 /**
- * @return a set of [DroppedItem]s in this [Level] whose [Hitbox] intersects the rectangle at [xPixel], [yPixel] with radius
- * [radius] and which matches the given [predicate] (defaults to { true })
- */
-fun Level.getDroppedItemCollisionsInSquareCenteredOn(xPixel: Int, yPixel: Int, radius: Int, predicate: (DroppedItem) -> Boolean = { true }): Set<DroppedItem> {
-    val set = mutableSetOf<DroppedItem>()
-    for (chunk in getChunksFromPixelRectangle(xPixel - radius, yPixel - radius, radius * 2, radius * 2)) {
-        set.addAll(getCollisionsWith(chunk.data.droppedItems, xPixel, yPixel, widthPixels, heightPixels, predicate))
-    }
-    return set
-}
-
-/**
  * @return the [Tile] at [xTile], [yTile]
  */
 fun Level.getTileAt(xTile: Int, yTile: Int): Tile {
@@ -337,16 +326,14 @@ fun Level.getTileAt(xTile: Int, yTile: Int): Tile {
 /**
  * Gets the [LevelObject]s at [xPixel], [yPixel] matching the given [predicate] (defaults to { true })
  *
- * @return a set of [LevelObject]s in this [Level] at [xPixel], [yPixel] which match the given [predicate]. Note, for [Block]s,
+ * @return a sequence of [LevelObject]s in this [Level] at [xPixel], [yPixel]. Note, for [Block]s,
  * this checks the base of the [Block] (i.e. the tiles around the block in which no other block may be), and for [MovingObject]s,
  * it checks the [Hitbox]. The [MovingObject]s will be first in the order of the set, then the [Block]s
  */
-fun Level.getLevelObjectsAt(xPixel: Int, yPixel: Int, predicate: (LevelObject) -> Boolean = { true }): Set<LevelObject> {
-    val set = mutableSetOf<LevelObject>()
-    getMovingObjectCollisionsWithPoint(xPixel, yPixel, predicate).let { set.addAll(it) }
-    getBlockFromPixel(xPixel, yPixel)?.let { if (predicate(it)) set.add(it) }
-    return set
-}
+fun Level.getLevelObjectsAt(xPixel: Int, yPixel: Int): Sequence<LevelObject> =
+        (getBlockFromPixel(xPixel, yPixel)?.let { sequenceOf(it) } ?: emptySequence<LevelObject>()) +
+                getMovingObjectCollisionsWithPoint(xPixel, yPixel) +
+                getDroppedItemCollisionsWithPoint(xPixel, yPixel)
 
 fun Level.getChunkAt(xChunk: Int, yChunk: Int): Chunk {
     if (!isChunkWithinBounds(xChunk, yChunk)) {
@@ -364,21 +351,17 @@ fun Level.getChunkFromPixel(xPixel: Int, yPixel: Int) =
 fun Level.getChunksFromTileRectangle(xTile: Int, yTile: Int, widthTiles: Int, heightTiles: Int) =
         getChunksFromChunkRectangle(xTile shr CHUNK_TILE_EXP, yTile shr CHUNK_TILE_EXP, (xTile + widthTiles) shr CHUNK_TILE_EXP, (yTile + heightTiles) shr CHUNK_TILE_EXP)
 
-fun Level.getChunksFromPixelRectangle(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int): Set<Chunk> =
+fun Level.getChunksFromPixelRectangle(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int) =
         getChunksFromChunkRectangle(xPixel shr CHUNK_PIXEL_EXP, yPixel shr CHUNK_PIXEL_EXP, (xPixel + widthPixels) shr CHUNK_PIXEL_EXP, (yPixel + heightPixels) shr CHUNK_PIXEL_EXP)
 
-fun Level.getChunksFromChunkRectangle(xChunk: Int, yChunk: Int, xChunk2: Int, yChunk2: Int): Set<Chunk> {
-    val l = mutableSetOf<Chunk>()
+fun Level.getChunksFromChunkRectangle(xChunk: Int, yChunk: Int, xChunk2: Int, yChunk2: Int): Sequence<Chunk> {
     val nXChunk = max(0, xChunk)
     val nYChunk = max(0, yChunk)
     val nXChunk2 = min(widthChunks - 1, xChunk2)
     val nYChunk2 = min(heightChunks - 1, yChunk2)
-    for (x in nXChunk..nXChunk2) {
-        for (y in nYChunk..nYChunk2) {
-            l.add(getChunkAt(x, y))
-        }
-    }
-    return l
+    return (nXChunk..nXChunk2).asSequence().flatMap { x ->
+        (nYChunk..nYChunk2).asSequence().map { x to it }
+    }.map { getChunkAt(it.first, it.second) }
 }
 
 /**
@@ -400,7 +383,7 @@ fun Level.canAdd(type: LevelObjectType<*>, xPixel: Int, yPixel: Int) = canAdd(ty
  */
 fun Level.canAdd(hitbox: Hitbox, xPixel: Int, yPixel: Int): Boolean {
     // TODO check rotation too
-    return hitbox == Hitbox.NONE || getCollisionsWith(hitbox, xPixel, yPixel).isEmpty()
+    return hitbox == Hitbox.NONE || getCollisionsWith(hitbox, xPixel, yPixel).none()
 }
 
 fun Level.canRemove(l: LevelObject): Boolean {

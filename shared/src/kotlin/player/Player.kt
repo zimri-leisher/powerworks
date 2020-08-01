@@ -3,15 +3,15 @@ package player
 import level.LevelManager
 import network.User
 import player.lobby.Lobby
-import serialization.Id
+import player.team.Team
+import serialization.Input
+import serialization.Output
+import serialization.Serializer
 import java.util.*
 
 class Player(
-        @Id(1)
         val user: User,
-        @Id(2)
         var homeLevelId: UUID,
-        @Id(3)
         var brainRobotId: UUID) {
 
     private constructor() : this(User(UUID.randomUUID(), ""), UUID.randomUUID(), UUID.randomUUID())
@@ -22,17 +22,10 @@ class Player(
     val brainRobot get() = LevelManager.allLevels.flatMap { it.data.brainRobots }.first { it.id == brainRobotId }
 
     var lobby = Lobby()
+    var team = Team(this)
 
     init {
-        var alreadyExists = false
-        PlayerManager.allPlayers.forEach {
-            if(it.user == user) {
-                alreadyExists = true
-            }
-        }
-        if(!alreadyExists) {
-            PlayerManager.allPlayers.add(this)
-        }
+        PlayerManager.allPlayers.add(this)
     }
 
     override fun equals(other: Any?): Boolean {
@@ -53,5 +46,27 @@ class Player(
         result = 31 * result + homeLevelId.hashCode()
         result = 31 * result + brainRobotId.hashCode()
         return result
+    }
+}
+
+class PlayerSerializer : Serializer<Player>() {
+    override fun write(obj: Any, output: Output) {
+        obj as Player
+        output.write(obj.user)
+        output.write(obj.brainRobotId)
+        output.write(obj.homeLevelId)
+    }
+
+    override fun instantiate(input: Input): Player {
+        val user = input.read(User::class.java)
+        val brainRobotId = input.read(UUID::class.java)
+        val homeLevelId = input.read(UUID::class.java)
+        var alreadyExistingPlayer: Player? = null
+        PlayerManager.allPlayers.forEach {
+            if (it.user == user) {
+                alreadyExistingPlayer = it
+            }
+        }
+        return alreadyExistingPlayer ?: Player(user, homeLevelId, brainRobotId)
     }
 }

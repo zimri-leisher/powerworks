@@ -1,14 +1,9 @@
 package serialization
 
-import level.LevelManager
-import level.pipe.FluidPipeBlock
-import resource.ResourceCategory
-import routing.ResourceRoutingNetwork
 import serialization.Registration.REFERENCE_ID
 import serialization.Registration.getId
 import serialization.Registration.getRegistry
 import java.io.*
-import java.lang.reflect.Field
 import java.lang.reflect.Modifier
 import java.util.*
 
@@ -23,22 +18,22 @@ fun debugln(text: String) {
 }
 
 private fun increaseDepth() {
-    SerializerDebugger.debug_depth++
+    SerializerDebugger.debugDepth++
 }
 
 private fun decreaseDepth() {
-    SerializerDebugger.debug_depth--
+    SerializerDebugger.debugDepth--
 }
 
 object SerializerDebugger {
 
-    var on = false
-    var debug_depth = 0
-    val debug_spaces get() = (0 until (debug_depth % 16)).joinToString { "   " }
+    const val on = false
+    var debugDepth = 0
+    val debugSpaces get() = (0 until (debugDepth % 16)).joinToString { "   " }
 
     fun writeln(text: String) {
         if (on) {
-            println("[Serializer] $debug_spaces $text")
+            println("[Serializer] $debugSpaces $text")
         }
     }
 }
@@ -115,7 +110,7 @@ object Serialization {
 
 class Input(inputStream: InputStream) : DataInputStream(inputStream) {
 
-    private val references = IdentityHashMap<Any, Int>(512)
+    private val references = IdentityHashMap<Any, Int>(16384)
 
     private var nextReferenceId = 0
 

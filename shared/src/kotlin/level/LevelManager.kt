@@ -144,7 +144,7 @@ object LevelManager : DirectoryChangeWatcher, MouseMovementListener, CameraMovem
         updateMouseLevelPosition()
     }
 
-    fun newLevelId() = UUID.randomUUID()
+    fun newLevelId() = UUID.nameUUIDFromBytes(ByteArray(1))
 
     fun newLevelInfoFor(user: User): LevelInfo = LevelInfo(user, user.id.toString(), LocalDateTime.now().toString(), LevelType.DEFAULT_SIMPLEX, (Math.random() * 4096).toLong())
 

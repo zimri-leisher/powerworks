@@ -2,6 +2,7 @@ package network
 
 import level.*
 import level.block.Block
+import level.entity.robot.BrainRobot
 import level.moving.MovingObject
 import resource.ResourceNode
 import serialization.Id
@@ -45,6 +46,19 @@ abstract class LevelObjectReference(@Id(1)
                                     @Id(2)
                                     val objectId: UUID) : NetworkReference<LevelObject>()
 
+class DroppedItemReference(level: Level, @Id(3) val xPixel: Int, @Id(4) val yPixel: Int, objectId: UUID) : LevelObjectReference(level, objectId) {
+
+    private constructor() : this(LevelManager.EMPTY_LEVEL, 0, 0, UUID.randomUUID())
+
+    constructor(droppedItem: DroppedItem) : this(droppedItem.level, droppedItem.xPixel, droppedItem.yPixel, droppedItem.id) {
+        value = droppedItem
+    }
+
+    override fun resolve(): LevelObject? {
+        return level.getChunkFromPixel(xPixel, yPixel).data.droppedItems.firstOrNull { it.id == objectId }
+    }
+}
+
 class GhostLevelObjectReference(val obj: GhostLevelObject) : LevelObjectReference(obj.level, obj.id) {
 
     init {
@@ -54,11 +68,11 @@ class GhostLevelObjectReference(val obj: GhostLevelObject) : LevelObjectReferenc
     override fun resolve() = obj
 }
 
-class MovingObjectReference(level: Level, objectId: UUID,
-                            @Id(3)
-                            val xPixel: Int,
-                            @Id(4)
-                            val yPixel: Int) : LevelObjectReference(level, objectId) {
+open class MovingObjectReference(level: Level, objectId: UUID,
+                                 @Id(3)
+                                 val xPixel: Int,
+                                 @Id(4)
+                                 val yPixel: Int) : LevelObjectReference(level, objectId) {
 
     constructor(movingObject: MovingObject) : this(movingObject.level, movingObject.id, movingObject.xPixel, movingObject.yPixel) {
         value = movingObject
@@ -74,7 +88,7 @@ class MovingObjectReference(level: Level, objectId: UUID,
         while (currentChunkRange < Math.max(level.widthChunks - xChunk - 1, xChunk + 1) || currentChunkRange < Math.max(level.heightChunks - yChunk - 1, yChunk + 1)) {
             // while we still have range to go
             for (chunk in currentChunks) {
-                val moving = chunk.data.moving.filter { it.id == objectId }.firstOrNull()
+                val moving = chunk.data.moving.firstOrNull { it.id == objectId }
                 if (moving != null) {
                     return moving
                 }
@@ -83,28 +97,28 @@ class MovingObjectReference(level: Level, objectId: UUID,
             if (currentChunkRange > 3) {
                 println("Resolving reference taking abnormally long, possible desync")
             }
-            currentChunks = level.getChunksFromChunkRectangle(xChunk - currentChunkRange, yChunk - currentChunkRange, xChunk + currentChunkRange, yChunk + currentChunkRange)
+            currentChunks = level.getChunksFromChunkRectangle(xChunk - currentChunkRange, yChunk - currentChunkRange, xChunk + currentChunkRange, yChunk + currentChunkRange).toSet()
         }
         return null
     }
 }
 
-class DroppedItemReference(level: Level, objectId: UUID,
-                           @Id(3)
-                           val xPixel: Int,
-                           @Id(4)
-                           val yPixel: Int) : LevelObjectReference(level, objectId) {
+class BrainRobotReference(
+        @Id(5)
+        val brainRobotId: UUID
+) : MovingObjectReference(LevelManager.allLevels.firstOrNull { it.data.brainRobots.any { it.id == brainRobotId } }
+        ?: LevelManager.EMPTY_LEVEL, brainRobotId, 0, 0) {
 
-    constructor(droppedItem: DroppedItem) : this(droppedItem.level, droppedItem.id, droppedItem.xPixel, droppedItem.yPixel) {
-        value = droppedItem
+    private constructor() : this(UUID.randomUUID())
+
+    constructor(brainRobot: BrainRobot) : this(brainRobot.id) {
+        value = brainRobot
     }
 
-    private constructor() : this(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0)
-
-    override fun resolve(): DroppedItem? {
-        val items = level.getDroppedItemCollisionsInSquareCenteredOn(xPixel, yPixel, 2)
-        return items.firstOrNull { it.id == objectId }
+    override fun resolve(): MovingObject? {
+        return level.data.brainRobots.firstOrNull { it.id == brainRobotId }
     }
+
 }
 
 class BlockReference(level: Level, objectId: UUID,

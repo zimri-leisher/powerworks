@@ -3,20 +3,14 @@ package screen
 import screen.elements.GUIDefaultTextureRectangle
 import screen.elements.GUIResourceTypeSelection
 import screen.elements.GUIWindow
+import kotlin.reflect.full.superclasses
 import kotlin.system.measureTimeMillis
 
 val Int.bitString: String get() = Integer.toBinaryString(this)
 
 fun main() {
-    measureTimeMillis {
-        for (m in 0..10000) {
-            for (n in 1..1000) {
-                if (m % n != fastMod(m, n)) {
-                    println("efasdf")
-                }
-            }
-        }
-    }.apply { println(this) }
+    val lambda: (String) -> Boolean = { true }
+    println(lambda::class.java.superclass)
 }
 
 fun slowMod(m: Int, n: Int): Int {

@@ -39,9 +39,9 @@ object TextManager {
             glyphLayout.setText(defaultFont, DEFAULT_CHARS)
             fonts.put(Pair(DEFAULT_SIZE, FontStyle.PLAIN), FontInfo(defaultFont, (glyphLayout.width / DEFAULT_CHARS.length) / Game.SCALE, glyphLayout.height / Game.SCALE))
         } catch (ex: FontFormatException) {
-            ex.printStackTrace()
+            ex.printStackTrace(System.err)
         } catch (ex: IOException) {
-            ex.printStackTrace()
+            ex.printStackTrace(System.err)
         }
     }
 

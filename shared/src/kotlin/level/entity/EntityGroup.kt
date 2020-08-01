@@ -3,7 +3,7 @@ package level.entity
 import data.WeakMutableList
 import graphics.Renderer
 import level.LevelManager
-import level.SetEntityFormation
+import level.update.EntitySetFormation
 import level.canAdd
 import misc.Geometry
 import misc.PixelCoord
@@ -131,7 +131,7 @@ class EntityGroup(
         }
 
         val level = entities.first().level
-        level.modify(SetEntityFormation(newFormation.mapKeys { it.key.toReference() as MovingObjectReference }, PixelCoord(xPixel, yPixel)))
+        level.modify(EntitySetFormation(newFormation.mapKeys { it.key.toReference() as MovingObjectReference }, PixelCoord(xPixel, yPixel)))
     }
 
     fun render() {

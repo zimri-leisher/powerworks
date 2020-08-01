@@ -1,6 +1,9 @@
 package level.block
 
-import level.*
+import level.Level
+import level.LevelObject
+import level.getBlockAt
+import level.getMovingObjectCollisions
 import level.particle.ParticleEffect
 import network.BlockReference
 import network.LevelObjectReference
@@ -103,28 +106,22 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotatio
 
     }
 
-    override fun getCollisions(xPixel: Int, yPixel: Int, predicate: (LevelObject) -> Boolean, level: Level): Set<LevelObject> {
-        val set = mutableSetOf<LevelObject>()
+    override fun update() {
+        super.update()
+    }
+
+    override fun getCollisions(xPixel: Int, yPixel: Int, level: Level): Sequence<LevelObject> {
         // Check if a block is already present
         val nXTile = xPixel shr 4
         val nYTile = yPixel shr 4
-        set.addAll(level.getMovingObjectCollisions(hitbox, xPixel, yPixel, predicate))
-        for (x in nXTile until (nXTile + type.widthTiles)) {
-            for (y in nYTile until (nYTile + type.heightTiles)) {
-                val c = level.getChunkAt(x shr CHUNK_TILE_EXP, y shr CHUNK_TILE_EXP)
-                val b = c.getBlock(x, y)
-                if (b != null) {
-                    if (!predicate(b)) {
-                        continue
-                    }
-                    // check memory because we could be trying to put the same block down at the same place
-                    if (b !== this) {
-                        set.add(b)
-                    }
-                }
-            }
-        }
-        return set
+        return level.getMovingObjectCollisions(hitbox, xPixel, yPixel) +
+                (nXTile until (nXTile + type.widthTiles)).asSequence()
+                        .flatMap { x ->
+                            (nYTile until (nYTile + type.heightTiles)).asSequence().map { x to it }
+                        }
+                        .map { level.getBlockAt(it.first, it.second) }
+                        .filterNotNull()
+                        .filter { it !== this }
     }
 
     override fun toReference(): LevelObjectReference {

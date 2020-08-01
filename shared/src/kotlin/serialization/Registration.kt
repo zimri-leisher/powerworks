@@ -39,18 +39,22 @@ import level.tile.OreTile
 import level.tile.OreTileType
 import level.tile.Tile
 import level.tile.TileType
+import level.update.*
 import main.DebugCode
 import main.Version
+import main.VersionSerializer
 import misc.PixelCoord
 import misc.TileCoord
 import network.*
 import network.packet.*
 import player.*
+import player.team.Team
 import resource.*
 import routing.*
 import routing.script.*
 import screen.Camera
 import java.awt.Polygon
+import java.awt.Rectangle
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.util.*
@@ -69,7 +73,7 @@ object Registration {
 
     fun registerAll() {
 
-        // max 252
+        // max 257
         /* COLLECTIONS */
         val singletonList = listOf(1)
         register(singletonList::class, CollectionSerializer { it.toList() }, 209)
@@ -83,6 +87,7 @@ object Registration {
         register(LinkedHashMap::class, MutableMapSerializer<LinkedHashMap<Any?, Any?>>(), 140)
         register(Set::class.java, MutableCollectionSerializer<LinkedHashSet<Any?>>(), 153)
         register(Polygon::class, Serializer.AllFields<Polygon>(), 251)
+        register(Rectangle::class, Serializer.AllFields<Rectangle>(), 254)
 
         FrameworkMessage.RegisterTCP::class.register(147, Serializer.AllFields<FrameworkMessage.RegisterTCP>())
         FrameworkMessage.RegisterUDP::class.register(148, Serializer.AllFields<FrameworkMessage.RegisterUDP>())
@@ -124,15 +129,15 @@ object Registration {
         register(ImageCollection::class, 12)
         register(Renderable::class, 13)
         register(Texture::class, TextureSerializer(), 14)
-        register(Animation::class, IDSerializer({ Animation.ALL }, { it.id }), 102)
-        register(AnimationCollection::class, IDSerializer({AnimationCollection.ALL}, {it}), 252)
+        register(Animation::class, AnimationSerializer(), 102)
+        register(AnimationCollection::class, AnimationCollectionSerializer(), 252)
 
         /* IO */
 
         /* ITEM */
         register(ToolItemType::class, IDSerializer({ ToolItemType.ALL }, { it.id }), 15)
         register(Projectile::class, 16)
-        register(ProjectileType::class, 248)
+        register(ProjectileType::class, IDSerializer({ ProjectileType.ALL }, { it.id }), 248)
         register(WeaponItem::class, 17)
         register(Weapon::class, 249)
         register(WeaponItemType::class, IDSerializer({ WeaponItemType.ALL }, { it.id }), 18)
@@ -153,31 +158,33 @@ object Registration {
         register(LevelData::class, 57)
         register(LevelInfo::class, 58)
         register(LevelObjectTextures::class, 60)
+        register(LevelObjectType::class, IDSerializer({ LevelObjectType.ALL }, { it.id }), 257)
         register(RemoteLevel::class, LevelSerializer<RemoteLevel>(), 64)
         register(ChunkData::class, 146)
         register(GhostLevelObject::class, 201)
-        register(AddObject::class, 222)
-        register(RemoveObject::class, 223)
-        register(DefaultLevelModification::class, 226)
+        register(LevelObjectAdd::class, 222)
+        register(LevelObjectRemove::class, 223)
+        register(DefaultLevelUpdate::class, 226)
         register(LevelModificationType::class, EnumSerializer<LevelModificationType>(), 227)
-        register(SelectCrafterRecipe::class, 229)
-        register(ModifyBrainRobotInv::class, 230)
-        register(ModifyBlockContainer::class, 231)
-        register(TransferThroughResourceNode::class, 232)
+        register(CrafterBlockSelectRecipe::class, 229)
+        register(BrainRobotInvModify::class, 230)
+        register(BlockContainerModify::class, 231)
+        register(ResourceNodeTransferThrough::class, 232)
         register(MachineBlockFinishWork::class, 233)
-        register(SetEntityPath::class, 237)
-        register(UpdateEntityPathPosition::class, 238)
-        register(AddEntititesToGroup::class, 242)
-        register(SetEntityFormation::class, 243)
-        register(SetEntityTarget::class, 246)
+        register(EntitySetPath::class, 237)
+        register(EntityPathUpdate::class, 238)
+        register(EntityAddToGroup::class, 242)
+        register(EntitySetFormation::class, 243)
+        register(EntitySetTarget::class, 246)
+        register(EntityFireWeapon::class, 253)
 
         /* /BLOCK */
-        register(BlockType::class, LevelObjectTypeSerializer(), 22)
-        register(MachineBlockType::class, LevelObjectTypeSerializer(), 119)
-        register(CrafterBlockType::class, LevelObjectTypeSerializer(), 120)
-        register(FluidTankBlockType::class, LevelObjectTypeSerializer(), 121)
-        register(ChestBlockType::class, LevelObjectTypeSerializer(), 122)
-        register(PipeBlockType::class, LevelObjectTypeSerializer(), 188)
+        register(BlockType::class, IDSerializer({ BlockType.ALL }, { it.id }), 22)
+        register(MachineBlockType::class, IDSerializer({ MachineBlockType.ALL }, { it.id }), 119)
+        register(CrafterBlockType::class, IDSerializer({ CrafterBlockType.ALL }, { it.id }), 120)
+        register(FluidTankBlockType::class, IDSerializer({ FluidTankBlockType.ALL }, { it.id }), 121)
+        register(ChestBlockType::class, IDSerializer({ ChestBlockType.ALL }, { it.id }), 122)
+        register(PipeBlockType::class, IDSerializer({ PipeBlockType.ALL }, { it.id }), 188)
 
         setSerializerFactory { LevelObjectSerializer<LevelObject>() }
 
@@ -196,7 +203,7 @@ object Registration {
 
         /* /ENTITY */
         register(Entity::class, 32)
-        register(EntityType::class, LevelObjectTypeSerializer(), 36)
+        register(EntityType::class, IDSerializer({ EntityType.ALL }, { it.id }), 36)
         register(EntityBehavior::class, Serializer.Tagged<EntityBehavior>(), 234)
         register(EntityGroup::class, Serializer.Tagged<EntityGroup>(), 240)
         register(Formation::class, Serializer.Tagged<Formation>(), 244)
@@ -205,7 +212,7 @@ object Registration {
         /* //ROBOT */
         register(BrainRobot::class, 33)
         register(Robot::class, 34)
-        register(RobotType::class, LevelObjectTypeSerializer(), 35)
+        register(RobotType::class, IDSerializer({ RobotType.ALL }, { it.id }), 35)
 
         /* /GENERATOR */
         setSerializerFactory { Serializer.Tagged<Any>() }
@@ -216,7 +223,7 @@ object Registration {
 
         /* /MOVING */
         register(MovingObject::class, LevelObjectSerializer<MovingObject>(), 41)
-        register(MovingObjectType::class, LevelObjectTypeSerializer(), 42)
+        register(MovingObjectType::class, IDSerializer({ MovingObjectType.ALL }, { it.id }), 42)
 
         /* /PARTICLE */
         register(ParticleType::class, IDSerializer({ ParticleType.ALL }, { it.id }), 43)
@@ -234,7 +241,7 @@ object Registration {
 
         /* MAIN */
         register(DebugCode::class, EnumSerializer<DebugCode>(), 65)
-        register(Version::class, EnumSerializer<Version>(), 66)
+        register(Version::class, VersionSerializer(), 66)
 
         /* MISC */
         register(PixelCoord::class, 67)
@@ -264,19 +271,21 @@ object Registration {
         register(MovingObjectReference::class, NetworkReferenceSerializer(), 198)
         register(ResourceNodeReference::class, NetworkReferenceSerializer(), 199)
         register(DroppedItemReference::class, NetworkReferenceSerializer(), 216)
-        register(LevelModificationPacket::class, 228)
+        register(BrainRobotReference::class, NetworkReferenceSerializer(), 256)
+        register(LevelUpdatePacket::class, 228)
         register(LevelLoadedSuccessPacket::class, 239)
 
         /* PLAYER */
-        register(Player::class, 85)
+        register(Player::class, PlayerSerializer(), 85)
         register(PlaceLevelObject::class, 202)
         register(RemoveLevelObjectAction::class, 203)
         register(SelectCrafterRecipeAction::class, 206)
         register(ControlEntityAction::class, 207)
         register(EditResourceNodeBehaviorAction::class, 208)
         register(PickUpDroppedItemAction::class, 215)
-        register(CreateEntityGroup::class, 241)
+        register(EntityCreateGroup::class, 241)
         register(TransferItemsBetweenBlock::class, 245)
+        register(Team::class, 255)
 
         /* RESOURCE */
         register(ResourceCategory::class, EnumSerializer<ResourceCategory>(), 86)

@@ -24,7 +24,7 @@ class WeaponItemType(initializer: WeaponItemType.() -> Unit = {}) : ItemType() {
 
         val MACHINE_GUN = WeaponItemType {
             name = "Heavy Kinetic 40 Mk."
-            cooldown = 60
+            cooldown = 22
             icon = Texture(AnimationCollection.MACHINE_GUN.animations[1].frames[2])
             fireAnimations = AnimationCollection.MACHINE_GUN
         }

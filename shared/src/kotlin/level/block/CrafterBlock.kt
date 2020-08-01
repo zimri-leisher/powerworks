@@ -18,6 +18,7 @@ open class CrafterBlock(override val type: CrafterBlockType<*>, xTile: Int, yTil
         set(value) {
             if (field != value) {
                 field = value
+                // clear behavior of input nodes
                 inputNodes.forEach { it.behavior.allowIn.clearStatements(); it.behavior.forceIn.clearStatements() }
                 if (field != null) {
                     val canCraft = enoughToCraft()
@@ -84,7 +85,7 @@ open class CrafterBlock(override val type: CrafterBlockType<*>, xTile: Int, yTil
         on = canCraft
     }
 
-    private fun enoughToCraft() = currentResources.containsAtLeastAll(recipe!!.consume)
+    private fun enoughToCraft() = true //currentResources.containsAtLeastAll(recipe!!.consume)
 
     override fun onFinishWork() {
         if(recipe == null) {

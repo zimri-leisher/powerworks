@@ -7,6 +7,7 @@ import network.packet.Packet
 import network.packet.PacketHandler
 import network.packet.PacketType
 import player.Player
+import player.PlayerManager
 import java.util.*
 
 class Lobby : PacketHandler {
@@ -48,8 +49,11 @@ class Lobby : PacketHandler {
 
     override fun handleClientPacket(packet: Packet) {
         if (packet is LevelLoadedSuccessPacket) {
-            loadedLevelIds.add(packet.levelId)
-            LevelManager.allLevels.firstOrNull { it.id == packet.levelId }?.paused = false
+            val player = PlayerManager.getPlayer(packet.fromUser)
+            if (player in players) {
+                loadedLevelIds.add(packet.levelId)
+                LevelManager.allLevels.firstOrNull { it.id == packet.levelId }?.paused = false
+            }
         }
     }
 

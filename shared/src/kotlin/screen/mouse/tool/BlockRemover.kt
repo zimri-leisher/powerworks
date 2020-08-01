@@ -18,10 +18,13 @@ object BlockRemover : Tool(Control.REMOVE_BLOCK) {
             if (control == Control.REMOVE_BLOCK) {
                 val toRemove = if (Selector.currentSelected.isNotEmpty())
                     Selector.currentSelected.filterIsInstance<Block>()
+                else if (LevelManager.levelObjectUnderMouse is Block)
+                    listOf(LevelManager.levelObjectUnderMouse as Block)
                 else
-                    listOf(LevelManager.levelObjectUnderMouse!!)
+                    listOf()
                 if (toRemove.isNotEmpty()) {
-                    PlayerManager.takeAction(RemoveLevelObjectAction(PlayerManager.localPlayer, toRemove.map { BlockReference(it as Block) }))
+                    toRemove.forEach { Selector.currentSelected.remove(it) }
+                    PlayerManager.takeAction(RemoveLevelObjectAction(PlayerManager.localPlayer, toRemove.map { BlockReference(it) }))
                 }
             }
         }

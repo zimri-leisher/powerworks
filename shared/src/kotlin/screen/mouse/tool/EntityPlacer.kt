@@ -37,7 +37,7 @@ object EntityPlacer : Tool(Control.SPAWN_ENTITY) {
     }
 
     override fun update() {
-        canSpawn = LevelManager.levelObjectUnderMouse == null && LevelManager.levelUnderMouse?.getCollisionsWith(type!!.spawnedEntity.hitbox, LevelManager.mouseLevelXPixel, LevelManager.mouseLevelYPixel)?.isEmpty() ?: false
+        canSpawn = LevelManager.levelObjectUnderMouse == null && LevelManager.levelUnderMouse?.getCollisionsWith(type!!.spawnedEntity.hitbox, LevelManager.mouseLevelXPixel, LevelManager.mouseLevelYPixel)?.none() ?: false
     }
 
     override fun updateCurrentlyActive() {

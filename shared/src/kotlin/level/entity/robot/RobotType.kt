@@ -14,9 +14,13 @@ class RobotType<T : Robot>(initializer: RobotType<T>.() -> Unit) : EntityType<T>
     init {
         initializer()
         mass = hitbox.width * hitbox.height * density
+        ALL.add(this)
     }
 
     companion object {
+
+        val ALL = mutableListOf<RobotType<*>>()
+
         val STANDARD = RobotType<Robot> {
             instantiate = { xPixel, yPixel, rotation -> Robot(this, xPixel, yPixel, rotation) }
             textures = LevelObjectTextures(ImageCollection.ROBOT)

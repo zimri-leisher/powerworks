@@ -1,7 +1,9 @@
 package misc
 
-import java.awt.Point
-import java.awt.Polygon
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.roundToInt
+import kotlin.math.sin
 
 object Geometry {
     fun intersects(xPixel: Int, yPixel: Int, width: Int, height: Int, xPixel2: Int, yPixel2: Int, width2: Int, height2: Int): Boolean {
@@ -85,47 +87,49 @@ object Geometry {
             return 0.0
     }
 
-    fun rotate(xTile: Int, yTile: Int, widthTiles: Int, heightTiles: Int, dir: Int): TileCoord {
-        return when (dir % 4) {
-            1 -> TileCoord(widthTiles - yTile - 1, heightTiles - xTile)
-            2 -> TileCoord(widthTiles - xTile - 1, yTile + 1)
-            3 -> TileCoord(yTile, xTile + 1)
-            else -> TileCoord(xTile, yTile)
+    fun rotate(xTile: Int, yTile: Int, widthTiles: Int, heightTiles: Int, angle: Int): TileCoord {
+        if (angle == 0) {
+            return TileCoord(xTile, yTile)
         }
+        val centeredX = xTile + 0.5
+        val centeredY = yTile + 0.5
+
+        val originX = widthTiles.toDouble() / 2
+        val originY = heightTiles.toDouble() / 2
+
+        val rebasedX = centeredX - originX
+        val rebasedY = centeredY - originY
+
+        val radians = angle * (-PI / 2)
+
+        val rotatedX = rebasedX * cos(radians) - rebasedY * sin(radians)
+        val rotatedY = rebasedX * sin(radians) + rebasedY * cos(radians)
+
+        val translatedX = rotatedX + originX - 0.5
+        val translatedY = rotatedY + originY - 0.5
+
+        return TileCoord(translatedX.roundToInt(), translatedY.roundToInt())
     }
 
     fun distance(x: Int, y: Int, x2: Int, y2: Int) = Numbers.sqrt(distanceSq(x, y, x2, y2))
 
     fun distanceSq(x: Int, y: Int, x2: Int, y2: Int) = Numbers.square(x - x2) + Numbers.square(y - y2)
 
-    /*
-
-    fun doesRectangleIntersectRectangle(x1: Int, y1: Int, x1b: Int, y1b: Int, x2: Int, y2: Int, x2b: Int, y2b: Int): Boolean { // credit to herohuyongtao on SO
-        for (x in 0..1) {
-            val polygon: Polygon = if (x == 0) a else b
-            for (i1 in polygon.getPoints().indices) {
-                val i2: Int = (i1 + 1) % polygon.getPoints().size
-                val p1: Point = polygon.getPoints().get(i1)
-                val p2: Point = polygon.getPoints().get(i2)
-                val normal = Point(p2.y - p1.y, p1.x - p2.x)
-                var minA = Double.POSITIVE_INFINITY
-                var maxA = Double.NEGATIVE_INFINITY
-                for (p in a.getPoints()) {
-                    val projected: Double = (normal.x * p.x + normal.y * p.y).toDouble()
-                    if (projected < minA) minA = projected
-                    if (projected > maxA) maxA = projected
-                }
-                var minB = Double.POSITIVE_INFINITY
-                var maxB = Double.NEGATIVE_INFINITY
-                for (p in b.getPoints()) {
-                    val projected: Double = (normal.x * p.x + normal.y * p.y).toDouble()
-                    if (projected < minB) minB = projected
-                    if (projected > maxB) maxB = projected
-                }
-                if (maxA < minB || maxB < minA) return false
-            }
-        }
-        return true
+    fun doesLineCollideWithRect(x1: Float, y1: Float, x2: Float, y2: Float, rx: Float, ry: Float, rw: Float, rh: Float): Boolean { // credit jefferythompson.org
+                return doesLineCollideWithLine(x1, y1, x2, y2, rx, ry, rx, ry + rh) ||
+                        doesLineCollideWithLine(x1, y1, x2, y2, rx + rw, ry, rx + rw, ry + rh) ||
+                        doesLineCollideWithLine(x1, y1, x2, y2, rx, ry, rx + rw, ry) ||
+                        doesLineCollideWithLine(x1, y1, x2, y2, rx, ry + rh, rx + rw, ry + rh)
     }
-     */
+
+
+    fun doesLineCollideWithLine(x1: Float, y1: Float, x2: Float, y2: Float, x3: Float, y3: Float, x4: Float, y4: Float): Boolean {// credit jefferythompson.org
+
+        // calculate the direction of the lines
+        val uA = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / ((y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1))
+        val uB = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / ((y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1))
+
+        // if uA and uB are between 0-1, lines are colliding
+        return uA in 0.0..1.0 && uB in 0.0..1.0
+    }
 }

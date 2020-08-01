@@ -7,9 +7,6 @@ import serialization.Id
 abstract class Entity(type: EntityType<out Entity>, xPixel: Int, yPixel: Int, rotation: Int = 0) : MovingObject(type, xPixel, yPixel, rotation) {
     override val type = type
 
-    @Id(22)
-    var health = type.maxHealth
-
     @Id(23)
     var weapon: Weapon? = null
         set(value) {
