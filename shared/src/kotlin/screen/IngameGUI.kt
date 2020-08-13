@@ -81,7 +81,7 @@ object IngameGUI : GUIWindow("In game gui",
         { 0 }, { 0 },
         { Game.WIDTH }, { Game.HEIGHT },
         ScreenManager.Groups.BACKGROUND
-), ControlPressHandler {
+), ControlHandler {
 
     const val MAX_VIEWS = 4
 
@@ -96,7 +96,7 @@ object IngameGUI : GUIWindow("In game gui",
         ViewControlGUI.open
     }
 
-    private fun newCamera(): LevelObject {
+    private fun newCamera(): Camera {
         val c = Camera(PlayerManager.localPlayer.brainRobot.xPixel, PlayerManager.localPlayer.brainRobot.yPixel)
         PlayerManager.localPlayer.brainRobot.level.modify(LevelObjectAdd(c), true)
         return c
@@ -132,7 +132,7 @@ object IngameGUI : GUIWindow("In game gui",
         viewControls.forEach { it.open = false }
     }
 
-    override fun handleControlPress(p: ControlPress) {
+    override fun handleControl(p: ControlPress) {
         if (p.control == Control.TOGGLE_VIEW_CONTROLS && open && p.pressType == PressType.PRESSED) {
             viewControlsOpen = !viewControlsOpen
             viewControls.filter { it !is GUIElement || it.parentWindow.open }.forEach { it.toggle() }
@@ -140,7 +140,7 @@ object IngameGUI : GUIWindow("In game gui",
     }
 }
 
-object NewViewSelectorGUI : GUIWindow("in game view controls", { 0 }, { 0 }, { 0 }, { 0 }, ScreenManager.Groups.HUD), ControlPressHandler {
+object NewViewSelectorGUI : GUIWindow("in game view controls", { 0 }, { 0 }, { 0 }, { 0 }, ScreenManager.Groups.HUD), ControlHandler {
     init {
         InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.TOGGLE_VIEW_CONTROLS)
         val tabs = GUITabList(this, "view tab list", { 0 }, { 0 },
@@ -151,7 +151,7 @@ object NewViewSelectorGUI : GUIWindow("in game view controls", { 0 }, { 0 }, { 0
         alignments.width = { tabs.widthPixels }
     }
 
-    override fun handleControlPress(p: ControlPress) {
+    override fun handleControl(p: ControlPress) {
         if(p.control == Control.TOGGLE_VIEW_CONTROLS && p.pressType == PressType.RELEASED) {
             open = !open
         }

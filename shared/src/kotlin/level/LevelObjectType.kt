@@ -16,6 +16,7 @@ open class LevelObjectType<T : LevelObject>(initializer: LevelObjectType<T>.() -
     var textures = LevelObjectTextures(Image.Misc.ERROR)
     var itemForm: ItemType? = null
     var maxHealth = 100
+    var damageable = true
 
     init {
         initializer()
@@ -26,10 +27,5 @@ open class LevelObjectType<T : LevelObject>(initializer: LevelObjectType<T>.() -
         val ALL = mutableListOf<LevelObjectType<*>>()
 
         val ERROR = LevelObjectType<LevelObject>()
-
-        val DROPPED_ITEM = LevelObjectType<DroppedItem> {
-            instantiate = { xPixel, yPixel, rotation -> DroppedItem(xPixel, yPixel, ItemType.ERROR) }
-            hitbox = Hitbox.DROPPED_ITEM
-        }
     }
 }

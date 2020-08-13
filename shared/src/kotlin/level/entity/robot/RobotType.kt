@@ -31,6 +31,7 @@ class RobotType<T : Robot>(initializer: RobotType<T>.() -> Unit) : EntityType<T>
             instantiate = { xPixel, yPixel, rotation -> BrainRobot(xPixel, yPixel, rotation, User(UUID.randomUUID(), "")) }
             textures = LevelObjectTextures(ImageCollection.ROBOT)
             hitbox = Hitbox.STANDARD_ROBOT
+            damageable = false
         }
     }
 }

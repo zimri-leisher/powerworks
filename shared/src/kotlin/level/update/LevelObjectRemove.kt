@@ -13,7 +13,7 @@ import java.util.*
 class LevelObjectRemove(
         @Id(2)
         val objReference: LevelObjectReference
-) : LevelUpdate(LevelModificationType.REMOVE_OBJECT) {
+) : LevelUpdate(LevelUpdateType.LEVEL_OBJECT_REMOVE) {
 
     private constructor() : this(BlockReference(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0))
 
@@ -42,10 +42,6 @@ class LevelObjectRemove(
             if (obj is BrainRobot) {
                 level.data.brainRobots.remove(obj)
             }
-        } else if(obj is DroppedItem) {
-            val chunk = level.getChunkAt(obj.xChunk, obj.yChunk)
-            chunk.removeDroppedItem(obj)
-            obj.inLevel = false
         } else if (obj is GhostLevelObject) {
             level.data.ghostObjects.remove(obj)
             obj.inLevel = false
@@ -74,11 +70,15 @@ class LevelObjectRemove(
             return false
         }
 
-        if (objReference.value != other.objReference.value) {
+        if (objReference.value == null || objReference.value !== other.objReference.value) {
             return false
         }
 
         return true
+    }
+
+    override fun resolveReferences() {
+        objReference.value = objReference.resolve()
     }
 
 }

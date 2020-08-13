@@ -1,6 +1,14 @@
 package player
 
+import level.Level
+import level.LevelEvent
+import level.LevelEventListener
 import level.LevelManager
+import level.entity.robot.BrainRobot
+import main.Game
+import main.PowerworksDelegates
+import network.ClientNetworkManager
+import network.ServerNetworkManager
 import network.User
 import player.lobby.Lobby
 import player.team.Team
@@ -12,20 +20,73 @@ import java.util.*
 class Player(
         val user: User,
         var homeLevelId: UUID,
-        var brainRobotId: UUID) {
+        var brainRobotId: UUID) : LevelEventListener {
 
     private constructor() : this(User(UUID.randomUUID(), ""), UUID.randomUUID(), UUID.randomUUID())
 
-    val homeLevel get() = LevelManager.allLevels.first { it.id == homeLevelId }
+    var online = false
+        set(value) {
+            if (field != value) {
+                if (!value) {
+                    playing = false
+                }
+                field = value
+                println("online: $field")
+                PlayerManager.pushPlayerEvent(this, if (field) PlayerEvent.CONNECT else PlayerEvent.DISCONNECT)
+            }
+        }
 
-    // keep on getting crashes here TODO something about loading before the brain robot is loaded?
-    val brainRobot get() = LevelManager.allLevels.flatMap { it.data.brainRobots }.first { it.id == brainRobotId }
+    var playing = false
+        set(value) {
+            if (field != value) {
+                if (value) {
+                    online = true
+                }
+                field = value
+                println("playing: $field")
+                PlayerManager.pushPlayerEvent(this, if (field) PlayerEvent.START_PLAYING else PlayerEvent.STOP_PLAYING)
+            }
+        }
+
+    private val homeLevelDelagate = PowerworksDelegates.lateinitVal<Level>()
+    var homeLevel: Level by homeLevelDelagate
+    val isHomeLevelInitialized get() = LevelManager.isLevelInitialized(homeLevelId)
+    val isHomeLevelLoaded get() = LevelManager.isLevelLoaded(homeLevelId)
+
+    private val brainRobotDelegate = PowerworksDelegates.lateinitVal<BrainRobot>()
+    var brainRobot: BrainRobot by brainRobotDelegate
 
     var lobby = Lobby()
     var team = Team(this)
 
-    init {
-        PlayerManager.allPlayers.add(this)
+    fun initialize() {
+        LevelManager.levelEventListeners.add(this)
+        PlayerManager.pushPlayerEvent(this, PlayerEvent.INITIALIZE)
+        online = if (Game.IS_SERVER) ServerNetworkManager.isOnline(user) else ClientNetworkManager.isVisibleAndOnline(user)
+        playing = LevelManager.isLevelLoaded(homeLevelId)
+    }
+
+    override fun onLevelEvent(level: Level, event: LevelEvent) {
+        if (event == LevelEvent.INITIALIZE) {
+            if (level.id == homeLevelId && !homeLevelDelagate.initialized) {
+                homeLevel = level
+            }
+        } else if (event == LevelEvent.LOAD) {
+            if (!brainRobotDelegate.initialized) {
+                for (brainRobot in level.data.brainRobots) {
+                    if (brainRobot.id == brainRobotId) {
+                        this.brainRobot = brainRobot
+                    }
+                }
+            }
+            if (level == homeLevel) {
+                playing = true
+            }
+        } else if (event == LevelEvent.UNLOAD) {
+            if (level == homeLevel) {
+                playing = false
+            }
+        }
     }
 
     override fun equals(other: Any?): Boolean {
@@ -61,12 +122,12 @@ class PlayerSerializer : Serializer<Player>() {
         val user = input.read(User::class.java)
         val brainRobotId = input.read(UUID::class.java)
         val homeLevelId = input.read(UUID::class.java)
-        var alreadyExistingPlayer: Player? = null
-        PlayerManager.allPlayers.forEach {
-            if (it.user == user) {
-                alreadyExistingPlayer = it
-            }
+        val alreadyExistingPlayer = PlayerManager.getInitializedPlayerOrNull(user)
+        if (alreadyExistingPlayer != null) {
+            return alreadyExistingPlayer
         }
-        return alreadyExistingPlayer ?: Player(user, homeLevelId, brainRobotId)
+        val newPlayer = Player(user, homeLevelId, brainRobotId)
+        newPlayer.initialize()
+        return newPlayer
     }
 }

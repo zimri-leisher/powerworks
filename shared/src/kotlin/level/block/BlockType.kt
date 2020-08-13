@@ -94,6 +94,14 @@ open class BlockType<T : Block>(initializer: BlockType<T>.() -> Unit = {}) : Lev
 
         val ERROR = BlockType<DefaultBlock>()
 
+        val FARSEEKER = BlockType<FarseekerBlock> {
+            instantiate = {xPixel, yPixel, rotation -> FarseekerBlock(xPixel shr 4, yPixel shr 4, rotation) }
+            name = "Farseeker"
+            widthTiles = 4
+            heightTiles = 4
+            hitbox = Hitbox.TILE4X4
+        }
+
         init {
             MachineBlockType
             CrafterBlockType
@@ -325,7 +333,6 @@ open class MachineBlockType<T : MachineBlock>(initializer: MachineBlockType<T>.(
             name = "Furnace"
             instantiate = { xPixel, yPixel, rotation -> FurnaceBlock(this, xPixel shr 4, yPixel shr 4, rotation) }
             widthTiles = 2
-            requiresUpdate = true
             textures = LevelObjectTextures(Image.Block.FURNACE)
             loop = true
             hitbox = Hitbox.TILE2X1
@@ -333,7 +340,7 @@ open class MachineBlockType<T : MachineBlock>(initializer: MachineBlockType<T>.(
                 val internalInventory = Inventory(1, 1)
                 val internalTank = FluidTank(1)
                 node(0, 0, 0, internalInventory, "true", ResourceTypeGroup.ORE_ITEMS.types, "false")
-                node(0, 0, 2, internalTank, allowIn = "false", allowOut = "true", forceOut = "true").outputToLevel = false
+                node(0, 0, 2, internalTank, allowIn = "false", allowOut = "true", forceOut = "true")
             }
             guiPool = BlockGUIPool({ FurnaceBlockGUI(it as FurnaceBlock) }, 3)
         }

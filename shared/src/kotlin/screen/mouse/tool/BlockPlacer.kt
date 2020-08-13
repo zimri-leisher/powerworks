@@ -4,13 +4,9 @@ import com.badlogic.gdx.graphics.Color
 import graphics.Image
 import graphics.Renderer
 import graphics.TextureRenderParams
-import io.Control
-import io.ControlPressHandlerType
-import io.InputManager
-import io.PressType
+import io.*
 import item.BlockItemType
 import level.LevelManager
-import level.LevelObjectType
 import level.block.BlockType
 import level.getCollisionsWith
 import main.toColor
@@ -19,58 +15,67 @@ import player.PlaceLevelObject
 import player.PlayerManager
 import screen.mouse.Mouse
 
-object BlockPlacer : Tool(Control.PLACE_BLOCK) {
+object BlockPlacer : Tool(Control.PLACE_BLOCK), ControlHandler {
     var type: BlockItemType? = null
 
     var xTile = 0
     var yTile = 0
     var rotation = 0
     var canPlace = false
+    var hasPlacedThisInteraction = false
 
     init {
         InputManager.registerControlPressHandler(this, ControlPressHandlerType.INGAME_ONLY, Control.ROTATE_BLOCK)
+        activationPredicate = {
+            val item = Mouse.heldItemType
+            hasPlacedThisInteraction || (LevelManager.levelObjectUnderMouse == null && item is BlockItemType && item.placedBlock != BlockType.ERROR && !Selector.dragging)
+        }
     }
 
-    override fun onUse(control: Control, type: PressType, mouseLevelXPixel: Int, mouseLevelYPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
-        if (type == PressType.PRESSED) {
-            if (control == Control.ROTATE_BLOCK) {
+    override fun onUse(control: Control, type: PressType, mouseLevelXPixel: Int, mouseLevelYPixel: Int): Boolean {
+        if (control == Control.PLACE_BLOCK) {
+            if (type != PressType.RELEASED) {
+                if (canPlace) {
+                    val blockType = BlockPlacer.type!!.placedBlock
+                    PlayerManager.takeAction(PlaceLevelObject(PlayerManager.localPlayer, blockType, xTile shl 4, yTile shl 4, rotation, LevelManager.levelUnderMouse!!))
+                    canPlace = false
+                    hasPlacedThisInteraction = true
+                    return true
+                }
+            } else {
+                val temp = hasPlacedThisInteraction
+                hasPlacedThisInteraction = false
+                return temp
+            }
+        }
+        return false
+    }
+
+    override fun handleControl(p: ControlPress) {
+        if (p.pressType == PressType.PRESSED) {
+            if (p.control == Control.ROTATE_BLOCK) {
                 rotation = (rotation + 1) % 4
             }
-        }
-        if (control == Control.PLACE_BLOCK && type != PressType.RELEASED) {
-            if (canPlace) {
-                val blockType = BlockPlacer.type!!.placedBlock
-                PlayerManager.takeAction(PlaceLevelObject(PlayerManager.localPlayer, blockType, xTile shl 4, yTile shl 4, rotation, LevelManager.levelUnderMouse!!))
-                canPlace = false
-            }
-        }
-    }
-
-    override fun updateCurrentlyActive() {
-        val item = Mouse.heldItemType
-        currentlyActive = LevelManager.levelObjectUnderMouse == null && item is BlockItemType && item.placedBlock != BlockType.ERROR && !Selector.dragging
-        if (currentlyActive) {
-            type = item as BlockItemType
-        } else {
-            type = null
         }
     }
 
     override fun update() {
         if (LevelManager.levelUnderMouse == null)
             return
-        xTile = (LevelManager.mouseLevelXTile) - type!!.placedBlock.widthTiles / 2
-        yTile = (LevelManager.mouseLevelYTile) - type!!.placedBlock.heightTiles / 2
-        val level = LevelManager.levelUnderMouse!!
-        val collisions = level.getCollisionsWith(type!!.placedBlock.hitbox, xTile shl 4, yTile shl 4) +
-                level.data.ghostObjects.getCollisionsWith(type!!.placedBlock.hitbox, xTile shl 4, yTile shl 4)
-        canPlace = collisions.none() || collisions.all { it.type == LevelObjectType.DROPPED_ITEM }// no collisions at all, or all the collisions are dropped items
+        type = Mouse.heldItemType as? BlockItemType
+        if (type != null) {
+            xTile = (LevelManager.mouseLevelXTile) - type!!.placedBlock.widthTiles / 2
+            yTile = (LevelManager.mouseLevelYTile) - type!!.placedBlock.heightTiles / 2
+            val level = LevelManager.levelUnderMouse!!
+            val collisions = level.getCollisionsWith(type!!.placedBlock.hitbox, xTile shl 4, yTile shl 4) +
+                    level.data.ghostObjects.getCollisionsWith(type!!.placedBlock.hitbox, xTile shl 4, yTile shl 4)
+            canPlace = collisions.none()
+        }
     }
 
     override fun renderAbove() {
-        if (currentlyActive) {
+        if (type != null) {
             val blockType = type!!.placedBlock
-
             val xPixel = xTile shl 4
             val yPixel = yTile shl 4
             blockType.textures.render(xPixel, yPixel, rotation, TextureRenderParams(color = Color(1f, 1f, 1f, 0.4f)))

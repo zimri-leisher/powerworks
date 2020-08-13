@@ -12,7 +12,7 @@ import java.util.*
 
 class EntitySetPath(@Id(2) val entityReference: MovingObjectReference,
                     @Id(4) val startPosition: PixelCoord,
-                    @Id(3) val path: EntityPath) : LevelUpdate(LevelModificationType.SET_ENTITY_PATH) {
+                    @Id(3) val path: EntityPath) : LevelUpdate(LevelUpdateType.ENTITY_SET_PATH) {
 
     private constructor() : this(MovingObjectReference(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0), PixelCoord(0, 0), EntityPath(PixelCoord(0, 0), listOf()))
 
@@ -41,10 +41,14 @@ class EntitySetPath(@Id(2) val entityReference: MovingObjectReference,
             return false
         }
 
-        if (other.entityReference.value != entityReference.value) {
+        if (other.entityReference.value == null || other.entityReference.value !== entityReference.value) {
             return false
         }
         return path == other.path && startPosition == other.startPosition
+    }
+
+    override fun resolveReferences() {
+        entityReference.value = entityReference.resolve()
     }
 
 }

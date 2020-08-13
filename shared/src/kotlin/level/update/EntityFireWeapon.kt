@@ -20,7 +20,7 @@ class EntityFireWeapon(
         val projectileType: ProjectileType,
         @Id(5)
         val entityReference: MovingObjectReference
-) : LevelUpdate(LevelModificationType.ENTITY_FIRE_WEAPON) {
+) : LevelUpdate(LevelUpdateType.ENTITY_FIRE_WEAPON) {
 
     private constructor() : this(PixelCoord(0, 0), 0f, ProjectileType.ERROR, MovingObjectReference(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0))
 
@@ -74,7 +74,7 @@ class EntityFireWeapon(
             return false
         }
 
-        if (other.entityReference.value != entityReference.value) {
+        if (other.entityReference.value !== entityReference.value) {
             return false
         }
 
@@ -91,6 +91,10 @@ class EntityFireWeapon(
         }
 
         return true
+    }
+
+    override fun resolveReferences() {
+        entityReference.value = entityReference.resolve()
     }
 
 }

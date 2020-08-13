@@ -183,34 +183,6 @@ fun Level.getMovingObjectCollisionsWithPoint(xPixel: Int, yPixel: Int): Sequence
     }
 }
 
-fun Level.getDroppedItemCollisions(levelObj: LevelObject) =
-        getDroppedItemCollisions(levelObj.type, levelObj.xPixel, levelObj.yPixel)
-
-fun Level.getDroppedItemCollisions(levelObjType: LevelObjectType<*>, xPixel: Int, yPixel: Int) =
-        getDroppedItemCollisions(levelObjType.hitbox, xPixel, yPixel)
-
-fun Level.getDroppedItemCollisions(hitbox: Hitbox, xPixel: Int, yPixel: Int) =
-        getDroppedItemCollisions(xPixel + hitbox.xStart, yPixel + hitbox.yStart, hitbox.width, hitbox.height)
-
-fun Level.getDroppedItemCollisions(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int): Sequence<DroppedItem> {
-    if (!isPixelRectangleInBounds(xPixel, yPixel, widthPixels, heightPixels))
-        return emptySequence()
-    return getChunksFromPixelRectangle(xPixel, yPixel, widthPixels, heightPixels).asSequence().flatMap { it.data.droppedItems.getCollisionsWith(xPixel, yPixel, widthPixels, heightPixels) }
-}
-
-/**
- * @return a sequence of [DroppedItem]s in this [Level] whose [Hitbox] intersects the rectangle at [xPixel], [yPixel] with radius
- * [radius]
- */
-fun Level.getDroppedItemCollisionsInSquareCenteredOn(xPixel: Int, yPixel: Int, radius: Int) =
-        getDroppedItemCollisions(xPixel - radius, yPixel - radius, radius * 2, radius * 2)
-
-fun Level.getDroppedItemCollisionsWithPoint(xPixel: Int, yPixel: Int): Sequence<DroppedItem> {
-    if (!isPixelWithinBounds(xPixel, yPixel))
-        return emptySequence()
-    return getChunkFromPixel(xPixel, yPixel).data.droppedItems.getCollisionsWith(xPixel, yPixel, 0, 0)
-}
-
 /**
  * Gets collisions between the [levelObj] and [LevelObject]s in this [Level]
  *
@@ -232,7 +204,7 @@ fun Level.getCollisionsWith(hitbox: Hitbox, xPixel: Int, yPixel: Int) =
         getCollisionsWith(xPixel + hitbox.xStart, yPixel + hitbox.yStart, hitbox.width, hitbox.height)
 
 fun Level.getCollisionsWith(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int): Sequence<LevelObject> =
-        getBlockCollisions(xPixel, yPixel, widthPixels, heightPixels) + getMovingObjectCollisions(xPixel, yPixel, widthPixels, heightPixels) + getDroppedItemCollisions(xPixel, yPixel, widthPixels, heightPixels)
+        getBlockCollisions(xPixel, yPixel, widthPixels, heightPixels) + getMovingObjectCollisions(xPixel, yPixel, widthPixels, heightPixels)
 
 /**
  * Gets collisions between the [levelObj] and all [this@getCollisionsWith]
@@ -266,7 +238,7 @@ fun <L : LevelObject> Iterable<L>.getCollisionsWith(xPixel: Int, yPixel: Int, wi
 }
 
 fun Level.getCollisionsWithPoint(xPixel: Int, yPixel: Int): Sequence<LevelObject> {
-    return getBlockCollisionsWithPoint(xPixel, yPixel) + getMovingObjectCollisionsWithPoint(xPixel, yPixel) + getDroppedItemCollisionsWithPoint(xPixel, yPixel)
+    return getBlockCollisionsWithPoint(xPixel, yPixel) + getMovingObjectCollisionsWithPoint(xPixel, yPixel)
 }
 
 /**
@@ -332,8 +304,7 @@ fun Level.getTileAt(xTile: Int, yTile: Int): Tile {
  */
 fun Level.getLevelObjectsAt(xPixel: Int, yPixel: Int): Sequence<LevelObject> =
         (getBlockFromPixel(xPixel, yPixel)?.let { sequenceOf(it) } ?: emptySequence<LevelObject>()) +
-                getMovingObjectCollisionsWithPoint(xPixel, yPixel) +
-                getDroppedItemCollisionsWithPoint(xPixel, yPixel)
+                getMovingObjectCollisionsWithPoint(xPixel, yPixel)
 
 fun Level.getChunkAt(xChunk: Int, yChunk: Int): Chunk {
     if (!isChunkWithinBounds(xChunk, yChunk)) {
@@ -388,19 +359,4 @@ fun Level.canAdd(hitbox: Hitbox, xPixel: Int, yPixel: Int): Boolean {
 
 fun Level.canRemove(l: LevelObject): Boolean {
     return l.inLevel && l.level == this
-}
-
-/**
- * Tries to 'materialize' this resource where specified. Note: most resources have no physical representation
- * other than some purely decorative particles
- * @return the quantity of the resource that was able to be materialized
- */
-fun Level.add(xPixel: Int, yPixel: Int, r: ResourceType, quantity: Int): Int {
-    // TODO make this materialize it within a certain range so the coords dont have to be precise
-    if (r is ItemType) {
-        if (!add(DroppedItem(xPixel, yPixel, r, quantity)))
-            return 0
-        return quantity
-    }
-    return 0
 }

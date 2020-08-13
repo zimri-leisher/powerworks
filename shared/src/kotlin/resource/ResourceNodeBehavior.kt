@@ -3,7 +3,7 @@ package resource
 import item.Inventory
 import level.LevelManager
 import level.updateResourceNodeAttachments
-import main.State
+import main.GameState
 import main.joinToString
 import routing.script.RoutingLanguage
 import routing.script.RoutingLanguageStatement
@@ -48,7 +48,7 @@ class ResourceNodeBehavior(
     var allowModification = true
 
     fun updateAttachments() {
-        if (State.CURRENT_STATE == State.INGAME) {
+        if (GameState.CURRENT_STATE == GameState.INGAME) {
             node.level.updateResourceNodeAttachments(node)
         }
     }

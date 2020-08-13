@@ -7,7 +7,7 @@ import network.MovingObjectReference
 import player.Player
 import serialization.Id
 
-class EntityAddToGroup(@Id(2) val entitiesInGroup: List<MovingObjectReference>) : LevelUpdate(LevelModificationType.ADD_ENTITIES_TO_GROUP) {
+class EntityAddToGroup(@Id(2) val entitiesInGroup: List<MovingObjectReference>) : LevelUpdate(LevelUpdateType.ENTITY_ADD_TO_GROUP) {
 
     private constructor() : this(listOf())
 
@@ -39,10 +39,14 @@ class EntityAddToGroup(@Id(2) val entitiesInGroup: List<MovingObjectReference>) 
             return false
         }
 
-        if (other.entitiesInGroup.any { otherEntityRef -> entitiesInGroup.none { it.value == otherEntityRef.value } }) {
+        if (other.entitiesInGroup.any { otherEntityRef -> otherEntityRef.value == null || entitiesInGroup.none { it.value === otherEntityRef.value } }) {
             return false
         }
         return true
+    }
+
+    override fun resolveReferences() {
+        entitiesInGroup.forEach { it.value = it.resolve() }
     }
 
 }

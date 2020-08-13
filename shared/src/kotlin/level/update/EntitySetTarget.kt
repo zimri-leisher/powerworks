@@ -15,7 +15,7 @@ class EntitySetTarget(
         val entityReference: MovingObjectReference,
         @Id(3)
         val target: LevelObjectReference?
-) : LevelUpdate(LevelModificationType.SET_ENTITY_TARGET) {
+) : LevelUpdate(LevelUpdateType.ENTITY_SET_TARGET) {
 
     private constructor() : this(MovingObjectReference(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0), BlockReference(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0))
 
@@ -46,13 +46,17 @@ class EntitySetTarget(
         if (other !is EntitySetTarget) {
             return false
         }
-        if (entityReference.value != null && other.entityReference.value != entityReference.value) {
+        if (entityReference.value == null || other.entityReference.value !== entityReference.value) {
             return false
         }
         if (target?.value != other.target?.value) {
             return false
         }
         return true
+    }
+
+    override fun resolveReferences() {
+        entityReference.value = entityReference.resolve()
     }
 
 }

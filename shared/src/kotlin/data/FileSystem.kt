@@ -234,11 +234,11 @@ class FileSystem(basePath: Path, baseIdentifier: DirectoryIdentifier? = null, cl
 
         /**
          * Copies a file from one directory (possibly a resources folder), to the specified directory relative to the directory it is called in. It will create all parent directories as necessary.
-         * @param internalLocation the location relative to the resources folder. This is resolved by calling [ResourceManager.getRawResource]
+         * @param internalLocation the location relative to the resources folder. This is resolved by calling [GameResourceManager.getRawResource]
          * @param newName the name of the file, including the file type
          */
         fun copyOfFile(internalLocation: String, newName: String = Paths.get(internalLocation).last().toString()) {
-            copyOfFile(ResourceManager.getRawResource(internalLocation), newName)
+            copyOfFile(GameResourceManager.getRawResource(internalLocation), newName)
         }
     }
 }

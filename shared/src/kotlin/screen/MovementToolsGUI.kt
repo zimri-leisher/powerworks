@@ -1,7 +1,6 @@
 package screen
 
 import graphics.Image
-import graphics.text.TextManager
 import io.*
 import main.Game
 import screen.elements.*
@@ -10,7 +9,7 @@ import screen.mouse.Mouse
 /**
  * Some tools for moving where you want
  */
-object MovementToolsGUI : GUIWindow("Player movement tools", { Game.WIDTH - 80 }, { GUICloseButton.HEIGHT }, { 80 }, { 40 }, ScreenManager.Groups.PLAYER_UTIL), ControlPressHandler {
+object MovementToolsGUI : GUIWindow("Player movement tools", { Game.WIDTH - 80 }, { GUICloseButton.HEIGHT }, { 80 }, { 40 }, ScreenManager.Groups.PLAYER_UTIL), ControlHandler {
 
     var teleporter = false
         set(value) {
@@ -33,7 +32,7 @@ object MovementToolsGUI : GUIWindow("Player movement tools", { Game.WIDTH - 80 }
         }
     }
 
-    override fun handleControlPress(p: ControlPress) {
+    override fun handleControl(p: ControlPress) {
         if (p.pressType == PressType.PRESSED) {
             if (p.control == Control.TOGGLE_MOVEMENT_TOOLS) {
                 open = !open

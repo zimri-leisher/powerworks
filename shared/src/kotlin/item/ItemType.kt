@@ -103,6 +103,11 @@ class BlockItemType(initializer: BlockItemType.() -> Unit) : ItemType() {
 
         val ALL = mutableListOf<BlockItemType>()
 
+        val FARSEEKER = BlockItemType {
+            name = "Farseeker"
+            placedBlock = BlockType.FARSEEKER
+        }
+
         val MINER = BlockItemType {
             name = "Miner"
             icon = Animation.MINER

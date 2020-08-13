@@ -2,10 +2,8 @@ package screen
 
 import graphics.Image
 import io.*
-import item.BlockItemType
-import item.Item
 import item.ItemType
-import main.State
+import main.GameState
 import player.PlayerManager
 import resource.*
 import routing.InvalidFunctionCallException
@@ -37,7 +35,7 @@ object HUD {
             ScreenManager.Groups.HUD,
             true,
             IngameGUI.layer + 2),
-            ControlPressHandler,
+            ControlHandler,
             ResourceContainerChangeListener {
 
         internal val items = HotbarInventory()
@@ -170,10 +168,10 @@ object HUD {
             selectOverlay.transparentToInteraction = true
         }
 
-        override fun handleControlPress(p: ControlPress) {
+        override fun handleControl(p: ControlPress) {
             if (p.pressType != PressType.PRESSED)
                 return
-            if (State.CURRENT_STATE == State.INGAME) {
+            if (GameState.CURRENT_STATE == GameState.INGAME) {
                 when (p.control) {
                     Control.SLOT_1 -> selected = 0
                     Control.SLOT_2 -> selected = 1

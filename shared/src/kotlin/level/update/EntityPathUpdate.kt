@@ -11,7 +11,7 @@ import java.util.*
 class EntityPathUpdate(@Id(2) val entityReference: MovingObjectReference,
                        @Id(5) val pathIndex: Int,
                        @Id(6) val timeReachedStep: Int,
-                       @Id(4) val pathHash: Int) : LevelUpdate(LevelModificationType.UPDATE_ENTITY_PATH_POSITION) {
+                       @Id(4) val pathHash: Int) : LevelUpdate(LevelUpdateType.ENTITY_UPDATE_PATH_POSITION) {
 
     private constructor() : this(MovingObjectReference(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0), 0, 0, 0)
 
@@ -39,7 +39,10 @@ class EntityPathUpdate(@Id(2) val entityReference: MovingObjectReference,
             return false
         }
 
-        return other.entityReference.value == entityReference.value && other.pathIndex == pathIndex && other.pathHash == pathHash && other.timeReachedStep == timeReachedStep
+        return other.entityReference.value != null && other.entityReference.value == entityReference.value && other.pathIndex == pathIndex && other.pathHash == pathHash && other.timeReachedStep == timeReachedStep
     }
 
+    override fun resolveReferences() {
+        entityReference.value = entityReference.resolve()
+    }
 }

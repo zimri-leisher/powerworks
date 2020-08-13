@@ -10,8 +10,6 @@ import level.entity.Entity
 import level.moving.MovingObject
 import main.toColor
 import network.MovingObjectReference
-import network.packet.Packet
-import network.packet.PacketHandler
 import player.EntityCreateGroup
 import player.PlayerManager
 import screen.mouse.Mouse
@@ -21,7 +19,7 @@ private enum class SelectorMode {
     ALL, ADD, SUBTRACT
 }
 
-object Selector : Tool(Control.Group.SELECTOR_TOOLS), PacketHandler {
+object Selector : Tool(Control.Group.SELECTOR_TOOLS.controls) {
 
     private const val SELECTION_START_THRESHOLD = 2
 
@@ -37,10 +35,10 @@ object Selector : Tool(Control.Group.SELECTOR_TOOLS), PacketHandler {
     var currentSelected = mutableSetOf<LevelObject>()
     var newlySelected = mutableSetOf<LevelObject>()
 
-    override fun handleServerPacket(packet: Packet) {
-    }
-
-    override fun handleClientPacket(packet: Packet) {
+    init {
+        activationPredicate = {
+            Mouse.heldItemType == null
+        }
     }
 
     override fun update() {
@@ -48,11 +46,7 @@ object Selector : Tool(Control.Group.SELECTOR_TOOLS), PacketHandler {
         newlySelected.removeIf { !it.inLevel }
     }
 
-    override fun updateCurrentlyActive() {
-        currentlyActive = Mouse.heldItemType == null
-    }
-
-    override fun onUse(control: Control, type: PressType, mouseLevelXPixel: Int, mouseLevelYPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+    override fun onUse(control: Control, type: PressType, mouseLevelXPixel: Int, mouseLevelYPixel: Int): Boolean {
         when (control) {
             Control.START_SELECTION -> mode = SelectorMode.ALL
             Control.START_SELECTION_ADD -> mode = SelectorMode.ADD
@@ -68,6 +62,7 @@ object Selector : Tool(Control.Group.SELECTOR_TOOLS), PacketHandler {
             dragStartYPixel = mouseLevelYPixel
             currentDragXPixel = mouseLevelXPixel
             currentDragYPixel = mouseLevelYPixel
+            return false
         } else if (type == PressType.REPEAT) {
             if (startPress) {
                 currentDragXPixel = mouseLevelXPixel
@@ -77,6 +72,7 @@ object Selector : Tool(Control.Group.SELECTOR_TOOLS), PacketHandler {
                     updateSelected()
                 }
             }
+            return true
         } else if (type == PressType.RELEASED) {
             if (dragging) {
                 updateSelected()
@@ -93,7 +89,9 @@ object Selector : Tool(Control.Group.SELECTOR_TOOLS), PacketHandler {
                 dragging = false
             }
             startPress = false
+            return true
         }
+        return false
     }
 
     private fun updateSelected() {

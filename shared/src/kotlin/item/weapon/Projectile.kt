@@ -96,10 +96,8 @@ class Projectile(
         xPixelLeftover %= 1
         yPixelLeftover %= 1
         val possibleCollisions = parent.level.getCollisionsWith(xPixel, yPixel, squareSideLength, squareSideLength)
-        println("possible collisions: ${possibleCollisions.joinToString()}")
         val actualCollision = getCollisionsWithPixelRectangle(possibleCollisions, points.map { it.first + xPixel + type.hitbox.width / 2 to it.second + yPixel + type.hitbox.height / 2 }).firstOrNull()
         if (actualCollision != null) {
-            println("actually collided")
             onCollide(actualCollision)
         }
     }

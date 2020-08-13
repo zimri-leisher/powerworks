@@ -4,26 +4,28 @@ import level.Level
 import player.Player
 import serialization.Id
 
-enum class LevelModificationType {
+enum class LevelUpdateType {
     DEFAULT,
-    ADD_OBJECT,
-    REMOVE_OBJECT,
-    SELECT_CRAFTER_RECIPE,
-    GIVE_BRAIN_ROBOT_ITEM,
-    MODIFY_BLOCK_CONTAINER,
-    TRANSFER_THROUGH_RESOURCE_NODE,
+    LEVEL_OBJECT_ADD,
+    LEVEL_OBJECT_REMOVE,
+    CRAFTER_SELECT_RECIPE,
+    BRAIN_ROBOT_GIVE_ITEM,
+    BLOCK_CONTAINER_MODIFY,
+    RESOURCE_NODE_TRANSFER_THROUGH,
     MACHINE_BLOCK_FINISH_WORK,
-    SET_ENTITY_PATH,
-    UPDATE_ENTITY_PATH_POSITION,
-    ADD_ENTITIES_TO_GROUP,
-    SET_ENTITY_FORMATION,
-    SET_ENTITY_TARGET,
-    ENTITY_FIRE_WEAPON
+    ENTITY_SET_PATH,
+    ENTITY_UPDATE_PATH_POSITION,
+    ENTITY_ADD_TO_GROUP,
+    ENTITY_SET_FORMATION,
+    ENTITY_SET_TARGET,
+    ENTITY_FIRE_WEAPON,
+    FARSEEKER_SET_AVAILABLE_LEVELS,
+    RESOURCE_NODE_BEHAVIOR_EDIT
 }
 
 abstract class LevelUpdate(
         @Id(1)
-        val type: LevelModificationType) {
+        val type: LevelUpdateType) {
 
     abstract val playersToSendTo: Set<Player>?
 
@@ -35,10 +37,12 @@ abstract class LevelUpdate(
     abstract fun cancelActGhost(level: Level)
 
     abstract fun equivalent(other: LevelUpdate): Boolean
+
+    abstract fun resolveReferences()
 }
 
 
-class DefaultLevelUpdate : LevelUpdate(LevelModificationType.DEFAULT) {
+class DefaultLevelUpdate : LevelUpdate(LevelUpdateType.DEFAULT) {
     override val playersToSendTo: Set<Player>?
         get() = null
 
@@ -53,4 +57,7 @@ class DefaultLevelUpdate : LevelUpdate(LevelModificationType.DEFAULT) {
     }
 
     override fun equivalent(other: LevelUpdate) = other is DefaultLevelUpdate
+
+    override fun resolveReferences() {
+    }
 }

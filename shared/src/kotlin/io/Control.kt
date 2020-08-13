@@ -7,7 +7,6 @@ enum class Control {
 
     PLACE_BLOCK,
     SPAWN_ENTITY,
-    SELECT_ENTITY_COMMAND,
     USE_ENTITY_COMMAND,
     START_SELECTION, START_SELECTION_ADD, START_SELECTION_SUBTRACT,
     PICK_BLOCK,
@@ -42,11 +41,10 @@ enum class Control {
     TOGGLE_MOVEMENT_TOOLS,
 
     DESELECT_HOTBAR,
-    DROP_HELD_ITEM,
     ROTATE_BLOCK,
-    PICK_UP_DROPPED_ITEMS;
+    ;
 
-    enum class Group(vararg val controls: Control) {
+    enum class Group(vararg controls: Control) {
         /* GUI clicks/scrolls, level clicks, etc */
         INTERACTION(INTERACT, SHIFT_INTERACT, CONTROL_INTERACT, ALT_INTERACT, SCROLL_UP, SCROLL_DOWN, SECONDARY_INTERACT, SHIFT_SECONDARY_INTERACT, CONTROL_SECONDARY_INTERACT, ALT_SECONDARY_INTERACT),
 
@@ -64,6 +62,8 @@ enum class Control {
         CAMERA(CAMERA_UP, CAMERA_DOWN, CAMERA_LEFT, CAMERA_RIGHT),
 
         SCROLL(SCROLL_DOWN, SCROLL_UP);
+
+        val controls = controls.toList()
 
         operator fun contains(c: Control): Boolean = controls.contains(c)
 

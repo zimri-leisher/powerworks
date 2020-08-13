@@ -12,7 +12,7 @@ import serialization.Id
 class LevelObjectAdd(
         @Id(2)
         val obj: LevelObject
-) : LevelUpdate(LevelModificationType.ADD_OBJECT) {
+) : LevelUpdate(LevelUpdateType.LEVEL_OBJECT_ADD) {
 
     private constructor() : this(DefaultBlock(BlockType.ERROR, 0, 0, 0))
 
@@ -40,18 +40,15 @@ class LevelObjectAdd(
             obj.level = level
             obj.inLevel = true
         } else if (obj is MovingObject) {
+            obj.level = level
+            obj.inLevel = true
             if (obj.hitbox != Hitbox.NONE) {
                 obj.intersectingChunks.forEach { it.data.movingOnBoundary.add(obj) }
+                // TODO may be a bug with adding to level and calculating the intersecting chunks based off of that
             }
             if (obj is BrainRobot) {
                 level.data.brainRobots.add(obj)
             }
-            obj.level = level
-            obj.inLevel = true
-        } else if (obj is DroppedItem) {
-            level.getChunkAt(obj.xChunk, obj.yChunk).addDroppedItem(obj)
-            obj.level = level
-            obj.inLevel = true
         } else if (obj is GhostLevelObject) {
             level.data.ghostObjects.add(obj)
             level.data.ghostObjects.sortWith(Comparator { o1, o2 -> o1.yPixel.compareTo(o2.yPixel) })
@@ -85,5 +82,12 @@ class LevelObjectAdd(
         }
 
         return false
+    }
+
+    override fun toString(): String {
+        return "LevelObjectAdd(obj=$obj)"
+    }
+
+    override fun resolveReferences() {
     }
 }

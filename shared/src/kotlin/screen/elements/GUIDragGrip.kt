@@ -16,7 +16,7 @@ class GUIDragGrip(parent: RootGUIElement,
                   val actOn: GUIWindow,
                   var keepInsideWindowBounds: Boolean = true) :
         GUIElement(parent, name, xAlignment, yAlignment, { WIDTH }, { HEIGHT }, open, layer),
-ControlPressHandler{
+ControlHandler{
 
     var dragging = false
     var startingXPixel = 0
@@ -73,7 +73,7 @@ ControlPressHandler{
         }
     }
 
-    override fun handleControlPress(p: ControlPress) {
+    override fun handleControl(p: ControlPress) {
         if(p.pressType == PressType.RELEASED && dragging) {
             dragging = false
         }

@@ -6,25 +6,22 @@ import graphics.Image
 import graphics.Renderer
 import graphics.Texture
 import graphics.text.TextRenderParams
-import io.*
 import item.ItemType
 import level.*
 import level.pipe.PipeBlock
 import main.DebugCode
 import main.Game
-import main.State
+import main.GameState
 import main.toColor
 import player.PlayerManager
 import resource.ResourceContainer
 import resource.ResourceContainerChangeListener
 import resource.ResourceList
-import resource.ResourceType
 import routing.dist
-import screen.HUD
 import screen.ScreenManager
 import screen.elements.*
 
-object Mouse : ControlPressHandler, ResourceContainerChangeListener {
+object Mouse : ResourceContainerChangeListener {
     const val DROPPED_ITEM_PICK_UP_RANGE = 8
 
     const val ICON_SIZE = 8
@@ -82,7 +79,6 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
                 }
             }
         }
-        InputManager.registerControlPressHandler(this, ControlPressHandlerType.LEVEL_ANY_UNDER_MOUSE, Control.DROP_HELD_ITEM, Control.PICK_UP_DROPPED_ITEMS)
     }
 
     /**
@@ -150,23 +146,11 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
             DebugCode.POSITION_INFO -> {
                 Renderer.renderText("Screen:\n" +
                         "  Pixel: $xPixel, $yPixel\n" +
-                        if (State.CURRENT_STATE == State.INGAME) "Level:\n" +
+                        if (GameState.CURRENT_STATE == GameState.INGAME) "Level:\n" +
                                 "  Pixel: ${LevelManager.mouseLevelXPixel}, ${LevelManager.mouseLevelYPixel}\n" +
                                 "  Tile: ${LevelManager.mouseLevelXPixel shr 4}, ${LevelManager.mouseLevelYPixel shr 4}\n" +
                                 "  Chunk: ${LevelManager.mouseLevelXPixel shr CHUNK_PIXEL_EXP}, ${LevelManager.mouseLevelYPixel shr CHUNK_PIXEL_EXP}" else "", xPixel, yPixel, TextRenderParams(color = toColor(r = 255, g = 0, b = 0)))
             }
-        }
-    }
-
-    /**
-     * Tries to place the held item on the level
-     * @param q how many to drop
-     */
-    private fun dropHeldItem(q: Int = 1) {
-        if (heldItemType != null) {
-            val type = heldItemType!!
-            if (LevelManager.levelUnderMouse?.add(DroppedItem(LevelManager.mouseLevelXPixel, LevelManager.mouseLevelYPixel, type, q)) == true)
-                PlayerManager.localPlayer.brainRobot.inventory.remove(type, q)
         }
     }
 
@@ -184,30 +168,6 @@ object Mouse : ControlPressHandler, ResourceContainerChangeListener {
         if (container.id == PlayerManager.localPlayer.brainRobot.inventory.id && heldItemType != null) {
             if (PlayerManager.localPlayer.brainRobot.inventory.getQuantity(heldItemType!!) == 0)
                 heldItemType = null
-        }
-    }
-
-    override fun handleControlPress(p: ControlPress) {
-        if (p.pressType == PressType.PRESSED) {
-            when (p.control) {
-                Control.DROP_HELD_ITEM -> if (State.CURRENT_STATE == State.INGAME) dropHeldItem()
-                Control.PICK_UP_DROPPED_ITEMS -> {
-                    if (State.CURRENT_STATE == State.INGAME) {
-                        val i = LevelManager.levelUnderMouse?.getDroppedItemCollisionsInSquareCenteredOn(LevelManager.mouseLevelXPixel, LevelManager.mouseLevelYPixel, DROPPED_ITEM_PICK_UP_RANGE)
-                        if (i != null && i.any()) {
-                            val g = i.first()
-                            if (!PlayerManager.localPlayer.brainRobot.inventory.full) {
-                                PlayerManager.localPlayer.brainRobot.inventory.add(g.itemType, g.quantity)
-                                PlayerManager.localPlayer.brainRobot.level.remove(g)
-                                if (heldItemType == null) {
-                                    heldItemType = g.itemType
-                                }
-                                HUD.Hotbar.items.add(g.itemType)
-                            }
-                        }
-                    }
-                }
-            }
         }
     }
 }

@@ -8,10 +8,7 @@ import level.*
 import level.block.Block
 import level.block.CrafterBlock
 import level.entity.Entity
-import level.update.BlockContainerModify
-import level.update.BrainRobotInvModify
-import level.update.CrafterBlockSelectRecipe
-import level.update.EntityAddToGroup
+import level.update.*
 import network.*
 import player.team.TeamPermission
 import resource.ResourceList
@@ -187,7 +184,7 @@ class PlaceLevelObject(owner: Player,
             println("doesnt contain item form")
             return false
         }
-        if (level.getCollisionsWith(levelObjType.hitbox, xPixel, yPixel).filter { it.type != LevelObjectType.DROPPED_ITEM}.any()) {// dropped items will be removed
+        if (level.getCollisionsWith(levelObjType.hitbox, xPixel, yPixel).any()) {
             println("can't add to level $levelObjType $xPixel $yPixel")
             return false
         }
@@ -204,8 +201,6 @@ class PlaceLevelObject(owner: Player,
             println("Should have been able to remove items from brainrobot but wasn't")
             return false
         }
-        val droppedItemCollisions = level.getChunkFromPixel(xPixel, yPixel).data.droppedItems.getCollisionsWith(levelObjType.hitbox, xPixel, yPixel)
-        droppedItemCollisions.forEach { level.remove(it) }
         val newInstance = levelObjType.instantiate(xPixel, yPixel, rotation)
         newInstance.team = owner.team
         if (!level.add(newInstance)) {
@@ -370,20 +365,23 @@ class SelectCrafterRecipeAction(owner: Player,
 }
 
 /**
- * Changes the [ResourceNodeBehavior] of the given [node] to [newBehavior]
+ * Changes the [ResourceNodeBehavior] of the given [node] to [behavior]
  */
 class EditResourceNodeBehaviorAction(owner: Player,
                                      @Id(2)
                                      val node: ResourceNodeReference,
                                      @Id(3)
-                                     val newBehavior: ResourceNodeBehavior) : PlayerAction(owner) {
+                                     val behavior: ResourceNodeBehavior) : PlayerAction(owner) {
     private constructor() : this(Player(User(UUID.randomUUID(), ""), UUID.randomUUID(), UUID.randomUUID()), ResourceNodeReference(0, 0, LevelManager.EMPTY_LEVEL, UUID.randomUUID()), ResourceNodeBehavior.EMPTY_BEHAVIOR)
 
     override fun verify(): Boolean {
+        println("verifying :")
         if (node.value == null) {
+            println("node is false")
             return false
         }
         if (!node.value!!.team.check(TeamPermission.MODIFY_RESOURCE_NODE, owner)) {
+            println("no permission")
             return false
         }
         return true
@@ -394,54 +392,8 @@ class EditResourceNodeBehaviorAction(owner: Player,
             println("Reference should have been able to be resolved but wasn't")
             return false
         }
-        node.value!!.behavior = newBehavior
-        return true
-    }
-
-    override fun actGhost() {
-    }
-
-    override fun cancelActGhost() {
-    }
-
-}
-
-/**
- * Picks up all the [droppedItemReferences] and places their items in the [owner]'s brain robot inv
- */
-class PickUpDroppedItemAction(
-        owner: Player,
-        @Id(2)
-        val droppedItemReferences: List<DroppedItemReference>) : PlayerAction(owner) {
-
-    private constructor() : this(Player(User(UUID.randomUUID(), ""), UUID.randomUUID(), UUID.randomUUID()), listOf())
-
-    override fun verify(): Boolean {
-        for (reference in droppedItemReferences) {
-            if (reference.value == null) {
-                return false
-            }
-            if (!reference.value!!.team.check(TeamPermission.MODIFY_LEVEL_OBJECTS, owner)) {
-                return false
-            }
-        }
-        return true
-    }
-
-    override fun act(): Boolean {
-        for (reference in droppedItemReferences) {
-            if (reference.value == null) {
-                println("Reference should have been able to be resolved but wasn't")
-                return false
-            }
-            val value = reference.value!!
-            if (value !is DroppedItem) {
-                println("Reference should have been to a droppped item but wasn't")
-                return false
-            }
-            owner.brainRobot.inventory.add(value.itemType, value.quantity)
-            value.level.remove(value)
-        }
+        println("player action taken")
+        node.level.modify(ResourceNodeBehaviorEdit(node, behavior))
         return true
     }
 

@@ -518,6 +518,8 @@ open class GUIWindow(name: String, xAlignment: Alignment, yAlignment: Alignment,
 
     var allowEscapeToClose = false
 
+    var clickOffToClose = false
+
     init {
         windowGroup.windows.add(this)
         ScreenManager.windows.add(this)
@@ -525,6 +527,13 @@ open class GUIWindow(name: String, xAlignment: Alignment, yAlignment: Alignment,
             ScreenManager.openWindows.add(this)
         }
     }
+
+    override fun onInteractOff(xPixel: Int, yPixel: Int, type: PressType, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+        if(clickOffToClose) {
+            open = false
+        }
+    }
+
 
     /* Util */
     /**

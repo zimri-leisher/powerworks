@@ -33,7 +33,7 @@ open class ResourceRoutingNetwork(category: ResourceCategory,
     val internalNodes = mutableListOf<ResourceNode>()
 
     @Id(10)
-    val nodesSentTo = mutableSetOf<ResourceNode>()
+    val containersSentTo = mutableSetOf<ResourceContainer>()
 
     init {
         ALL.add(this)
@@ -139,7 +139,8 @@ open class ResourceRoutingNetwork(category: ResourceCategory,
     protected open fun findDestinationFor(type: ResourceType, quantity: Int, onlyTo: (ResourceNode) -> Boolean = { true }): ResourceNode? {
         val possibleSendToAttached = attachedNodes.getInputters(type, quantity, onlyTo, accountForExpected = true).map { it.attachedNode!! }
         val possibleForceInputter = possibleSendToAttached.getForceInputter(type, quantity, onlyTo, accountForExpected = true)?.attachedNode
-        return possibleForceInputter ?: possibleSendToAttached.minBy { if (it in nodesSentTo) 1 else 0 }
+        return possibleForceInputter
+                ?: possibleSendToAttached.minBy { if (it.attachedNode!!.attachedContainer in containersSentTo) 1 else 0 }
     }
 
     /**
@@ -203,10 +204,10 @@ open class ResourceRoutingNetwork(category: ResourceCategory,
     protected open fun transferResources(type: ResourceType, quantity: Int, from: ResourceNode, to: ResourceNode): Boolean {
         val success = to.input(type, quantity)
         if (success) {
-            nodesSentTo.add(to)
-            if (nodesSentTo.size == attachedNodes.filter { it.behavior.allowIn.possible() != null }.size) {
-                // if we've sent to all internal nodes
-                nodesSentTo.clear()
+            containersSentTo.add(to.attachedNode!!.attachedContainer)
+            if (containersSentTo.size == attachedNodes.filter { it.behavior.allowIn.possible() != null }.map { it.attachedContainer }.distinct().size) {
+                // if we've sent to all internal containers
+                containersSentTo.clear()
             }
         }
         return success

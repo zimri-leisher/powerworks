@@ -5,6 +5,8 @@ import graphics.text.TextManager
 import graphics.text.TextRenderParams
 import io.*
 import misc.Numbers.ceil
+import player.EditResourceNodeBehaviorAction
+import player.PlayerManager
 import resource.ResourceNode
 import resource.ResourceType
 import routing.script.CompileException
@@ -15,7 +17,7 @@ import screen.elements.*
 // TODO make all GUIElements open classes
 
 object RoutingLanguageEditor : GUIWindow("Routing language editor window", { 0 }, { 0 }, { 32 + 4 }, { GUIButton.HEIGHT * 2 + 6 }, ScreenManager.Groups.PLAYER_UTIL),
-        ControlPressHandler {
+        ControlHandler {
 
     var node: ResourceNode? = null
     private lateinit var inputs: GUIGroup
@@ -48,16 +50,29 @@ object RoutingLanguageEditor : GUIWindow("Routing language editor window", { 0 }
         }
         inputs = GUIGroup(this, "Routing language input editor group", { 0 }, { heightPixels }).apply {
             inputsFormatGroup = AutoFormatGUIGroup(this, "Routing language input editor", { 2 }, { 0 }, dir = 2).apply {
-                allowInput = GUIRoutingLanguageRule(this, "Routing language input rules", { 0 }, { 0 }, "Allow input if...")
-                forceInput = GUIRoutingLanguageRule(this, "Routing language output rules", { 0 }, { 0 }, "Force input if...")
+                allowInput = GUIRoutingLanguageRule(this, "Routing language input rules", { 0 }, { 0 }, "Allow input if...",
+                        { statement ->
+                            PlayerManager.takeAction(EditResourceNodeBehaviorAction(PlayerManager.localPlayer, node!!.toReference(), node!!.behavior.copy(node!!).apply { allowIn.setStatement(statement) }))
+                        })
+                forceInput = GUIRoutingLanguageRule(this, "Routing language output rules", { 0 }, { 0 }, "Force input if...",
+                        { statement ->
+                            PlayerManager.takeAction(EditResourceNodeBehaviorAction(PlayerManager.localPlayer, node!!.toReference(), node!!.behavior.copy(node!!).apply { forceIn.setStatement(statement) }))
+                        })
             }
             GUIDefaultTextureRectangle(this, "Routing language output editor background", { 0 }, { -inputsFormatGroup.alignments.height() - 2 }, { inputsFormatGroup.alignments.width() + 4 }, { inputsFormatGroup.alignments.height() + 4 })
             matchParentOpening = false
         }
         outputs = GUIGroup(this, "Routing language output editor group", { 0 }, { heightPixels }).apply {
             outputsFormatGroup = AutoFormatGUIGroup(this, "Routing language output editor", { 2 }, { 0 }, dir = 2, layer = layer + 2).apply {
-                allowOutput = GUIRoutingLanguageRule(this, "Routing language output rules", { 0 }, { 0 }, "Allow output if...")
-                forceOutput = GUIRoutingLanguageRule(this, "Routing language output rules", { 0 }, { 0 }, "Force output if...")
+                allowOutput = GUIRoutingLanguageRule(this, "Routing language output rules", { 0 }, { 0 }, "Allow output if...",
+                        { statement ->
+                            println("jklasdfjklasdf")
+                            PlayerManager.takeAction(EditResourceNodeBehaviorAction(PlayerManager.localPlayer, node!!.toReference(), node!!.behavior.copy(node!!).apply { allowOut.setStatement(statement) }))
+                        })
+                forceOutput = GUIRoutingLanguageRule(this, "Routing language output rules", { 0 }, { 0 }, "Force output if...",
+                        { statement ->
+                            PlayerManager.takeAction(EditResourceNodeBehaviorAction(PlayerManager.localPlayer, node!!.toReference(), node!!.behavior.copy(node!!).apply { forceOut.setStatement(statement) }))
+                        })
             }
             GUIDefaultTextureRectangle(this, "Routing language output editor background", { 0 }, { -outputsFormatGroup.alignments.height() - 2 }, { outputsFormatGroup.alignments.width() + 4 }, { outputsFormatGroup.alignments.height() + 4 })
             matchParentOpening = false
@@ -82,7 +97,7 @@ object RoutingLanguageEditor : GUIWindow("Routing language editor window", { 0 }
         }
     }
 
-    override fun handleControlPress(p: ControlPress) {
+    override fun handleControl(p: ControlPress) {
         if (p.pressType == PressType.PRESSED && p.control in Control.Group.INTERACTION) {
             if (!mouseOn && !ResourceTypeSelector.mouseOn) {
                 open = false
@@ -127,20 +142,20 @@ object RoutingLanguageEditor : GUIWindow("Routing language editor window", { 0 }
     }
 
     override fun update() {
-        if(node != null) {
-            for(statement in allowInput.statements) {
+        if (node != null) {
+            for (statement in allowInput.statements) {
                 val result = statement.currentStatement.evaluate(node!!)
                 statement.evaluationText.text = "And the following condition is true... (currently: $result)"
             }
-            for(statement in allowOutput.statements) {
+            for (statement in allowOutput.statements) {
                 val result = statement.currentStatement.evaluate(node!!)
                 statement.evaluationText.text = "And the following condition is true... (currently: $result)"
             }
-            for(statement in forceInput.statements) {
+            for (statement in forceInput.statements) {
                 val result = statement.currentStatement.evaluate(node!!)
                 statement.evaluationText.text = "And the following condition is true... (currently: $result)"
             }
-            for(statement in forceOutput.statements) {
+            for (statement in forceOutput.statements) {
                 val result = statement.currentStatement.evaluate(node!!)
                 statement.evaluationText.text = "And the following condition is true... (currently: $result)"
             }
@@ -154,7 +169,7 @@ object RoutingLanguageEditor : GUIWindow("Routing language editor window", { 0 }
     }
 }
 
-class GUIRoutingLanguageRule(parent: RootGUIElement, name: String, xAlignment: Alignment, yAlignment: Alignment, val displayName: String) : GUIElement(parent, name, xAlignment, yAlignment, { 0 }, { 0 }) {
+class GUIRoutingLanguageRule(parent: RootGUIElement, name: String, xAlignment: Alignment, yAlignment: Alignment, val displayName: String, val onEnterStatement: (statement: RoutingLanguageStatement) -> Unit) : GUIElement(parent, name, xAlignment, yAlignment, { 0 }, { 0 }) {
 
     private var nextStatementId = 0
     val statements = mutableListOf<GUIRoutingLanguageStatement>()
@@ -185,7 +200,7 @@ class GUIRoutingLanguageRule(parent: RootGUIElement, name: String, xAlignment: A
     }
 
     fun addStatement(statement: RoutingLanguageStatement, types: List<ResourceType>) {
-        val statementGUI = GUIRoutingLanguageStatement(statementsGroup, "routing language statement $nextStatementId", statement, types)
+        val statementGUI = GUIRoutingLanguageStatement(statementsGroup, "routing language statement $nextStatementId", statement, types, onEnterStatement)
         statements.add(statementGUI)
         nextStatementId++
         statementsGroup.reformat()
@@ -194,7 +209,7 @@ class GUIRoutingLanguageRule(parent: RootGUIElement, name: String, xAlignment: A
     }
 }
 
-class GUIRoutingLanguageStatement(parent: RootGUIElement, name: String, var currentStatement: RoutingLanguageStatement, types: List<ResourceType>) :
+class GUIRoutingLanguageStatement(parent: RootGUIElement, name: String, var currentStatement: RoutingLanguageStatement, types: List<ResourceType>, val onEnterStatement: (statement: RoutingLanguageStatement) -> Unit) :
         GUIElement(parent, name,
                 { 0 }, { 0 },
                 { (TextManager.getFont().charWidth * 30).toInt() + 2 },
@@ -234,6 +249,7 @@ class GUIRoutingLanguageStatement(parent: RootGUIElement, name: String, var curr
         try {
             currentStatement = RoutingLanguage.parse(text)
             textInput.positiveFlashOutline()
+            onEnterStatement(currentStatement)
         } catch (e: CompileException) {
             println(e.message)
             textInput.negativeFlashOutline()

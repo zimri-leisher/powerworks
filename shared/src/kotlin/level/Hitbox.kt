@@ -21,7 +21,7 @@ class Hitbox private constructor(
         val TILE2X2 = Hitbox(0, 0, 32, 32)
         val TILE2X1 = Hitbox(0, 0, 32, 16)
         val STANDARD_ROBOT = Hitbox(3, 0, 16, 16)
-        val DROPPED_ITEM = Hitbox(0, 0, 8, 8)
+        val TILE4X4 = Hitbox(0,0,64,64)
         val NONE = Hitbox(0, 0, 0, 0)
 
         fun rotate(h: Hitbox, rotation: Int): Hitbox {

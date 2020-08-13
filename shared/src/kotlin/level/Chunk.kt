@@ -51,14 +51,6 @@ class Chunk(
             removeUpdateRequired(block)
     }
 
-    fun addDroppedItem(d: DroppedItem) {
-        data.droppedItems.add(d)
-    }
-
-    fun removeDroppedItem(d: DroppedItem) {
-        data.droppedItems.remove(d)
-    }
-
     fun addMoving(m: MovingObject) {
         data.moving.add(m)
         data.moving.sortWith(Comparator { o1, o2 -> o1.yPixel.compareTo(o2.yPixel) })
@@ -136,8 +128,6 @@ data class ChunkData(
         var movingOnBoundary: MutableList<MovingObject> = mutableListOf(),
         @Id(6)
         var updatesRequired: ConcurrentlyModifiableMutableList<LevelObject> = ConcurrentlyModifiableMutableList(),
-        @Id(7)
-        var droppedItems: MutableList<DroppedItem> = mutableListOf(),
         @Id(8)
         var resourceNodes: MutableList<MutableList<ResourceNode>> = mutableListOf(mutableListOf(), mutableListOf(), mutableListOf(), mutableListOf(), mutableListOf())) {
 
@@ -152,7 +142,6 @@ data class ChunkData(
         if (moving != other.moving) return false
         if (movingOnBoundary != other.movingOnBoundary) return false
         if (updatesRequired != other.updatesRequired) return false
-        if (droppedItems != other.droppedItems) return false
         if (resourceNodes != other.resourceNodes) return false
 
         return true
@@ -165,7 +154,6 @@ data class ChunkData(
         result = 31 * result + moving.hashCode()
         result = 31 * result + movingOnBoundary.hashCode()
         result = 31 * result + updatesRequired.hashCode()
-        result = 31 * result + droppedItems.hashCode()
         result = 31 * result + resourceNodes.hashCode()
         return result
     }

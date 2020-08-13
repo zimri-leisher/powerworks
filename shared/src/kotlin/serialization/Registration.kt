@@ -43,6 +43,7 @@ import level.update.*
 import main.DebugCode
 import main.Version
 import main.VersionSerializer
+import main.isKotlinClass
 import misc.PixelCoord
 import misc.TileCoord
 import network.*
@@ -62,6 +63,7 @@ import kotlin.collections.ArrayList
 import kotlin.collections.LinkedHashMap
 import kotlin.collections.LinkedHashSet
 import kotlin.reflect.KClass
+import kotlin.reflect.full.companionObjectInstance
 import kotlin.system.measureTimeMillis
 
 object Registration {
@@ -73,13 +75,13 @@ object Registration {
 
     fun registerAll() {
 
-        // max 257
+        // max 265
         /* COLLECTIONS */
         val singletonList = listOf(1)
         register(singletonList::class, CollectionSerializer { it.toList() }, 209)
         register(emptyList<Nothing>()::class, EmptyListSerializer(), 160)
         val immutableListClass = Class.forName("java.util.Arrays${'$'}ArrayList") as Class<Collection<Any?>>
-        register<Collection<Any?>>(immutableListClass, CollectionSerializer { listOf(*it.toTypedArray()) }, 141)
+        register<Collection<Any?>>(immutableListClass, CollectionSerializer { it.toList() }, 141)
         register(ArrayList::class, MutableCollectionSerializer<ArrayList<Any?>>(), 142)
         register(LinkedHashSet::class, MutableCollectionSerializer<LinkedHashSet<Any?>>(), 143)
         register(Array<out Any?>::class, ArraySerializer(), 144)
@@ -88,6 +90,8 @@ object Registration {
         register(Set::class.java, MutableCollectionSerializer<LinkedHashSet<Any?>>(), 153)
         register(Polygon::class, Serializer.AllFields<Polygon>(), 251)
         register(Rectangle::class, Serializer.AllFields<Rectangle>(), 254)
+        register(emptyMap<Nothing, Nothing>()::class, EmptyMapSerializer(),261)
+        register(mapOf(1 to 1)::class, MapSerializer { it.toMap() }, 262)
 
         FrameworkMessage.RegisterTCP::class.register(147, Serializer.AllFields<FrameworkMessage.RegisterTCP>())
         FrameworkMessage.RegisterUDP::class.register(148, Serializer.AllFields<FrameworkMessage.RegisterUDP>())
@@ -152,8 +156,8 @@ object Registration {
 
         /* LEVEL */
         register(ActualLevel::class, LevelSerializer<ActualLevel>(), 52)
+        register(UnknownLevel::class, LevelSerializer<UnknownLevel>(), 264)
         register(Chunk::class, 53)
-        register(DroppedItem::class, LevelObjectSerializer<DroppedItem>(), 54)
         register(Hitbox::class, 55)
         register(LevelData::class, 57)
         register(LevelInfo::class, 58)
@@ -165,7 +169,7 @@ object Registration {
         register(LevelObjectAdd::class, 222)
         register(LevelObjectRemove::class, 223)
         register(DefaultLevelUpdate::class, 226)
-        register(LevelModificationType::class, EnumSerializer<LevelModificationType>(), 227)
+        register(LevelUpdateType::class, EnumSerializer<LevelUpdateType>(), 227)
         register(CrafterBlockSelectRecipe::class, 229)
         register(BrainRobotInvModify::class, 230)
         register(BlockContainerModify::class, 231)
@@ -177,6 +181,8 @@ object Registration {
         register(EntitySetFormation::class, 243)
         register(EntitySetTarget::class, 246)
         register(EntityFireWeapon::class, 253)
+        register(FarseekerBlockSetAvailableLevels::class, 263)
+        register(ResourceNodeBehaviorEdit::class, 265)
 
         /* /BLOCK */
         register(BlockType::class, IDSerializer({ BlockType.ALL }, { it.id }), 22)
@@ -200,6 +206,7 @@ object Registration {
         register(PipeBlock::class, 189)
         register(RobotFactoryBlock::class, 217)
         register(ArmoryBlock::class, 247)
+        register(FarseekerBlock::class, 260)
 
         /* /ENTITY */
         register(Entity::class, 32)
@@ -270,7 +277,6 @@ object Registration {
         register(BlockReference::class, NetworkReferenceSerializer(), 197)
         register(MovingObjectReference::class, NetworkReferenceSerializer(), 198)
         register(ResourceNodeReference::class, NetworkReferenceSerializer(), 199)
-        register(DroppedItemReference::class, NetworkReferenceSerializer(), 216)
         register(BrainRobotReference::class, NetworkReferenceSerializer(), 256)
         register(LevelUpdatePacket::class, 228)
         register(LevelLoadedSuccessPacket::class, 239)
@@ -282,7 +288,6 @@ object Registration {
         register(SelectCrafterRecipeAction::class, 206)
         register(ControlEntityAction::class, 207)
         register(EditResourceNodeBehaviorAction::class, 208)
-        register(PickUpDroppedItemAction::class, 215)
         register(EntityCreateGroup::class, 241)
         register(TransferItemsBetweenBlock::class, 245)
         register(Team::class, 255)
@@ -391,7 +396,19 @@ object Registration {
             }
         }
         // this line here will initialize the object if it is an object
-        type.kotlin.objectInstance
+        try {
+            if(type.isKotlinClass()) {
+                with(type.kotlin) {
+                    objectInstance
+                    companionObjectInstance
+                }
+            }
+        } catch (e: IllegalAccessException) {
+            if(!e.message!!.contains("can not access a member of class")) {
+                throw e
+            }
+        }
+
         debugln("Registered class $type with id $id")
     }
 

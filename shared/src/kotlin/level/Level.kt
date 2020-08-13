@@ -17,6 +17,7 @@ import level.update.LevelObjectRemove
 import level.update.LevelUpdate
 import main.DebugCode
 import main.Game
+import main.PowerworksDelegates
 import main.toColor
 import network.ClientNetworkManager
 import network.ServerNetworkManager
@@ -58,8 +59,7 @@ abstract class Level(
 
     val generator = info.levelType.getGenerator(this)
 
-    abstract var data: LevelData
-        protected set
+    var data: LevelData by PowerworksDelegates.lateinitVal()
 
     val widthChunks = info.levelType.widthChunks
     val heightChunks = info.levelType.heightChunks
@@ -74,19 +74,37 @@ abstract class Level(
         set(value) {
             if (field != value) {
                 field = value
+                if (generator !is EmptyLevelGenerator) {
+                    if (field) {
+                        LevelManager.pushLevelStateEvent(this, LevelEvent.LOAD)
+                    } else if (!field) {
+                        LevelManager.pushLevelStateEvent(this, LevelEvent.UNLOAD)
+                    }
+                }
+            }
+        }
+
+    var initialized = false
+        set(value) {
+            if (field != value) {
+                field = value
                 if (field && generator !is EmptyLevelGenerator) {
-                    LevelManager.loadedLevels.add(this)
-                } else if (!field) {
-                    LevelManager.loadedLevels.remove(this)
+                    LevelManager.pushLevelStateEvent(this, LevelEvent.INITIALIZE)
                 }
             }
         }
 
     var paused = false
+        set(value) {
+            if (field != value) {
+                field = value
+                LevelManager.pushLevelStateEvent(this, if (field) LevelEvent.PAUSE else LevelEvent.UNPAUSE)
+            }
+        }
 
     var updatesCount = 0
 
-    init {
+    open fun initialize() {
         if (generator !is EmptyLevelGenerator) {
             LevelManager.allLevels.forEach {
                 if (it.id == id) {
@@ -95,9 +113,14 @@ abstract class Level(
             }
             LevelManager.allLevels.add(this)
         }
+        initialized = true
     }
 
-    fun canModify(update: LevelUpdate) = update.canAct(this)
+    open fun load() {
+        loaded = true
+    }
+
+    open fun canModify(update: LevelUpdate) = update.canAct(this)
 
     open fun modify(update: LevelUpdate, transient: Boolean = false): Boolean {
         if (!canModify(update)) {
@@ -209,16 +232,13 @@ abstract class Level(
     open fun remove(projectile: Projectile) = data.projectiles.remove(projectile)
 
     open fun update() {
-        if(paused) {
+        if (paused) {
             return
         }
         ResourceRoutingNetwork.update()
         data.projectiles.forEach { it.update() }
         data.chunks.forEach { it.update() }
         data.particles.forEach { it.update() }
-        if (!Game.IS_SERVER) {
-            Tool.update() // TODO should this be here?
-        }
         updatesCount++
     }
 
@@ -244,6 +264,7 @@ abstract class Level(
             }
         }
         Tool.renderBelow()
+        Tool.renderBelow()
         data.particles.forEach {
             it.render()
         }
@@ -263,8 +284,8 @@ abstract class Level(
             // Render the moving objects in sorted order
             for (xChunk in (minX shr CHUNK_TILE_EXP)..(maxX shr CHUNK_TILE_EXP)) {
                 val c = getChunkAt(xChunk, yChunk)
-                if (c.data.moving.isNotEmpty() || c.data.droppedItems.isNotEmpty()) {
-                    (c.data.moving + c.data.droppedItems).forEach {
+                if (c.data.moving.isNotEmpty()) {
+                    c.data.moving.forEach {
                         if (it.yTile >= y && it.yTile < y + 1) {
                             it.render()
                         }
@@ -282,6 +303,7 @@ abstract class Level(
 
         ResourceRoutingNetwork.render()
         data.projectiles.forEach { it.render() }
+        Tool.renderAbove()
         Tool.renderAbove()
 
         val chunksInTileRectangle = getChunksFromTileRectangle(minX, minY, maxX - minX - 1, maxY - minY - 1)
@@ -347,10 +369,11 @@ class LevelSerializer<R : Level> : Serializer<R>() {
 
     override fun instantiate(input: Input): R {
         val id = input.read(UUID::class.java)
-        val existingLevel = LevelManager.allLevels.firstOrNull { it.id == id }
+        val existingLevel = LevelManager.getLevelByIdOrNull(id)
                 ?: if (id == LevelManager.EMPTY_LEVEL.id) LevelManager.EMPTY_LEVEL else null
         if (existingLevel == null) {
-            throw NonexistentLevelException("Level with id $id does not exist yet and so cannot be deserialized")
+            println("Unknown level $id")
+            return UnknownLevel(id) as R
         }
         return existingLevel as R
     }

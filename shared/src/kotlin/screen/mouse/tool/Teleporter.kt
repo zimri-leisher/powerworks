@@ -7,14 +7,11 @@ import level.moving.MovingObject
 
 object Teleporter : Tool(Control.TELEPORT) {
 
-    override fun onUse(control: Control, type: PressType, mouseLevelXPixel: Int, mouseLevelYPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+    override fun onUse(control: Control, type: PressType, mouseLevelXPixel: Int, mouseLevelYPixel: Int): Boolean {
         if (type == PressType.PRESSED) {
             (LevelManager.levelViewUnderMouse?.camera as? MovingObject)?.setPosition(LevelManager.mouseLevelXPixel, LevelManager.mouseLevelYPixel)
+            return true
         }
+        return false
     }
-
-    override fun updateCurrentlyActive() {
-        currentlyActive = true
-    }
-
 }

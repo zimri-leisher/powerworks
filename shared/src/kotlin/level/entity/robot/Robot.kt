@@ -1,18 +1,12 @@
 package level.entity.robot
 
 import io.*
-import item.weapon.Projectile
 import item.weapon.Weapon
 import item.weapon.WeaponItemType
-import level.LevelObject
 import level.entity.Entity
-import misc.Numbers
-import kotlin.math.PI
-import kotlin.math.atan
-import level.LevelManager
 import main.Game
 
-open class Robot(type: RobotType<out Robot>, xPixel: Int, yPixel: Int, rotation: Int = 0) : Entity(type, xPixel, yPixel, rotation), ControlPressHandler {
+open class Robot(type: RobotType<out Robot>, xPixel: Int, yPixel: Int, rotation: Int = 0) : Entity(type, xPixel, yPixel, rotation), ControlHandler {
 
     override val type = type
 
@@ -27,7 +21,7 @@ open class Robot(type: RobotType<out Robot>, xPixel: Int, yPixel: Int, rotation:
         weapon = Weapon(WeaponItemType.MACHINE_GUN)
     }
 
-    override fun handleControlPress(p: ControlPress) {
+    override fun handleControl(p: ControlPress) {
         if(p.pressType == PressType.PRESSED && inLevel) {
             
         }

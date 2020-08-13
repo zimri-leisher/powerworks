@@ -17,7 +17,6 @@ class ArmoryBlockGUI(block: ArmoryBlock) : AutoFormatGUIWindow("Armory block gui
 
     init {
         openAtMouse = true
-
         progressBar = GUIProgressBar(group, "Armory block progress bar", { 0 }, { 0 }, { 32 }, { 6 }, block.type.maxWork)
 
         generateCloseButton()

@@ -1,43 +1,42 @@
 package player.lobby
 
+import level.Level
+import level.LevelEvent
+import level.LevelEventListener
 import level.LevelManager
 import network.ServerNetworkManager
 import network.packet.LevelLoadedSuccessPacket
 import network.packet.Packet
-import network.packet.PacketHandler
-import network.packet.PacketType
 import player.Player
+import player.PlayerEvent
+import player.PlayerEventListener
 import player.PlayerManager
 import java.util.*
 
-class Lobby : PacketHandler {
+class Lobby : PlayerEventListener, LevelEventListener {
 
     val players = mutableSetOf<Player>()
 
-    val loadedLevelIds = mutableSetOf<UUID>()
+    val loadedLevels = mutableSetOf<Level>()
 
     init {
-        LobbyManager.allLobbies.add(this)
-        ServerNetworkManager.registerClientPacketHandler(this, PacketType.LEVEL_LOADED_SUCCESS)
+        PlayerManager.playerEventListeners.add(this)
+        LevelManager.levelEventListeners.add(this)
     }
 
     fun connectPlayer(player: Player) {
-        println("connecting player to $this")
         players.add(player)
     }
 
     fun disconnectPlayer(player: Player) {
-        println("disconnecting player $player from $this")
         players.remove(player)
-        if (players.isEmpty()) {
-            println("no more players left")
-            loadedLevelIds.forEach { id -> LevelManager.allLevels.firstOrNull { it.id == id }?.paused = true }
-            loadedLevelIds.clear()
-        }
     }
 
-    fun sendPacket(packet: Packet) {
-        ServerNetworkManager.sendToPlayers(packet, players)
+    fun sendPacket(packet: Packet, players: Set<Player> = this.players) {
+        for (player in players) {
+            val connection = ServerNetworkManager.getConnectionIdByUser(player.user)
+            ServerNetworkManager.sendToClient(packet, connection)
+        }
     }
 
     fun merge(other: Lobby): Lobby {
@@ -47,16 +46,26 @@ class Lobby : PacketHandler {
         return new
     }
 
-    override fun handleClientPacket(packet: Packet) {
-        if (packet is LevelLoadedSuccessPacket) {
-            val player = PlayerManager.getPlayer(packet.fromUser)
+    override fun onLevelEvent(level: Level, event: LevelEvent) {
+        if(event == LevelEvent.LOAD) {
+            val player = players.firstOrNull { it.homeLevelId == level.id }
             if (player in players) {
-                loadedLevelIds.add(packet.levelId)
-                LevelManager.allLevels.firstOrNull { it.id == packet.levelId }?.paused = false
+                loadedLevels.add(level)
+                level.paused = false
             }
         }
     }
 
-    override fun handleServerPacket(packet: Packet) {
+    override fun onPlayerEvent(player: Player, event: PlayerEvent) {
+        if (player in players) {
+            if(event == PlayerEvent.STOP_PLAYING) {
+                if (players.none { it.playing }) {
+                    loadedLevels.forEach { it.paused = true }
+                    loadedLevels.clear()
+                }
+            } else if(event == PlayerEvent.DISCONNECT) {
+                disconnectPlayer(player)
+            }
+        }
     }
 }

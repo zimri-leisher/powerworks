@@ -1,7 +1,7 @@
 package graphics
 
 import com.badlogic.gdx.graphics.g2d.TextureRegion
-import data.ResourceManager
+import data.GameResourceManager
 import serialization.Id
 
 class ImageCollection(
@@ -22,7 +22,7 @@ class ImageCollection(
         ALL.add(this)
         val list = mutableListOf<TextureRegion>()
         for (i in 1..numberOfFrames) {
-            list.add(ResourceManager.getAtlasTexture(identifier, i))
+            list.add(GameResourceManager.getAtlasTexture(identifier, i))
         }
         textures = list.toTypedArray()
     }

@@ -3,13 +3,12 @@ package screen
 import com.badlogic.gdx.Input
 import crafting.Recipe
 import crafting.RecipeCategory
-import data.ResourceManager
+import data.GameResourceManager
 import graphics.*
 import graphics.text.TaggedText
 import graphics.text.TextManager
 import io.PressType
 import main.toColor
-import misc.Numbers
 import screen.elements.*
 import screen.mouse.Tooltips
 
@@ -62,7 +61,7 @@ object RecipeSelectorGUI : GUIWindow("Recipe selector", 0, 0, 100,
                 } else {
                     Image.Misc.ERROR
                 }
-                tagTexts.add(TextManager.parseTags("<size=40><img=${ResourceManager.getIdentifier(textureRegion)}>"))
+                tagTexts.add(TextManager.parseTags("<size=40><img=${GameResourceManager.getIdentifier(textureRegion)}>"))
 
                 GUIGroup(this, "recipe category background $i", { 0 }, { 0 }).apply {
 

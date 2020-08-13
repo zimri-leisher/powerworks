@@ -38,7 +38,7 @@ open class GUITextInputField(parent: RootGUIElement, name: String,
                              val allowTextScrolling: Boolean = false,
                              open: Boolean = false,
                              layer: Int = parent.layer + 1) :
-        GUIElement(parent, name, xAlignment, yAlignment, { (widthChars * TextManager.getFont().charWidth).toInt() + 2 }, { Numbers.ceil(heightChars * (TextManager.getFont().charHeight + 1)) + 2 }, open, layer), TextHandler, ControlPressHandler {
+        GUIElement(parent, name, xAlignment, yAlignment, { (widthChars * TextManager.getFont().charWidth).toInt() + 2 }, { Numbers.ceil(heightChars * (TextManager.getFont().charHeight + 1)) + 2 }, open, layer), TextHandler, ControlHandler {
 
     val maxChars = widthChars * heightChars
 
@@ -85,8 +85,8 @@ open class GUITextInputField(parent: RootGUIElement, name: String,
 
     init {
         InputManager.registerControlPressHandler(this, ControlPressHandlerType.SCREEN_THIS, ControlMap.TEXT_EDITOR)
-        InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, ControlMap.DEFAULT, *Control.Group.INTERACTION.controls)
-        InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, ControlMap.TEXT_EDITOR, *Control.Group.INTERACTION.controls)
+        InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, ControlMap.DEFAULT, *Control.Group.INTERACTION.controls.toTypedArray())
+        InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, ControlMap.TEXT_EDITOR, *Control.Group.INTERACTION.controls.toTypedArray())
     }
 
     override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
@@ -114,7 +114,7 @@ open class GUITextInputField(parent: RootGUIElement, name: String,
         }
     }
 
-    override fun handleControlPress(p: ControlPress) {
+    override fun handleControl(p: ControlPress) {
         if (p.pressType == PressType.PRESSED) {
             when (p.control) {
                 in Control.Group.INTERACTION -> {

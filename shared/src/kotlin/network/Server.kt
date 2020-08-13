@@ -5,13 +5,14 @@ import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration
 import com.esotericsoftware.minlog.Log
 import data.FileSystem
-import data.ResourceManager
+import data.GameResourceManager
 import graphics.text.TextManager
 import level.LevelManager
 import main.Game
-import main.State
+import main.GameState
 import network.packet.*
 import player.PlayerManager
+import progression.ProgressionManager
 import serialization.Registration
 import serialization.Serialization
 import java.util.concurrent.atomic.AtomicBoolean
@@ -37,7 +38,8 @@ object Server : ApplicationAdapter(), PacketHandler {
 
     override fun create() {
         // order matters with some of these!
-        ResourceManager.registerAtlas("textures/all.atlas")
+        ProgressionManager
+        GameResourceManager.registerAtlas("textures/all.atlas")
         Registration.registerAll()
         Serialization.warmup()
         Log.ERROR()
@@ -77,7 +79,7 @@ object Server : ApplicationAdapter(), PacketHandler {
         FileSystem.update()
         ServerNetworkManager.update()
         LevelManager.update()
-        State.update()
+        GameState.update()
     }
 
     override fun dispose() {
@@ -85,7 +87,7 @@ object Server : ApplicationAdapter(), PacketHandler {
         LevelManager.saveLevels()
         PlayerManager.savePlayers()
         ServerNetworkManager.close()
-        ResourceManager.dispose()
+        GameResourceManager.dispose()
         TextManager.dispose()
         System.exit(0)
     }

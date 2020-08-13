@@ -209,20 +209,23 @@ open class Serializer<R : Any>(var useDefaultConstructorInstantiation: Boolean =
          */
         override fun write(obj: Any, output: Output) {
             obj as R
-            // write size so that we know if the number has changed (possibly because something was changed, its class was edited, and it wsa reloaded again)
+            // write size so that we know if the number has changed (possibly because something was changed, its class was edited, and it was reloaded again)
             output.writeInt(cachedTaggedFields.size)
             for (field in cachedTaggedFields) {
                 synchronized(field) {
+                    /*
                     if (!field.field.trySetAccessible()) {
                         throw WriteException("Unable to set accessibility of field ${field.field} from class ${obj::class} to true")
                     }
+*/
+                    field.field.isAccessible = true
                     try {
                         val fieldValue = field.field.get(obj)
                         debugln("Writing tagged field @Id(${field.id}) ${field.field.name}: ${field.field.type.simpleName} = ${fieldValue}")
                         output.writeInt(field.id)
                         output.write(fieldValue)
                     } catch (e: IllegalAccessException) {
-                        System.out.println("Error while getting value of field ${field.field} from class ${obj::class} (accessible: ${field.field.canAccess(obj)}")
+                        System.out.println("Error while getting value of field ${field.field} from class ${obj::class} (accessible: ${field.field.isAccessible}")
                         throw e
                     }
                     field.field.isAccessible = false
@@ -269,13 +272,16 @@ open class Serializer<R : Any>(var useDefaultConstructorInstantiation: Boolean =
                     } else {
                         newValue = input.read(field.type)
                     }
+                    /*
                     if (!field.trySetAccessible()) {
                         throw ReadException("Unable to set accessible of field $field from class ${newInstance::class}")
                     }
+                     */
+                    field.isAccessible = true
                     try {
                         field.set(newInstance, newValue)
                     } catch (e: IllegalAccessException) {
-                        System.out.println("Error while setting field $field in ${newInstance::class} to $newValue: (accessible: ${field.canAccess(newInstance)})")
+                        System.out.println("Error while setting field $field in ${newInstance::class} to $newValue: (accessible: ${field.isAccessible})")
                         throw e
                     }
                     field.isAccessible = false
@@ -326,11 +332,15 @@ open class Serializer<R : Any>(var useDefaultConstructorInstantiation: Boolean =
             output.writeInt(cachedFields.size)
             for (field in cachedFields) {
                 synchronized(field) {
+                    /*
                     if (!field.trySetAccessible()) {
                         throw WriteException("Unable to set accessible of field $field from class ${obj::class}")
                     }
+
+                     */
+                    field.isAccessible = true
                     val fieldValue = field.get(obj)
-                    debugln("Writing field ${field.name}: ${field.type.simpleName} = ${fieldValue}")
+                    debugln("Writing field ${field.name}: ${field.type.simpleName} = $fieldValue")
                     output.writeUTF(field.name)
                     output.write(fieldValue)
                     field.isAccessible = false
@@ -373,9 +383,13 @@ open class Serializer<R : Any>(var useDefaultConstructorInstantiation: Boolean =
                 }
                 synchronized(field) {
                     debugln("Reading field ${field.name}: ${field.type.simpleName} ")
+                    field.isAccessible = false
+                    /*
                     if (!field.trySetAccessible()) {
                         throw ReadException("Unable to set accessible of field $field from class ${newInstance::class}")
                     }
+
+                     */
                     // set the value of the tagged field by recursively deserializing it
                     val nullable = field.kotlinProperty?.returnType?.isMarkedNullable
                     if (nullable == false && value == null) {
@@ -386,6 +400,18 @@ open class Serializer<R : Any>(var useDefaultConstructorInstantiation: Boolean =
                 }
             }
         }
+    }
+}
+
+class EmptyMapSerializer : Serializer<Map<Nothing, Nothing>>() {
+    override fun write(obj: Any, output: Output) {
+    }
+
+    override fun instantiate(input: Input): Map<Nothing, Nothing> {
+        return emptyMap()
+    }
+
+    override fun read(newInstance: Any, input: Input) {
     }
 }
 
@@ -451,6 +477,34 @@ class MutableCollectionSerializer<R : MutableCollection<*>> : Serializer<R>(true
         for (i in 0 until size) {
             newInstance.add(input.readUnknownNullable())
         }
+    }
+}
+
+/**
+ * A serializer for any non-mutable [Collection]
+ *
+ * @param makeImmutable should take in a mutable collection and return an instance of [R] that is immutable
+ */
+class MapSerializer<R : Map<*, *>>(val makeImmutable: (MutableMap<*, *>) -> R) : Serializer<R>() {
+    override fun instantiate(input: Input): R {
+        val mutableCollection = mutableMapOf<Any?, Any?>()
+        val size = input.readUnsignedShort()
+        for (i in 0 until size) {
+            val pair = input.read(Pair::class.java)
+            mutableCollection[pair.first] = pair.second
+        }
+        return makeImmutable(mutableCollection)
+    }
+
+    override fun write(obj: Any, output: Output) {
+        obj as Map<Any?, Any?>
+        output.writeShort(obj.size)
+        for ((first, second) in obj) {
+            output.write(first to second)
+        }
+    }
+
+    override fun read(newInstance: Any, input: Input) {
     }
 }
 

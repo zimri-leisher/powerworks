@@ -3,15 +3,11 @@ package screen
 import screen.elements.GUIDefaultTextureRectangle
 import screen.elements.GUIResourceTypeSelection
 import screen.elements.GUIWindow
+import kotlin.reflect.KClass
 import kotlin.reflect.full.superclasses
 import kotlin.system.measureTimeMillis
 
 val Int.bitString: String get() = Integer.toBinaryString(this)
-
-fun main() {
-    val lambda: (String) -> Boolean = { true }
-    println(lambda::class.java.superclass)
-}
 
 fun slowMod(m: Int, n: Int): Int {
     if (n > m) {

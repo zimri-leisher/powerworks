@@ -9,7 +9,7 @@ class RobotFactoryBlock(xTile: Int, yTile: Int, rotation: Int) : CrafterBlock(Cr
         if(recipe == null) {
             return
         }
-        if (true || outputContainer.spaceFor(recipe!!.produce) && inputContainer.contains(recipe!!.consume)) {
+        if (outputContainer.spaceFor(recipe!!.produce) && inputContainer.contains(recipe!!.consume)) {
             for ((type, quantity) in recipe!!.consume) {
                 inputContainer.remove(type, quantity)
             }

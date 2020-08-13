@@ -1,9 +1,6 @@
 package misc
 
-import kotlin.math.PI
-import kotlin.math.cos
-import kotlin.math.roundToInt
-import kotlin.math.sin
+import kotlin.math.*
 
 object Geometry {
     fun intersects(xPixel: Int, yPixel: Int, width: Int, height: Int, xPixel2: Int, yPixel2: Int, width2: Int, height2: Int): Boolean {
@@ -110,6 +107,8 @@ object Geometry {
 
         return TileCoord(translatedX.roundToInt(), translatedY.roundToInt())
     }
+
+    fun manhattanDist(x: Int, y: Int, x2: Int, y2: Int) = (x - x2).absoluteValue + (y - y2).absoluteValue
 
     fun distance(x: Int, y: Int, x2: Int, y2: Int) = Numbers.sqrt(distanceSq(x, y, x2, y2))
 

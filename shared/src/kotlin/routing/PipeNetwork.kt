@@ -11,7 +11,6 @@ import item.ItemType
 import level.Level
 import level.LevelManager
 import level.update.ResourceNodeTransferThrough
-import level.add
 import level.pipe.PipeBlock
 import main.DebugCode
 import main.Game
@@ -58,7 +57,6 @@ abstract class PipeNetwork(resourceCategory: ResourceCategory, level: Level, pri
                 // if the package was partially on this tube
                 // drop it and remove it from the network
                 packages.remove(pack)
-                level.add(pack.position.xPixel, pack.position.yPixel + 5, pack.type, pack.quantity)
                 pack.to.attachedContainer.cancelExpectation(pack.type, pack.quantity)
             }
         }
@@ -81,7 +79,7 @@ abstract class PipeNetwork(resourceCategory: ResourceCategory, level: Level, pri
         return intersections.firstOrNull { it.pipeBlock == t }
     }
 
-    private fun getPipeAt(xTile: Int, yTile: Int) = pipes.firstOrNull { it.xTile == xTile && it.yTile == yTile }
+    fun getPipeAtOrNull(xTile: Int, yTile: Int) = pipes.firstOrNull { it.xTile == xTile && it.yTile == yTile }
 
     override fun mergeIntoThis(other: ResourceRoutingNetwork) {
         super.mergeIntoThis(other)
@@ -118,14 +116,12 @@ abstract class PipeNetwork(resourceCategory: ResourceCategory, level: Level, pri
     }
 
     /**
-     * @return the [Connections] object describing the intersections in each direction and their distance to this [xTile], [yTile].
+     * @return the [Connections] object describing the intersections in each direction and their distance to this [pipe].
      * This will also create new intersections as needed (if there should be one but isn't)
      */
-    fun findConnections(xTile: Int, yTile: Int): Connections {
+    fun findConnectionsWithPipe(pipe: PipeBlock): Connections {
         val connecIntersections = arrayOfNulls<Intersection>(4)
         val connecDists = arrayOfNulls<Int>(4)
-        val pipe = getPipeAt(xTile, yTile)
-                ?: throw IllegalArgumentException("Can't find the connections at $xTile, $yTile because there is no pipe in the network there")
         for (i in 0..3) {
             var currentPipe = pipe.pipeConnections[i]
             var dist = 1
@@ -182,10 +178,10 @@ abstract class PipeNetwork(resourceCategory: ResourceCategory, level: Level, pri
             if (!expectSuccess) {
                 throw Exception("Wasn't able to expect resources in ${to.attachedNode!!.attachedContainer} successfully, but was still told to transfer resources there")
             }
-            nodesSentTo.add(to)
-            if (nodesSentTo.size == attachedNodes.filter { it.behavior.allowIn.possible() != null }.size) {
-                // if we've sent to all internal nodes
-                nodesSentTo.clear()
+            containersSentTo.add(to.attachedNode!!.attachedContainer)
+            if (containersSentTo.size == attachedNodes.filter { it.behavior.allowIn.possible() != null }.map { it.attachedContainer }.distinct().size) {
+                // if we've sent to all internal containers
+                containersSentTo.clear()
             }
             packages.add(PipeRoutingPackage(from, to, type, quantity, route))
             return true
@@ -196,7 +192,7 @@ abstract class PipeNetwork(resourceCategory: ResourceCategory, level: Level, pri
     private fun reroutePackage(pack: PipeRoutingPackage) {
         val newDestination = findDestinationFor(pack.type, pack.quantity)
         if (newDestination != null) {
-            val route = route(pack.position.xPixel, pack.position.yPixel, pack.dir, newDestination, this)
+            val route = route(pack.position.xPixel, pack.position.yPixel, newDestination, this)
             if (route != null) {
                 if (newDestination.attachedNode!!.attachedContainer.expect(pack.type, pack.quantity)) {
                     println("routing resource: $route")
@@ -236,7 +232,7 @@ abstract class PipeNetwork(resourceCategory: ResourceCategory, level: Level, pri
                 packages.remove(pack)
             } else {
                 if (pack.position.manhattanDistance(pack.currentRouteStep.position) < speed) {
-                    pack.dir = pack.currentRouteStep.nextDir
+                    pack.dir = pack.currentRouteStep.dir
                     pack.routeStepIndex++
                 }
                 pack.position.xPixel += Geometry.getXSign(pack.dir) * speed
@@ -259,7 +255,7 @@ abstract class PipeNetwork(resourceCategory: ResourceCategory, level: Level, pri
                     val xDistanceStep = step.position.xPixel - lastStep.position.xPixel
                     val yDistanceStep = step.position.yPixel - lastStep.position.yPixel
                     Renderer.renderFilledRectangle(lastStep.position.xPixel, lastStep.position.yPixel + 5, if (xDistanceStep == 0) 2 else xDistanceStep, if (yDistanceStep == 0) 2 else yDistanceStep)
-                    Renderer.renderTexture(Image.Misc.THIN_ARROW, lastStep.position.xPixel, lastStep.position.yPixel, 8, 8, TextureRenderParams(rotation = Geometry.getDegrees(lastStep.nextDir + 1)))
+                    Renderer.renderTexture(Image.Misc.THIN_ARROW, lastStep.position.xPixel, lastStep.position.yPixel, 8, 8, TextureRenderParams(rotation = Geometry.getDegrees(lastStep.dir + 1)))
                 }
             }
         }
@@ -281,7 +277,7 @@ abstract class PipeNetwork(resourceCategory: ResourceCategory, level: Level, pri
             @Id(7)
             var position: PixelCoord = PixelCoord(route[0].position.xPixel, route[0].position.yPixel),
             @Id(8)
-            var dir: Int = route[0].nextDir,
+            var dir: Int = route[0].dir,
             @Id(9)
             var awaitingRoute: Boolean = false) {
 

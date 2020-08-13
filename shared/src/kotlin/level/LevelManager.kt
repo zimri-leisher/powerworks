@@ -1,21 +1,18 @@
 package level
 
 import audio.AudioManager
-import crafting.Recipe
 import data.DirectoryChangeWatcher
 import data.FileManager
 import data.GameDirectoryIdentifier
 import data.WeakMutableList
-import io.ControlPressHandler
+import io.ControlHandler
 import io.InputManager
 import io.MouseMovementListener
-import level.block.CrafterBlock
-import level.entity.robot.Robot
-import level.entity.robot.RobotType
 import level.generator.LevelType
 import main.Game
-import main.State
+import main.GameState
 import network.User
+import player.PlayerManager
 import resource.ResourceNode
 import screen.CameraMovementListener
 import screen.ScreenManager
@@ -25,28 +22,21 @@ import java.nio.file.Path
 import java.time.LocalDateTime
 import java.util.*
 
-object LevelManager : DirectoryChangeWatcher, MouseMovementListener, CameraMovementListener {
+// TODO use mouse movement listener
+// TODO Design choice: all listeners are held in their managers
+// TODO events are pushed to the manager which pushes out the event
+
+object LevelManager : DirectoryChangeWatcher, MouseMovementListener, CameraMovementListener, LevelEventListener {
 
     val allLevels = mutableSetOf<Level>()
 
-    private val _loadedLevels = mutableSetOf<Level>()
-    val loadedLevels = object : MutableSet<Level> by _loadedLevels {
-        override fun add(element: Level): Boolean {
-            val result = _loadedLevels.add(element)
-            if(result) {
-                onLevelLoad(element)
-            }
-            return result
-        }
-    }
+    val loadedLevels = mutableSetOf<Level>()
 
     /**
      * The default [Level] for [LevelObject]s and [ResourceNode]s. They are never added to it and only store it after their
      * instantiation and before they get [added][Level.add] to a [Level]
      */
-    val EMPTY_LEVEL = ActualLevel(UUID.nameUUIDFromBytes(ByteArray(2, { 0 })), LevelInfo(User(UUID.nameUUIDFromBytes(ByteArray(3, { 0 })), ""), "EMPTY_LEVEL", "-1", LevelType.EMPTY, 0))
-
-    val EMPTY_CHUNK = Chunk(0, 0)
+    val EMPTY_LEVEL = UnknownLevel(UUID.nameUUIDFromBytes(ByteArray(1) { 0 }))
 
     /**
      * The [Level] that the mouse is over, or null if the mouse is not over any [Level]
@@ -72,10 +62,11 @@ object LevelManager : DirectoryChangeWatcher, MouseMovementListener, CameraMovem
      */
     lateinit var levelViewLastInteractedWith: GUILevelView
         private set
+
     /**
      * The [LevelObject] that the mouse is currently over, or null if the mouse is not over any [LevelObject]. If there are
-     * multiple [LevelObject]s under the [Mouse], it will return [MovingObject]s first (in an undefined order) and [Block]s
-     * last. However, this is a pretty rare case
+     * multiple [LevelObject]s under the [Mouse], it will return [MovingObject]s first (in an arbitrary order) and [Block]s
+     * last
      */
     var levelObjectUnderMouse: LevelObject? = null
         private set
@@ -115,13 +106,36 @@ object LevelManager : DirectoryChangeWatcher, MouseMovementListener, CameraMovem
 
     val mouseMovementListeners = mutableSetOf<MouseLevelMovementListener>()
 
+    val levelEventListeners = mutableListOf<LevelEventListener>()
+
     init {
         if (Game.IS_SERVER) {
             FileManager.fileSystem.registerDirectoryChangeWatcher(this, FileManager.fileSystem.getPath(GameDirectoryIdentifier.SAVES))
         } else {
             InputManager.mouseMovementListeners.add(this)
         }
+        levelEventListeners.add(this)
     }
+
+    fun pushLevelStateEvent(level: Level, event: LevelEvent) {
+        levelEventListeners.forEach { it.onLevelEvent(level, event) }
+    }
+
+    override fun onLevelEvent(level: Level, event: LevelEvent) {
+        if(event == LevelEvent.LOAD) {
+            loadedLevels.add(level)
+        } else if(event == LevelEvent.UNLOAD) {
+            loadedLevels.remove(level)
+        }
+    }
+
+    fun getLevelById(levelId: UUID) = allLevels.first { it.id == levelId }
+
+    fun getLevelByIdOrNull(levelId: UUID) = allLevels.firstOrNull { it.id == levelId }
+
+    fun isLevelInitialized(levelId: UUID) = allLevels.any { it.id == levelId }
+
+    fun isLevelLoaded(levelId: UUID) = loadedLevels.any { it.id == levelId }
 
     fun addLevelView(view: GUILevelView) {
         if (allViews.size == 0) {
@@ -131,11 +145,8 @@ object LevelManager : DirectoryChangeWatcher, MouseMovementListener, CameraMovem
         allViews.add(view)
     }
 
-    private fun onLevelLoad(level: Level) {
-    }
-
     override fun onMouseMove(pXPixel: Int, pYPixel: Int) {
-        if (State.CURRENT_STATE == State.INGAME) {
+        if (GameState.CURRENT_STATE == GameState.INGAME) {
             updateMouseLevelPosition()
         }
     }
@@ -144,21 +155,21 @@ object LevelManager : DirectoryChangeWatcher, MouseMovementListener, CameraMovem
         updateMouseLevelPosition()
     }
 
-    fun newLevelId() = UUID.nameUUIDFromBytes(ByteArray(1))
+    fun newLevelId() = UUID.randomUUID()
 
-    fun newLevelInfoFor(user: User): LevelInfo = LevelInfo(user, user.id.toString(), LocalDateTime.now().toString(), LevelType.DEFAULT_SIMPLEX, (Math.random() * 4096).toLong())
+    fun newLevelInfoForFile(user: User): LevelInfo = LevelInfo(user, user.id.toString(), LocalDateTime.now().toString(), LevelType.DEFAULT_SIMPLEX, (Math.random() * 4096).toLong())
 
-    fun doesLevelInfoExist(levelId: UUID, dir: GameDirectoryIdentifier = GameDirectoryIdentifier.SAVES) = FileManager.fileExists(dir, "$levelId/main.info")
+    fun doesLevelInfoExistFile(levelId: UUID, dir: GameDirectoryIdentifier = GameDirectoryIdentifier.SAVES) = FileManager.fileExists(dir, "$levelId/main.info")
 
-    fun tryLoadLevelInfo(levelId: UUID, dir: GameDirectoryIdentifier = GameDirectoryIdentifier.SAVES) = FileManager.tryLoadObject(dir, "$levelId/main.info", LevelInfo::class.java)
+    fun tryLoadLevelInfoFile(levelId: UUID, dir: GameDirectoryIdentifier = GameDirectoryIdentifier.SAVES) = FileManager.tryLoadObject(dir, "$levelId/main.info", LevelInfo::class.java)
 
-    fun saveLevelInfo(levelId: UUID, info: LevelInfo, dir: GameDirectoryIdentifier = GameDirectoryIdentifier.SAVES) = FileManager.saveObject(dir, "$levelId/main.info", info)
+    fun saveLevelInfoFile(levelId: UUID, info: LevelInfo, dir: GameDirectoryIdentifier = GameDirectoryIdentifier.SAVES) = FileManager.saveObject(dir, "$levelId/main.info", info)
 
-    fun doesLevelDataExist(levelId: UUID, dir: GameDirectoryIdentifier = GameDirectoryIdentifier.SAVES) = FileManager.fileExists(dir, "$levelId/main.level")
+    fun doesLevelDataFileExist(levelId: UUID, dir: GameDirectoryIdentifier = GameDirectoryIdentifier.SAVES) = FileManager.fileExists(dir, "$levelId/main.level")
 
-    fun tryLoadLevelData(levelId: UUID, dir: GameDirectoryIdentifier = GameDirectoryIdentifier.SAVES) = FileManager.tryLoadObject(dir, "$levelId/main.level", LevelData::class.java)
+    fun tryLoadLevelDataFile(levelId: UUID, dir: GameDirectoryIdentifier = GameDirectoryIdentifier.SAVES) = FileManager.tryLoadObject(dir, "$levelId/main.level", LevelData::class.java)
 
-    fun saveLevelData(levelId: UUID, data: LevelData, dir: GameDirectoryIdentifier = GameDirectoryIdentifier.SAVES) = FileManager.saveObject(dir, "$levelId/main.level", data)
+    fun saveLevelDataFile(levelId: UUID, data: LevelData, dir: GameDirectoryIdentifier = GameDirectoryIdentifier.SAVES) = FileManager.saveObject(dir, "$levelId/main.level", data)
 
     /**
      * Updates the audio engine so you hear sound from last the selected view
@@ -197,8 +208,8 @@ object LevelManager : DirectoryChangeWatcher, MouseMovementListener, CameraMovem
     fun onInteractWithLevelObjectUnderMouse() {
         levelObjectLastInteractedWith = levelObjectUnderMouse!!
         InputManager.currentLevelHandlers.clear()
-        if (levelObjectLastInteractedWith is ControlPressHandler) {
-            InputManager.currentLevelHandlers.add(levelObjectLastInteractedWith as ControlPressHandler)
+        if (levelObjectLastInteractedWith is ControlHandler) {
+            InputManager.currentLevelHandlers.add(levelObjectLastInteractedWith as ControlHandler)
         }
     }
 
@@ -216,22 +227,9 @@ object LevelManager : DirectoryChangeWatcher, MouseMovementListener, CameraMovem
         }
     }
 
-    private fun updateChunksBeingRendered() {
-        // todo redo this shit
-        allViews.forEach {
-            if (it.open) {
-                val chunksInView = it.level.getChunksFromPixelRectangle(it.viewRectangle.x, it.viewRectangle.y, it.viewRectangle.width, it.viewRectangle.height)
-                for (chunk in it.level.data.chunks) {
-                    chunk.beingRendered = chunk in chunksInView
-                }
-            }
-        }
-    }
-
     fun update() {
         if (!Game.IS_SERVER) {
             updateLevelAndViewInformation()
-            updateChunksBeingRendered()
         }
         loadedLevels.forEach { it.update() }
     }
@@ -241,14 +239,10 @@ object LevelManager : DirectoryChangeWatcher, MouseMovementListener, CameraMovem
         }
     }
 
-    fun onCrafterRecipeChange(block: CrafterBlock, newRecipe: Recipe?) {
-
-    }
-
     fun saveLevels() {
         for (level in loadedLevels) {
-            saveLevelInfo(level.id, level.info)
-            saveLevelData(level.id, level.data)
+            saveLevelInfoFile(level.id, level.info)
+            saveLevelDataFile(level.id, level.data)
         }
     }
 }

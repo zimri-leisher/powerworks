@@ -13,6 +13,7 @@ class LevelUpdatePacket(@Id(4) val update: LevelUpdate,
                         val level: Level) : ServerUpdatePacket(PacketType.LEVEL_UPDATE) {
     private constructor() : this(DefaultLevelUpdate(), LevelManager.EMPTY_LEVEL)
 
-    @Id(3)
-    val levelTimeWhenSent = level.updatesCount
+    override fun toString(): String {
+        return "LevelUpdatePacket: (update=$update, level=$level)"
+    }
 }

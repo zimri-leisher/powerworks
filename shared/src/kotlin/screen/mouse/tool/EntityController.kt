@@ -57,7 +57,7 @@ object ControllerMenu : GUIWindow("Entity controller window",
     }
 }
 
-object EntityController : Tool(Control.SELECT_ENTITY_COMMAND, Control.USE_ENTITY_COMMAND) {
+object EntityController : Tool(Control.USE_ENTITY_COMMAND) {
 
     const val DRAG_DISTANCE_BEFORE_MENU_OPEN = 8
 
@@ -67,11 +67,12 @@ object EntityController : Tool(Control.SELECT_ENTITY_COMMAND, Control.USE_ENTITY
     var currentlyHoveringCommand: BehaviorTree? = null
     var selectedCommand: BehaviorTree? = null
 
-    override fun onUse(control: Control, type: PressType, mouseLevelXPixel: Int, mouseLevelYPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
-        if (control == Control.SELECT_ENTITY_COMMAND) {
+    override fun onUse(control: Control, type: PressType, mouseLevelXPixel: Int, mouseLevelYPixel: Int): Boolean {
+        if (control == Control.USE_ENTITY_COMMAND) {
             if (type == PressType.PRESSED) {
                 startXPixel = Mouse.xPixel
                 startYPixel = Mouse.yPixel
+                println("start: $startXPixel, $startYPixel")
             } else if (type == PressType.REPEAT) {
                 if (Geometry.distance(Mouse.xPixel, Mouse.yPixel, startXPixel, startYPixel) > DRAG_DISTANCE_BEFORE_MENU_OPEN) {
                     val startXCopy = startXPixel
@@ -85,14 +86,15 @@ object EntityController : Tool(Control.SELECT_ENTITY_COMMAND, Control.USE_ENTITY
                     selectedCommand = currentlyHoveringCommand
                     ControllerMenu.open = false
                 }
-            }
-        } else if (control == Control.USE_ENTITY_COMMAND) {
-            if (type == PressType.RELEASED && !Selector.dragging) {
-                if (selectedCommand != null && !ControllerMenu.open) {
-                    controlEntities(selectedCommand!!)
+                if(!Selector.dragging) {
+                    if (selectedCommand != null && !ControllerMenu.open) {
+                        controlEntities(selectedCommand!!)
+                        return true
+                    }
                 }
             }
         }
+        return false
     }
 
     private fun controlEntities(command: BehaviorTree) {
@@ -118,9 +120,5 @@ object EntityController : Tool(Control.SELECT_ENTITY_COMMAND, Control.USE_ENTITY
                         command, LevelManager.levelObjectUnderMouse?.toReference()))
             }
         }
-    }
-
-    override fun updateCurrentlyActive() {
-        currentlyActive = true
     }
 }

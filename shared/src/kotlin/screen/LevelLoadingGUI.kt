@@ -4,7 +4,7 @@ import graphics.Image
 import level.LevelManager
 import level.RemoteLevel
 import main.Game
-import main.State
+import main.GameState
 import player.PlayerManager
 import screen.elements.GUIText
 import screen.elements.GUITexturePane
@@ -16,17 +16,17 @@ object LevelLoadingGUI : GUIWindow("Level loading window", { 0 }, { 0 }, { Game.
 
     init {
         GUITexturePane(this, "Level loading screen background", { 0 }, { 0 }, Image.GUI.GREY_FILLER, { widthPixels }, { heightPixels }).run {
-            text = GUIText(this, "Loading level levelInfo text", 100, 100, "Loading level")
+            text = GUIText(this, "Loading level levelInfo text", { widthPixels / 2 }, { heightPixels / 2 }, "Loading level")
         }
     }
 
     override fun update() {
         if (PlayerManager.isLocalPlayerLoaded()) {
             if (((PlayerManager.localPlayer.homeLevel is RemoteLevel && (PlayerManager.localPlayer.homeLevel as RemoteLevel).loaded)
-                    || PlayerManager.localPlayer.homeLevel !is RemoteLevel)
-                    && LevelManager.allLevels.any { it.data.brainRobots.any { it.id == PlayerManager.localPlayer.brainRobotId } }) {
+                            || PlayerManager.localPlayer.homeLevel !is RemoteLevel)
+                    && LevelManager.allLevels.any { it.data.brainRobots.any { brainRobot -> brainRobot.id == PlayerManager.localPlayer.brainRobotId } }) {
                 open = false
-                State.setState(State.INGAME)
+                GameState.setState(GameState.INGAME)
             }
         }
     }

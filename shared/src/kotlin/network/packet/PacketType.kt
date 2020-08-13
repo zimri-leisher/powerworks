@@ -15,5 +15,5 @@ enum class PacketType {
     UPDATE_BLOCK,
     LEVEL_UPDATE,
 
-    LEVEL_LOADED_SUCCESS
+    LEVEL_LOADED_SUCCESS,
 }

@@ -12,7 +12,7 @@ import screen.elements.GUIWindow
 import screen.elements.RootGUIElement
 import screen.mouse.Mouse
 
-object ScreenManager : ControlPressHandler {
+object ScreenManager : ControlHandler {
 
     private val _windowGroups = mutableListOf<WindowGroup>()
     val windowGroups = object : MutableList<WindowGroup> by _windowGroups {
@@ -153,14 +153,14 @@ object ScreenManager : ControlPressHandler {
         if (windowUnderMouse != null) {
             windowLastInteractedWith = windowUnderMouse!!
             windowLastInteractedWith.windowGroup.bringToTop(windowLastInteractedWith)
-            if (windowLastInteractedWith is ControlPressHandler) {
-                InputManager.currentScreenHandlers.add(windowLastInteractedWith as ControlPressHandler)
+            if (windowLastInteractedWith is ControlHandler) {
+                InputManager.currentScreenHandlers.add(windowLastInteractedWith as ControlHandler)
             }
         }
         if (elementUnderMouse != null) {
             elementLastInteractedWith = elementUnderMouse!!
-            if (elementLastInteractedWith is ControlPressHandler) {
-                InputManager.currentScreenHandlers.add(elementLastInteractedWith as ControlPressHandler)
+            if (elementLastInteractedWith is ControlHandler) {
+                InputManager.currentScreenHandlers.add(elementLastInteractedWith as ControlHandler)
             }
         }
     }
@@ -176,7 +176,7 @@ object ScreenManager : ControlPressHandler {
         }
     }
 
-    override fun handleControlPress(p: ControlPress) {
+    override fun handleControl(p: ControlPress) {
         val x = Mouse.xPixel
         val y = Mouse.yPixel
         val t = p.pressType

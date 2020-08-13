@@ -45,7 +45,7 @@ class GhostLevelObject(type: LevelObjectType<*>, xPixel: Int, yPixel: Int, rotat
                 Renderer.renderTexture(Image.Block.TUBE_DOWN_CLOSE, xPixel, yPixel + 14 - Image.Block.TUBE_DOWN_CLOSE.heightPixels)
             if (pipeClosedEnds[3])
                 Renderer.renderTexture(Image.Block.TUBE_LEFT_CLOSE, xPixel - Image.Block.TUBE_LEFT_CLOSE.widthPixels, yPixel + 20 - Image.Block.TUBE_LEFT_CLOSE.heightPixels)
-        } else if (type != LevelObjectType.DROPPED_ITEM) {
+        } else {
             super.render()
         }
     }

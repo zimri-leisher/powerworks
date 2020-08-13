@@ -12,7 +12,7 @@ import java.util.*
 class CrafterBlockSelectRecipe(
         @Id(2) val crafterReference: BlockReference,
         @Id(3) val recipe: Recipe?
-) : LevelUpdate(LevelModificationType.SELECT_CRAFTER_RECIPE) {
+) : LevelUpdate(LevelUpdateType.CRAFTER_SELECT_RECIPE) {
 
     private constructor() : this(BlockReference(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0), null)
 
@@ -39,7 +39,7 @@ class CrafterBlockSelectRecipe(
             return false
         }
 
-        if (other.crafterReference.value != crafterReference.value) {
+        if (other.crafterReference.value == null || other.crafterReference.value !== crafterReference.value) {
             return false
         }
 
@@ -50,4 +50,7 @@ class CrafterBlockSelectRecipe(
         return true
     }
 
+    override fun resolveReferences() {
+        crafterReference.value = crafterReference.resolve()
+    }
 }

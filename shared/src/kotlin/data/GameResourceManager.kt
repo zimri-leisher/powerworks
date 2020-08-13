@@ -10,9 +10,9 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion
 import java.io.InputStream
 import java.net.URL
 
-class ResourceNotFoundException(message: String) : Exception(message)
+class GameResourceNotFoundException(message: String) : Exception(message)
 
-object ResourceManager {
+object GameResourceManager {
 
     private val images = mutableMapOf<String, Texture>()
 
@@ -52,7 +52,7 @@ object ResourceManager {
                 break
         }
         if (region == null) {
-            throw ResourceNotFoundException("Resource with identifier $identifier ${if (index != -1) "and index $index" else ""} not found in an atlas")
+            throw GameResourceNotFoundException("Resource with identifier $identifier ${if (index != -1) "and index $index" else ""} not found in an atlas")
         }
         textureRegions.put(fullId, region)
         return region
@@ -105,13 +105,13 @@ object ResourceManager {
 
     /**
      * @return a [Texture] that matches the identifier.
-     * @throws ResourceNotFoundException if there is no matching
+     * @throws GameResourceNotFoundException if there is no matching
      */
     fun getTexture(identifier: String): Texture {
         try {
             return images[identifier]!!
         } catch (e: KotlinNullPointerException) {
-            throw ResourceNotFoundException("Resource with identifier $identifier not found")
+            throw GameResourceNotFoundException("Resource with identifier $identifier not found")
         }
     }
 
@@ -121,9 +121,9 @@ object ResourceManager {
      */
     fun getRawResource(path: String): URL {
         return try {
-            ResourceManager.javaClass.getResource(path)!!
+            GameResourceManager.javaClass.getResource(path)!!
         } catch (e: KotlinNullPointerException) {
-            throw ResourceNotFoundException("Resource at $path not found")
+            throw GameResourceNotFoundException("Resource at $path not found")
         }
     }
 
@@ -133,9 +133,9 @@ object ResourceManager {
      */
     fun getRawResourceAsStream(path: String): InputStream {
         return try {
-            ResourceManager.javaClass.getResourceAsStream(path)!!
+            GameResourceManager.javaClass.getResourceAsStream(path)!!
         } catch (e: KotlinNullPointerException) {
-            throw ResourceNotFoundException("Resource at $path not found")
+            throw GameResourceNotFoundException("Resource at $path not found")
         }
     }
 

@@ -38,6 +38,6 @@ abstract class LevelGenerator(
         return chunks.requireNoNulls()
     }
 
-    fun generateData(level: Level) = LevelData(ConcurrentlyModifiableMutableList(), ConcurrentlyModifiableMutableList(), generateChunks(), mutableListOf())
+    fun generateData() = LevelData(ConcurrentlyModifiableMutableList(), ConcurrentlyModifiableMutableList(), generateChunks(), mutableListOf())
 
 }

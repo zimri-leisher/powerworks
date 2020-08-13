@@ -11,16 +11,23 @@ object ResourceNodeEditor : Tool(Control.EDIT_RESOURCE_NODE) {
 
     var selectedNodes = setOf<ResourceNode>()
 
-    override fun onUse(control: Control, type: PressType, mouseLevelXPixel: Int, mouseLevelYPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
-        if (type == PressType.RELEASED) {
-            RoutingLanguageEditor.node = selectedNodes.first()
-            RoutingLanguageEditor.open = true
+    init {
+        activationPredicate = {
+            selectedNodes.isNotEmpty()
         }
     }
 
-    override fun updateCurrentlyActive() {
+    override fun onUse(control: Control, type: PressType, mouseLevelXPixel: Int, mouseLevelYPixel: Int): Boolean {
+        if (type == PressType.RELEASED) {
+            RoutingLanguageEditor.node = selectedNodes.first()
+            RoutingLanguageEditor.open = true
+            return true
+        }
+        return false
+    }
+
+    override fun update() {
         selectedNodes = LevelManager.levelUnderMouse?.getResourceNodesAt(LevelManager.mouseLevelXPixel shr 4, LevelManager.mouseLevelYPixel shr 4)
                 ?: emptySet()
-        currentlyActive = selectedNodes.isNotEmpty()
     }
 }

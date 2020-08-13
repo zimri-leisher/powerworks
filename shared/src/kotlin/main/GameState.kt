@@ -5,21 +5,20 @@ import player.PlayerManager
 import screen.*
 import screen.mouse.Mouse
 
-class State(val activate: () -> Unit, val deactivate: () -> Unit) {
+class GameState(val activate: () -> Unit, val deactivate: () -> Unit) {
     companion object {
 
-        private var NEXT_STATE: State? = null
+        private var NEXT_STATE: GameState? = null
 
-        val MAIN_MENU = State({
+        val MAIN_MENU = GameState({
             MainMenuGUI.open = true
         }, {
             MainMenuGUI.open = false
         })
 
-        val INGAME = State({
+        val INGAME = GameState({
             IngameGUI.open = true
             TestGUI
-            // the mouse listens to changes so that if there are no more items of the selected type in the main inventory, then it will switch the type to null
             PlayerManager.localPlayer.brainRobot.inventory.listeners.add(Mouse)
 
             AudioManager.ears = IngameGUI.cameras[0]
@@ -32,7 +31,7 @@ class State(val activate: () -> Unit, val deactivate: () -> Unit) {
         var CURRENT_STATE = MAIN_MENU
             private set
 
-        fun setState(s: State) {
+        fun setState(s: GameState) {
             NEXT_STATE = s
         }
 

@@ -94,7 +94,6 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: In
         if (dist > 8) {
             println("TELEPORTING: $dist")
         }
-        onMove(oXPixel, oYPixel)
     }
 
     override fun update() {
@@ -145,6 +144,8 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: In
     }
 
     protected open fun onMove(pXPixel: Int, pYPixel: Int) {
+        if(!inLevel)
+            return
         val oldChunk = level.getChunkFromPixel(pXPixel, pYPixel)
         val newChunk = level.getChunkAt(xChunk, yChunk)
         if (oldChunk != newChunk) {
@@ -200,8 +201,6 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: In
                 gettingUnstuck = false
             }
             updateRotation()
-            val pXPixel = xPixel
-            val pYPixel = yPixel
             // add fractional part of velocity
             xPixelRemainder += xVel - xVel.toInt()
             yPixelRemainder += yVel - yVel.toInt()
@@ -284,7 +283,7 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: In
     }
 
     private fun updateIntersectingChunks() {
-        if (hitbox != Hitbox.NONE) {
+        if (hitbox != Hitbox.NONE && inLevel) {
             val newIntersectingChunks = level.getChunksFromPixelRectangle(
                     hitbox.xStart + xPixel, hitbox.yStart + yPixel, hitbox.width, hitbox.height).toMutableSet()
             newIntersectingChunks.remove(level.getChunkAt(xChunk, yChunk))

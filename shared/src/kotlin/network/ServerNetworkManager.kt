@@ -8,7 +8,6 @@ import main.SERVER_IP
 import main.SERVER_PORT
 import main.Version
 import network.packet.*
-import player.Player
 import player.PlayerManager
 import java.net.InetSocketAddress
 import java.util.*
@@ -83,12 +82,12 @@ object ServerNetworkManager : PacketHandler {
     override fun handleClientPacket(packet: Packet) {
         if (packet is ClientHandshakePacket) {
             if (clientInfos.none { (id, _) -> id == packet.connectionId }) {
-                val accepted = Game.VERSION.isCompatible(packet.version)
-                sendToClient(ServerHandshakePacket(packet.timestamp, System.currentTimeMillis(), accepted), packet.connectionId) {
-                    if (!accepted) connection.close()
-                }
+                val accepted = Game.VERSION.isCompatible(packet.version) && getConnectionIdByUserOrNull(packet.newUser) == null // version compatible, user is not previously connected
+                sendToClient(ServerHandshakePacket(packet.timestamp, System.currentTimeMillis(), accepted), packet.connectionId)
                 if (accepted) {
                     clientInfos.put(packet.connectionId, ClientInfo(packet.newUser, packet.version, packet.connection.remoteAddressTCP))
+                } else {
+                    println("Client connection not accepted")
                 }
             }
         }
@@ -97,30 +96,16 @@ object ServerNetworkManager : PacketHandler {
     override fun handleServerPacket(packet: Packet) {
     }
 
-    fun sendToPlayers(packet: Packet, players: Set<Player>, onSend: Packet.() -> Unit = {}) {
-        for (player in players) {
-            val playerConnections = clientInfos.filterValues { it.user == player.user }.keys
-            for (connection in playerConnections) {
-                sendToClient(packet, connection, onSend)
-            }
-            if (playerConnections.size > 1) {
-                println("Player is connected more than once!")
-            }
-        }
-    }
-
-    fun sendToClient(packet: Packet, connectionId: Int, onSend: Packet.() -> Unit = {}) {
+    fun sendToClient(packet: Packet, connectionId: Int) {
         if (!Game.IS_SERVER) return
-        packet.onSend = onSend
         // want to put in the correct map a pair of (connectionId, packet)
         (if (traversingOutwardPackets) _toAddOutwardPackets else outwardPackets).get(connectionId)?.add(packet)
                 ?: outwardPackets.put(connectionId, mutableListOf(packet))
     }
 
-    fun sendToClients(packet: Packet, onSend: Packet.() -> Unit = {}) {
+    fun sendToClients(packet: Packet) {
         if (!Game.IS_SERVER) return
         packet.connectionId = -1
-        packet.onSend = onSend
         // want to put in the correct map a pair of (null, packet)
         // null value signifies it goes to all clients
         (if (traversingOutwardPackets) _toAddOutwardPackets else outwardPackets).get(null)?.add(packet)
@@ -136,20 +121,28 @@ object ServerNetworkManager : PacketHandler {
         }
     }
 
-    fun getConnection(id: Int) = connections.first { it.id == id }
+    fun isOnline(user: User) = clientInfos.any { it.value.user == user }
 
-    fun getUser(packet: Packet) = getUser(packet.connectionId)
+    fun getConnectionIdByUser(user: User) = clientInfos.entries.first { (_, value) -> value.user == user }.key
 
-    fun getUser(connection: Int) = clientInfos[connection]!!.user
+    fun getConnectionIdByUserOrNull(user: User) = clientInfos.entries.firstOrNull { (_, value) -> value.user == user }?.key
 
-    fun isAccepted(connection: Int) = connection in clientInfos
+    fun getConnectionById(id: Int) = connections.first { it.id == id }!!
 
-    fun onClientDisconnect(client: Connection) {
+    fun getConnectionByIdOrNull(id: Int) = connections.firstOrNull { it.id == id }
+
+    fun getUserByConnectionId(connection: Int) = clientInfos[connection]!!.user
+
+    fun getUserByConnectionIdOrNull(connection: Int) = clientInfos[connection]?.user
+
+    private fun isAccepted(connection: Int) = connection in clientInfos
+
+    private fun onClientDisconnect(client: Connection) {
         if (clientInfos.containsKey(client.id)) { // if a client connects twice from the same ip, they will get
             // disconnected but the connection id wont be in client infos
-            val player = PlayerManager.getPlayer(getUser(client.id))
-            player.lobby.disconnectPlayer(player)
+            val user = getUserByConnectionId(client.id)
             clientInfos.remove(client.id)
+            PlayerManager.onUserDisconnect(user)
         }
     }
 
@@ -193,9 +186,15 @@ object ServerNetworkManager : PacketHandler {
                 if (connectionId == null) {
                     // send it to all accepted clients
                     for (accepted in clientInfos.map { it.key }) {
-                        packets.forEach { kryoServer.sendToTCP(accepted, it) }
+                        packets.forEach {
+                            try {
+                                kryoServer.sendToTCP(accepted, it)
+                            } catch (e: Exception) {
+                                System.err.println("Exception while sending packet $it:")
+                                e.printStackTrace(System.err)
+                            }
+                        }
                     }
-                    packets.forEach { it.onSend(it) }
                     iterator.remove()
                 } else {
                     // else if the packet is meant for one client (connectionId)
@@ -210,8 +209,20 @@ object ServerNetworkManager : PacketHandler {
                                 e.printStackTrace(System.err)
                             }
                         }
-                        packets.forEach { it.onSend(it) }
                         iterator.remove()
+                    } else {
+                        // if the packet was meant for a single client and the client was not accepted, it might be a
+                        // server handshake denial packet
+                        val handshakeDenialPacket = packets.filterIsInstance<ServerHandshakePacket>()
+                        for(denialPacket in handshakeDenialPacket) {
+                            try {
+                                kryoServer.sendToTCP(connectionId, denialPacket)
+                            } catch (e: Exception) {
+                                System.err.println("Exception while sending packet $denialPacket:")
+                                e.printStackTrace(System.err)
+                            }
+                        }
+                        connections.getOrNull(connectionId)?.close()
                     }
                 }
             }

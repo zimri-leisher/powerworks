@@ -8,24 +8,79 @@ import level.ActualLevel
 import level.LevelManager
 import level.entity.robot.BrainRobot
 import main.Game
+import main.PowerworksDelegates
 import network.ClientNetworkManager
 import network.ServerNetworkManager
 import network.User
 import network.packet.*
 import java.util.*
 
-object PlayerManager : PacketHandler {
-    lateinit var localPlayer: Player
+object PlayerManager : PacketHandler, PlayerEventListener {
+    private val localPlayerDelegate = PowerworksDelegates.lateinitVal<Player>()
+    var localPlayer: Player by localPlayerDelegate
 
     val allPlayers = ConcurrentlyModifiableWeakMutableList<Player>()
 
     val actionsAwaitingAck = mutableListOf<PlayerActionPacket>()
 
-    fun isLocalPlayerLoaded() = ::localPlayer.isInitialized
+    val playerEventListeners = mutableListOf<PlayerEventListener>()
+
+    fun isLocalPlayerLoaded() = localPlayerDelegate.initialized
 
     init {
         ServerNetworkManager.registerClientPacketHandler(this, PacketType.PLAYER_ACTION)
         ClientNetworkManager.registerServerPacketHandler(this, PacketType.ACK_PLAYER_ACTION)
+        playerEventListeners.add(this)
+    }
+
+    fun pushPlayerEvent(player: Player, event: PlayerEvent) {
+        playerEventListeners.forEach { it.onPlayerEvent(player, event) }
+    }
+
+    override fun onPlayerEvent(player: Player, event: PlayerEvent) {
+        if (event == PlayerEvent.INITIALIZE) {
+            allPlayers.add(player)
+            val homeLevel = LevelManager.allLevels.firstOrNull { it.id == player.homeLevelId }
+            if (homeLevel != null) {
+                player.homeLevel = homeLevel
+            }
+            val brainRobot = LevelManager.loadedLevels.mapNotNull { it.data.brainRobots.firstOrNull { it.id == player.brainRobotId } }
+            if (brainRobot.size > 1) {
+                println("$player has ${brainRobot.size} brainrobots ERROR ERROR")
+            } else if (brainRobot.size == 1) {
+                player.brainRobot = brainRobot.first()
+            }
+        }
+    }
+
+    fun getInitializedPlayerByIdOrNull(id: UUID): Player? {
+        var player: Player? = null
+        allPlayers.forEach {
+            if (it.user.id == id) {
+                player = it
+            }
+        }
+        return player
+    }
+
+    fun getOnlinePlayerOrNull(user: User): Player? {
+        var player: Player? = null
+        allPlayers.forEach {
+            if (it.online && it.user == user) {
+                player = it
+            }
+        }
+        return player
+    }
+
+    fun getInitializedPlayerOrNull(user: User): Player? {
+        var player: Player? = null
+        allPlayers.forEach {
+            if (it.user == user) {
+                player = it
+            }
+        }
+        return player
     }
 
     /**
@@ -35,46 +90,44 @@ object PlayerManager : PacketHandler {
      * the disk too.
      */
     fun getPlayer(user: User): Player {
-        var alreadyExistingPlayer: Player? = null
-        allPlayers.forEach {
-            if (it.user == user) {
-                alreadyExistingPlayer = it
-            }
-        }
-        if (alreadyExistingPlayer != null) {
-            // player has already been loaded this server session
-            return alreadyExistingPlayer!!
-        } else {
-            var player = tryLoadPlayer(user.id)
-            if (player == null) {
-                // player has never connected before
-                // will create and save a new level
-                player = newPlayer(user)
-            } else {
-                // player has connected before but not this session
-                // preload the players level if it is not already
-                if (LevelManager.allLevels.none { it.id == player.homeLevelId }) {
-                    ActualLevel(player.homeLevelId, LevelManager.tryLoadLevelInfo(player.homeLevelId)!!)
-                }
-            }
-            return player
-        }
+        return getInitializedPlayerOrNull(user)
+                ?: tryLoadPlayerOrNull(user)
+                        ?.also { player ->
+                            println("trying to load player")
+                            if (!LevelManager.isLevelInitialized(player.homeLevelId)) {
+                                ActualLevel(player.homeLevelId, LevelManager.tryLoadLevelInfoFile(player.homeLevelId)!!).apply {
+                                    initialize()
+                                    load()
+                                }
+                            }
+                        }
+                ?: newFirstTimePlayer(user)
     }
 
-    private fun tryLoadPlayer(id: UUID) = FileManager.tryLoadObject(GameDirectoryIdentifier.PLAYERS, "$id.player", Player::class.java)
+    fun onUserDisconnect(user: User) {
+        // make it realize it's no longer online
+        getOnlinePlayerOrNull(user)?.online = false
+    }
 
-    private fun newPlayer(forUser: User): Player {
-        val level = ActualLevel(LevelManager.newLevelId(), LevelManager.newLevelInfoFor(forUser))
-        val player = Player(forUser, level.id, UUID.nameUUIDFromBytes(ByteArray(1)))
-        val brainRobot = BrainRobot(level.widthPixels / 2, level.heightPixels / 2, 0, player.user)
+    private fun tryLoadPlayerOrNull(user: User) = FileManager.tryLoadObject(GameDirectoryIdentifier.PLAYERS, "${user.id}.player", Player::class.java)
+
+    private fun newFirstTimePlayer(user: User): Player {
+        val player = Player(user, LevelManager.newLevelId(), UUID.randomUUID())
+        player.initialize()
+        val level = ActualLevel(player.homeLevelId, LevelManager.newLevelInfoForFile(user))
+        level.initialize()
+        level.load()
+        val brainRobot = BrainRobot(level.widthPixels / 2, level.heightPixels / 2, 2, player.user)
+        player.brainRobot = brainRobot
         brainRobot.team = player.team
         for (type in ItemType.ALL) {
             brainRobot.inventory.add(type, type.maxStack)
         }
         level.add(brainRobot)
         brainRobot.id = player.brainRobotId
-        LevelManager.saveLevelData(level.id, level.data)
-        LevelManager.saveLevelInfo(level.id, level.info)
+        LevelManager.saveLevelDataFile(level.id, level.data)
+        LevelManager.saveLevelInfoFile(level.id, level.info)
+        savePlayer(player)
         return player
     }
 
@@ -112,12 +165,7 @@ object PlayerManager : PacketHandler {
         if (packet.type != PacketType.PLAYER_ACTION)
             return
         packet as PlayerActionPacket
-        var ownerShouldBe: Player? = null
-        allPlayers.forEach {
-            if (it.user == packet.fromUser) {
-                ownerShouldBe = it
-            }
-        }
+        val ownerShouldBe = getInitializedPlayerOrNull(packet.fromUser)
         if (ownerShouldBe == null) {
             println("Received an action from a user whose player has not been loaded yet")
             return

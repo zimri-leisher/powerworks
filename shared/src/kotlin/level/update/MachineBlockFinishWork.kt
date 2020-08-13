@@ -10,14 +10,22 @@ import java.util.*
 
 class MachineBlockFinishWork(
         @Id(2) val blockReference: BlockReference
-) : LevelUpdate(LevelModificationType.MACHINE_BLOCK_FINISH_WORK) {
+) : LevelUpdate(LevelUpdateType.MACHINE_BLOCK_FINISH_WORK) {
 
     private constructor() : this(BlockReference(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0))
 
     override val playersToSendTo: Set<Player>?
         get() = null
 
-    override fun canAct(level: Level) = blockReference.value != null && blockReference.value is MachineBlock
+    override fun canAct(level: Level): Boolean {
+        if(blockReference.value == null) {
+            return false
+        }
+        if(blockReference.value !is MachineBlock) {
+            return false
+        }
+        return true
+    }
 
     override fun act(level: Level) {
         val block = blockReference.value!! as MachineBlock
@@ -35,7 +43,11 @@ class MachineBlockFinishWork(
         if (other !is MachineBlockFinishWork) {
             return false
         }
-        return other.blockReference.value == blockReference.value
+        return other.blockReference.value != null && other.blockReference.value === blockReference.value
+    }
+
+    override fun resolveReferences() {
+        blockReference.value = blockReference.resolve()
     }
 
 }

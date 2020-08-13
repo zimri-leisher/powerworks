@@ -154,17 +154,19 @@ abstract class ResourceContainer(
      * @return a set of [ResourceType]s present with quantity greater than 0
      */
     fun toTypeList(): Set<ResourceType> = toResourceList().keys
-
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
         other as ResourceContainer
 
+        if (id != other.id) return false
+
         return true
     }
 
     override fun hashCode(): Int {
-        return id?.hashCode() ?: 0
+        return id.hashCode()
     }
+
 }

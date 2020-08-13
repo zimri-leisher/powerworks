@@ -6,6 +6,7 @@ import graphics.TextureRenderParams
 import item.Inventory
 import level.*
 import misc.Geometry
+import network.ResourceNodeReference
 import player.team.Team
 import routing.ResourceRoutingNetwork
 import serialization.Id
@@ -58,13 +59,6 @@ class ResourceNode constructor(
     var attachedNode: ResourceNode? = null
 
     /**
-     * Whether or not this node should be allowed to output resources directly to the level, using the Level.add(ResourceType, Int) method.
-     * If false, calls to can/couldOutput will return false if there is no attached node, regardless of whether there is space in the level
-     */
-    @Id(9)
-    var outputToLevel = true
-
-    /**
      * The resource routing network which this is part of
      */
     @Id(10)
@@ -107,7 +101,7 @@ class ResourceNode constructor(
             if (!attachedNode!!.canInput(resources)) {
                 return false
             }
-        } else if (attachedNode == null && !outputToLevel) {
+        } else if (attachedNode == null) {
             return false
         }
         return true
@@ -156,13 +150,6 @@ class ResourceNode constructor(
         if (attachedNode != null) {
             // we already checked if we were able to, everything here is under the assumption it is successful
             attachedNode!!.input(resources, false)
-        } else if (outputToLevel && inLevel) {
-            for ((type, quantity) in resources) {
-                // TODO make this better some time, have it actually spawn in the center
-                val xSign = Geometry.getXSign(dir)
-                val ySign = Geometry.getYSign(dir)
-                level.add(((xTile shl 4) + 7) + (8 + Hitbox.DROPPED_ITEM.width) * xSign, ((yTile shl 4) + 7) + (8 + Hitbox.DROPPED_ITEM.height) * ySign, type, quantity)
-            }
         }
         attachedContainer.remove(resources, this, false)
         return true
@@ -216,10 +203,9 @@ class ResourceNode constructor(
      */
     fun isRightType(resource: ResourceType) = resource.category == resourceCategory
 
-    fun copy(xTile: Int = this.xTile, yTile: Int = this.yTile, dir: Int = this.dir, attachedContainer: ResourceContainer = this.attachedContainer, outputToLevel: Boolean = this.outputToLevel) =
+    fun copy(xTile: Int = this.xTile, yTile: Int = this.yTile, dir: Int = this.dir, attachedContainer: ResourceContainer = this.attachedContainer) =
             ResourceNode(xTile, yTile, dir, resourceCategory, attachedContainer, level).apply {
                 this.behavior = this@ResourceNode.behavior.copy(this)
-                this.outputToLevel = outputToLevel
             }
 
     override fun toString() = "Resource node at $xTile, $yTile, dir: $dir"
@@ -244,10 +230,7 @@ class ResourceNode constructor(
         return result
     }
 
-    companion object {
-        fun createCorresponding(n: ResourceNode, attachedContainer: ResourceContainer, behavior: ResourceNodeBehavior) =
-                ResourceNode(n.xTile + Geometry.getXSign(n.dir), n.yTile + Geometry.getYSign(n.dir), Geometry.getOppositeAngle(n.dir), n.resourceCategory, attachedContainer, n.level).apply {
-                    this.behavior = behavior
-                }
+    fun toReference(): ResourceNodeReference {
+        return ResourceNodeReference(this)
     }
 }

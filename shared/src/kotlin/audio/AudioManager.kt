@@ -4,9 +4,7 @@ import data.ConcurrentlyModifiableMutableList
 import level.LevelObject
 import level.MovementListener
 import level.moving.MovingObject
-import main.Game
 import java.util.*
-import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag
 import serialization.Id
 
 private fun Sound.play(vol: Double = 1.0, pan: Double = 0.0, speed: Double = 1.0, loops: Int = 0): Int {
@@ -39,7 +37,7 @@ object AudioManager : MovementListener {
      * The distance after which sound cannot be heard
      */
     val MAX_HEARING_DISTANCE_PIXELS = 100
-    var SOUND_ENABLED = true
+    var soundEnabled = true
     /**
      * Whether or not to play level sounds
      */
@@ -57,7 +55,7 @@ object AudioManager : MovementListener {
         }
     var levelSounds = ConcurrentlyModifiableMutableList<SoundSource>()
     var forceUpdate = ConcurrentlyModifiableMutableList<SoundSource>()
-    var otherSounds: MutableMap<Sound, Int> = HashMap()
+    var otherSounds: MutableMap<Sound, Int> = EnumMap(audio.Sound::class.java)
 
     /**
      * Prepares all sounds for playing, must do before using them
@@ -129,7 +127,7 @@ object AudioManager : MovementListener {
      * Plays a sound with full volume, no pan and no looping
      */
     fun play(s: Sound) {
-        if (!SOUND_ENABLED)
+        if (!soundEnabled)
             return
         val i = s.play()
         if (i != -1)
@@ -142,7 +140,7 @@ object AudioManager : MovementListener {
      * @return a SoundSource with relevant methods and information
      */
     fun play(s: Sound, xPixel: Int, yPixel: Int, loop: Boolean): SoundSource? {
-        if (!SOUND_ENABLED)
+        if (!soundEnabled)
             return null
         if (ears == null)
             return null
@@ -163,7 +161,7 @@ object AudioManager : MovementListener {
     }
 
     fun update() {
-        if (!SOUND_ENABLED)
+        if (!soundEnabled)
             return
         if (ears == null)
             return

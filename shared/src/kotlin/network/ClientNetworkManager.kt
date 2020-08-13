@@ -4,9 +4,7 @@ import com.esotericsoftware.kryonet.Client
 import com.esotericsoftware.kryonet.Connection
 import com.esotericsoftware.kryonet.Listener
 import data.ConcurrentlyModifiableMutableMap
-import main.Game
-import main.SERVER_IP
-import main.SERVER_PORT
+import main.*
 import network.packet.*
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
@@ -17,11 +15,14 @@ object ClientNetworkManager : PacketHandler {
 
     private lateinit var kryoClient: KryoClient
 
-    private lateinit var connection: Connection
+    private val connectionDelegate = PowerworksDelegates.lateinitVal<Connection>()
+
+    private var connection: Connection by connectionDelegate
 
     private lateinit var thread: Thread
 
     private val running = AtomicBoolean(false)
+
     val handlingLock = Any()
 
     private val packetHandlers = ConcurrentlyModifiableMutableMap<PacketHandler, MutableList<PacketType>>()
@@ -30,7 +31,9 @@ object ClientNetworkManager : PacketHandler {
 
     private val outwardPackets = Collections.synchronizedList(mutableListOf<Packet>())
 
-    fun hasConnected() = ::connection.isInitialized
+    val visibleOnlineUsers = mutableListOf<User>()
+
+    fun hasConnected() = connectionDelegate.initialized
 
     fun start() {
         registerServerPacketHandler(this, PacketType.SERVER_HANDSHAKE)
@@ -38,6 +41,7 @@ object ClientNetworkManager : PacketHandler {
         thread = thread(isDaemon = true) {
             kryoClient = Client(2.0.pow(21.0).toInt(), 2.0.pow(21.0).toInt(), NetworkSerializationPlug())
             kryoClient.start()
+            visibleOnlineUsers.add(Game.USER)
             kryoClient.setName(Game.USER.id.toString())
             kryoClient.addListener(object : Listener() {
                 override fun received(connection: Connection, data: Any?) {
@@ -67,15 +71,15 @@ object ClientNetworkManager : PacketHandler {
                     running.set(false)
                 }
             })
-            while(!hasConnected()) {
-                try {
-                    kryoClient.connect(5000, SERVER_IP, SERVER_PORT)
-                } catch (e: Exception) {
-                    println("Unable to connect to server at $SERVER_IP:$SERVER_PORT")
-                }
+            try {
+                kryoClient.connect(5000, SERVER_IP, SERVER_PORT)
+            } catch (e: Exception) {
+                println("Unable to connect to server at $SERVER_IP:$SERVER_PORT")
             }
         }
     }
+
+    fun isVisibleAndOnline(user: User) = user in visibleOnlineUsers
 
     override fun handleClientPacket(packet: Packet) {
     }

@@ -13,7 +13,7 @@ class EntitySetFormation(
         val positions: Map<MovingObjectReference, PixelCoord>,
         @Id(3)
         val center: PixelCoord
-) : LevelUpdate(LevelModificationType.SET_ENTITY_FORMATION) {
+) : LevelUpdate(LevelUpdateType.ENTITY_SET_FORMATION) {
 
     private constructor() : this(mapOf(), PixelCoord(0, 0))
 
@@ -56,9 +56,10 @@ class EntitySetFormation(
             return false
         }
         if (other.positions.any { (key, value) ->
-                    positions.none { (key2, value2) ->
-                        key.value != key2.value && value != value2
-                    }
+                    key.value == null ||
+                            positions.none { (key2, value2) ->
+                                key.value !== key2.value && value != value2
+                            }
                 }) {
             return false
         }
@@ -68,6 +69,10 @@ class EntitySetFormation(
         }
 
         return true
+    }
+
+    override fun resolveReferences() {
+        positions.forEach { key, _ -> key.value = key.resolve() }
     }
 
 }

@@ -1,6 +1,6 @@
 package audio
 
-import data.ResourceManager
+import data.GameResourceManager
 import src.main.java.com.adonax.audiocue.AudioCue
 
 enum class Sound(path: String, maxConcurrent: Int) {
@@ -14,7 +14,7 @@ enum class Sound(path: String, maxConcurrent: Int) {
     /**
      * API related instance
      */
-    var a: AudioCue = AudioCue.makeStereoCue(ResourceManager.getRawResource(path), maxConcurrent)
+    var a: AudioCue = AudioCue.makeStereoCue(GameResourceManager.getRawResource(path), maxConcurrent)
 
     fun setVolume(vol: Double, instance: Int) {
         a.setVolume(instance, vol)

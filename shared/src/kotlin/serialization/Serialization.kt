@@ -3,6 +3,9 @@ package serialization
 import serialization.Registration.REFERENCE_ID
 import serialization.Registration.getId
 import serialization.Registration.getRegistry
+import serialization.SerializerDebugger.alreadyPrinted
+import serialization.SerializerDebugger.lastLinesBuffer
+import serialization.SerializerDebugger.safe
 import java.io.*
 import java.lang.reflect.Modifier
 import java.util.*
@@ -27,14 +30,38 @@ private fun decreaseDepth() {
 
 object SerializerDebugger {
 
+    var alreadyPrinted = false
+    const val safe = true
+    const val bufferCount = 100
     const val on = false
     var debugDepth = 0
     val debugSpaces get() = (0 until (debugDepth % 16)).joinToString { "   " }
 
+    val lastLinesBuffer = LinkedList<String>()
+
     fun writeln(text: String) {
         if (on) {
             println("[Serializer] $debugSpaces $text")
+        } else if (safe) {
+            lastLinesBuffer.add("[Serializer] $debugSpaces $text")
+            if (lastLinesBuffer.size > bufferCount) {
+                lastLinesBuffer.removeAt(0)
+            }
         }
+    }
+}
+
+private fun <R> catchAndPrintIfSafe(block: () -> R): R {
+    try {
+        return block()
+    } catch (e: Exception) {
+        if (safe && !alreadyPrinted) {
+            alreadyPrinted = true
+            for (line in lastLinesBuffer) {
+                System.err.println(line)
+            }
+        }
+        throw e
     }
 }
 
@@ -94,12 +121,12 @@ object Serialization {
     }
 
     fun tryGetLambdaClass(type: Class<*>): Class<*> {
-        val lambdaSuperClass = {0}::class.java.superclass
-        when(type) {
+        val lambdaSuperClass = { 0 }::class.java.superclass
+        when (type) {
             Function1::class.java, Function2::class.java, Function3::class.java,
             Function4::class.java, Function5::class.java, Function6::class.java -> return lambdaSuperClass
         }
-        if(type.superclass == lambdaSuperClass) {
+        if (type.superclass == lambdaSuperClass) {
             return lambdaSuperClass
         }
         return type
@@ -118,13 +145,13 @@ class Input(inputStream: InputStream) : DataInputStream(inputStream) {
         debugln("-- Begin instantiating $type")
         increaseDepth()
         val registry = getRegistry(type) as ClassRegistry<R>
-        val instance = registry.serializer.instantiate(this) as R
+        val instance = catchAndPrintIfSafe { registry.serializer.instantiate(this) as R }
         decreaseDepth()
         debugln("-- End instantiating $type = $instance")
         return instance
     }
 
-    fun readPrimitive(id: Int): Any? {
+    private fun readPrimitive(id: Int): Any? {
         val prim: Any? = when (id) {
             Primitive.BOOLEAN.id -> readBoolean()
             Primitive.DOUBLE.id -> readDouble()
@@ -149,7 +176,7 @@ class Input(inputStream: InputStream) : DataInputStream(inputStream) {
         references.put(obj, id)
     }
 
-    fun readReference(): Any {
+    private fun readReference(): Any {
         val referenceId = readInt()
         val objectsReferencedById = mutableListOf<Any>()
         references.forEach { (key, value) ->
@@ -183,12 +210,12 @@ class Input(inputStream: InputStream) : DataInputStream(inputStream) {
         }
         if (supposedClassId == REFERENCE_ID) {
             debugln("(Value is a reference)")
-            return readReference()
+            return catchAndPrintIfSafe { readReference() }
         }
         val supposedClassType = Registration.getType(supposedClassId)
                 ?: throw ReadException("Unregistered class id $supposedClassId encountered while trying to read value of unknown class")
         debugln("Found class id $supposedClassId -> $supposedClassType")
-        return unsafeRead(supposedClassType)
+        return catchAndPrintIfSafe { unsafeRead(supposedClassType) }
     }
 
     fun readUnknownNullable(): Any? {
@@ -203,12 +230,12 @@ class Input(inputStream: InputStream) : DataInputStream(inputStream) {
         }
         if (supposedClassId == REFERENCE_ID) {
             debugln("(Value is a reference)")
-            return readReference()
+            return catchAndPrintIfSafe { readReference() }
         }
         val supposedClassType = Registration.getType(supposedClassId)
                 ?: throw ReadException("Unregistered class id $supposedClassId encountered while trying to read value of unknown class")
         debugln("Found class id $supposedClassId -> $supposedClassType")
-        return unsafeRead(supposedClassType)
+        return catchAndPrintIfSafe { unsafeRead(supposedClassType) }
     }
 
     fun <R> readNullable(type: Class<R>): R? {
@@ -223,7 +250,7 @@ class Input(inputStream: InputStream) : DataInputStream(inputStream) {
         }
         if (supposedClassId == REFERENCE_ID) {
             debugln("(Value is a reference)")
-            return readReference() as R
+            return catchAndPrintIfSafe { readReference() as R }
         }
         val supposedClassType = verifyType(actualType, supposedClassId)
         if (Serialization.isPrimitive(supposedClassId)) {
@@ -232,7 +259,7 @@ class Input(inputStream: InputStream) : DataInputStream(inputStream) {
             debugln("-- End read of potentially null $type = $prim")
             return prim
         }
-        return unsafeRead(supposedClassType) as R
+        return catchAndPrintIfSafe { unsafeRead(supposedClassType) as R }
     }
 
     fun <R> read(type: Class<R>): R {
@@ -245,7 +272,7 @@ class Input(inputStream: InputStream) : DataInputStream(inputStream) {
         }
         if (supposedClassId == REFERENCE_ID) {
             debugln("(Value is a reference)")
-            return readReference() as R
+            return catchAndPrintIfSafe { readReference() as R }
         }
         val supposedClassType = verifyType(actualType, supposedClassId)
         if (Serialization.isPrimitive(supposedClassId)) {
@@ -254,7 +281,7 @@ class Input(inputStream: InputStream) : DataInputStream(inputStream) {
             debugln("-- End read of non-null $type = $prim")
             return prim
         }
-        return unsafeRead(supposedClassType) as R
+        return catchAndPrintIfSafe { unsafeRead(supposedClassType) as R }
     }
 
     private fun makeTypeNice(type: Class<*>): Class<*> {
@@ -267,7 +294,7 @@ class Input(inputStream: InputStream) : DataInputStream(inputStream) {
             debugln("(Converted type from a specific array to generic Object array)")
         }
         val nonSpecificLambdaType = Serialization.tryGetLambdaClass(nonSpecificArrayType)
-        if(nonSpecificLambdaType != nonSpecificArrayType) {
+        if (nonSpecificLambdaType != nonSpecificArrayType) {
             debugln("(Converted type from a specific lambda to a generic one)")
         }
         return nonSpecificLambdaType
@@ -334,8 +361,8 @@ class Output(outputStream: OutputStream) : DataOutputStream(outputStream) {
     }
 
     private fun makeTypeNice(type: Class<*>): Class<*> {
-        val lambdaSuperClass = {0}::class.java.superclass
-        if(type.superclass == lambdaSuperClass || type.superclass == Function::class.java) {
+        val lambdaSuperClass = { 0 }::class.java.superclass
+        if (type.superclass == lambdaSuperClass || type.superclass == Function::class.java) {
             return lambdaSuperClass
         }
         return type

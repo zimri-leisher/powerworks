@@ -12,11 +12,23 @@ import kotlin.math.absoluteValue
  * @param input the internal network node that the package will start at
  * @param output the internal network node that the package will end at
  */
-fun route(input: ResourceNode, output: ResourceNode, network: PipeNetwork) = route(input.xTile shl 4, input.yTile shl 4, Geometry.getOppositeAngle(input.dir), output, network)
+fun route(input: ResourceNode, output: ResourceNode, network: PipeNetwork): PackageRoute? {
+    val route = route(input.xTile shl 4, input.yTile shl 4, output, network)
+            ?: return null
+    val adjustedStartXPixel = (input.xTile shl 4) + 8 * Geometry.getXSign(input.dir)
+    val adjustedStartYPixel = (input.yTile shl 4) + 8 * Geometry.getYSign(input.dir)
+    // add step to come out from start of block
+    val result = arrayOfNulls<RouteStep>(route.size + 1)
+    System.arraycopy(route.steps, 0, result, 1, route.steps.size)
+    result[0] = RouteStep(PixelCoord(adjustedStartXPixel, adjustedStartYPixel), Geometry.getOppositeAngle(input.dir))
+    return PackageRoute(result.requireNoNulls())
+}
 
-fun route(startXPixel: Int, startYPixel: Int, startDir: Int, output: ResourceNode, network: PipeNetwork): PackageRoute? {
+fun route(startXPixel: Int, startYPixel: Int, output: ResourceNode, network: PipeNetwork): PackageRoute? {
     val startXTile = startXPixel shr 4
     val startYTile = startYPixel shr 4
+
+    // starting at the end?
     if (startXTile == output.xTile && startYTile == output.yTile) {
         val instructions = mutableListOf<RouteStep>()
         instructions.add(RouteStep(PixelCoord(startXTile shl 4, startYTile shl 4), output.dir))
@@ -24,12 +36,19 @@ fun route(startXPixel: Int, startYPixel: Int, startDir: Int, output: ResourceNod
         instructions.add(RouteStep(PixelCoord(attachedToOutput.xTile shl 4, attachedToOutput.yTile shl 4), -1))
         return PackageRoute(instructions.toTypedArray())
     }
-    val initialConnections = network.findConnections(startXTile, startYTile)
+
+    // either the pipe at the start, or the nearest pipe in line with the start, or there is no path
+    val startingPipe = network.getPipeAtOrNull(startXTile, startYTile)
+            ?: network.pipes.filter { it.xTile == startXTile || it.yTile == startYTile }
+                    .minBy { Geometry.manhattanDist(startXTile, startYTile, it.xTile, it.yTile) }
+            ?: return null
+
+    val initialConnections = network.findConnectionsWithPipe(startingPipe)
     val outputTube = network.pipes.first { it.xTile == output.xTile && it.yTile == output.yTile }
     val outputIntersection = network.getIntersection(outputTube)!!
     val startNode = AStarRoutingNode(null, startXTile, startYTile, initialConnections, outputIntersection, -1, 0, heuristic(startXTile, startYTile, outputIntersection.xTile, outputIntersection.yTile))
 
-    val possibleNextNodes = mutableListOf<AStarRoutingNode>()
+    val possibleNextNodes = mutableListOf<AStarRoutingNode>() // TODO switch to PriorityQueue
     val alreadyUsedNodes = mutableListOf<AStarRoutingNode>()
     possibleNextNodes.add(startNode)
 
@@ -82,8 +101,12 @@ fun route(startXPixel: Int, startYPixel: Int, startDir: Int, output: ResourceNod
             instructions.add(RouteStep(PixelCoord(finalNode.parent!!.xTile shl 4, finalNode.parent!!.yTile shl 4), finalNode.directionFromParent))
             finalNode = finalNode.parent
         }
-        // come out from the start block
-        instructions.add(RouteStep(PixelCoord(startXPixel - 8 * Geometry.getXSign(startDir), startYPixel - 8 * Geometry.getYSign(startDir)), startDir))
+        // move to the starting pipe if necessary
+        if (startingPipe.xTile != startXTile && startingPipe.yTile != startYTile) {
+            println("needed to move extra to get to starting pipe")
+            val dirToPipe = Geometry.getDir(startingPipe.xTile - startXTile, startingPipe.yTile - startYTile)
+            instructions.add(RouteStep(PixelCoord(startXPixel, startYPixel), dirToPipe))
+        }
         instructions.reverse()
         return PackageRoute(instructions.toTypedArray())
     }
@@ -191,9 +214,9 @@ class AStarRoutingNode(var parent: AStarRoutingNode? = null, val xTile: Int, val
 
 }
 
-class PackageRoute(
+data class PackageRoute(
         @Id(1)
-        private val steps: Array<RouteStep>) {
+        val steps: Array<RouteStep>) {
 
     private constructor() : this(arrayOf())
 
@@ -207,14 +230,25 @@ class PackageRoute(
         return steps[i]
     }
 
-    fun indexOf(step: RouteStep) = steps.indexOf(step)
-
-    fun withIndex() = steps.withIndex()
-
     operator fun iterator() = steps.iterator()
 
     override fun toString(): String {
         return "\n" + steps.joinToString("\n")
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as PackageRoute
+
+        if (!steps.contentEquals(other.steps)) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return steps.contentHashCode()
     }
 }
 
@@ -222,6 +256,6 @@ data class RouteStep(
         @Id(1)
         val position: PixelCoord,
         @Id(2)
-        val nextDir: Int) {
+        val dir: Int) {
     private constructor() : this(PixelCoord(0, 0), 0)
 }

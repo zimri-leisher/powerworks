@@ -1,7 +1,7 @@
 package graphics
 
 import com.badlogic.gdx.graphics.g2d.TextureRegion
-import data.ResourceManager
+import data.GameResourceManager
 import main.heightPixels
 import main.widthPixels
 import serialization.Id
@@ -37,11 +37,11 @@ class TextureSerializer : Serializer.Tagged<Texture>() {
 
     override fun write(obj: Any, output: Output) {
         obj as Texture
-        output.writeUTF(ResourceManager.getIdentifier(obj.region)!!)
+        output.writeUTF(GameResourceManager.getIdentifier(obj.region)!!)
         super.write(obj, output)
     }
 
     override fun instantiate(input: Input): Texture {
-        return Texture(ResourceManager.getAtlasTexture(input.readUTF()))
+        return Texture(GameResourceManager.getAtlasTexture(input.readUTF()))
     }
 }

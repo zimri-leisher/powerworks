@@ -93,6 +93,11 @@ abstract class LevelObject protected constructor(
 
     @Id(991)
     var health = type.maxHealth
+        set(value) {
+            if (type.damageable) {
+                field = value
+            }
+        }
 
     @Id(992)
     var team = Team.NEUTRAL

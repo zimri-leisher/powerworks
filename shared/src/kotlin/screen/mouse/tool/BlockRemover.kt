@@ -9,11 +9,14 @@ import player.PlayerManager
 import player.RemoveLevelObjectAction
 
 object BlockRemover : Tool(Control.REMOVE_BLOCK) {
-    override fun updateCurrentlyActive() {
-        currentlyActive = LevelManager.levelObjectUnderMouse != null && LevelManager.levelObjectUnderMouse is Block
+
+    init {
+        activationPredicate = {
+            LevelManager.levelObjectUnderMouse != null && LevelManager.levelObjectUnderMouse is Block
+        }
     }
 
-    override fun onUse(control: Control, type: PressType, mouseLevelXPixel: Int, mouseLevelYPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+    override fun onUse(control: Control, type: PressType, mouseLevelXPixel: Int, mouseLevelYPixel: Int): Boolean {
         if (type == PressType.PRESSED) {
             if (control == Control.REMOVE_BLOCK) {
                 val toRemove = if (Selector.currentSelected.isNotEmpty())
@@ -26,7 +29,9 @@ object BlockRemover : Tool(Control.REMOVE_BLOCK) {
                     toRemove.forEach { Selector.currentSelected.remove(it) }
                     PlayerManager.takeAction(RemoveLevelObjectAction(PlayerManager.localPlayer, toRemove.map { BlockReference(it) }))
                 }
+                return true
             }
         }
+        return false
     }
 }

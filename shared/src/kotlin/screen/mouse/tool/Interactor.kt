@@ -4,23 +4,28 @@ import com.badlogic.gdx.graphics.Color
 import graphics.Renderer
 import graphics.TextureRenderParams
 import io.Control
+import io.InputManager
 import io.PressType
 import level.LevelManager
 import level.block.Block
 import level.moving.MovingObject
+import screen.mouse.Mouse
 
-object Interactor : Tool(Control.Group.INTERACTION) {
-    override fun onUse(control: Control, type: PressType, mouseLevelXPixel: Int, mouseLevelYPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
-        if (control in Control.Group.SCROLL)
-            LevelManager.levelObjectUnderMouse!!.onScroll(if (control == Control.SCROLL_DOWN) -1 else 1)
-        else {
-            LevelManager.levelObjectUnderMouse!!.onInteractOn(type, mouseLevelXPixel, mouseLevelYPixel, button, shift, ctrl, alt)
-            LevelManager.onInteractWithLevelObjectUnderMouse()
+object Interactor : Tool(Control.Group.INTERACTION.controls) {
+    init {
+        activationPredicate = {
+            LevelManager.levelObjectUnderMouse?.isInteractable == true && !Selector.dragging && !BlockPlacer.hasPlacedThisInteraction
         }
     }
-
-    override fun updateCurrentlyActive() {
-        currentlyActive = LevelManager.levelObjectUnderMouse?.isInteractable == true && !Selector.dragging
+    override fun onUse(control: Control, type: PressType, mouseLevelXPixel: Int, mouseLevelYPixel: Int): Boolean {
+        if (control in Control.Group.SCROLL) {
+            LevelManager.levelObjectUnderMouse!!.onScroll(if (control == Control.SCROLL_DOWN) -1 else 1)
+        } else {
+            LevelManager.levelObjectUnderMouse!!.onInteractOn(type, mouseLevelXPixel, mouseLevelYPixel, Mouse.button,
+                    InputManager.inputsBeingPressed.contains("SHIFT"), InputManager.inputsBeingPressed.contains("CONTROL"), InputManager.inputsBeingPressed.contains("ALT"))
+            LevelManager.onInteractWithLevelObjectUnderMouse()
+        }
+        return true
     }
 
     override fun renderBelow() {

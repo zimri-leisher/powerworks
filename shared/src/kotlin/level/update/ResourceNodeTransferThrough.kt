@@ -14,7 +14,7 @@ class ResourceNodeTransferThrough(
         @Id(4) val output: Boolean,
         @Id(5) val checkIfAble: Boolean,
         @Id(6) val mustContainOrHaveSpace: Boolean
-) : LevelUpdate(LevelModificationType.TRANSFER_THROUGH_RESOURCE_NODE) {
+) : LevelUpdate(LevelUpdateType.RESOURCE_NODE_TRANSFER_THROUGH) {
 
     private constructor() : this(ResourceNodeReference(0, 0, LevelManager.EMPTY_LEVEL, UUID.randomUUID()), ResourceList(), false, false, false)
 
@@ -57,8 +57,12 @@ class ResourceNodeTransferThrough(
         if (other !is ResourceNodeTransferThrough) {
             return false
         }
-        return other.nodeReference.value == nodeReference.value && other.resources == resources &&
+        return other.nodeReference.value != null && other.nodeReference.value === nodeReference.value && other.resources == resources &&
                 other.mustContainOrHaveSpace == mustContainOrHaveSpace && other.checkIfAble == checkIfAble
+    }
+
+    override fun resolveReferences() {
+        nodeReference.value = nodeReference.resolve()
     }
 
 }

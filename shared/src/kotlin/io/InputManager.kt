@@ -8,15 +8,15 @@ import level.Level
 import level.LevelManager
 import level.LevelObject
 import main.Game
-import main.State
+import main.GameState
 import screen.ScreenManager
 import screen.elements.GUILevelView
 import screen.mouse.Mouse
 import java.awt.event.KeyEvent
 import java.lang.ref.WeakReference
 
-interface ControlPressHandler {
-    fun handleControlPress(p: ControlPress)
+interface ControlHandler {
+    fun handleControl(p: ControlPress)
 }
 
 enum class ControlPressHandlerType {
@@ -39,7 +39,7 @@ enum class ControlPressHandlerType {
     LEVEL_ANY_UNDER_MOUSE,
 
     /**
-     * Only when the [State.CURRENT_STATE] is [State.INGAME]
+     * Only when the [GameState.CURRENT_STATE] is [GameState.INGAME]
      */
     INGAME_ONLY,
 
@@ -62,7 +62,7 @@ object InputManager : InputProcessor {
     val handlers = ConcurrentlyModifiableMutableMap<
             // the handler itself and the handler type (GLOBAL, LEVEL_ANY_UNDER_MOUSE, etc.)
             Pair<
-                    WeakReference<ControlPressHandler>,
+                    WeakReference<ControlHandler>,
                     ControlPressHandlerType>,
             // the control maps and the controls themselves
             // each pair in this map specifies the control map and the controls that the handler wants to receive when that map is active
@@ -71,9 +71,9 @@ object InputManager : InputProcessor {
                     // you've tried to remove this 'out' before. don't bother. lmao kotlin generics
                     Array<out Control>?>?>()
 
-    var currentScreenHandlers = WeakMutableList<ControlPressHandler>()
+    var currentScreenHandlers = WeakMutableList<ControlHandler>()
 
-    var currentLevelHandlers = WeakMutableList<ControlPressHandler>()
+    var currentLevelHandlers = WeakMutableList<ControlHandler>()
     val inputsBeingPressed = mutableSetOf<String>()
 
     var inputEvent = ConcurrentlyModifiableMutableMap<String, PressType>()
@@ -103,8 +103,8 @@ object InputManager : InputProcessor {
      * @param type one of GLOBAL, LEVEL_ANY_UNDER_MOUSE, LEVEL_THIS_UNDER_MOUSE and SCREEN_THIS
      * @param controls the control group of controls to send to this
      */
-    fun registerControlPressHandler(h: ControlPressHandler, type: ControlPressHandlerType, controls: Control.Group) {
-        registerControlPressHandler(h, type, *controls.controls)
+    fun registerControlPressHandler(h: ControlHandler, type: ControlPressHandlerType, controls: Control.Group) {
+        registerControlPressHandler(h, type, controls.controls)
     }
 
     /**
@@ -112,7 +112,7 @@ object InputManager : InputProcessor {
      * @param type one of GLOBAL, LEVEL_ANY_UNDER_MOUSE, LEVEL_THIS_UNDER_MOUSE and SCREEN_THIS
      * @param controls the first element is the control map that these controls are active on, the second is the list of controls to send to this
      */
-    fun registerControlPressHandler(h: ControlPressHandler, type: ControlPressHandlerType, controls: Map<ControlMap, Array<out Control>>? = null) {
+    fun registerControlPressHandler(h: ControlHandler, type: ControlPressHandlerType, controls: Map<ControlMap, Array<out Control>>? = null) {
         handlers.put(Pair(WeakReference(h), type), controls)
     }
 
@@ -121,7 +121,7 @@ object InputManager : InputProcessor {
      * @param type one of GLOBAL, LEVEL_ANY_UNDER_MOUSE, LEVEL_THIS_UNDER_MOUSE and SCREEN_THIS
      * @param controls the list of controls to send to this
      */
-    fun registerControlPressHandler(h: ControlPressHandler, type: ControlPressHandlerType, controls: List<Control>) {
+    fun registerControlPressHandler(h: ControlHandler, type: ControlPressHandlerType, controls: List<Control>) {
         registerControlPressHandler(h, type, *controls.toTypedArray())
     }
 
@@ -132,7 +132,7 @@ object InputManager : InputProcessor {
      * match, this will not receive them
      * @param controls the list of controls to send to this
      */
-    fun registerControlPressHandler(h: ControlPressHandler, type: ControlPressHandlerType, map: ControlMap, vararg controls: Control) {
+    fun registerControlPressHandler(h: ControlHandler, type: ControlPressHandlerType, map: ControlMap, vararg controls: Control) {
         registerControlPressHandler(h, type, mapOf(map to controls))
     }
 
@@ -141,7 +141,7 @@ object InputManager : InputProcessor {
      * @param type one of GLOBAL, LEVEL_ANY_UNDER_MOUSE, LEVEL_THIS_UNDER_MOUSE and SCREEN_THIS
      * @param controls the list of controls to send to this
      */
-    fun registerControlPressHandler(h: ControlPressHandler, type: ControlPressHandlerType, vararg controls: Control) {
+    fun registerControlPressHandler(h: ControlHandler, type: ControlPressHandlerType, vararg controls: Control) {
         val m = mutableMapOf<ControlMap, Array<out Control>>()
         for (map in ControlMap.values()) {
             m.put(map, controls)
@@ -154,14 +154,14 @@ object InputManager : InputProcessor {
      * @param type one of GLOBAL, LEVEL_ANY_UNDER_MOUSE, LEVEL_THIS_UNDER_MOUSE and SCREEN_THIS
      * @param map whenever this map is active, all controls will be sent to this
      */
-    fun registerControlPressHandler(h: ControlPressHandler, type: ControlPressHandlerType, map: ControlMap) {
+    fun registerControlPressHandler(h: ControlHandler, type: ControlPressHandlerType, map: ControlMap) {
         handlers.put(Pair(WeakReference(h), type), mapOf<ControlMap, Array<Control>?>(Pair(map, null)))
     }
 
     /**
      * Removes the entry corresponding with the handler
      */
-    fun removeControlPressHandler(handler: ControlPressHandler) {
+    fun removeControlPressHandler(handler: ControlHandler) {
         handlers.forEach { k, _ ->
             if (k.first.get() == handler) {
                 handlers.remove(k)
@@ -242,20 +242,20 @@ object InputManager : InputProcessor {
                         (k.second == ControlPressHandlerType.LEVEL_ANY_UNDER_MOUSE && ScreenManager.elementLastInteractedWith is GUILevelView && LevelManager.levelUnderMouse != null) ||
                         (k.second == ControlPressHandlerType.LEVEL_THIS_LAST_SELECTED && LevelManager.levelObjectLastInteractedWith == handler) ||
                         (k.second == ControlPressHandlerType.LEVEL_THIS_UNDER_MOUSE && LevelManager.levelObjectUnderMouse != null && currentLevelHandlers.contains(handler)) ||
-                        (k.second == ControlPressHandlerType.INGAME_ONLY && State.CURRENT_STATE == State.INGAME)) {
+                        (k.second == ControlPressHandlerType.INGAME_ONLY && GameState.CURRENT_STATE == GameState.INGAME)) {
                     if (v != null) {
                         if (v.containsKey(map)) {
                             val controls = v.get(map)
                             if (controls != null) {
                                 if (controls.contains(p.control)) {
-                                    handler.handleControlPress(p)
+                                    handler.handleControl(p)
                                 }
                             } else {
-                                handler.handleControlPress(p)
+                                handler.handleControl(p)
                             }
                         }
                     } else {
-                        handler.handleControlPress(p)
+                        handler.handleControl(p)
                     }
                 }
             }

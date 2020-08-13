@@ -238,29 +238,4 @@ class Inventory(
 
     override fun toString() = "Inventory width: $width, height: $height, $totalQuantity items"
 
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-        if (!super.equals(other)) return false
-
-        other as Inventory
-
-        if (width != other.width) return false
-        if (height != other.height) return false
-        if (!items.contentEquals(other.items)) return false
-        if (expected != other.expected) return false
-        if (totalQuantity != other.totalQuantity) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        var result = super.hashCode()
-        result = 31 * result + width
-        result = 31 * result + height
-        result = 31 * result + items.contentHashCode()
-        result = 31 * result + expected.hashCode()
-        result = 31 * result + totalQuantity
-        return result
-    }
 }

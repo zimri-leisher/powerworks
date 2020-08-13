@@ -12,14 +12,14 @@ abstract class PowerworksFileHandleResolver : FileHandleResolver {
         var url: URL? = null
         for (possibility in possibilities) {
             try {
-                url = ResourceManager.getRawResource(possibility)
+                url = GameResourceManager.getRawResource(possibility)
                 break
-            } catch (e: ResourceNotFoundException) {
+            } catch (e: GameResourceNotFoundException) {
                 continue
             }
         }
         if (url == null) {
-            throw ResourceNotFoundException("Resource at $fileName not found")
+            throw GameResourceNotFoundException("Resource at $fileName not found")
         }
         return FileHandle(url.file)
     }

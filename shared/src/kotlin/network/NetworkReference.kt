@@ -46,19 +46,6 @@ abstract class LevelObjectReference(@Id(1)
                                     @Id(2)
                                     val objectId: UUID) : NetworkReference<LevelObject>()
 
-class DroppedItemReference(level: Level, @Id(3) val xPixel: Int, @Id(4) val yPixel: Int, objectId: UUID) : LevelObjectReference(level, objectId) {
-
-    private constructor() : this(LevelManager.EMPTY_LEVEL, 0, 0, UUID.randomUUID())
-
-    constructor(droppedItem: DroppedItem) : this(droppedItem.level, droppedItem.xPixel, droppedItem.yPixel, droppedItem.id) {
-        value = droppedItem
-    }
-
-    override fun resolve(): LevelObject? {
-        return level.getChunkFromPixel(xPixel, yPixel).data.droppedItems.firstOrNull { it.id == objectId }
-    }
-}
-
 class GhostLevelObjectReference(val obj: GhostLevelObject) : LevelObjectReference(obj.level, obj.id) {
 
     init {
@@ -100,6 +87,10 @@ open class MovingObjectReference(level: Level, objectId: UUID,
             currentChunks = level.getChunksFromChunkRectangle(xChunk - currentChunkRange, yChunk - currentChunkRange, xChunk + currentChunkRange, yChunk + currentChunkRange).toSet()
         }
         return null
+    }
+
+    override fun toString(): String {
+        return "MovingObjectReference: $level, $objectId, $xPixel, $yPixel"
     }
 }
 

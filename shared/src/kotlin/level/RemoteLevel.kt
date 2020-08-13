@@ -12,26 +12,30 @@ import java.util.*
 
 /**
  * A level which is only a copy of another, remote [ActualLevel], usually stored on a [ServerNetworkManager]. This is what the [ClientNetworkManager]
- * keeps as a copy of what the [ServerNetworkManager] has, and is not necessarily correct at any time.
+ * keeps as a copy of what the [ServerNetworkManager] has, and is not necessarily correct at any time. Instantiating this
+ * will not automatically load it, [requestLoad] must be called first
  *
  * @param info the information describing the [Level]
  */
 class RemoteLevel(id: UUID, info: LevelInfo) : Level(id, info), PacketHandler {
 
-    override lateinit var data: LevelData
-
     val outgoingModifications = mutableMapOf<LevelUpdate, Int>()
     val incomingModifications = mutableMapOf<LevelUpdate, Int>()
 
-    init {
+    override fun initialize() {
+        println("initialize remote level with id $id")
+        ClientNetworkManager.registerServerPacketHandler(this, PacketType.LEVEL_UPDATE, PacketType.CHUNK_DATA, PacketType.LEVEL_DATA, PacketType.UPDATE_BLOCK)
+        super.initialize()
+    }
+
+    override fun load() {
         val chunks: Array<Chunk?> = arrayOfNulls(widthChunks * heightChunks)
         for (y in 0 until heightChunks) {
             for (x in 0 until widthChunks) {
                 chunks[x + y * widthChunks] = Chunk(x, y)
             }
         }
-        data = LevelData(ConcurrentlyModifiableMutableList(), ConcurrentlyModifiableMutableList(), chunks.requireNoNulls(), mutableListOf())
-        ClientNetworkManager.registerServerPacketHandler(this, PacketType.LEVEL_UPDATE, PacketType.CHUNK_DATA, PacketType.LEVEL_DATA, PacketType.UPDATE_BLOCK)
+        ClientNetworkManager.sendToServer(RequestLevelDataPacket(id))
     }
 
     override fun add(l: LevelObject): Boolean {
@@ -54,8 +58,8 @@ class RemoteLevel(id: UUID, info: LevelInfo) : Level(id, info), PacketHandler {
                 update.actGhost(this)
                 outgoingModifications.put(update, updatesCount)
             } else {
-                // this has already happened
-                incomingModifications.removeIfKey { it in equivalent }
+                // there are equivalent modifications waiting to be taken that are from the server
+                // take them instead, ignore this
             }
         }
         return true
@@ -73,9 +77,18 @@ class RemoteLevel(id: UUID, info: LevelInfo) : Level(id, info), PacketHandler {
             }
         }
         val incomingIterator = incomingModifications.iterator()
-        for ((_, time) in incomingIterator) {
-            if (updatesCount - time > 300) {
+        for ((update, time) in incomingIterator) {
+            if (update.canAct(this)) {
+                update.act(this)
                 incomingIterator.remove()
+            } else {
+                if ((updatesCount - time) % 10 == 0) {
+                    update.resolveReferences()
+                }
+                if (updatesCount - time > 60) {
+                    incomingIterator.remove()
+                    println("client has been unable to take server action $update for more than a second")
+                }
             }
         }
     }
@@ -85,7 +98,6 @@ class RemoteLevel(id: UUID, info: LevelInfo) : Level(id, info), PacketHandler {
             packet as LevelUpdatePacket
             if (packet.level == this) {
                 outgoingModifications.removeIfKey { it.equivalent(packet.update) }
-                packet.update.act(this)
                 incomingModifications.put(packet.update, updatesCount)
             }
         } else if (packet is ChunkDataPacket) {
@@ -108,7 +120,6 @@ class RemoteLevel(id: UUID, info: LevelInfo) : Level(id, info), PacketHandler {
                 }
                 updatesCount = packet.updatesCount
                 loaded = true
-                println("received level data, communicating success")
                 ClientNetworkManager.sendToServer(LevelLoadedSuccessPacket(id))
             }
         } else if (packet is UpdateBlockPacket) {

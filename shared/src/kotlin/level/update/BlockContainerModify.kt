@@ -14,7 +14,7 @@ class BlockContainerModify(
         @Id(5) val containerId: UUID,
         @Id(3) val resources: ResourceList,
         @Id(4) val add: Boolean
-) : LevelUpdate(LevelModificationType.MODIFY_BLOCK_CONTAINER) {
+) : LevelUpdate(LevelUpdateType.BLOCK_CONTAINER_MODIFY) {
 
     private constructor() : this(BlockReference(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0), UUID.randomUUID(), ResourceList(), false)
 
@@ -62,7 +62,7 @@ class BlockContainerModify(
         if (other !is BlockContainerModify) {
             return false
         }
-        if (other.blockReference.value != blockReference.value) {
+        if (other.blockReference.value == null || other.blockReference.value !== blockReference.value) {
             return false
         }
         if (other.resources != resources || other.containerId != containerId) {
@@ -71,4 +71,7 @@ class BlockContainerModify(
         return true
     }
 
+    override fun resolveReferences() {
+        blockReference.value = blockReference.resolve()
+    }
 }

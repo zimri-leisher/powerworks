@@ -19,9 +19,7 @@ open class Packet(
 
     var connectionId = 0
 
-    lateinit var onSend: Packet.() -> Unit
+    val connection get() = ServerNetworkManager.getConnectionById(connectionId)
 
-    val connection get() = ServerNetworkManager.getConnection(connectionId)
-
-    val fromUser get() = ServerNetworkManager.getUser(connectionId)
+    val fromUser get() = ServerNetworkManager.getUserByConnectionId(connectionId)
 }

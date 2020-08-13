@@ -8,10 +8,9 @@ import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.g2d.TextureRegion
-import com.esotericsoftware.kryo.Kryo
 import data.FileManager
 import data.FileSystem
-import data.ResourceManager
+import data.GameResourceManager
 import graphics.Animation
 import graphics.Renderer
 import graphics.text.TextManager
@@ -20,19 +19,31 @@ import level.LevelManager
 import level.RemoteLevel
 import network.ClientNetworkManager
 import network.User
-import network.packet.*
+import network.packet.LoadGamePacket
+import network.packet.Packet
+import network.packet.PacketHandler
+import network.packet.PacketType
 import player.PlayerManager
 import screen.IngameGUI
 import screen.ScreenManager
 import screen.mouse.Mouse
 import screen.mouse.Tooltips
+import screen.mouse.tool.Tool
 import serialization.Registration
 import serialization.Serialization
 import java.util.*
+import kotlin.streams.asSequence
 import kotlin.system.exitProcess
 import kotlin.system.measureTimeMillis
 
 /* Utility extensions */
+fun Class<*>.isKotlinClass(): Boolean {
+    return this.declaredAnnotations.any {
+        // hacky but should be safe for the foreseeable future
+        it.annotationClass.qualifiedName == "kotlin.Metadata"
+    }
+}
+
 fun <K, V> MutableMap<K, V>.removeIfKey(selector: (K) -> Boolean) = removeIf { selector(it.key) }
 
 fun <K, V> MutableMap<K, V>.removeIfValue(selector: (V) -> Boolean) = removeIf { selector(it.value) }
@@ -83,7 +94,7 @@ fun main(args: Array<String>) {
     exitProcess(1)
 }
 
-object Game : ApplicationAdapter(), ControlPressHandler, PacketHandler {
+object Game : ApplicationAdapter(), ControlHandler, PacketHandler {
 
     /* Dimensions */
     var WIDTH = 300
@@ -97,7 +108,14 @@ object Game : ApplicationAdapter(), ControlPressHandler, PacketHandler {
     var FRAMES_PER_SECOND = 30
     var NS_PER_FRAME: Float = 1000000000f / FRAMES_PER_SECOND
 
-    val USER = User(UUID.nameUUIDFromBytes(ByteArray(1)), "default_user")
+    private val OS = OperatingSystem.get()
+
+    val source = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+    val USER = User(UUID.randomUUID(), Random().ints(5, 0, source.length)
+            .asSequence()
+            .map(source::get)
+            .joinToString("")) //User(OS.getUUID(), System.getProperty("user.name"))
 
     val VERSION = Version.`0_5_0`
 
@@ -141,7 +159,8 @@ object Game : ApplicationAdapter(), ControlPressHandler, PacketHandler {
 
     override fun create() {
         // order matters with some of these!
-        ResourceManager.registerAtlas("textures/all.atlas")
+        println("game user: $USER")
+        GameResourceManager.registerAtlas("textures/all.atlas")
         Registration.registerAll()
         Serialization.warmup()
         ClientNetworkManager.start()
@@ -149,7 +168,7 @@ object Game : ApplicationAdapter(), ControlPressHandler, PacketHandler {
         AudioManager.load()
         Gdx.input.inputProcessor = InputManager
         InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.PIPE_INFO, Control.ESCAPE, Control.TURN_OFF_DEBUG_INFO, Control.TAKE_SCREENSHOT, Control.POSITION_INFO, Control.RESOURCE_NODES_INFO, Control.RENDER_HITBOXES, Control.SCREEN_INFO, Control.CHUNK_INFO, Control.TOGGLE_INVENTORY, Control.TUBE_INFO)
-        State.setState(State.MAIN_MENU)
+        GameState.setState(GameState.MAIN_MENU)
     }
 
     override fun render() {
@@ -191,10 +210,12 @@ object Game : ApplicationAdapter(), ControlPressHandler, PacketHandler {
         Tooltips.update()
         Animation.update()
         ScreenManager.update()
-        if (State.CURRENT_STATE == State.INGAME) {
+        if (GameState.CURRENT_STATE == GameState.INGAME) {
             LevelManager.update()
         }
-        State.update()
+        Tool.update()
+        Tool.update()
+        GameState.update()
     }
 
     fun renderFinal() {
@@ -217,13 +238,13 @@ object Game : ApplicationAdapter(), ControlPressHandler, PacketHandler {
     override fun dispose() {
         ClientNetworkManager.close()
         Renderer.batch.dispose()
-        ResourceManager.dispose()
+        GameResourceManager.dispose()
         TextManager.dispose()
         AudioManager.close()
         System.exit(0)
     }
 
-    override fun handleControlPress(p: ControlPress) {
+    override fun handleControl(p: ControlPress) {
         if (p.pressType == PressType.PRESSED)
             when (p.control) {
                 Control.TURN_OFF_DEBUG_INFO -> currentDebugCode = DebugCode.NONE
@@ -245,7 +266,7 @@ object Game : ApplicationAdapter(), ControlPressHandler, PacketHandler {
                     }
                 }
                 Control.TOGGLE_INVENTORY -> {
-                    if (State.CURRENT_STATE != State.INGAME)
+                    if (GameState.CURRENT_STATE != GameState.INGAME)
                         return
                     IngameGUI.mainInvGUI.toggle()
                     IngameGUI.mainInvGUI.windowGroup.bringToTop(IngameGUI.mainInvGUI)
@@ -260,7 +281,8 @@ object Game : ApplicationAdapter(), ControlPressHandler, PacketHandler {
         if (packet is LoadGamePacket) {
             PlayerManager.localPlayer = packet.localPlayer
             val localLevel = RemoteLevel(packet.localPlayer.homeLevelId, packet.currentLevelInfo)
-            ClientNetworkManager.sendToServer(RequestLevelDataPacket(localLevel.id))
+            localLevel.initialize()
+            localLevel.load()
         }
     }
 }

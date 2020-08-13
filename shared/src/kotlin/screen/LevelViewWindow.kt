@@ -19,7 +19,7 @@ class LevelViewWindow(name: String,
                       layer: Int = 0,
                       windowGroup: WindowGroup) :
         GUIWindow(name, xPixel, yPixel, widthPixels, heightPixels, windowGroup, open, layer),
-        ControlPressHandler {
+        ControlHandler {
 
     var CAMERA_SPEED = 1
 
@@ -42,7 +42,7 @@ class LevelViewWindow(name: String,
         allowEscapeToClose = false
     }
 
-    override fun handleControlPress(p: ControlPress) {
+    override fun handleControl(p: ControlPress) {
         // eventually check if this was the last selected gui level view
         if (p.control in Control.Group.CAMERA && p.pressType != PressType.RELEASED && camera is MovingObject) {
             if(!open) {
