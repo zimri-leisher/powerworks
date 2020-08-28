@@ -4,16 +4,16 @@ import level.block.Block
 import level.block.ChestBlock
 import screen.elements.BlockGUI
 
-class ChestBlockGUI(block: ChestBlock) : InventoryGUI("Chest inventory gui", block.type.invName, block.inv, 0, 0), BlockGUI {
+class ChestBlockGUI(block: ChestBlock) : InventoryGUI("Chest inventory gui", block.type.invName, block.inventory, 0, 0), BlockGUI {
     var block = block
         private set
 
     override fun canDisplayBlock(newBlock: Block): Boolean {
         if(newBlock !is ChestBlock)
             return false
-        if (inv.width != newBlock.inv.width)
+        if (inv.width != newBlock.inventory.width)
             return false
-        if (inv.height != newBlock.inv.height)
+        if (inv.height != newBlock.inventory.height)
             return false
         return true
     }
@@ -23,7 +23,7 @@ class ChestBlockGUI(block: ChestBlock) : InventoryGUI("Chest inventory gui", blo
             return false
         }
         block = newBlock as ChestBlock
-        itemSlots.forEach { it.inv = newBlock.inv }
+        itemSlots.forEach { it.inv = newBlock.inventory }
         return true
     }
 

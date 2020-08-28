@@ -18,7 +18,7 @@ class BrainRobot(xPixel: Int, yPixel: Int, rotation: Int,
 
     override fun render() {
         super.render()
-        Renderer.renderText("${user.displayName}'s BR/AIN", xPixel - 8, yPixel + 44, params = TextRenderParams(size = 10))
+        Renderer.renderText("${user.displayName}'s BRAIN", xPixel - 8, yPixel + 44, params = TextRenderParams(size = 10))
     }
 
     override fun toReference(): LevelObjectReference {

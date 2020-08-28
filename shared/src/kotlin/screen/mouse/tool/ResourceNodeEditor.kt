@@ -1,7 +1,8 @@
 package screen.mouse.tool
 
 import io.Control
-import io.PressType
+import io.ControlEvent
+import io.ControlEventType
 import level.LevelManager
 import level.getResourceNodesAt
 import resource.ResourceNode
@@ -17,8 +18,8 @@ object ResourceNodeEditor : Tool(Control.EDIT_RESOURCE_NODE) {
         }
     }
 
-    override fun onUse(control: Control, type: PressType, mouseLevelXPixel: Int, mouseLevelYPixel: Int): Boolean {
-        if (type == PressType.RELEASED) {
+    override fun onUse(event: ControlEvent, mouseLevelXPixel: Int, mouseLevelYPixel: Int): Boolean {
+        if (event.type == ControlEventType.RELEASE) {
             RoutingLanguageEditor.node = selectedNodes.first()
             RoutingLanguageEditor.open = true
             return true

@@ -9,7 +9,7 @@ import screen.elements.GUIDefaultTextureRectangle
 import screen.elements.GUIElement
 import screen.elements.RootGUIElement
 
-class FarseekerBlockGUI(var block: FarseekerBlock) : AutoFormatGUIWindow("FarseekerBlock GUI window", { 0 }, { 0 }, ScreenManager.Groups.INVENTORY) {
+class FarseekerBlockGUI(var block: FarseekerBlock) : AutoFormatGUIWindow("FarseekerBlock GUI window", { 0 }, { 0 }) {
 
     init {
 

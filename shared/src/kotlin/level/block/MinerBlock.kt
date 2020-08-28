@@ -1,12 +1,10 @@
 package level.block
 
 import com.badlogic.gdx.Input
-import io.PressType
-import level.getChunkFromTile
+import io.ControlEvent
+import io.ControlEventType
 import level.getTileAt
 import level.tile.OreTile
-import resource.give
-import resource.output
 import serialization.Id
 
 class MinerBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(MachineBlockType.MINER, xTile, yTile, rotation) {
@@ -31,9 +29,11 @@ class MinerBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(MachineBl
         }
     }
 
-    override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
-        if(type == PressType.RELEASED && button == Input.Buttons.LEFT && !shift && !alt && !ctrl) {
-            this.type.guiPool!!.toggle(this)
+    override fun onInteractOn(event: ControlEvent, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+        if (event.type == ControlEventType.PRESS && !shift && !ctrl && !alt) {
+            if (button == Input.Buttons.LEFT) {
+                this.type.guiPool!!.toggle(this)
+            }
         }
     }
 }

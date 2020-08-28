@@ -1,11 +1,12 @@
 package screen.mouse.tool
 
 import io.Control
-import io.PressType
+import io.ControlEvent
+import io.ControlEventType
 import level.LevelManager
 import level.block.Block
 import player.PlayerManager
-import screen.HUD
+import screen.gui2.GuiIngame
 import screen.mouse.Mouse
 
 object BlockPicker : Tool(Control.PICK_BLOCK) {
@@ -16,12 +17,12 @@ object BlockPicker : Tool(Control.PICK_BLOCK) {
         }
     }
 
-    override fun onUse(control: Control, type: PressType, mouseLevelXPixel: Int, mouseLevelYPixel: Int): Boolean {
-        if (type == PressType.PRESSED) {
+    override fun onUse(event: ControlEvent, mouseLevelXPixel: Int, mouseLevelYPixel: Int): Boolean {
+        if (event.type == ControlEventType.PRESS) {
             val selectedBlock = LevelManager.levelObjectUnderMouse!!
             if (selectedBlock.type.itemForm != null && PlayerManager.localPlayer.brainRobot.inventory.contains(selectedBlock.type.itemForm!!)) {
                 Mouse.heldItemType = selectedBlock.type.itemForm
-                HUD.Hotbar.selected = HUD.Hotbar.items.items.indexOf(Mouse.heldItemType)
+                GuiIngame.Hotbar.selectedSlotIndex = GuiIngame.Hotbar.slots.indexOf(Mouse.heldItemType)
             }
         }
         return true

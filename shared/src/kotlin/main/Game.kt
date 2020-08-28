@@ -24,13 +24,13 @@ import network.packet.Packet
 import network.packet.PacketHandler
 import network.packet.PacketType
 import player.PlayerManager
-import screen.IngameGUI
-import screen.ScreenManager
+import screen.gui2.ScreenManager
 import screen.mouse.Mouse
 import screen.mouse.Tooltips
 import screen.mouse.tool.Tool
 import serialization.Registration
 import serialization.Serialization
+import setting.Settings
 import java.util.*
 import kotlin.streams.asSequence
 import kotlin.system.exitProcess
@@ -74,10 +74,18 @@ fun toColor(color: Int = 0xFFFFFF, alpha: Float = 1f): Color {
 
 fun <K, V> Map<K, V>.joinToString() = toList().joinToString()
 
-const val SERVER_IP = "72.79.52.121"
+const val SERVER_IP = "127.0.0.1"
 const val SERVER_PORT = 9412
 
 fun main(args: Array<String>) {
+    //brain=мозг
+    // разбомбить = fire
+    // weapon = оружие
+    // пуля = bullet
+    // success = успех
+    // впасть в депрессию
+    // напасть = less concrete version of war
+    //
     val config = Lwjgl3ApplicationConfiguration()
     Game.processArguments(args)
     config.setWindowedMode(Game.WIDTH * Game.SCALE, Game.HEIGHT * Game.SCALE)
@@ -94,24 +102,24 @@ fun main(args: Array<String>) {
     exitProcess(1)
 }
 
-object Game : ApplicationAdapter(), ControlHandler, PacketHandler {
+object Game : ApplicationAdapter(), ControlEventHandler, PacketHandler {
 
     /* Dimensions */
     var WIDTH = 300
     var HEIGHT = (WIDTH.toDouble() / 16 * 9).toInt()
-    const val SCALE = 4
+    val SCALE = 4
 
     /* Frame and update rates */
     const val UPDATES_PER_SECOND = 60
     const val NS_PER_UPDATE: Float = 1000000000f / UPDATES_PER_SECOND
     const val MAX_UPDATES_BEFORE_RENDER = 5
-    var FRAMES_PER_SECOND = 30
+    var FRAMES_PER_SECOND = 60
     var NS_PER_FRAME: Float = 1000000000f / FRAMES_PER_SECOND
 
     private val OS = OperatingSystem.get()
 
+    // temporary random user generation
     val source = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-
     val USER = User(UUID.randomUUID(), Random().ints(5, 0, source.length)
             .asSequence()
             .map(source::get)
@@ -159,15 +167,17 @@ object Game : ApplicationAdapter(), ControlHandler, PacketHandler {
 
     override fun create() {
         // order matters with some of these!
-        println("game user: $USER")
         GameResourceManager.registerAtlas("textures/all.atlas")
         Registration.registerAll()
         Serialization.warmup()
+        if (!Settings.tryLoad("default")) {
+            Settings.save("default")
+        }
         ClientNetworkManager.start()
         ClientNetworkManager.registerServerPacketHandler(this, PacketType.LOAD_GAME)
         AudioManager.load()
         Gdx.input.inputProcessor = InputManager
-        InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.PIPE_INFO, Control.ESCAPE, Control.TURN_OFF_DEBUG_INFO, Control.TAKE_SCREENSHOT, Control.POSITION_INFO, Control.RESOURCE_NODES_INFO, Control.RENDER_HITBOXES, Control.SCREEN_INFO, Control.CHUNK_INFO, Control.TOGGLE_INVENTORY, Control.TUBE_INFO)
+        InputManager.register(this, Control.PIPE_INFO, Control.ESCAPE, Control.TURN_OFF_DEBUG_INFO, Control.TAKE_SCREENSHOT, Control.POSITION_INFO, Control.RESOURCE_NODES_INFO, Control.RENDER_HITBOXES, Control.SCREEN_INFO, Control.CHUNK_INFO, Control.TOGGLE_INVENTORY, Control.TUBE_INFO)
         GameState.setState(GameState.MAIN_MENU)
     }
 
@@ -207,10 +217,11 @@ object Game : ApplicationAdapter(), ControlHandler, PacketHandler {
         FileSystem.update()
         ClientNetworkManager.update()
         InputManager.update()
+        Mouse.update()
         Tooltips.update()
         Animation.update()
         ScreenManager.update()
-        if (GameState.CURRENT_STATE == GameState.INGAME) {
+        if (GameState.currentState == GameState.INGAME) {
             LevelManager.update()
         }
         Tool.update()
@@ -231,11 +242,12 @@ object Game : ApplicationAdapter(), ControlHandler, PacketHandler {
         if (IS_SERVER) return
         WIDTH = width / SCALE
         HEIGHT = height / SCALE
-        ScreenManager.screenSizeChange()
+        //ScreenManager.screenSizeChange()
         Renderer.batch.projectionMatrix.setToOrtho2D(0f, 0f, width.toFloat(), height.toFloat())
     }
 
     override fun dispose() {
+        InputManager.shutdown()
         ClientNetworkManager.close()
         Renderer.batch.dispose()
         GameResourceManager.dispose()
@@ -244,9 +256,9 @@ object Game : ApplicationAdapter(), ControlHandler, PacketHandler {
         System.exit(0)
     }
 
-    override fun handleControl(p: ControlPress) {
-        if (p.pressType == PressType.PRESSED)
-            when (p.control) {
+    override fun handleControlEvent(event: ControlEvent) {
+        if (event.type == ControlEventType.PRESS)
+            when (event.control) {
                 Control.TURN_OFF_DEBUG_INFO -> currentDebugCode = DebugCode.NONE
                 Control.TAKE_SCREENSHOT -> FileManager.takeScreenshot()
                 Control.RENDER_HITBOXES -> currentDebugCode = DebugCode.RENDER_HITBOXES
@@ -257,6 +269,7 @@ object Game : ApplicationAdapter(), ControlHandler, PacketHandler {
                 Control.SCREEN_INFO -> currentDebugCode = DebugCode.SCREEN_INFO
                 Control.POSITION_INFO -> currentDebugCode = DebugCode.POSITION_INFO
                 Control.ESCAPE -> {
+                    /*
                     for (group in ScreenManager.windowGroups) {
                         val highestCloseableWindow = group.windows.sortedBy { it.layer }.firstOrNull { it.allowEscapeToClose && it.open }
                         if (highestCloseableWindow != null) {
@@ -264,12 +277,7 @@ object Game : ApplicationAdapter(), ControlHandler, PacketHandler {
                             break
                         }
                     }
-                }
-                Control.TOGGLE_INVENTORY -> {
-                    if (GameState.CURRENT_STATE != GameState.INGAME)
-                        return
-                    IngameGUI.mainInvGUI.toggle()
-                    IngameGUI.mainInvGUI.windowGroup.bringToTop(IngameGUI.mainInvGUI)
+                     */
                 }
             }
     }

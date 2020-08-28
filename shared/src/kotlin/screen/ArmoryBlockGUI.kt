@@ -8,8 +8,7 @@ import screen.elements.GUIDefaultTextureRectangle
 import screen.elements.GUIProgressBar
 
 class ArmoryBlockGUI(block: ArmoryBlock) : AutoFormatGUIWindow("Armory block gui window",
-        { 0 }, { 0 },
-        ScreenManager.Groups.INVENTORY), BlockGUI {
+        { 0 }, { 0 }), BlockGUI {
     var block = block
         private set
 

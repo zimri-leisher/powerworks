@@ -24,15 +24,17 @@ import java.util.*
 object FileManager {
 
     val fileSystem = FileSystem(Paths.get(Game.JAR_PATH.substring(0 until Game.JAR_PATH.lastIndexOf("/"))), GameDirectoryIdentifier.ENCLOSING) {
-        if(Game.IS_SERVER) {
+        if (Game.IS_SERVER) {
             directory("server") {
                 directory("saves", GameDirectoryIdentifier.SAVES)
                 directory("players", GameDirectoryIdentifier.PLAYERS)
             }
         } else {
-            directory("settings/controls", GameDirectoryIdentifier.CONTROLS) {
-                copyOfFile("/settings/controls/default.txt")
-                copyOfFile("/settings/controls/texteditor.txt")
+            directory("settings", GameDirectoryIdentifier.SETTINGS) {
+                directory("controls", GameDirectoryIdentifier.CONTROLS) {
+                    copyOfFile("/settings/controls/default.txt")
+                    copyOfFile("/settings/controls/texteditor.txt")
+                }
             }
             directory("data") {
                 directory("saves", GameDirectoryIdentifier.SAVES)
@@ -47,20 +49,34 @@ object FileManager {
      */
     fun <T> tryLoadObject(directoryIdentifier: DirectoryIdentifier, further: String, objectType: Class<T>) = tryLoadObject(fileSystem.getPath(directoryIdentifier).resolve(further), objectType)
 
+    fun tryGetFile(path: Path): File? {
+        val file = path.toFile()
+        if (!file.exists()) {
+            return null
+        }
+        return file
+    }
+
+    fun tryGetFile(directoryIdentifier: DirectoryIdentifier, further: String) = tryGetFile(fileSystem.getPath(directoryIdentifier).resolve(further))
+
     /**
      * Uses [Input] to load an object at the [path] of the given (class)[objectType]
      * @return the object if its file exists, null otherwise
      */
     fun <T> tryLoadObject(path: Path, objectType: Class<T>): T? {
-        val file = path.toFile()
-        if (!file.exists()) {
-            return null
-        }
+        val file = tryGetFile(path) ?: return null
         val input = Input(FileInputStream(file))
         val obj = input.read(objectType)
         input.close()
         return obj
     }
+
+    fun tryGetFileInputStream(path: Path): FileInputStream? {
+        val file = tryGetFile(path) ?: return null
+        return FileInputStream(file)
+    }
+
+    fun tryGetFileInputStream(directoryIdentifier: DirectoryIdentifier, further: String) = tryGetFileInputStream(fileSystem.getPath(directoryIdentifier).resolve(further))
 
     /**
      * @return true if a file of the given [name] exists in the given [dir]
@@ -88,6 +104,19 @@ object FileManager {
      */
     fun saveObject(directoryIdentifier: DirectoryIdentifier, further: String, obj: Any) = saveObject(fileSystem.getPath(directoryIdentifier).resolve(further), obj)
 
+    fun getFileOutputStream(path: Path): FileOutputStream {
+        val directory = path.parent
+        if (Files.notExists(directory))
+            Files.createDirectories(directory)
+        if (Files.exists(path)) {
+            Files.delete(path)
+        }
+        Files.createFile(path)
+        return FileOutputStream(path.toFile())
+    }
+
+    fun getFileOutputStream(directoryIdentifier: DirectoryIdentifier, further: String) = getFileOutputStream(fileSystem.getPath(directoryIdentifier).resolve(further))
+
     fun takeScreenshot() {
         fileSystem.ensureDirectoryExists(GameDirectoryIdentifier.SCREENSHOTS)
         val pixels = ScreenUtils.getFrameBufferPixels(0, 0, Gdx.graphics.backBufferWidth, Gdx.graphics.backBufferHeight, true)
@@ -113,5 +142,5 @@ object FileManager {
 }
 
 enum class GameDirectoryIdentifier : DirectoryIdentifier {
-    ENCLOSING, SCREENSHOTS, CONTROLS, SAVES, PLAYERS
+    ENCLOSING, SCREENSHOTS, CONTROLS, SAVES, PLAYERS, SETTINGS
 }

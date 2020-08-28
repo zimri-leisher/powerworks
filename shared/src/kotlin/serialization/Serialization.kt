@@ -10,6 +10,8 @@ import java.io.*
 import java.lang.reflect.Modifier
 import java.util.*
 
+// TODO sanity checks on what gets read/written for security
+
 class ReadException(message: String) : Exception(message)
 
 class RegistrationException(message: String) : Exception(message)

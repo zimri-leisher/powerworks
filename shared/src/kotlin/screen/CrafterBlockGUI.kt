@@ -12,8 +12,7 @@ import screen.elements.*
  */
 class CrafterBlockGUI(block: CrafterBlock) :
         AutoFormatGUIWindow("Crafting block gui window",
-                { 0 }, { 0 },
-                ScreenManager.Groups.INVENTORY), BlockGUI {
+                { 0 }, { 0 }), BlockGUI {
     var block = block
         private set
 

@@ -5,7 +5,7 @@ import level.block.MinerBlock
 import screen.elements.*
 
 class MinerBlockGUI(block: MinerBlock) :
-        AutoFormatGUIWindow("GUI window for miner block: $block", { 0 }, { 0 }, ScreenManager.Groups.INVENTORY), BlockGUI {
+        AutoFormatGUIWindow("GUI window for miner block: $block", { 0 }, { 0 }), BlockGUI {
     var block = block
         private set
     var progressBar: GUIProgressBar

@@ -2,7 +2,8 @@ package screen.elements
 
 import graphics.Renderer
 import graphics.TextureRenderParams
-import io.PressType
+import io.ControlEvent
+import io.ControlEventType
 import misc.Geometry
 import screen.mouse.Mouse
 import screen.mouse.Tooltips
@@ -68,8 +69,8 @@ open class GUIIconList(parent: RootGUIElement, name: String,
         alignments.y = { lastYAlignment() - ((this.rows - 1) * (iconSize + ICON_PADDING)) }
     }
 
-    override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
-        if (allowSelection && type == PressType.PRESSED && button == 0) {
+    override fun onInteractOn(event: ControlEvent, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+        if (allowSelection && event.type == ControlEventType.PRESS && button == 0) {
             selectedIcon = getIconAt(xPixel, yPixel)
             if (selectedIcon != -1) {
                 onSelectIcon(selectedIcon)

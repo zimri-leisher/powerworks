@@ -2,7 +2,8 @@ package screen.elements
 
 import graphics.Image
 import graphics.Renderer
-import io.PressType
+import io.ControlEvent
+import io.ControlEventType
 import main.Game
 import screen.mouse.Mouse
 
@@ -24,14 +25,14 @@ class GUIDimensionDragGrip(parent: RootGUIElement,
     var nWidthPixels = 0
     var nHeightPixels = 0
 
-    override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
-        if (type == PressType.PRESSED) {
+    override fun onInteractOn(event: ControlEvent, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+        if (event.type == ControlEventType.PRESS) {
             dragging = true
             startXPixel = Mouse.xPixel
             startYPixel = Mouse.yPixel
             nWidthPixels = actOn.widthPixels
             nHeightPixels = actOn.heightPixels
-        } else if (type == PressType.RELEASED) {
+        } else if (event.type == ControlEventType.RELEASE) {
             dragging = false
             if (keepInsideWindowBounds) {
                 nWidthPixels = Math.min(Game.WIDTH, nWidthPixels)
@@ -42,6 +43,7 @@ class GUIDimensionDragGrip(parent: RootGUIElement,
         }
     }
 
+    /*
     override fun onInteractOff(xPixel: Int, yPixel: Int, type: PressType, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
         if (dragging && type == PressType.RELEASED) {
             dragging = false
@@ -53,6 +55,7 @@ class GUIDimensionDragGrip(parent: RootGUIElement,
             actOn.alignments.height = { nHeightPixels }
         }
     }
+     */
 
     override fun render() {
         if (!dragging)

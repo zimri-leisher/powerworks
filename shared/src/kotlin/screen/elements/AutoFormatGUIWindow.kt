@@ -15,9 +15,8 @@ import screen.WindowGroup
  */
 open class AutoFormatGUIWindow(name: String,
                                xAlignment: Alignment, yAlignment: Alignment,
-                               windowGroup: WindowGroup,
                                open: Boolean = false, layer: Int = 0) :
-        GUIWindow(name, xAlignment, yAlignment, { 0 }, { 0 }, windowGroup, open, layer) {
+        GUIWindow(name, xAlignment, yAlignment, { 0 }, { 0 }, open, layer) {
 
     val group = AutoFormatGUIGroup(this, name + " element group", { EDGE_PADDING }, { heightPixels - EDGE_PADDING }, open, dir = 2)
 

@@ -2,45 +2,47 @@ package main
 
 import audio.AudioManager
 import player.PlayerManager
-import screen.*
+import screen.RecipeSelectorGUI
+import screen.gui2.GuiIngame
+import screen.gui2.GuiMainMenu
 import screen.mouse.Mouse
 
 class GameState(val activate: () -> Unit, val deactivate: () -> Unit) {
     companion object {
 
-        private var NEXT_STATE: GameState? = null
+        private var nextState: GameState? = null
 
         val MAIN_MENU = GameState({
-            MainMenuGUI.open = true
+            GuiMainMenu.open = true
         }, {
-            MainMenuGUI.open = false
+            GuiMainMenu.open = false
         })
 
         val INGAME = GameState({
-            IngameGUI.open = true
-            TestGUI
+            GuiIngame.initializeFor(PlayerManager.localPlayer.brainRobot)
+            GuiIngame.open = true
             PlayerManager.localPlayer.brainRobot.inventory.listeners.add(Mouse)
 
-            AudioManager.ears = IngameGUI.cameras[0]
+            AudioManager.ears = GuiIngame.cameras[0]
             RecipeSelectorGUI
-            HUD
-            MovementToolsGUI
         }, {
         })
 
-        var CURRENT_STATE = MAIN_MENU
+        var currentState = MAIN_MENU
             private set
 
         fun setState(s: GameState) {
-            NEXT_STATE = s
+            if(nextState != s) {
+                nextState = s
+            }
         }
 
         fun update() {
-            if (NEXT_STATE != null) {
-                CURRENT_STATE.deactivate()
-                NEXT_STATE!!.activate()
-                CURRENT_STATE = NEXT_STATE!!
-                NEXT_STATE = null
+            if (nextState != null) {
+                currentState.deactivate()
+                nextState!!.activate()
+                currentState = nextState!!
+                nextState = null
             }
         }
     }

@@ -3,8 +3,8 @@ package screen.mouse
 import level.LevelManager
 import level.LevelObject
 import main.GameState
-import screen.ScreenManager
 import screen.elements.RootGUIElement
+import screen.gui2.ScreenManager
 
 object Tooltips {
 
@@ -32,6 +32,7 @@ object Tooltips {
 
     fun update() {
         var s: String? = null
+        /*
         val screen = ScreenManager.elementUnderMouse
         if (screen != null) {
             for (v in screenTooltipTemplates.values) {
@@ -42,7 +43,7 @@ object Tooltips {
                 }
             }
         }
-        if (s == null && GameState.CURRENT_STATE == GameState.INGAME) {
+        if (s == null && GameState.currentState == GameState.INGAME) {
             val level = LevelManager.levelObjectUnderMouse
             if (level != null) {
                 for (v in levelTooltipTemplates.values) {
@@ -64,5 +65,7 @@ object Tooltips {
             Mouse.background.open = false
         }
         Mouse.window.alignments.updatePosition()
+
+         */
     }
 }

@@ -1,7 +1,8 @@
 package level.block
 
 import com.badlogic.gdx.Input
-import io.PressType
+import io.ControlEvent
+import io.ControlEventType
 import item.weapon.Weapon
 import item.weapon.WeaponItemType
 import level.entity.Entity
@@ -11,8 +12,8 @@ class ArmoryBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(MachineB
 
     private constructor() : this(0, 0, 0)
 
-    override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
-        if (type == PressType.PRESSED && !shift && !ctrl && !alt) {
+    override fun onInteractOn(event: ControlEvent, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+        if (event.type == ControlEventType.PRESS && !shift && !ctrl && !alt) {
             if (button == Input.Buttons.LEFT) {
                 this.type.guiPool!!.toggle(this)
             }

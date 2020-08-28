@@ -24,6 +24,7 @@ import resource.*
 import routing.script.RoutingLanguage
 import screen.*
 import screen.elements.BlockGUI
+import screen.gui2.*
 import java.util.*
 
 /**
@@ -74,7 +75,7 @@ open class BlockType<T : Block>(initializer: BlockType<T>.() -> Unit = {}) : Lev
      * The [BlockGUIPool] for [Block]s of this [BlockType]. This is meant for [Block]s which have a single, standard
      * [BlockGUI] across all instances, and is usually accessed in the [Block.onInteractOn] method (e.g. `guiPool.open(this)`)
      */
-    var guiPool: BlockGUIPool<*>? = null
+    var guiPool: GuiPool<*>? = null
 
     init {
         instantiate = { xPixel, yPixel, rotation -> DefaultBlock(this as BlockType<DefaultBlock>, xPixel shr 4, yPixel shr 4, rotation) as T }
@@ -95,7 +96,7 @@ open class BlockType<T : Block>(initializer: BlockType<T>.() -> Unit = {}) : Lev
         val ERROR = BlockType<DefaultBlock>()
 
         val FARSEEKER = BlockType<FarseekerBlock> {
-            instantiate = {xPixel, yPixel, rotation -> FarseekerBlock(xPixel shr 4, yPixel shr 4, rotation) }
+            instantiate = { xPixel, yPixel, rotation -> FarseekerBlock(xPixel shr 4, yPixel shr 4, rotation) }
             name = "Farseeker"
             widthTiles = 4
             heightTiles = 4
@@ -326,7 +327,7 @@ open class MachineBlockType<T : MachineBlock>(initializer: MachineBlockType<T>.(
                 val internalInventory = Inventory(1, 1)
                 node(0, 0, 2, internalInventory, allowOut = "true", forceOut = "true")
             }
-            guiPool = BlockGUIPool({ MinerBlockGUI(it as MinerBlock) }, 3)
+            guiPool = GuiPool({ GuiMinerBlock(it as MinerBlock) })
         }
 
         val FURNACE = MachineBlockType<FurnaceBlock> {
@@ -342,7 +343,7 @@ open class MachineBlockType<T : MachineBlock>(initializer: MachineBlockType<T>.(
                 node(0, 0, 0, internalInventory, "true", ResourceTypeGroup.ORE_ITEMS.types, "false")
                 node(0, 0, 2, internalTank, allowIn = "false", allowOut = "true", forceOut = "true")
             }
-            guiPool = BlockGUIPool({ FurnaceBlockGUI(it as FurnaceBlock) }, 3)
+            guiPool = GuiPool({ GuiFurnaceBlock(it as FurnaceBlock) })
         }
         val SOLIDIFIER = MachineBlockType<SolidifierBlock> {
             name = "Molten Ore Solidifer"
@@ -359,7 +360,7 @@ open class MachineBlockType<T : MachineBlock>(initializer: MachineBlockType<T>.(
                 node(0, 1, 0, tank, "true", ResourceTypeGroup.MOLTEN_ORE_FLUIDS.types, "false")
                 node(0, 0, 2, out, "false", allowOut = "true", forceOut = "true")
             }
-            guiPool = BlockGUIPool({ SolidifierBlockGUI(it as SolidifierBlock) }, 3)
+            guiPool = GuiPool({ GuiSolidifierBlock(it as SolidifierBlock) }, 3)
         }
         val ARMORY = MachineBlockType<ArmoryBlock> {
             name = "Armory"
@@ -370,7 +371,7 @@ open class MachineBlockType<T : MachineBlock>(initializer: MachineBlockType<T>.(
             loop = true
             startOn = true
             hitbox = Hitbox.TILE2X2
-            guiPool = BlockGUIPool({ ArmoryBlockGUI(it as ArmoryBlock) }, 3)
+            //guiPool = BlockGUIPool({ ArmoryBlockGUI(it as ArmoryBlock) }, 3)
             nodeTemplate {
                 val inputInv = Inventory(3, 1)
                 node(0, 1, 0, inputInv, "true", allowOut = "false")
@@ -390,7 +391,7 @@ class CrafterBlockType<T : CrafterBlock>(initializer: CrafterBlockType<T>.() -> 
     init {
         widthTiles = 2
         heightTiles = 2
-        guiPool = BlockGUIPool({ CrafterBlockGUI(it as CrafterBlock) })
+//        guiPool = BlockGUIPool({ CrafterBlockGUI(it as CrafterBlock) })
         initializer()
         ALL.add(this)
     }
@@ -457,7 +458,7 @@ class FluidTankBlockType(initializer: FluidTankBlockType.() -> Unit) : BlockType
             node(0, 0, 2, storage, "true", allowOut = "true")
             node(0, 0, 3, storage, "true", allowOut = "true")
         }
-        guiPool = BlockGUIPool({ FluidTankBlockGUI(it as FluidTankBlock) }, 3)
+//        guiPool = BlockGUIPool({ FluidTankBlockGUI(it as FluidTankBlock) }, 3)
         initializer()
         ALL.add(this)
     }
@@ -481,7 +482,7 @@ class ChestBlockType(initializer: ChestBlockType.() -> Unit) : BlockType<ChestBl
 
     init {
         instantiate = { xPixel, yPixel, rotation -> ChestBlock(this, xPixel shr 4, yPixel shr 4, rotation) }
-        guiPool = BlockGUIPool({ ChestBlockGUI(it as ChestBlock) })
+        guiPool = GuiPool({ GuiChestBlock(it as ChestBlock) })
         initializer()
         nodeTemplate {
             val storage = Inventory(invWidth, invHeight)

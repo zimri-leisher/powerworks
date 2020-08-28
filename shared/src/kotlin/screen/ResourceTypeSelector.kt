@@ -6,7 +6,7 @@ import resource.ResourceType
 import resource.ResourceTypeGroup
 import screen.elements.*
 
-object ResourceTypeSelector : GUIWindow("Resource type selector", 0, 0, (GUIResourceTypesDisplayList.OPTIONS_PER_ROW * (17)) + 8 + GUIVerticalScrollBar.WIDTH, 110, ScreenManager.Groups.PLAYER_UTIL) {
+object ResourceTypeSelector : GUIWindow("Resource type selector", 0, 0, (GUIResourceTypesDisplayList.OPTIONS_PER_ROW * (17)) + 8 + GUIVerticalScrollBar.WIDTH, 110) {
 
     private val background = GUIDefaultTextureRectangle(this, "Resource type selector background")
 

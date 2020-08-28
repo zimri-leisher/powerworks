@@ -13,7 +13,7 @@ import screen.elements.GUIButton
 import screen.elements.GUITexturePane
 import screen.elements.GUIWindow
 
-object LevelSelectorGUI : GUIWindow("Level selector window", { 0 }, { 0 }, { Game.WIDTH }, { Game.HEIGHT }, ScreenManager.Groups.BACKGROUND, layer = 3) {
+object LevelSelectorGUI : GUIWindow("Level selector window", { 0 }, { 0 }, { Game.WIDTH }, { Game.HEIGHT }, layer = 3) {
 
 
     init {

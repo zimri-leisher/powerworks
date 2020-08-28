@@ -5,18 +5,18 @@ import data.DirectoryChangeWatcher
 import data.FileManager
 import data.GameDirectoryIdentifier
 import data.WeakMutableList
-import io.ControlHandler
+import io.ControlEventHandler
 import io.InputManager
 import io.MouseMovementListener
 import level.generator.LevelType
 import main.Game
 import main.GameState
 import network.User
-import player.PlayerManager
 import resource.ResourceNode
 import screen.CameraMovementListener
-import screen.ScreenManager
 import screen.elements.GUILevelView
+import screen.gui2.ElementLevelView
+import screen.gui2.ScreenManager
 import screen.mouse.Mouse
 import java.nio.file.Path
 import java.time.LocalDateTime
@@ -44,23 +44,9 @@ object LevelManager : DirectoryChangeWatcher, MouseMovementListener, CameraMovem
     var levelUnderMouse: Level? = null
 
     /**
-     * The last [Level] that was clicked on. Before any have been clicked on, defaults to the [localLevel]
-     */
-    lateinit var levelLastInteractedWith: Level
-
-    private val allViews = WeakMutableList<GUILevelView>()
-
-    /**
      * The [GUILevelView] that the mouse is currently over, or null if the mouse is not over any [GUILevelView]
      */
-    var levelViewUnderMouse: GUILevelView? = null
-        private set
-
-    /**
-     * The last [GUILevelView] that was clicked on. Before any have been clicked on, defaults to the first [GUILevelView]
-     * created
-     */
-    lateinit var levelViewLastInteractedWith: GUILevelView
+    var levelViewUnderMouse: ElementLevelView? = null
         private set
 
     /**
@@ -69,12 +55,6 @@ object LevelManager : DirectoryChangeWatcher, MouseMovementListener, CameraMovem
      * last
      */
     var levelObjectUnderMouse: LevelObject? = null
-        private set
-
-    /**
-     * The last [LevelObject] that was clicked on. Before any have been clicked on, defaults to the camera of the first [GUILevelView]
-     */
-    lateinit var levelObjectLastInteractedWith: LevelObject
         private set
 
     var mouseLevelXPixel = 0
@@ -112,7 +92,7 @@ object LevelManager : DirectoryChangeWatcher, MouseMovementListener, CameraMovem
         if (Game.IS_SERVER) {
             FileManager.fileSystem.registerDirectoryChangeWatcher(this, FileManager.fileSystem.getPath(GameDirectoryIdentifier.SAVES))
         } else {
-            InputManager.mouseMovementListeners.add(this)
+            Mouse.mouseMovementListeners.add(this)
         }
         levelEventListeners.add(this)
     }
@@ -137,21 +117,13 @@ object LevelManager : DirectoryChangeWatcher, MouseMovementListener, CameraMovem
 
     fun isLevelLoaded(levelId: UUID) = loadedLevels.any { it.id == levelId }
 
-    fun addLevelView(view: GUILevelView) {
-        if (allViews.size == 0) {
-            levelViewLastInteractedWith = view
-        }
-        view.moveListeners.add(this)
-        allViews.add(view)
-    }
-
     override fun onMouseMove(pXPixel: Int, pYPixel: Int) {
-        if (GameState.CURRENT_STATE == GameState.INGAME) {
+        if (GameState.currentState == GameState.INGAME) {
             updateMouseLevelPosition()
         }
     }
 
-    override fun onCameraMove(view: GUILevelView, pXPixel: Int, pYPixel: Int) {
+    override fun onCameraMove(view: ElementLevelView, pXPixel: Int, pYPixel: Int) {
         updateMouseLevelPosition()
     }
 
@@ -171,20 +143,13 @@ object LevelManager : DirectoryChangeWatcher, MouseMovementListener, CameraMovem
 
     fun saveLevelDataFile(levelId: UUID, data: LevelData, dir: GameDirectoryIdentifier = GameDirectoryIdentifier.SAVES) = FileManager.saveObject(dir, "$levelId/main.level", data)
 
-    /**
-     * Updates the audio engine so you hear sound from last the selected view
-     */
-    private fun updateAudioEars() {
-        AudioManager.ears = levelViewLastInteractedWith.camera
-    }
-
-    fun updateLevelAndViewInformation() {
-        val topViewUnderMouse = allViews.filter { it.open }.sortedByDescending { it.parent.layer }.firstOrNull { it.mouseOn }
+    private fun updateLevelAndViewInformation() {
+        val topViewUnderMouse = ScreenManager.elementsUnderMouse.filterIsInstance<ElementLevelView>().firstOrNull { it.open }
         // should be the highest level view under the mouse, even if it is hidden. null if none
         levelViewUnderMouse = topViewUnderMouse
         // the level under the mouse will be the level of this view. null if mouse not on level
         if (levelUnderMouse != levelViewUnderMouse?.level) {
-            updateAudioEars()
+            AudioManager.ears = levelViewUnderMouse?.camera
             updateMouseLevelPosition()
             levelUnderMouse = levelViewUnderMouse?.level
         }
@@ -196,31 +161,16 @@ object LevelManager : DirectoryChangeWatcher, MouseMovementListener, CameraMovem
             newLevelObjectUnderMouse?.mouseOn = true
             levelObjectUnderMouse = newLevelObjectUnderMouse
         }
-        // if the last element that was clicked on is a gui level view and it has changed
-        if (ScreenManager.elementLastInteractedWith is GUILevelView && ScreenManager.elementLastInteractedWith != levelViewLastInteractedWith) {
-            // update the last level view
-            levelViewLastInteractedWith = ScreenManager.elementLastInteractedWith as GUILevelView
-            // the last level interacted with will be the level of the last view interacted with
-            levelLastInteractedWith = levelViewLastInteractedWith.level
-        }
     }
 
-    fun onInteractWithLevelObjectUnderMouse() {
-        levelObjectLastInteractedWith = levelObjectUnderMouse!!
-        InputManager.currentLevelHandlers.clear()
-        if (levelObjectLastInteractedWith is ControlHandler) {
-            InputManager.currentLevelHandlers.add(levelObjectLastInteractedWith as ControlHandler)
-        }
-    }
-
-    fun updateMouseLevelPosition() {
+    private fun updateMouseLevelPosition() {
         if (levelViewUnderMouse != null) {
             val zoom = levelViewUnderMouse!!.zoomMultiplier
             val viewRectangle = levelViewUnderMouse!!.viewRectangle
             val pXPixel = mouseLevelXPixel
             val pYPixel = mouseLevelYPixel
-            mouseLevelXPixel = ((Mouse.xPixel - levelViewUnderMouse!!.xPixel) / zoom).toInt() + viewRectangle.x
-            mouseLevelYPixel = ((Mouse.yPixel - levelViewUnderMouse!!.yPixel) / zoom).toInt() + viewRectangle.y
+            mouseLevelXPixel = ((Mouse.xPixel - levelViewUnderMouse!!.absoluteXPixel) / zoom).toInt() + viewRectangle.x
+            mouseLevelYPixel = ((Mouse.yPixel - levelViewUnderMouse!!.absoluteYPixel) / zoom).toInt() + viewRectangle.y
             if (pXPixel != mouseLevelXPixel || pYPixel != mouseLevelYPixel) {
                 mouseMovementListeners.forEach { it.onMouseMoveRelativeToLevel(pXPixel, pYPixel) }
             }

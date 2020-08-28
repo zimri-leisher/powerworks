@@ -9,7 +9,6 @@ class WindowGroup(var layer: Int, val name: String) {
 
     init {
         windows.onAdd = { sortBy { it.layer } }
-        ScreenManager.windowGroups.add(this)
     }
 
     /**

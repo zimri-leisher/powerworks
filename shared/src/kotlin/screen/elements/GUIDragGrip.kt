@@ -15,8 +15,7 @@ class GUIDragGrip(parent: RootGUIElement,
                   layer: Int = parent.layer + 1,
                   val actOn: GUIWindow,
                   var keepInsideWindowBounds: Boolean = true) :
-        GUIElement(parent, name, xAlignment, yAlignment, { WIDTH }, { HEIGHT }, open, layer),
-ControlHandler{
+        GUIElement(parent, name, xAlignment, yAlignment, { WIDTH }, { HEIGHT }, open, layer){
 
     var dragging = false
     var startingXPixel = 0
@@ -24,18 +23,14 @@ ControlHandler{
     var actOnStartingXPixel = 0
     var actOnStartingYPixel = 0
 
-    init {
-        InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.Group.INTERACTION)
-    }
-
-    override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
-        if (type == PressType.PRESSED) {
+    override fun onInteractOn(event: ControlEvent, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+        if (event.type == ControlEventType.PRESS) {
             dragging = true
             startingXPixel = Mouse.xPixel
             startingYPixel = Mouse.yPixel
             actOnStartingXPixel = actOn.xPixel
             actOnStartingYPixel = actOn.yPixel
-        } else if (type == PressType.RELEASED) {
+        } else if (event.type == ControlEventType.RELEASE) {
             dragging = false
         }
     }
@@ -73,11 +68,6 @@ ControlHandler{
         }
     }
 
-    override fun handleControl(p: ControlPress) {
-        if(p.pressType == PressType.RELEASED && dragging) {
-            dragging = false
-        }
-    }
     companion object {
         val WIDTH = Image.GUI.DRAG_GRIP.widthPixels
         val HEIGHT = Image.GUI.DRAG_GRIP.heightPixels

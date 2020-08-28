@@ -5,7 +5,7 @@ import level.block.ChestBlock
 import level.block.FluidTankBlock
 import screen.elements.*
 
-open class FluidTankGUI(tank: FluidTank) : GUIWindow("Fluid tank GUI", 0, 0, WIDTH, HEIGHT, ScreenManager.Groups.INVENTORY) {
+open class FluidTankGUI(tank: FluidTank) : GUIWindow("Fluid tank GUI", 0, 0, WIDTH, HEIGHT) {
     var tank = tank
         protected set
 

@@ -2,7 +2,8 @@ package screen.elements
 
 import graphics.Image
 import graphics.Renderer
-import io.PressType
+import io.ControlEvent
+import io.ControlEventType
 import main.heightPixels
 import main.widthPixels
 import misc.Geometry
@@ -60,16 +61,16 @@ class GUIVerticalScrollBar(parent: RootGUIElement,
         currentTextures[2] = otherTextures[i * 3 + 2]
     }
 
-    override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
-        when (type) {
-            PressType.PRESSED -> {
+    override fun onInteractOn(event: ControlEvent, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+        when (event.type) {
+            ControlEventType.PRESS -> {
                 if (intersectsScrollBar(xPixel, yPixel)) {
                     dragging = true
                     mYPixelPrev = yPixel
                     setTexture(2)
                 }
             }
-            PressType.RELEASED -> {
+            ControlEventType.RELEASE -> {
                 if (mouseOn && intersectsScrollBar(xPixel, yPixel))
                     setTexture(1)
                 else

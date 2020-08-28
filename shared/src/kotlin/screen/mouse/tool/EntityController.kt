@@ -5,7 +5,8 @@ import behavior.BehaviorTree
 import graphics.Image
 import graphics.Texture
 import io.Control
-import io.PressType
+import io.ControlEvent
+import io.ControlEventType
 import level.LevelManager
 import level.entity.Entity
 import level.entity.EntityGroup
@@ -14,14 +15,13 @@ import misc.PixelCoord
 import network.MovingObjectReference
 import player.ControlEntityAction
 import player.PlayerManager
-import screen.ScreenManager
 import screen.elements.GUIMouseOverRegion
 import screen.elements.GUITexturePane
 import screen.elements.GUIWindow
 import screen.mouse.Mouse
 
 object ControllerMenu : GUIWindow("Entity controller window",
-        0, 0, 55, 55, ScreenManager.Groups.HUD) {
+        0, 0, 55, 55) {
 
     var background: GUITexturePane
 
@@ -67,13 +67,13 @@ object EntityController : Tool(Control.USE_ENTITY_COMMAND) {
     var currentlyHoveringCommand: BehaviorTree? = null
     var selectedCommand: BehaviorTree? = null
 
-    override fun onUse(control: Control, type: PressType, mouseLevelXPixel: Int, mouseLevelYPixel: Int): Boolean {
-        if (control == Control.USE_ENTITY_COMMAND) {
-            if (type == PressType.PRESSED) {
+    override fun onUse(event: ControlEvent, mouseLevelXPixel: Int, mouseLevelYPixel: Int): Boolean {
+        if (event.control == Control.USE_ENTITY_COMMAND) {
+            if (event.type ==ControlEventType.PRESS) {
                 startXPixel = Mouse.xPixel
                 startYPixel = Mouse.yPixel
                 println("start: $startXPixel, $startYPixel")
-            } else if (type == PressType.REPEAT) {
+            } else if (false) { // TODO should be if held
                 if (Geometry.distance(Mouse.xPixel, Mouse.yPixel, startXPixel, startYPixel) > DRAG_DISTANCE_BEFORE_MENU_OPEN) {
                     val startXCopy = startXPixel
                     val startYCopy = startYPixel // the unhappy (sometimes) magic of lambdas
@@ -105,8 +105,7 @@ object EntityController : Tool(Control.USE_ENTITY_COMMAND) {
                         val boundaries = group.formation!!.boundaries
                         if (Geometry.contains(boundaries.x, boundaries.y, boundaries.width, boundaries.height,
                                         LevelManager.mouseLevelXPixel, LevelManager.mouseLevelYPixel, 0, 0)) {
-                            // merge groups
-                            // TODO
+                            // TODO merge groups
                         }
                     }
                 }

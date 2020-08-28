@@ -3,7 +3,8 @@ package level.block
 import com.badlogic.gdx.Input
 import crafting.Crafter
 import crafting.Recipe
-import io.PressType
+import io.ControlEvent
+import io.ControlEventType
 import resource.*
 import routing.script.RoutingLanguage
 import serialization.Id
@@ -103,9 +104,11 @@ open class CrafterBlock(override val type: CrafterBlockType<*>, xTile: Int, yTil
         }
     }
 
-    override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
-        if (type == PressType.PRESSED && !shift && !ctrl && !alt && button == Input.Buttons.LEFT) {
-            this.type.guiPool!!.toggle(this)
+    override fun onInteractOn(event: ControlEvent, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+        if (event.type == ControlEventType.PRESS && !shift && !ctrl && !alt) {
+            if (button == Input.Buttons.LEFT) {
+                this.type.guiPool!!.toggle(this)
+            }
         }
     }
 }

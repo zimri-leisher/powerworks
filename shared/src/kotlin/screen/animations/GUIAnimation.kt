@@ -1,6 +1,5 @@
 package screen.animations
 
-import screen.ScreenManager
 import screen.elements.RootGUIElement
 
 /**
@@ -23,11 +22,9 @@ abstract class GUIAnimation<E : RootGUIElement>(val subject: E, private var onSt
             if (field != value) {
                 field = value
                 if (value) {
-                    ScreenManager.playingAnimations.add(this)
                     onStart.invoke()
                     onStart()
                 } else {
-                    ScreenManager.playingAnimations.remove(this)
                     onStop.invoke()
                     onStop()
                 }

@@ -6,7 +6,7 @@ import main.toColor
 import screen.elements.*
 
 class SolidifierBlockGUI(block: SolidifierBlock) :
-        AutoFormatGUIWindow("GUI window for solidifier block: $block", { 0 }, { 0 }, ScreenManager.Groups.INVENTORY), BlockGUI {
+        AutoFormatGUIWindow("GUI window for solidifier block: $block", { 0 }, { 0 }), BlockGUI {
     var block = block
         private set
     var progressArrow: GUIProgressArrow

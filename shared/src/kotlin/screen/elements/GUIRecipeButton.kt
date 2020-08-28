@@ -2,8 +2,8 @@ package screen.elements
 
 import com.badlogic.gdx.Input
 import crafting.Recipe
-import graphics.Renderer
-import io.PressType
+import io.ControlEvent
+import io.ControlEventType
 import screen.RecipeSelectorGUI
 
 class GUIRecipeButton(parent: RootGUIElement,
@@ -51,20 +51,20 @@ class GUIRecipeButton(parent: RootGUIElement,
         }
     }
 
-    override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
-        if (type == PressType.PRESSED && button == Input.Buttons.LEFT) {
-            if(RecipeSelectorGUI.open) {
+    override fun onInteractOn(event: ControlEvent, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+        if (event.type == ControlEventType.PRESS && button == Input.Buttons.LEFT) {
+            if (RecipeSelectorGUI.open) {
                 RecipeSelectorGUI.open = false
             }
             RecipeSelectorGUI.open = true
             RecipeSelectorGUI.available = available
-            RecipeSelectorGUI.windowGroup.bringToTop(RecipeSelectorGUI)
+//            RecipeSelectorGUI.windowGroup.bringToTop(RecipeSelectorGUI)
             waitingForRecipeSelection = true
         }
     }
 
     override fun render() {
-        display.background.localRenderParams.brightness = if(mouseOn) 1.1f else 1f
+        display.background.localRenderParams.brightness = if (mouseOn) 1.1f else 1f
     }
 
     companion object {

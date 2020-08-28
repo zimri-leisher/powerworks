@@ -3,7 +3,8 @@ package level.block
 import com.badlogic.gdx.Input
 import fluid.FluidTank
 import fluid.MoltenOreFluidType
-import io.PressType
+import io.ControlEvent
+import io.ControlEventType
 import item.Inventory
 import resource.ResourceContainer
 import resource.ResourceContainerChangeListener
@@ -57,14 +58,16 @@ class SolidifierBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(Mach
         }
     }
 
-    override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
-        if (type == PressType.RELEASED && !shift && !ctrl && !alt && button == Input.Buttons.LEFT) {
-            this.type.guiPool!!.toggle(this)
+    override fun onInteractOn(event: ControlEvent, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+        if (event.type == ControlEventType.PRESS && !shift && !ctrl && !alt) {
+            if (button == Input.Buttons.LEFT) {
+                this.type.guiPool!!.toggle(this)
+            }
         }
     }
 
     override fun onFinishWork() {
-        if(currentlySolidifying == null) {
+        if (currentlySolidifying == null) {
             return
         }
         if (out.add(currentlySolidifying!!.ingot)) {

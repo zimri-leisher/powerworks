@@ -3,6 +3,9 @@ package screen.mouse.tool
 import io.*
 import level.LevelManager
 import main.Game
+import main.GameState
+import screen.gui2.ElementLevelView
+import screen.gui2.ScreenManager
 import java.util.*
 
 abstract class Tool(val use: List<Control>, val activators: List<Control> = listOf()) {
@@ -13,7 +16,7 @@ abstract class Tool(val use: List<Control>, val activators: List<Control> = list
     var currentlyActive = false
     var activationPredicate: Tool.() -> Boolean = { true }
 
-    abstract fun onUse(control: Control, type: PressType, mouseLevelXPixel: Int, mouseLevelYPixel: Int): Boolean
+    abstract fun onUse(event: ControlEvent, mouseLevelXPixel: Int, mouseLevelYPixel: Int): Boolean
 
     open fun update() {}
 
@@ -21,10 +24,10 @@ abstract class Tool(val use: List<Control>, val activators: List<Control> = list
 
     open fun renderAbove() {}
 
-    companion object : ControlHandler {
+    companion object : ControlEventHandler {
         val ALL = mutableListOf<Tool>()
 
-        val presses = LinkedList<ControlPress>()
+        val controlEvents = LinkedList<ControlEvent>()
 
         init {
             addTool(BlockPicker)
@@ -40,7 +43,7 @@ abstract class Tool(val use: List<Control>, val activators: List<Control> = list
 
         fun addTool(tool: Tool, priority: Int = 0) {
             if (!Game.IS_SERVER) {
-                InputManager.registerControlPressHandler(Companion, ControlPressHandlerType.LEVEL_ANY_UNDER_MOUSE, tool.activators.toList() + tool.use)
+                InputManager.register(Companion, tool.activators.toList() + tool.use)
                 tool.priority = priority
                 ALL.add(tool)
                 ALL.sortByDescending { it.priority }
@@ -50,24 +53,23 @@ abstract class Tool(val use: List<Control>, val activators: List<Control> = list
         fun update() {
             var blocked = false
             for (tool in ALL) {
-                for (press in presses) {
-                    if (press.control in tool.activators) {
-                        if (press.pressType == PressType.PRESSED) {
-                            tool.currentlyHeldActivators.add(press.control)
-                        } else if (press.pressType == PressType.RELEASED) {
-                            tool.currentlyHeldActivators.remove(press.control)
+                for (event in controlEvents) {
+                    if (event.control in tool.activators) {
+                        if (event.type == ControlEventType.PRESS) {
+                            tool.currentlyHeldActivators.add(event.control)
+                        } else if (event.type == ControlEventType.RELEASE) {
+                            tool.currentlyHeldActivators.remove(event.control)
                         }
                     }
                     tool.currentlyActive = tool.activationPredicate(tool) && tool.activators.all { it in tool.currentlyHeldActivators }
-                    if (tool.currentlyActive && press.control in tool.use && !blocked) {
-                        if (tool.onUse(press.control, press.pressType, LevelManager.mouseLevelXPixel, LevelManager.mouseLevelYPixel)) {
+                    if (tool.currentlyActive && event.control in tool.use && !blocked) {
+                        if (tool.onUse(event, LevelManager.mouseLevelXPixel, LevelManager.mouseLevelYPixel)) {
                             blocked = true
                         }
                     }
                 }
             }
-
-            presses.clear()
+            controlEvents.clear()
             ALL.forEach { it.update() }
         }
 
@@ -79,8 +81,12 @@ abstract class Tool(val use: List<Control>, val activators: List<Control> = list
             ALL.forEach { it.renderAbove() }
         }
 
-        override fun handleControl(p: ControlPress) {
-            presses.add(p)
+        override fun handleControlEvent(event: ControlEvent) {
+            if(GameState.currentState == GameState.INGAME) {
+                if(ScreenManager.elementUnderMouse is ElementLevelView) {
+                    controlEvents.add(event)
+                }
+            }
         }
     }
 }

@@ -5,7 +5,7 @@ import level.block.FurnaceBlock
 import main.toColor
 import screen.elements.*
 
-class FurnaceBlockGUI(block: FurnaceBlock) : AutoFormatGUIWindow("Furnace block gui", { 0 }, { 0 }, ScreenManager.Groups.INVENTORY), BlockGUI {
+class FurnaceBlockGUI(block: FurnaceBlock) : AutoFormatGUIWindow("Furnace block gui", { 0 }, { 0 }), BlockGUI {
     var block = block
         private set
     private val progressArrow: GUIProgressArrow

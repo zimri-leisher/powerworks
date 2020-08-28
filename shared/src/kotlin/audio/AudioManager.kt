@@ -55,7 +55,7 @@ object AudioManager : MovementListener {
         }
     var levelSounds = ConcurrentlyModifiableMutableList<SoundSource>()
     var forceUpdate = ConcurrentlyModifiableMutableList<SoundSource>()
-    var otherSounds: MutableMap<Sound, Int> = EnumMap(audio.Sound::class.java)
+    var otherSounds: MutableMap<Sound, Int> = EnumMap(Sound::class.java)
 
     /**
      * Prepares all sounds for playing, must do before using them

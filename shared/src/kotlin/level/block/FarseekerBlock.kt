@@ -1,6 +1,5 @@
 package level.block
 
-import io.PressType
 import level.*
 import level.moving.MovingObject
 import level.update.FarseekerBlockSetAvailableLevels
@@ -8,7 +7,6 @@ import level.update.LevelObjectAdd
 import misc.TileCoord
 import network.BlockReference
 import progression.ProgressionManager
-import screen.IngameGUI
 import serialization.Id
 import java.util.*
 
@@ -52,10 +50,6 @@ class FarseekerBlock(xTile: Int, yTile: Int, rotation: Int) : Block(BlockType.FA
                 field = null
             }
         }
-
-    override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
-        destinationLevel?.modify(LevelObjectAdd(IngameGUI.cameras[1]), true)
-    }
 
     override fun onAddToLevel() {
         super.onAddToLevel()

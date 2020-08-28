@@ -7,7 +7,7 @@ import level.LevelObjectType
 import screen.Camera
 
 open class MovingObjectType<T : MovingObject>(initializer: MovingObjectType<T>.() -> Unit = {}) : LevelObjectType<T>() {
-    var maxSpeed = 10
+    var maxSpeed = 10.0
     var drag = 2
     var density = 1.0
     var mass = -1.0
@@ -30,6 +30,7 @@ open class MovingObjectType<T : MovingObject>(initializer: MovingObjectType<T>.(
         }
 
         val CAMERA = MovingObjectType<Camera> {
+            maxSpeed = 1.5
             hitbox = Hitbox.NONE
             instantiate = { xPixel, yPixel, _ -> Camera(xPixel, yPixel) }
         }

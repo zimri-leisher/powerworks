@@ -7,7 +7,8 @@ import data.GameResourceManager
 import graphics.*
 import graphics.text.TaggedText
 import graphics.text.TextManager
-import io.PressType
+import io.ControlEvent
+import io.ControlEventType
 import main.toColor
 import screen.elements.*
 import screen.mouse.Tooltips
@@ -19,8 +20,7 @@ private const val RECIPES_PER_ROW = 6
  * The best way to get the choice is calling getSelected() in your update method
  */
 object RecipeSelectorGUI : GUIWindow("Recipe selector", 0, 0, 100,
-        GUITabList.TAB_HEIGHT + 3 * GUIRecipeDisplay.HEIGHT + 2,
-        ScreenManager.Groups.PLAYER_UTIL) {
+        GUITabList.TAB_HEIGHT + 3 * GUIRecipeDisplay.HEIGHT + 2) {
 
 
     private val tabs: Array<GUIGroup>
@@ -104,13 +104,13 @@ private class GUIRecipeSelectionButton(parent: RootGUIElement, name: String, xAl
 
     private val recipeDisplay = GUIRecipeDisplay(this, "Recipe (icon: ${recipe.iconType}) display", { 0 }, { 0 }, recipe, layer = layer - 1, open = open).apply { transparentToInteraction = true }
 
-    override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+    override fun onInteractOn(event: ControlEvent, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
         if (isAvailable()) {
-            if (type == PressType.PRESSED && button == Input.Buttons.LEFT) {
+            if (event.type == ControlEventType.PRESS && button == Input.Buttons.LEFT) {
                 RecipeSelectorGUI.selected = recipeDisplay.recipe
                 recipeDisplay.background.localRenderParams.brightness = 0.9f
                 recipeDisplay.background.localRenderParams.rotation = 180f
-            } else if (type == PressType.RELEASED) {
+            } else if (event.type == ControlEventType.RELEASE) {
                 recipeDisplay.background.localRenderParams.brightness = 1.1f
             }
         }

@@ -16,10 +16,8 @@ class LevelViewWindow(name: String,
                       var camera: LevelObject,
                       zoomLevel: Int = 10,
                       open: Boolean = false,
-                      layer: Int = 0,
-                      windowGroup: WindowGroup) :
-        GUIWindow(name, xPixel, yPixel, widthPixels, heightPixels, windowGroup, open, layer),
-        ControlHandler {
+                      layer: Int = 0) :
+        GUIWindow(name, xPixel, yPixel, widthPixels, heightPixels, open, layer){
 
     var CAMERA_SPEED = 1
 
@@ -32,7 +30,6 @@ class LevelViewWindow(name: String,
     private val controls = mutableListOf<GUIElement>()
 
     init {
-        InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.CAMERA_UP, Control.CAMERA_DOWN, Control.CAMERA_LEFT, Control.CAMERA_RIGHT)
         nameText.transparentToInteraction = true
         controls.add(generateDimensionDragGrip(2))
         controls.add(generateDragGrip(2))
@@ -42,25 +39,5 @@ class LevelViewWindow(name: String,
         allowEscapeToClose = false
     }
 
-    override fun handleControl(p: ControlPress) {
-        // eventually check if this was the last selected gui level view
-        if (p.control in Control.Group.CAMERA && p.pressType != PressType.RELEASED && camera is MovingObject) {
-            if(!open) {
-                return
-            }
-            val c = p.control
-            val m = camera as MovingObject
-            if (c == Control.CAMERA_UP) {
-                m.yVel += CAMERA_SPEED
-            } else if (c == Control.CAMERA_DOWN) {
-                m.yVel -= CAMERA_SPEED
-            } else if (c == Control.CAMERA_RIGHT) {
-                m.xVel += CAMERA_SPEED
-            } else if (c == Control.CAMERA_LEFT) {
-                m.xVel -= CAMERA_SPEED
-            }
-        } else if(p.control == Control.TOGGLE_VIEW_CONTROLS && p.pressType == PressType.PRESSED) {
-            controls.forEach { it.open = !it.open }
-        }
-    }
+
 }

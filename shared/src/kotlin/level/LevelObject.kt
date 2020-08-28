@@ -3,7 +3,7 @@ package level
 import com.badlogic.gdx.graphics.Color
 import graphics.Renderer
 import graphics.TextureRenderParams
-import io.PressType
+import io.ControlEvent
 import main.DebugCode
 import main.Game
 import network.LevelObjectReference
@@ -188,7 +188,7 @@ abstract class LevelObject protected constructor(
     /**
      * When the mouse is clicked on this
      */
-    open fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+    open fun onInteractOn(event: ControlEvent, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
     }
 
     /**

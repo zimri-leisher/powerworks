@@ -3,7 +3,8 @@ package screen.elements
 import graphics.Renderer
 import graphics.TextureRenderParams
 import graphics.text.TextManager
-import io.PressType
+import io.ControlEvent
+import io.ControlEventType
 import main.toColor
 
 class GUIListSelector(parent: RootGUIElement, name: String,
@@ -40,8 +41,8 @@ class GUIListSelector(parent: RootGUIElement, name: String,
         }
     }
 
-    override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
-        if (type == PressType.RELEASED) {
+    override fun onInteractOn(event: ControlEvent, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+        if (event.type == ControlEventType.RELEASE) {
             if (selectionsOpen) {
                 val index = getSelectionIndex(yPixel)
                 if (index != -1) {

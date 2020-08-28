@@ -16,8 +16,8 @@ import screen.elements.*
 
 // TODO make all GUIElements open classes
 
-object RoutingLanguageEditor : GUIWindow("Routing language editor window", { 0 }, { 0 }, { 32 + 4 }, { GUIButton.HEIGHT * 2 + 6 }, ScreenManager.Groups.PLAYER_UTIL),
-        ControlHandler {
+object RoutingLanguageEditor : GUIWindow("Routing language editor window", { 0 }, { 0 }, { 32 + 4 }, { GUIButton.HEIGHT * 2 + 6 }),
+        ControlEventHandler {
 
     var node: ResourceNode? = null
     private lateinit var inputs: GUIGroup
@@ -31,7 +31,7 @@ object RoutingLanguageEditor : GUIWindow("Routing language editor window", { 0 }
     private lateinit var selector: GUIDefaultTextureRectangle
 
     init {
-        InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, Control.Group.INTERACTION)
+        InputManager.register(this, Control.Group.INTERACTION)
         openAtMouse = true
         allowEscapeToClose = true
         selector = GUIDefaultTextureRectangle(this, "Routing language editor background").apply {
@@ -97,8 +97,8 @@ object RoutingLanguageEditor : GUIWindow("Routing language editor window", { 0 }
         }
     }
 
-    override fun handleControl(p: ControlPress) {
-        if (p.pressType == PressType.PRESSED && p.control in Control.Group.INTERACTION) {
+    override fun handleControlEvent(event: ControlEvent) {
+        if (event.type == ControlEventType.PRESS && event.control in Control.Group.INTERACTION) {
             if (!mouseOn && !ResourceTypeSelector.mouseOn) {
                 open = false
             }

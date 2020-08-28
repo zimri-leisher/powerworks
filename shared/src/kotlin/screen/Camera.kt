@@ -21,4 +21,8 @@ class Camera(xPixel: Int, yPixel: Int) : MovingObject(MovingObjectType.CAMERA, x
         return other is Camera && other.id == this.id // you can have multiple identical cameras
     }
 
+    override fun hashCode(): Int {
+        return super.hashCode()
+    }
+
 }

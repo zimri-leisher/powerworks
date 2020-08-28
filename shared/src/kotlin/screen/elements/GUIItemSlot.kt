@@ -3,16 +3,12 @@ package screen.elements
 import com.badlogic.gdx.Input
 import graphics.Image
 import graphics.Renderer
-import io.PressType
 import item.Inventory
 import item.Item
 import player.PlayerManager
-import player.TransferItemsBetweenBlock
 import resource.ResourceContainer
-import screen.HUD
 import screen.InventoryGUI
 import screen.mouse.Mouse
-import screen.ScreenManager
 import screen.mouse.Tooltips
 
 
@@ -25,6 +21,7 @@ class GUIItemSlot(parent: RootGUIElement, name: String, xPixel: Int, yPixel: Int
     var currentItem: Item? = null
 
     override fun update() {
+        /*
         if (inv is Inventory) {
             currentItem = (inv as Inventory)[index]
         } else if (inv is HUD.Hotbar.HotbarInventory) {
@@ -35,6 +32,8 @@ class GUIItemSlot(parent: RootGUIElement, name: String, xPixel: Int, yPixel: Int
                 currentItem = null
             }
         }
+
+         */
     }
 
     override fun render() {
@@ -60,6 +59,7 @@ class GUIItemSlot(parent: RootGUIElement, name: String, xPixel: Int, yPixel: Int
         currentTexture = Image.GUI.ITEM_SLOT
     }
 
+    /*
     override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
         if (isDisplay)
             return
@@ -68,14 +68,7 @@ class GUIItemSlot(parent: RootGUIElement, name: String, xPixel: Int, yPixel: Int
             currentTexture = Image.GUI.ITEM_SLOT_CLICK
             if (shift) {
                 if (currentItem != null) {
-                    val i = currentItem!!
-                    val other = getSecondaryInventory()
-                    if (other != null) {
-                        other.add(i)
-                        inv.remove(i.type, i.quantity)
-                    } else {
-                        HUD.Hotbar.items.add(i.type)
-                    }
+
                 }
             } else if (ctrl) {
                 if (currentItem != null) {
@@ -99,6 +92,9 @@ class GUIItemSlot(parent: RootGUIElement, name: String, xPixel: Int, yPixel: Int
         }
     }
 
+     */
+
+    /*
     private fun getSecondaryInventory(): Inventory? {
         val invGUIs = ScreenManager.Groups.INVENTORY.windows
         if (invGUIs.isNotEmpty()) {
@@ -109,6 +105,8 @@ class GUIItemSlot(parent: RootGUIElement, name: String, xPixel: Int, yPixel: Int
         }
         return null
     }
+
+     */
 
     companion object {
         const val WIDTH = 16

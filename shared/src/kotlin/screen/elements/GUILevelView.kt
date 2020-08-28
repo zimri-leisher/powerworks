@@ -90,7 +90,6 @@ class GUILevelView(parent: RootGUIElement,
         }
         updateCamera()
         updateViewRectangle()
-        LevelManager.addLevelView(this)
     }
 
     private fun updateCamera() {
@@ -114,7 +113,6 @@ class GUILevelView(parent: RootGUIElement,
             y = (viewYPixel * Game.SCALE).toFloat()
         }
         cameraMatrix.update()
-        moveListeners.forEach { it.onCameraMove(this, camera.xPixel, camera.yPixel) }
     }
 
     private fun updateViewRectangle() {
@@ -138,12 +136,10 @@ class GUILevelView(parent: RootGUIElement,
     override fun onDimensionChange(oldWidth: Int, oldHeight: Int) {
         updateCamera()
         updateViewRectangle()
-        LevelManager.updateLevelAndViewInformation()
     }
 
     override fun onPositionChange(pXPixel: Int, pYPixel: Int) {
         updateCamera()
-        LevelManager.updateLevelAndViewInformation()
     }
 
     //Camera moves
@@ -151,7 +147,6 @@ class GUILevelView(parent: RootGUIElement,
         if (open) {
             updateCamera()
             updateViewRectangle()
-            moveListeners.forEach { it.onCameraMove(this, pXPixel, pYPixel) }
         }
     }
 
@@ -159,7 +154,6 @@ class GUILevelView(parent: RootGUIElement,
         val screenMatrix = Renderer.batch.projectionMatrix.cpy()
         Renderer.batch.projectionMatrix = cameraMatrix.combined
         Renderer.setClip(xPixel, yPixel, widthPixels, heightPixels)
-        camera.level.render(this)
         Renderer.batch.projectionMatrix = screenMatrix
         Renderer.resetClip()
     }

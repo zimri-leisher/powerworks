@@ -3,7 +3,8 @@ package screen.mouse.tool
 import graphics.Renderer
 import graphics.TextureRenderParams
 import io.Control
-import io.PressType
+import io.ControlEvent
+import io.ControlEventType
 import level.*
 import level.block.Block
 import level.entity.Entity
@@ -46,13 +47,13 @@ object Selector : Tool(Control.Group.SELECTOR_TOOLS.controls) {
         newlySelected.removeIf { !it.inLevel }
     }
 
-    override fun onUse(control: Control, type: PressType, mouseLevelXPixel: Int, mouseLevelYPixel: Int): Boolean {
-        when (control) {
+    override fun onUse(event: ControlEvent, mouseLevelXPixel: Int, mouseLevelYPixel: Int): Boolean {
+        when (event.control) {
             Control.START_SELECTION -> mode = SelectorMode.ALL
             Control.START_SELECTION_ADD -> mode = SelectorMode.ADD
             Control.START_SELECTION_SUBTRACT -> mode = SelectorMode.SUBTRACT
         }
-        if (type == PressType.PRESSED) {
+        if (event.type == ControlEventType.PRESS) {
             startPress = true
             if (mode == SelectorMode.ALL) {
                 currentSelected = mutableSetOf()
@@ -63,7 +64,7 @@ object Selector : Tool(Control.Group.SELECTOR_TOOLS.controls) {
             currentDragXPixel = mouseLevelXPixel
             currentDragYPixel = mouseLevelYPixel
             return false
-        } else if (type == PressType.REPEAT) {
+        } else if (event.type == ControlEventType.HOLD) {
             if (startPress) {
                 currentDragXPixel = mouseLevelXPixel
                 currentDragYPixel = mouseLevelYPixel
@@ -73,7 +74,7 @@ object Selector : Tool(Control.Group.SELECTOR_TOOLS.controls) {
                 }
             }
             return true
-        } else if (type == PressType.RELEASED) {
+        } else if (event.type == ControlEventType.RELEASE) {
             if (dragging) {
                 updateSelected()
                 currentSelected = when (mode) {
@@ -95,7 +96,7 @@ object Selector : Tool(Control.Group.SELECTOR_TOOLS.controls) {
     }
 
     private fun updateSelected() {
-        if (dragging) {
+        if (dragging && LevelManager.levelUnderMouse != null) {
             val xChange = currentDragXPixel - dragStartXPixel
             val yChange = currentDragYPixel - dragStartYPixel
             val x = if (xChange < 0) currentDragXPixel else dragStartXPixel

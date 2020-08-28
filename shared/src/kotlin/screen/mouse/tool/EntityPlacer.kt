@@ -3,7 +3,8 @@ package screen.mouse.tool
 import graphics.Renderer
 import graphics.TextureRenderParams
 import io.Control
-import io.PressType
+import io.ControlEvent
+import io.ControlEventType
 import item.EntityItemType
 import level.LevelManager
 import level.getCollisionsWith
@@ -24,10 +25,10 @@ object EntityPlacer : Tool(Control.SPAWN_ENTITY) {
         }
     }
 
-    override fun onUse(control: Control, type: PressType, mouseLevelXPixel: Int, mouseLevelYPixel: Int): Boolean {
-        if (type == PressType.RELEASED && control == Control.SPAWN_ENTITY) {
+    override fun onUse(event: ControlEvent, mouseLevelXPixel: Int, mouseLevelYPixel: Int): Boolean {
+        if (event.type == ControlEventType.RELEASE && event.control == Control.SPAWN_ENTITY) {
             if (canSpawn) {
-                PlayerManager.takeAction(PlaceLevelObject(PlayerManager.localPlayer, EntityPlacer.type!!.spawnedEntity, mouseLevelXPixel, mouseLevelYPixel, 0, LevelManager.levelUnderMouse!!))
+                PlayerManager.takeAction(PlaceLevelObject(PlayerManager.localPlayer, type!!.spawnedEntity, mouseLevelXPixel, mouseLevelYPixel, 0, LevelManager.levelUnderMouse!!))
             }
             return true
         }
@@ -35,7 +36,7 @@ object EntityPlacer : Tool(Control.SPAWN_ENTITY) {
     }
 
     override fun renderAbove() {
-        if(type != null) {
+        if (type != null) {
             val entity = type!!.spawnedEntity
             val texture = entity.textures[0]
             texture.render(LevelManager.mouseLevelXPixel, LevelManager.mouseLevelYPixel, params = TextureRenderParams(color = toColor(alpha = 0.4f)))
@@ -47,7 +48,7 @@ object EntityPlacer : Tool(Control.SPAWN_ENTITY) {
 
     override fun update() {
         type = Mouse.heldItemType as? EntityItemType
-        if(type != null) {
+        if (type != null) {
             canSpawn = LevelManager.levelObjectUnderMouse == null && LevelManager.levelUnderMouse?.getCollisionsWith(type!!.spawnedEntity.hitbox, LevelManager.mouseLevelXPixel, LevelManager.mouseLevelYPixel)?.none() ?: false
         }
     }

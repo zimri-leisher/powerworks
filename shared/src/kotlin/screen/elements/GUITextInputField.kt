@@ -8,6 +8,7 @@ import io.*
 import main.toColor
 import misc.Geometry
 import misc.Numbers
+import screen.gui2.ScreenManager
 import screen.mouse.Mouse
 import java.awt.Toolkit
 import java.awt.datatransfer.DataFlavor
@@ -38,7 +39,7 @@ open class GUITextInputField(parent: RootGUIElement, name: String,
                              val allowTextScrolling: Boolean = false,
                              open: Boolean = false,
                              layer: Int = parent.layer + 1) :
-        GUIElement(parent, name, xAlignment, yAlignment, { (widthChars * TextManager.getFont().charWidth).toInt() + 2 }, { Numbers.ceil(heightChars * (TextManager.getFont().charHeight + 1)) + 2 }, open, layer), TextHandler, ControlHandler {
+        GUIElement(parent, name, xAlignment, yAlignment, { (widthChars * TextManager.getFont().charWidth).toInt() + 2 }, { Numbers.ceil(heightChars * (TextManager.getFont().charHeight + 1)) + 2 }, open, layer), TextHandler, ControlEventHandler {
 
     val maxChars = widthChars * heightChars
 
@@ -84,13 +85,10 @@ open class GUITextInputField(parent: RootGUIElement, name: String,
     var autocompleteMenu = GUIAutocompleteMenu(this)
 
     init {
-        InputManager.registerControlPressHandler(this, ControlPressHandlerType.SCREEN_THIS, ControlMap.TEXT_EDITOR)
-        InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, ControlMap.DEFAULT, *Control.Group.INTERACTION.controls.toTypedArray())
-        InputManager.registerControlPressHandler(this, ControlPressHandlerType.GLOBAL, ControlMap.TEXT_EDITOR, *Control.Group.INTERACTION.controls.toTypedArray())
     }
 
-    override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
-        if (type == PressType.PRESSED) {
+    override fun onInteractOn(event: ControlEvent, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+        if (event.type == ControlEventType.PRESS) {
             selected = true
             currentIndex = Math.min(text.lastIndex + 1, getIndex(xPixel, yPixel))
             cursorFlash = true
@@ -98,7 +96,7 @@ open class GUITextInputField(parent: RootGUIElement, name: String,
         }
     }
 
-    override fun onInteractOff(xPixel: Int, yPixel: Int, type: PressType, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+    override fun onInteractOff(event: ControlEvent, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
         selected = false
     }
 
@@ -114,62 +112,64 @@ open class GUITextInputField(parent: RootGUIElement, name: String,
         }
     }
 
-    override fun handleControl(p: ControlPress) {
-        if (p.pressType == PressType.PRESSED) {
-            when (p.control) {
-                in Control.Group.INTERACTION -> {
-                    if(!Geometry.contains(xPixel, yPixel, widthPixels, heightPixels, Mouse.xPixel, Mouse.yPixel, 0, 0)) {
+    override fun handleControlEvent(event: ControlEvent) {
+        if (event.type == ControlEventType.PRESS) {
+            if (this == ScreenManager.elementLastInteractedWith) {
+                when (event.control) {
+                    in Control.Group.INTERACTION -> {
+                        if (!Geometry.contains(xPixel, yPixel, widthPixels, heightPixels, Mouse.xPixel, Mouse.yPixel, 0, 0)) {
+                            selected = false
+                        }
+                    }
+                    Control.PASTE_FROM_CLIPBOARD -> {
+                        val data = Toolkit.getDefaultToolkit()
+                                .systemClipboard.getData(DataFlavor.stringFlavor).toString()
+                        insert(data)
+                    }
+                    Control.ESCAPE -> {
                         selected = false
                     }
-                }
-                Control.PASTE_FROM_CLIPBOARD -> {
-                    val data = Toolkit.getDefaultToolkit()
-                            .systemClipboard.getData(DataFlavor.stringFlavor).toString()
-                    insert(data)
-                }
-                Control.ESCAPE -> {
-                    selected = false
-                }
-                Control.SUBMIT -> {
-                    onPressEnter(text.toString())
-                    positiveFlashOutline()
-                }
-                Control.DELETE -> {
-                    delete(1)
-                    ticksSinceLastDelete = 0
-                    isRepeatingDelete = false
-                }
-                Control.CURSOR_LEFT -> {
-                    currentIndex = Math.max(0, currentIndex - 1)
-                }
-                Control.CURSOR_RIGHT -> {
-                    currentIndex = Math.min(text.length, currentIndex + 1)
-                }
-                Control.CURSOR_DOWN -> {
-                    currentIndex = Math.min(text.length, currentIndex + widthChars)
-                }
-                Control.CURSOR_UP -> {
-                    currentIndex = Math.max(0, currentIndex - widthChars)
+                    Control.SUBMIT -> {
+                        onPressEnter(text.toString())
+                        positiveFlashOutline()
+                    }
+                    Control.DELETE -> {
+                        delete(1)
+                        ticksSinceLastDelete = 0
+                        isRepeatingDelete = false
+                    }
+                    Control.CURSOR_LEFT -> {
+                        currentIndex = Math.max(0, currentIndex - 1)
+                    }
+                    Control.CURSOR_RIGHT -> {
+                        currentIndex = Math.min(text.length, currentIndex + 1)
+                    }
+                    Control.CURSOR_DOWN -> {
+                        currentIndex = Math.min(text.length, currentIndex + widthChars)
+                    }
+                    Control.CURSOR_UP -> {
+                        currentIndex = Math.max(0, currentIndex - widthChars)
+                    }
                 }
             }
-        } else if(p.pressType == PressType.REPEAT) {
-            if(p.control == Control.DELETE) {
+        } else if (false) { // should be if held down
+            if (event.control == Control.DELETE) {
                 ticksSinceLastDelete++
-                if(!isRepeatingDelete) {
-                    if(ticksSinceLastDelete == DELETE_START_TICKS) {
+                if (!isRepeatingDelete) {
+                    if (ticksSinceLastDelete == DELETE_START_TICKS) {
                         isRepeatingDelete = true
                         ticksSinceLastDelete = 0
                     }
                 } else {
                     println("ticks $ticksSinceLastDelete, $DELETE_REPEAT_TICKS")
-                    if(ticksSinceLastDelete == DELETE_REPEAT_TICKS) {
+                    if (ticksSinceLastDelete == DELETE_REPEAT_TICKS) {
                         delete(1)
                         ticksSinceLastDelete = 0
                     }
                 }
             }
-        } else if(p.pressType == PressType.RELEASED) {
-            if(p.control == Control.DELETE) {
+        } else if (event.type == ControlEventType.RELEASE) {
+            if (event.control == Control.DELETE) {
                 isRepeatingDelete = false
                 ticksSinceLastDelete = -1
             }

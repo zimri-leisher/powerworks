@@ -3,7 +3,8 @@ package screen.elements
 import graphics.Renderer
 import graphics.text.TaggedText
 import graphics.text.TextManager
-import io.PressType
+import io.ControlEvent
+import io.ControlEventType
 import screen.mouse.Mouse
 import screen.mouse.Tooltips
 
@@ -30,8 +31,8 @@ class GUITabList(parent: RootGUIElement, name: String, xAlignment: Alignment, yA
         alignments.width = { tabWidths.sum() }
     }
 
-    override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
-        if (type == PressType.PRESSED) {
+    override fun onInteractOn(event: ControlEvent, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+        if (event.type == ControlEventType.PRESS) {
             val selectedIndex = getTabIndexAt(xPixel)
             if (selectedIndex != -1) {
                 if (selectedIndex != selectedTabIndex) {

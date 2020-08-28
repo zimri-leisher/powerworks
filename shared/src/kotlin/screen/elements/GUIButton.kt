@@ -2,7 +2,8 @@ package screen.elements
 
 import graphics.Renderer
 import graphics.text.TextManager
-import io.PressType
+import io.ControlEvent
+import io.ControlEventType
 import screen.mouse.Tooltips
 
 class GUIButton(parent: RootGUIElement,
@@ -84,14 +85,14 @@ class GUIButton(parent: RootGUIElement,
         }
     }
 
-    override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+    override fun onInteractOn(event: ControlEvent, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
         if (available) {
-            if (type == PressType.PRESSED) {
+            if (event.type == ControlEventType.PRESS) {
                 onPress.invoke()
                 localRenderParams.rotation = 180f
                 localRenderParams.brightness = 0.9f
                 down = true
-            } else if (type == PressType.RELEASED) {
+            } else if (event.type == ControlEventType.RELEASE) {
                 if (down) {
                     onRelease.invoke()
                     localRenderParams.rotation = 0f

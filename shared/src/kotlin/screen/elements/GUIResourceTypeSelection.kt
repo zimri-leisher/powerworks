@@ -60,7 +60,7 @@ class GUIResourceTypeSelection(parent: RootGUIElement, name: String,
             ResourceTypeSelector.possibleTypePredicate = { it !in currentTypes && typeSelectionPredicate(it) }
             waitingForSelection = true
             ResourceTypeSelector.open = true
-            ResourceTypeSelector.windowGroup.bringToTop(ResourceTypeSelector)
+//            ResourceTypeSelector.windowGroup.bringToTop(ResourceTypeSelector)
         } else {
             currentTypes.removeAt(index)
             iconCount = currentTypes.size + 1

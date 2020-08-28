@@ -9,13 +9,14 @@ import item.BlockItemType
 import level.LevelManager
 import level.block.BlockType
 import level.getCollisionsWith
+import main.GameState
 import main.toColor
 import misc.Geometry
 import player.PlaceLevelObject
 import player.PlayerManager
 import screen.mouse.Mouse
 
-object BlockPlacer : Tool(Control.PLACE_BLOCK), ControlHandler {
+object BlockPlacer : Tool(Control.PLACE_BLOCK), ControlEventHandler {
     var type: BlockItemType? = null
 
     var xTile = 0
@@ -25,18 +26,18 @@ object BlockPlacer : Tool(Control.PLACE_BLOCK), ControlHandler {
     var hasPlacedThisInteraction = false
 
     init {
-        InputManager.registerControlPressHandler(this, ControlPressHandlerType.INGAME_ONLY, Control.ROTATE_BLOCK)
+        InputManager.register(this, Control.ROTATE_BLOCK)
         activationPredicate = {
             val item = Mouse.heldItemType
             hasPlacedThisInteraction || (LevelManager.levelObjectUnderMouse == null && item is BlockItemType && item.placedBlock != BlockType.ERROR && !Selector.dragging)
         }
     }
 
-    override fun onUse(control: Control, type: PressType, mouseLevelXPixel: Int, mouseLevelYPixel: Int): Boolean {
-        if (control == Control.PLACE_BLOCK) {
-            if (type != PressType.RELEASED) {
+    override fun onUse(event: ControlEvent, mouseLevelXPixel: Int, mouseLevelYPixel: Int): Boolean {
+        if (event.control == Control.PLACE_BLOCK) {
+            if (event.type != ControlEventType.RELEASE) {
                 if (canPlace) {
-                    val blockType = BlockPlacer.type!!.placedBlock
+                    val blockType = type!!.placedBlock
                     PlayerManager.takeAction(PlaceLevelObject(PlayerManager.localPlayer, blockType, xTile shl 4, yTile shl 4, rotation, LevelManager.levelUnderMouse!!))
                     canPlace = false
                     hasPlacedThisInteraction = true
@@ -51,15 +52,16 @@ object BlockPlacer : Tool(Control.PLACE_BLOCK), ControlHandler {
         return false
     }
 
-    override fun handleControl(p: ControlPress) {
-        if (p.pressType == PressType.PRESSED) {
-            if (p.control == Control.ROTATE_BLOCK) {
+    override fun handleControlEvent(event: ControlEvent) {
+        if (GameState.currentState == GameState.INGAME && event.type == ControlEventType.PRESS) {
+            if (event.control == Control.ROTATE_BLOCK) {
                 rotation = (rotation + 1) % 4
             }
         }
     }
 
     override fun update() {
+        canPlace = false
         if (LevelManager.levelUnderMouse == null)
             return
         type = Mouse.heldItemType as? BlockItemType

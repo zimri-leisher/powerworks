@@ -19,7 +19,6 @@ open class InventoryGUI(name: String,
         GUIWindow(name, xPixel, yPixel,
                 inv.width * (GUIItemSlot.WIDTH + ITEM_SLOT_PADDING) + ITEM_SLOT_PADDING + 2,
                 inv.height * (GUIItemSlot.HEIGHT + ITEM_SLOT_PADDING) + ITEM_SLOT_PADDING + 8,
-                ScreenManager.Groups.INVENTORY,
                 open,
                 layer) {
 

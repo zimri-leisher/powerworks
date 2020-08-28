@@ -8,9 +8,12 @@ class GUIResourceListDisplay(parent: RootGUIElement, name: String, var currentRe
                              val displayQuantity: Boolean = true,
                              open: Boolean = false, layer: Int = parent.layer + 1) :
         GUIIconList(parent, name, xAlignment, yAlignment, width, height,
-                renderIcon = { xPixel, yPixel, index -> (this as GUIResourceListDisplay).renderIcon(xPixel, yPixel, index) }, open = open, layer = layer) {
+                renderIcon = { _, _, _ -> }, open = open, layer = layer) {
 
     init {
+        renderIcon = { xPixel, yPixel, index ->
+            (this as GUIResourceListDisplay).renderIcon(xPixel, yPixel, index)
+        }
         getToolTip = { index ->
             if (index != -1 && currentResources[index] != null)
                 "${currentResources[index]!!.key.name} * ${currentResources[index]!!.value}"

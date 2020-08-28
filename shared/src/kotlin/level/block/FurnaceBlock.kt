@@ -68,7 +68,7 @@ class FurnaceBlock(type: MachineBlockType<FurnaceBlock>, xTile: Int, yTile: Int,
         if (queue.totalQuantity > 0) {
             // start smelting another item
             if (queue.getQuantity(currentlySmelting!!) == 0) {
-                currentlySmelting = queue.toResourceList()[0]!!.key as OreItemType
+                currentlySmelting = queue.toResourceList()[0].key as OreItemType
             }
             // do nothing, old item still has quantity
         } else {
@@ -77,9 +77,11 @@ class FurnaceBlock(type: MachineBlockType<FurnaceBlock>, xTile: Int, yTile: Int,
         }
     }
 
-    override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
-        if (type == PressType.RELEASED && !shift && !ctrl && !alt && button == Input.Buttons.LEFT) {
-            this.type.guiPool!!.toggle(this)
+    override fun onInteractOn(event: ControlEvent, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+        if (event.type == ControlEventType.PRESS && !shift && !ctrl && !alt) {
+            if (button == Input.Buttons.LEFT) {
+                this.type.guiPool!!.toggle(this)
+            }
         }
     }
 }

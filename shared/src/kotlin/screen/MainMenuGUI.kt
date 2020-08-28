@@ -2,17 +2,15 @@ package screen
 
 import graphics.Animation
 import graphics.Image
-import io.PressType
 import main.Game
 import main.heightPixels
 import main.widthPixels
-import screen.animations.SlideOnScreenAnimation
 import screen.elements.GUIElement
 import screen.elements.GUIText
 import screen.elements.GUITexturePane
 import screen.elements.GUIWindow
 
-object MainMenuGUI : GUIWindow("Main menu", { 0 }, { 0 }, { Game.WIDTH }, { Game.HEIGHT }, ScreenManager.Groups.BACKGROUND, true, 0) {
+object MainMenuGUI : GUIWindow("Main menu", { 0 }, { 0 }, { Game.WIDTH }, { Game.HEIGHT }, true, 0) {
 
     internal var logo: GUITexturePane
 
@@ -38,13 +36,6 @@ object MainMenuGUI : GUIWindow("Main menu", { 0 }, { 0 }, { Game.WIDTH }, { Game
                 }
                 GUIText(this, "Main menu play button text", widthPixels - 32, heightPixels - 12, "<size=30>Play", allowTags = true).apply {
                     transparentToInteraction = true
-                }
-            }
-
-            override fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
-                if (type == PressType.RELEASED) {
-                    LevelSelectorGUI.open = true
-                    SlideOnScreenAnimation(LevelSelectorGUI, onStop = { this@MainMenuGUI.open = false }).playing = true
                 }
             }
 

@@ -58,7 +58,7 @@ class ResourceList(
 
     override fun get(key: ResourceType) = resources[key] ?: 0
 
-    operator fun get(index: Int) = if (index > size - 1) null else resources.entries.toMutableList()[index]
+    operator fun get(index: Int) = resources.entries.toList()[index]
 
     override fun isEmpty() = resources.isEmpty()
 

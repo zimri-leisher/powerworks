@@ -2,9 +2,9 @@ package screen.elements
 
 import data.WeakMutableList
 import graphics.TextureRenderParams
-import io.PressType
+import io.ControlEvent
 import main.Game
-import screen.ScreenManager
+import main.PowerworksDelegates
 import screen.WindowGroup
 import screen.mouse.Mouse
 import java.util.*
@@ -24,17 +24,17 @@ sealed class RootGUIElement(name: String, xAlignment: Alignment, yAlignment: Ali
                 if (this is GUIElement) {
                     parentWindow.openChildren.remove(this)
                 } else if (this is GUIWindow) {
-                    ScreenManager.openWindows.remove(this)
+                    //ScreenManager.openWindows.remove(this)
                 }
                 onClose()
                 children.forEach { if (it.matchParentClosing) it.open = false }
             } else if (value && !field) {
                 field = true
-                mouseOn = ScreenManager.isMouseOn(this)
+                //mouseOn = ScreenManager.isMouseOn(this)
                 if (this is GUIElement)
                     parentWindow.openChildren.add(this)
                 else if (this is GUIWindow) {
-                    ScreenManager.openWindows.add(this)
+                    //ScreenManager.openWindows.add(this)
                     if (openAtMouse) {
                         val x = Mouse.xPixel
                         val y = Mouse.yPixel - heightPixels
@@ -260,8 +260,8 @@ sealed class RootGUIElement(name: String, xAlignment: Alignment, yAlignment: Ali
         }
 
     init {
-        if (open)
-            mouseOn = ScreenManager.isMouseOn(this)
+        if (open) {}
+            //mouseOn = ScreenManager.isMouseOn(this)
     }
 
     /** Opens if closed, closes if opened */
@@ -290,10 +290,10 @@ sealed class RootGUIElement(name: String, xAlignment: Alignment, yAlignment: Ali
     }
 
     /** When the mouse is clicked on this and it is on the highest layer, unless transparentToInteraction is true */
-    open fun onInteractOn(type: PressType, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+    open fun onInteractOn(event: ControlEvent, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
     }
 
-    open fun onInteractOff(xPixel: Int, yPixel: Int, type: PressType, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+    open fun onInteractOff(event: ControlEvent, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
 
     }
 
@@ -482,11 +482,11 @@ open class GUIElement(parent: RootGUIElement, name: String, xAlignment: Alignmen
     override fun toString() = "${javaClass.simpleName}: $name at $xPixel, $yPixel absolute, ${alignments.x()}, ${alignments.y()} relative, w: $widthPixels, h: $heightPixels, l: $layer"
 }
 
-open class GUIWindow(name: String, xAlignment: Alignment, yAlignment: Alignment, widthAlignment: Alignment, heightAlignment: Alignment, windowGroup: WindowGroup, open: Boolean = false, layer: Int = 0) :
+open class GUIWindow(name: String, xAlignment: Alignment, yAlignment: Alignment, widthAlignment: Alignment, heightAlignment: Alignment, open: Boolean = false, layer: Int = 0) :
         RootGUIElement(name, xAlignment, yAlignment, widthAlignment, heightAlignment, open, layer) {
 
-    constructor(name: String, xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int, windowGroup: WindowGroup, open: Boolean = false, layer: Int = 0) :
-            this(name, { xPixel }, { yPixel }, { widthPixels }, { heightPixels }, windowGroup, open, layer)
+    constructor(name: String, xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int, open: Boolean = false, layer: Int = 0) :
+            this(name, { xPixel }, { yPixel }, { widthPixels }, { heightPixels }, open, layer)
 
     /**
      * Ordered constantly based on layer
@@ -499,12 +499,7 @@ open class GUIWindow(name: String, xAlignment: Alignment, yAlignment: Alignment,
 
     override val parentWindow = this
 
-    var windowGroup: WindowGroup = windowGroup
-        set(value) {
-            field.windows.remove(this)
-            value.windows.add(this)
-            field = value
-        }
+    var windowGroup: WindowGroup by PowerworksDelegates.lateinitVal()
 
     var topLeftGroup = AutoFormatGUIGroup(this, name + " top left group", { 1 }, { this.heightPixels - 6 }, open = open, padding = 1, dir = 1)
     var topRightGroup = AutoFormatGUIGroup(this, name + " top right group", { this.widthPixels - 1 }, { this.heightPixels - 6 }, open = open, padding = 1, dir = 3)
@@ -519,21 +514,6 @@ open class GUIWindow(name: String, xAlignment: Alignment, yAlignment: Alignment,
     var allowEscapeToClose = false
 
     var clickOffToClose = false
-
-    init {
-        windowGroup.windows.add(this)
-        ScreenManager.windows.add(this)
-        if (open) {
-            ScreenManager.openWindows.add(this)
-        }
-    }
-
-    override fun onInteractOff(xPixel: Int, yPixel: Int, type: PressType, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
-        if(clickOffToClose) {
-            open = false
-        }
-    }
-
 
     /* Util */
     /**

@@ -48,7 +48,7 @@ class ResourceNodeBehavior(
     var allowModification = true
 
     fun updateAttachments() {
-        if (GameState.CURRENT_STATE == GameState.INGAME) {
+        if (GameState.currentState == GameState.INGAME) {
             node.level.updateResourceNodeAttachments(node)
         }
     }

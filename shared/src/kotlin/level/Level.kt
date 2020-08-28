@@ -24,7 +24,7 @@ import network.ServerNetworkManager
 import resource.ResourceNode
 import routing.PipeNetwork
 import routing.ResourceRoutingNetwork
-import screen.elements.GUILevelView
+import screen.gui2.ElementLevelView
 import screen.mouse.tool.Tool
 import serialization.Input
 import serialization.Output
@@ -235,14 +235,14 @@ abstract class Level(
         if (paused) {
             return
         }
-        ResourceRoutingNetwork.update()
+        ResourceRoutingNetwork.ALL.forEach { if (it.level == this) it.update() }
         data.projectiles.forEach { it.update() }
         data.chunks.forEach { it.update() }
         data.particles.forEach { it.update() }
         updatesCount++
     }
 
-    fun render(view: GUILevelView) {
+    fun render(view: ElementLevelView) {
         // Assume it is already added to views list
         val r = view.viewRectangle
         val xPixel0 = r.minX.toInt()
@@ -263,7 +263,6 @@ abstract class Level(
                 c.getTile(x, y).render()
             }
         }
-        Tool.renderBelow()
         Tool.renderBelow()
         data.particles.forEach {
             it.render()
@@ -301,9 +300,8 @@ abstract class Level(
             }
         }
 
-        ResourceRoutingNetwork.render()
+        ResourceRoutingNetwork.ALL.forEach { if (it.level == this) it.render() }
         data.projectiles.forEach { it.render() }
-        Tool.renderAbove()
         Tool.renderAbove()
 
         val chunksInTileRectangle = getChunksFromTileRectangle(minX, minY, maxX - minX - 1, maxY - minY - 1)

@@ -54,6 +54,8 @@ import resource.*
 import routing.*
 import routing.script.*
 import screen.Camera
+import setting.IntSetting
+import setting.UnknownSetting
 import java.awt.Polygon
 import java.awt.Rectangle
 import java.io.ByteArrayInputStream
@@ -75,7 +77,7 @@ object Registration {
 
     fun registerAll() {
 
-        // max 265
+        // max 267
         /* COLLECTIONS */
         val singletonList = listOf(1)
         register(singletonList::class, CollectionSerializer { it.toList() }, 209)
@@ -346,6 +348,9 @@ object Registration {
         /* SCREEN */
         register(Camera::class, LevelObjectSerializer<Camera>(), 131)
 
+        /* SETTING */
+        register(UnknownSetting::class, 266)
+        register(IntSetting::class, 267)
         val clazz = java.util.Collections::class.java.declaredClasses.first { it.simpleName == "SynchronizedRandomAccessList" }
         //register(clazz, 103).setInstantiator { Collections.synchronizedList<Any?>(mutableListOf()) }
         register(TextureRegion::class, 104)
