@@ -4,7 +4,7 @@ import item.weapon.ProjectileType
 import level.Level
 import level.LevelManager
 import level.entity.Entity
-import misc.PixelCoord
+import misc.Coord
 import network.MovingObjectReference
 import player.Player
 import serialization.Id
@@ -19,7 +19,7 @@ class EntityFireWeapon(
          * The position of the [Entity] when it fired.
          */
         @Id(2)
-        val positionWhenFired: PixelCoord,
+        val positionWhenFired: Coord,
         /**
          * The angle the [Entity] fired at.
          */
@@ -37,7 +37,7 @@ class EntityFireWeapon(
         val entityReference: MovingObjectReference
 ) : LevelUpdate(LevelUpdateType.ENTITY_FIRE_WEAPON) {
 
-    private constructor() : this(PixelCoord(0, 0), 0f, ProjectileType.ERROR, MovingObjectReference(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0))
+    private constructor() : this(Coord(0, 0), 0f, ProjectileType.ERROR, MovingObjectReference(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0))
 
     override val playersToSendTo: Set<Player>?
         get() = null
@@ -58,7 +58,7 @@ class EntityFireWeapon(
 
     override fun act(level: Level) {
         val entity = entityReference.value!! as Entity
-        entity.setPosition(positionWhenFired.xPixel, positionWhenFired.yPixel)
+        entity.setPosition(positionWhenFired.x, positionWhenFired.y)
         if (entity.weapon != null) {
             if (!entity.weapon!!.canFire) {
                 entity.weapon!!.cooldown = 0

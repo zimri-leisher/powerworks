@@ -5,10 +5,10 @@ import graphics.Image
 import graphics.Renderer
 import graphics.TextureRenderParams
 import level.LevelInfo
-import main.heightPixels
-import main.widthPixels
+import main.height
+import main.width
 import misc.Geometry
-import misc.PixelCoord
+import misc.Coord
 import screen.gui.GuiElement
 import screen.Interaction
 import screen.mouse.Mouse
@@ -24,7 +24,7 @@ class ElementLevelSelector(parent: GuiElement, levels: Map<UUID, LevelInfo>, var
         set(value) {
             if (field != value) {
                 field = value
-                levelPositions = value.mapKeys { (key, value) -> key to value }.mapValues { PixelCoord(((widthPixels - 40) * Math.random()).toInt() + 40, ((heightPixels - 40) * Math.random()).toInt() + 40) }
+                levelPositions = value.mapKeys { (key, value) -> key to value }.mapValues { Coord(((width - 40) * Math.random()).toInt() + 40, ((height - 40) * Math.random()).toInt() + 40) }
             }
         }
 
@@ -39,24 +39,24 @@ class ElementLevelSelector(parent: GuiElement, levels: Map<UUID, LevelInfo>, var
             }
         }
 
-    private var levelPositions: Map<Pair<UUID, LevelInfo>, PixelCoord> = levels.mapKeys { (key, value) -> key to value }.mapValues { PixelCoord(((widthPixels - 20) * Math.random()).toInt() + 20, ((heightPixels - 20) * Math.random()).toInt() + 20) }
+    private var levelPositions: Map<Pair<UUID, LevelInfo>, Coord> = levels.mapKeys { (key, value) -> key to value }.mapValues { Coord(((width - 20) * Math.random()).toInt() + 20, ((height - 20) * Math.random()).toInt() + 20) }
 
-    private var starPositions = List(40) { PixelCoord((widthPixels.toDouble() * Math.random()).toInt(), (heightPixels.toDouble() * Math.random()).toInt()) to StarType.values().random() }
+    private var starPositions = List(40) { Coord((width.toDouble() * Math.random()).toInt(), (height.toDouble() * Math.random()).toInt()) to StarType.values().random() }
 
     override fun onChangeDimensions() {
-        starPositions = List(40) { PixelCoord((widthPixels.toDouble() * Math.random()).toInt(), (heightPixels.toDouble() * Math.random()).toInt()) to StarType.values().random() }
-        levelPositions = levels.mapKeys { (key, value) -> key to value }.mapValues { PixelCoord(((widthPixels - 20) * Math.random()).toInt() + 20, ((heightPixels - 20) * Math.random()).toInt() + 20) }
+        starPositions = List(40) { Coord((width.toDouble() * Math.random()).toInt(), (height.toDouble() * Math.random()).toInt()) to StarType.values().random() }
+        levelPositions = levels.mapKeys { (key, value) -> key to value }.mapValues { Coord(((width - 20) * Math.random()).toInt() + 20, ((height - 20) * Math.random()).toInt() + 20) }
         super.onChangeDimensions()
     }
 
-    private fun getLevelAt(xPixel: Int, yPixel: Int): Pair<UUID, LevelInfo>? {
+    private fun getLevelAt(x: Int, y: Int): Pair<UUID, LevelInfo>? {
         return levelPositions.entries.firstOrNull { (_, position) ->
-            Geometry.intersects(position.xPixel - Image.Gui.PLANET_NORMAL.widthPixels / 2, position.yPixel - Image.Gui.PLANET_NORMAL.heightPixels / 2, Image.Gui.PLANET_NORMAL.widthPixels, Image.Gui.PLANET_NORMAL.heightPixels, xPixel, yPixel, 1, 1)
+            Geometry.intersects(position.x - Image.Gui.PLANET_NORMAL.width / 2, position.y - Image.Gui.PLANET_NORMAL.height / 2, Image.Gui.PLANET_NORMAL.width, Image.Gui.PLANET_NORMAL.height, x, y, 1, 1)
         }?.key
     }
 
     override fun update() {
-        hoveringLevel = getLevelAt(Mouse.xPixel - absoluteXPixel, Mouse.yPixel - absoluteYPixel)
+        hoveringLevel = getLevelAt(Mouse.x - absoluteX, Mouse.y - absoluteY)
         super.update()
     }
 
@@ -66,24 +66,24 @@ class ElementLevelSelector(parent: GuiElement, levels: Map<UUID, LevelInfo>, var
     }
 
     override fun render(params: TextureRenderParams?) {
-        Renderer.pushClip(absoluteXPixel, absoluteYPixel, widthPixels, heightPixels)
+        Renderer.pushClip(absoluteX, absoluteY, width, height)
         val actualParams = params ?: TextureRenderParams.DEFAULT
-        Renderer.renderTexture(Image.Gui.BLACK_FILLER, absoluteXPixel, absoluteYPixel, widthPixels, heightPixels, actualParams)
+        Renderer.renderTexture(Image.Gui.BLACK_FILLER, absoluteX, absoluteY, width, height, actualParams)
         for ((position, type) in starPositions) {
-            Renderer.renderTexture(type.texture, absoluteXPixel + position.xPixel - type.texture.widthPixels / 2, absoluteYPixel + position.yPixel - type.texture.heightPixels / 2, actualParams)
+            Renderer.renderTexture(type.texture, absoluteX + position.x - type.texture.width / 2, absoluteY + position.y - type.texture.height / 2, actualParams)
         }
         for ((pair, position) in levelPositions) {
             val (id, info) = pair
             if (pair == selectedLevel) {
-                Renderer.renderTexture(Image.Gui.PLANET_NORMAL, absoluteXPixel + position.xPixel - Image.Gui.PLANET_NORMAL.widthPixels / 2, absoluteYPixel + position.yPixel - Image.Gui.PLANET_NORMAL.heightPixels / 2, actualParams)
-                Renderer.renderEmptyRectangle(absoluteXPixel + position.xPixel - Image.Gui.PLANET_NORMAL.widthPixels / 2, absoluteYPixel + position.yPixel - Image.Gui.PLANET_NORMAL.heightPixels / 2, Image.Gui.PLANET_NORMAL.widthPixels, Image.Gui.PLANET_NORMAL.heightPixels, borderThickness = 2f)
-                Renderer.renderText("${info.owner.displayName}'s level", absoluteXPixel + position.xPixel - Image.Gui.PLANET_NORMAL.widthPixels / 2, absoluteYPixel + position.yPixel + Image.Gui.PLANET_NORMAL.heightPixels / 2)
+                Renderer.renderTexture(Image.Gui.PLANET_NORMAL, absoluteX + position.x - Image.Gui.PLANET_NORMAL.width / 2, absoluteY + position.y - Image.Gui.PLANET_NORMAL.height / 2, actualParams)
+                Renderer.renderEmptyRectangle(absoluteX + position.x - Image.Gui.PLANET_NORMAL.width / 2, absoluteY + position.y - Image.Gui.PLANET_NORMAL.height / 2, Image.Gui.PLANET_NORMAL.width, Image.Gui.PLANET_NORMAL.height, borderThickness = 2f)
+                Renderer.renderText("${info.owner.displayName}'s level", absoluteX + position.x - Image.Gui.PLANET_NORMAL.width / 2, absoluteY + position.y + Image.Gui.PLANET_NORMAL.height / 2)
             } else if (pair == hoveringLevel) {
-                Renderer.renderTexture(Image.Gui.PLANET_NORMAL, absoluteXPixel + position.xPixel - Image.Gui.PLANET_NORMAL.widthPixels / 2, absoluteYPixel + position.yPixel - Image.Gui.PLANET_NORMAL.heightPixels / 2, actualParams)
-                Renderer.renderEmptyRectangle(absoluteXPixel + position.xPixel - Image.Gui.PLANET_NORMAL.widthPixels / 2, absoluteYPixel + position.yPixel - Image.Gui.PLANET_NORMAL.heightPixels / 2, Image.Gui.PLANET_NORMAL.widthPixels, Image.Gui.PLANET_NORMAL.heightPixels)
-                Renderer.renderText("${info.owner.displayName}'s level", absoluteXPixel + position.xPixel - Image.Gui.PLANET_NORMAL.widthPixels / 2, absoluteYPixel + position.yPixel + Image.Gui.PLANET_NORMAL.heightPixels / 2)
+                Renderer.renderTexture(Image.Gui.PLANET_NORMAL, absoluteX + position.x - Image.Gui.PLANET_NORMAL.width / 2, absoluteY + position.y - Image.Gui.PLANET_NORMAL.height / 2, actualParams)
+                Renderer.renderEmptyRectangle(absoluteX + position.x - Image.Gui.PLANET_NORMAL.width / 2, absoluteY + position.y - Image.Gui.PLANET_NORMAL.height / 2, Image.Gui.PLANET_NORMAL.width, Image.Gui.PLANET_NORMAL.height)
+                Renderer.renderText("${info.owner.displayName}'s level", absoluteX + position.x - Image.Gui.PLANET_NORMAL.width / 2, absoluteY + position.y + Image.Gui.PLANET_NORMAL.height / 2)
             } else {
-                Renderer.renderTexture(Image.Gui.PLANET_NORMAL, absoluteXPixel + position.xPixel - Image.Gui.PLANET_NORMAL.widthPixels / 2, absoluteYPixel + position.yPixel - Image.Gui.PLANET_NORMAL.heightPixels / 2, actualParams)
+                Renderer.renderTexture(Image.Gui.PLANET_NORMAL, absoluteX + position.x - Image.Gui.PLANET_NORMAL.width / 2, absoluteY + position.y - Image.Gui.PLANET_NORMAL.height / 2, actualParams)
             }
         }
         Renderer.popClip()

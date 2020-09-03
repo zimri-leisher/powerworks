@@ -4,43 +4,43 @@ import level.Level
 import serialization.Id
 import java.lang.Math.abs
 
-data class PixelCoord(
+data class Coord(
         @Id(1)
-        val xPixel: Int,
+        val x: Int,
         @Id(2)
-        val yPixel: Int) {
+        val y: Int) {
 
     private constructor() : this(0, 0)
 
-    fun distance(other: PixelCoord): Double {
-        return Geometry.distance(xPixel, yPixel, other.xPixel, other.yPixel)
+    fun distance(other: Coord): Double {
+        return Geometry.distance(x, y, other.x, other.y)
     }
 
-    fun manhattanDistance(other: PixelCoord): Int {
-        return abs(xPixel - other.xPixel) + abs(yPixel - other.yPixel)
+    fun manhattanDistance(other: Coord): Int {
+        return abs(x - other.x) + abs(y - other.y)
     }
 
-    fun toTile() = TileCoord(xPixel shr 4, yPixel shr 4)
+    fun toTile() = TileCoord(x shr 4, y shr 4)
 
-    fun enforceBounds(level: Level) = enforceBounds(0, level.widthPixels, 0, level.heightPixels)
+    fun enforceBounds(level: Level) = enforceBounds(0, level.width, 0, level.height)
 
-    fun enforceBounds(xMin: Int, xMax: Int, yMin: Int, yMax: Int) = PixelCoord(Math.min(xMax, Math.max(xMin, xPixel)), Math.min(yMax, Math.max(yMin, yPixel)))
+    fun enforceBounds(xMin: Int, xMax: Int, yMin: Int, yMax: Int) = Coord(Math.min(xMax, Math.max(xMin, x)), Math.min(yMax, Math.max(yMin, y)))
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as PixelCoord
+        other as Coord
 
-        if (xPixel != other.xPixel) return false
-        if (yPixel != other.yPixel) return false
+        if (x != other.x) return false
+        if (y != other.y) return false
 
         return true
     }
 
     override fun hashCode(): Int {
-        var result = xPixel
-        result = 31 * result + yPixel
+        var result = x
+        result = 31 * result + y
         return result
     }
 }
@@ -53,7 +53,7 @@ data class TileCoord(
 
     private constructor() : this(0, 0)
 
-    fun pixel() = PixelCoord(xTile shl 4, yTile shl 4)
+    fun toCoord() = Coord(xTile shl 4, yTile shl 4)
 
     fun enforceBounds(level: Level) = enforceBounds(0, level.widthTiles, 0, level.heightTiles)
 

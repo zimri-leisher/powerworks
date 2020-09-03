@@ -36,11 +36,11 @@ object GuiDebugInfo : Gui(ScreenLayer.OVERLAY) {
     init {
         define {
             placement = Placement.Align(HorizontalAlign.LEFT, VerticalAlign.TOP)
-            onRender { xPixel, yPixel, _ ->
-                var y = 0
+            onRender { x, y, _ ->
+                var lineY = 0
                 for ((_, text) in debugInfo) {
-                    y += ceil((TextManager.getFont().charHeight + 1) * text.size).toInt()
-                    Renderer.renderText(text.joinToString(separator = "\n"), xPixel, yPixel - y)
+                    lineY += ceil((TextManager.getFont().charHeight + 1) * text.size).toInt()
+                    Renderer.renderText(text.joinToString(separator = "\n"), x, y - lineY)
                 }
                 debugInfo.clear()
             }

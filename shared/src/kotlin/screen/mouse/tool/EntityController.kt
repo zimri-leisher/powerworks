@@ -12,10 +12,9 @@ import level.LevelManager
 import level.LevelPosition
 import level.entity.Entity
 import level.entity.EntityGroup
-import main.heightPixels
-import main.widthPixels
+import main.height
+import main.width
 import misc.Geometry
-import misc.PixelCoord
 import network.MovingObjectReference
 import player.ActionControlEntity
 import player.PlayerManager
@@ -27,28 +26,28 @@ object EntityController : Tool(Control.USE_ENTITY_COMMAND) {
 
     const val DRAG_DISTANCE_BEFORE_MENU_OPEN = 8
 
-    var startXPixel = 0
-    var startYPixel = 0
-    var startLevelXPixel = 0
-    var startLevelYPixel = 0
+    var startX = 0
+    var startY = 0
+    var startLevelX = 0
+    var startLevelY = 0
     var active = false
 
     var currentlyHoveringCommand: BehaviorTree? = null
     var selectedCommand: BehaviorTree? = null
 
-    override fun onUse(event: ControlEvent, mouseLevelXPixel: Int, mouseLevelYPixel: Int): Boolean {
+    override fun onUse(event: ControlEvent, mouseLevelX: Int, mouseLevelY: Int): Boolean {
         if (event.control == Control.USE_ENTITY_COMMAND) {
             if (event.type == ControlEventType.PRESS) {
-                startXPixel = Mouse.xPixel
-                startYPixel = Mouse.yPixel
-                startLevelXPixel = LevelManager.mouseLevelXPixel
-                startLevelYPixel = LevelManager.mouseLevelYPixel
+                startX = Mouse.x
+                startY = Mouse.y
+                startLevelX = LevelManager.mouseLevelX
+                startLevelY = LevelManager.mouseLevelY
             } else if (event.type == ControlEventType.HOLD) { // TODO should be if held
-                if (!active && Geometry.distance(Mouse.xPixel, Mouse.yPixel, startXPixel, startYPixel) > DRAG_DISTANCE_BEFORE_MENU_OPEN) {
+                if (!active && Geometry.distance(Mouse.x, Mouse.y, startX, startY) > DRAG_DISTANCE_BEFORE_MENU_OPEN) {
                     active = true
                 }
                 if (active) {
-                    val angle = atan2(Mouse.yPixel - startYPixel.toDouble(), Mouse.xPixel - startXPixel.toDouble())
+                    val angle = atan2(Mouse.y - startY.toDouble(), Mouse.x - startX.toDouble())
                     if (angle > 3 * PI / 4 || angle < -3 * PI / 4) {
                         // left
                         currentlyHoveringCommand = Behavior.Offense.ATTACK_ARG
@@ -83,7 +82,7 @@ object EntityController : Tool(Control.USE_ENTITY_COMMAND) {
     override fun renderAbove(level: Level) {
         if(level == LevelManager.levelUnderMouse) {
             if (active) {
-                Renderer.renderTexture(Image.Gui.ENTITY_CONTROLLER_MENU2, startLevelXPixel - Image.Gui.ENTITY_CONTROLLER_MENU2.widthPixels / 2, startLevelYPixel - Image.Gui.ENTITY_CONTROLLER_MENU2.heightPixels / 2)
+                Renderer.renderTexture(Image.Gui.ENTITY_CONTROLLER_MENU2, startLevelX - Image.Gui.ENTITY_CONTROLLER_MENU2.width / 2, startLevelY - Image.Gui.ENTITY_CONTROLLER_MENU2.height / 2)
             }
         }
     }
@@ -95,14 +94,14 @@ object EntityController : Tool(Control.USE_ENTITY_COMMAND) {
                     if (group.formation != null) {
                         val boundaries = group.formation!!.boundaries
                         if (Geometry.contains(boundaries.x, boundaries.y, boundaries.width, boundaries.height,
-                                        LevelManager.mouseLevelXPixel, LevelManager.mouseLevelYPixel, 0, 0)) {
+                                        LevelManager.mouseLevelX, LevelManager.mouseLevelY, 0, 0)) {
                             // TODO merge groups
                         }
                     }
                 }
                 PlayerManager.takeAction(ActionControlEntity(PlayerManager.localPlayer,
                         Selector.currentSelected.filterIsInstance<Entity>().map { it.toReference() as MovingObjectReference },
-                        command, LevelPosition(LevelManager.mouseLevelXPixel, LevelManager.mouseLevelYPixel, LevelManager.levelUnderMouse!!)))
+                        command, LevelPosition(LevelManager.mouseLevelX, LevelManager.mouseLevelY, LevelManager.levelUnderMouse!!)))
             }
             Behavior.Offense.ATTACK_ARG -> {
                 PlayerManager.takeAction(ActionControlEntity(PlayerManager.localPlayer,

@@ -3,14 +3,14 @@ package misc
 import kotlin.math.*
 
 object Geometry {
-    fun intersects(xPixel: Int, yPixel: Int, width: Int, height: Int, xPixel2: Int, yPixel2: Int, width2: Int, height2: Int): Boolean {
-        if (xPixel + width <= xPixel2 || yPixel + height <= yPixel2 || xPixel >= xPixel2 + width2 || yPixel >= yPixel2 + height2)
+    fun intersects(x: Int, y: Int, width: Int, height: Int, x2: Int, y2: Int, width2: Int, height2: Int): Boolean {
+        if (x + width <= x2 || y + height <= y2 || x >= x2 + width2 || y >= y2 + height2)
             return false
         return true
     }
 
-    fun contains(xPixel: Int, yPixel: Int, width: Int, height: Int, xPixelIn: Int, yPixelIn: Int, widthIn: Int, heightIn: Int): Boolean {
-        if (xPixelIn >= xPixel && yPixelIn >= yPixel && xPixelIn + widthIn <= xPixel + width && yPixelIn + heightIn <= yPixel + height)
+    fun contains(x: Int, y: Int, width: Int, height: Int, xIn: Int, yIn: Int, widthIn: Int, heightIn: Int): Boolean {
+        if (xIn >= x && yIn >= y && xIn + widthIn <= x + width && yIn + heightIn <= y + height)
             return true
         return false
     }

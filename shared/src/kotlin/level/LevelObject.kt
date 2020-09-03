@@ -16,8 +16,8 @@ import java.util.*
 
 abstract class LevelObject protected constructor(
         type: LevelObjectType<out LevelObject>,
-        open val xPixel: Int,
-        open val yPixel: Int,
+        open val x: Int,
+        open val y: Int,
         rotation: Int = 0,
         /**
          * Whether or not the [Interactor] tool should allow clicking on this
@@ -51,27 +51,16 @@ abstract class LevelObject protected constructor(
         }
 
     @Id(8)
-    open val xTile = xPixel shr 4
+    open val xTile = x shr 4
 
     @Id(9)
-    open val yTile = yPixel shr 4
+    open val yTile = y shr 4
 
     @Id(11)
     open val xChunk = xTile shr CHUNK_TILE_EXP
 
     @Id(12)
     open val yChunk = yTile shr CHUNK_TILE_EXP
-
-    var mouseOn = false
-        set(value) {
-            if (value && !field) {
-                onMouseEnter()
-                field = value
-            } else if (!value && field) {
-                field = value
-                onMouseLeave()
-            }
-        }
 
     @Id(13)
     var hitbox = type.hitbox
@@ -123,7 +112,7 @@ abstract class LevelObject protected constructor(
     @Id(16)
     var requiresUpdate = type.requiresUpdate
         set(value) {
-            val c = level.getChunkAt(xChunk, yChunk)
+            val c = level.getChunkAtChunk(xChunk, yChunk)
             if (field && !value) {
                 field = value
                 c.removeUpdateRequired(this)
@@ -157,7 +146,7 @@ abstract class LevelObject protected constructor(
     }
 
     protected fun renderHitbox() {
-        Renderer.renderFilledRectangle(xPixel + hitbox.xStart, yPixel + hitbox.yStart, hitbox.width, hitbox.height, TextureRenderParams(color = Color(0xFF0010)))
+        Renderer.renderFilledRectangle(x + hitbox.xStart, y + hitbox.yStart, hitbox.width, hitbox.height, TextureRenderParams(color = Color(0xFF0010)))
     }
 
     open fun onHitboxChange() {
@@ -176,37 +165,25 @@ abstract class LevelObject protected constructor(
     }
 
     /**
-     * @return a sequence of [LevelObject]s that would collide with this [LevelObject] if it were at [xPixel], [yPixel] in the
+     * @return a sequence of [LevelObject]s that would collide with this [LevelObject] if it were at [x], [y] in the
      * given [level] (defaults to [LevelObject.level])
      */
-    open fun getCollisions(xPixel: Int, yPixel: Int, level: Level = this.level): Sequence<LevelObject> {
+    open fun getCollisions(x: Int, y: Int, level: Level = this.level): Sequence<LevelObject> {
         if (hitbox == Hitbox.NONE)
             return emptySequence()
-        return level.getCollisionsWith(hitbox, xPixel, yPixel).filter { it !== this }
+        return level.getCollisionsWith(hitbox, x, y).filter { it !== this }
     }
 
     /**
      * When the mouse is clicked on this
      */
-    open fun onInteractOn(event: ControlEvent, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+    open fun onInteractOn(event: ControlEvent, x: Int, y: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
     }
 
     /**
      * When the mouse is scrolled and is over this
      */
     open fun onScroll(dir: Int) {
-    }
-
-    /**
-     * When the mouse enters the rectangle defined by xPixel, yPixel, widthPixels, heightPixels. Called even if it's on the bottom layer
-     */
-    open fun onMouseEnter() {
-    }
-
-    /**
-     * When the mouse leaves the rectangle defined by xPixel, yPixel, widthPixels, heightPixels. Called even if it's on the bottom layer
-     */
-    open fun onMouseLeave() {
     }
 
     abstract fun toReference(): LevelObjectReference
@@ -217,8 +194,8 @@ abstract class LevelObject protected constructor(
 
         other as LevelObject
 
-        if (xPixel != other.xPixel) return false
-        if (yPixel != other.yPixel) return false
+        if (x != other.x) return false
+        if (y != other.y) return false
         if (type != other.type) return false
         if (hitbox != other.hitbox) return false
         if (rotation != other.rotation) return false
@@ -227,8 +204,8 @@ abstract class LevelObject protected constructor(
     }
 
     override fun hashCode(): Int {
-        var result = xPixel
-        result = 31 * result + yPixel
+        var result = x
+        result = 31 * result + y
         result = 31 * result + type.hashCode()
         result = 31 * result + hitbox.hashCode()
         result = 31 * result + rotation
@@ -241,8 +218,8 @@ class LevelObjectSerializer<R : LevelObject> : Serializer.Tagged<R>(false) {
     override fun write(obj: Any, output: Output) {
         obj as LevelObject
         output.write(obj.type)
-        output.writeInt(obj.xPixel)
-        output.writeInt(obj.yPixel)
+        output.writeInt(obj.x)
+        output.writeInt(obj.y)
         output.writeInt(obj.rotation)
         super.write(obj, output)
     }

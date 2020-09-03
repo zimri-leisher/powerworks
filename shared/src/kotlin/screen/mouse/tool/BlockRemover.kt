@@ -17,7 +17,7 @@ object BlockRemover : Tool(Control.REMOVE_BLOCK) {
         }
     }
 
-    override fun onUse(event: ControlEvent, mouseLevelXPixel: Int, mouseLevelYPixel: Int): Boolean {
+    override fun onUse(event: ControlEvent, mouseLevelX: Int, mouseLevelY: Int): Boolean {
         if (event.type == ControlEventType.PRESS) {
             if (event.control == Control.REMOVE_BLOCK) {
                 val toRemove = if (Selector.currentSelected.isNotEmpty())

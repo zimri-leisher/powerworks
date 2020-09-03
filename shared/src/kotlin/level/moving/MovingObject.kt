@@ -7,38 +7,38 @@ import network.MovingObjectReference
 import serialization.Id
 import kotlin.math.*
 
-abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: Int, yPixel: Int, rotation: Int = 0) : LevelObject(type, xPixel, yPixel, rotation, true) {
+abstract class MovingObject(type: MovingObjectType<out MovingObject>, x: Int, y: Int, rotation: Int = 0) : LevelObject(type, x, y, rotation, true) {
     override val type = type
-    /* Only allow setting of pixel values because otherwise it would cause infinite loop (unless I added a lot of boilerplate private values) */
+    /* Only allow setting of non tile/chunk values because otherwise it would cause infinite loop (unless I added a lot of boilerplate private values) */
 
-    final override var xPixel = xPixel
+    final override var x = x
         set(value) {
             val old = field
             field = value
             xTile = value shr 4
             xChunk = xTile shr CHUNK_TILE_EXP
-            onMove(old, yPixel)
+            onMove(old, y)
         }
 
     @Id(100)
-    private var xPixelRemainder = 0.0
+    private var xRemainder = 0.0
 
-    final override var yPixel = yPixel
+    final override var y = y
         set(value) {
             val old = field
             field = value
             yTile = value shr 4
             yChunk = yTile shr CHUNK_TILE_EXP
-            onMove(xPixel, old)
+            onMove(x, old)
         }
 
     @Id(101)
-    private var yPixelRemainder = 0.0
+    private var yRemainder = 0.0
 
-    final override var xTile = xPixel shr 4
+    final override var xTile = x shr 4
         private set
 
-    final override var yTile = yPixel shr 4
+    final override var yTile = y shr 4
         private set
 
     final override var xChunk = xTile shr CHUNK_TILE_EXP
@@ -83,14 +83,14 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: In
     @Id(102)
     private var gettingUnstuck = false
 
-    fun setPosition(xPixel: Int, yPixel: Int) {
-        val oXPixel = this.xPixel
-        val oYPixel = this.yPixel
-        this.xPixel = xPixel
-        this.yPixel = yPixel
-        xPixelRemainder = 0.0
-        yPixelRemainder = 0.0
-        val dist = Geometry.distance(oXPixel, oYPixel, xPixel, yPixel)
+    fun setPosition(x: Int, y: Int) {
+        val oldX = this.x
+        val oldY = this.y
+        this.x = x
+        this.y = y
+        xRemainder = 0.0
+        yRemainder = 0.0
+        val dist = Geometry.distance(oldX, oldY, x, y)
         if (dist > 8) {
             println("TELEPORTING: $dist")
         }
@@ -108,8 +108,8 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: In
     }
 
     private fun isCollidingAlongXAxis(o: LevelObject): Boolean {
-        val range = (yPixel + hitbox.yStart) until (yPixel + hitbox.yStart + hitbox.height)
-        val otherRange = (o.yPixel + o.hitbox.yStart) until (o.yPixel + o.hitbox.yStart + o.hitbox.height)
+        val range = (y + hitbox.yStart) until (y + hitbox.yStart + hitbox.height)
+        val otherRange = (o.y + o.hitbox.yStart) until (o.y + o.hitbox.yStart + o.hitbox.height)
         return range.any { it in otherRange }
     }
 
@@ -143,17 +143,17 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: In
 
     }
 
-    protected open fun onMove(pXPixel: Int, pYPixel: Int) {
+    protected open fun onMove(prevX: Int, prevY: Int) {
         if(!inLevel)
             return
-        val oldChunk = level.getChunkFromPixel(pXPixel, pYPixel)
-        val newChunk = level.getChunkAt(xChunk, yChunk)
+        val oldChunk = level.getChunkAt(prevX, prevY)
+        val newChunk = level.getChunkAtChunk(xChunk, yChunk)
         if (oldChunk != newChunk) {
             onChangeChunks(oldChunk, newChunk)
         } else {
             updateIntersectingChunks()
         }
-        moveListeners.forEach { it.onMove(this, pXPixel, pYPixel) }
+        moveListeners.forEach { it.onMove(this, prevX, prevY) }
     }
 
     /**
@@ -185,7 +185,7 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: In
 
     open fun move() {
         if (xVel.absoluteValue > EPSILON || yVel.absoluteValue > EPSILON) {
-            val currentCollisions = getCollisions(xPixel, yPixel)
+            val currentCollisions = getCollisions(x, y)
             if (currentCollisions.any()) {
                 if (!gettingUnstuck) {
                     // the first time we notice that it's stuck, stop all movement except for getting unstuck
@@ -194,7 +194,7 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: In
                 }
                 gettingUnstuck = true
                 for (collider in currentCollisions) {
-                    applyForce(atan2(yPixel - collider.yPixel.toDouble(), xPixel - collider.xPixel.toDouble()), type.mass)
+                    applyForce(atan2(y - collider.y.toDouble(), x - collider.x.toDouble()), type.mass)
                 }
                 println("getting unstuck")
             } else {
@@ -202,18 +202,18 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: In
             }
             updateRotation()
             // add fractional part of velocity
-            xPixelRemainder += xVel - xVel.toInt()
-            yPixelRemainder += yVel - yVel.toInt()
+            xRemainder += xVel - xVel.toInt()
+            yRemainder += yVel - yVel.toInt()
             // add integer of velocity and integer of remainder
-            val nXPixel = xPixel + xVel.toInt() + xPixelRemainder.toInt()
-            val nYPixel = yPixel + yVel.toInt() + yPixelRemainder.toInt()
+            val newX = x + xVel.toInt() + xRemainder.toInt()
+            val newY = y + yVel.toInt() + yRemainder.toInt()
             // remove integer of remainder
-            xPixelRemainder -= xPixelRemainder.toInt()
-            yPixelRemainder -= yPixelRemainder.toInt()
+            xRemainder -= xRemainder.toInt()
+            yRemainder -= yRemainder.toInt()
             if (gettingUnstuck) {
                 // ignore all collisions
-                xPixel = nXPixel
-                yPixel = nYPixel
+                x = newX
+                y = newY
                 currentCollisions.forEach {
                     /*
                     if (it is MovingObject) {
@@ -226,36 +226,36 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: In
                 }
             } else {
                 var collisions: MutableSet<LevelObject>? = null
-                val g = getCollisions(nXPixel, nYPixel).toMutableSet()
-                var xPixelOk = false
-                var yPixelOk = false
+                val g = getCollisions(newX, newY).toMutableSet()
+                var xOk = false
+                var yOk = false
                 if (g.isEmpty()) {
-                    xPixelOk = true
-                    yPixelOk = true
+                    xOk = true
+                    yOk = true
                 } else {
                     collisions = g
-                    if (nXPixel != xPixel) {
-                        val o = getCollisions(nXPixel, yPixel)
+                    if (newX != x) {
+                        val o = getCollisions(newX, y)
                         if (o.none()) {
-                            xPixelOk = true
+                            xOk = true
                         } else {
                             collisions.addAll(o)
                         }
                     }
-                    if (nYPixel != yPixel) {
-                        val o = getCollisions(xPixel, nYPixel)
+                    if (newY != y) {
+                        val o = getCollisions(x, newY)
                         if (o.none()) {
-                            yPixelOk = true
+                            yOk = true
                         } else {
                             collisions.addAll(o)
                         }
                     }
                 }
-                if (xPixelOk) {
-                    xPixel = nXPixel
+                if (xOk) {
+                    x = newX
                 }
-                if (yPixelOk) {
-                    yPixel = nYPixel
+                if (yOk) {
+                    y = newY
                 }
                 collisions?.forEach {
                     /*
@@ -274,7 +274,7 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: In
     }
 
     override fun onAddToLevel() {
-        val newChunk = level.getChunkAt(xChunk, yChunk)
+        val newChunk = level.getChunkAtChunk(xChunk, yChunk)
         onChangeChunks(newChunk, newChunk)
     }
 
@@ -284,9 +284,9 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: In
 
     private fun updateIntersectingChunks() {
         if (hitbox != Hitbox.NONE && inLevel) {
-            val newIntersectingChunks = level.getChunksFromPixelRectangle(
-                    hitbox.xStart + xPixel, hitbox.yStart + yPixel, hitbox.width, hitbox.height).toMutableSet()
-            newIntersectingChunks.remove(level.getChunkAt(xChunk, yChunk))
+            val newIntersectingChunks = level.getChunksFromRectangle(
+                    hitbox.xStart + x, hitbox.yStart + y, hitbox.width, hitbox.height).toMutableSet()
+            newIntersectingChunks.remove(level.getChunkAtChunk(xChunk, yChunk))
             if (intersectingChunks != newIntersectingChunks) {
                 intersectingChunks.forEach { it.data.movingOnBoundary.remove(this) }
                 newIntersectingChunks.forEach { it.data.movingOnBoundary.add(this) }

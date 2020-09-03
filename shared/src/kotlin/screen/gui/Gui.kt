@@ -13,9 +13,9 @@ import item.Inventory
 import level.LevelInfo
 import level.LevelObject
 import main.PowerworksDelegates
-import main.heightPixels
+import main.height
 import main.toColor
-import main.widthPixels
+import main.width
 import misc.Geometry
 import resource.ResourceContainer
 import resource.ResourceList
@@ -42,8 +42,8 @@ open class Gui(val layer: ScreenLayer, block: GuiElement.Context.() -> Unit = {}
      * else, [open], [dimensions], [placement], and all of its children, are stored in this element.
      */
     val parentElement = object : GuiElement(null) {
-        override val absoluteXPixel get() = xPixel
-        override val absoluteYPixel get() = yPixel
+        override val absoluteX get() = x
+        override val absoluteY get() = y
         override val gui: Gui
             get() = this@Gui
 
@@ -128,7 +128,7 @@ open class Gui(val layer: ScreenLayer, block: GuiElement.Context.() -> Unit = {}
          */
         fun recalculateExactDimensions(element: GuiElement): Dimensions.Exact {
             val dimension = element.dimensions.get(element, gui)
-            dimensions[element] = if (dimension is Dimensions.Unknown) Dimensions.Exact(dimension.widthPixels, dimension.heightPixels) else dimension
+            dimensions[element] = if (dimension is Dimensions.Unknown) Dimensions.Exact(dimension.width, dimension.height) else dimension
             element.onChangeDimensions()
             return dimension
         }
@@ -138,7 +138,7 @@ open class Gui(val layer: ScreenLayer, block: GuiElement.Context.() -> Unit = {}
          */
         fun recalculateExactPlacement(element: GuiElement): Placement.Exact {
             val placement = element.placement.get(element, gui)
-            placements[element] = if (placement is Placement.Unknown) Placement.Exact(placement.xPixel, placement.yPixel) else placement
+            placements[element] = if (placement is Placement.Unknown) Placement.Exact(placement.x, placement.y) else placement
             element.onChangePlacement()
             return placement
         }
@@ -168,13 +168,13 @@ open class Gui(val layer: ScreenLayer, block: GuiElement.Context.() -> Unit = {}
             fun recursivelySetDimensions(element: GuiElement) {
                 element.children.forEach { recursivelySetDimensions(it) }
                 val dimension = element.dimensions.get(element, gui)
-                dimensions[element] = if (dimension is Dimensions.Unknown) Dimensions.Exact(dimension.widthPixels, dimension.heightPixels) else dimension
+                dimensions[element] = if (dimension is Dimensions.Unknown) Dimensions.Exact(dimension.width, dimension.height) else dimension
                 element.onChangeDimensions()
             }
 
             fun recursivelySetPlacement(element: GuiElement) {
                 val placement = element.placement.get(element, gui)
-                placements[element] = if (placement is Placement.Unknown) Placement.Exact(placement.xPixel, placement.yPixel) else placement
+                placements[element] = if (placement is Placement.Unknown) Placement.Exact(placement.x, placement.y) else placement
                 element.onChangePlacement()
                 element.children.forEach { recursivelySetPlacement(it) }
             }
@@ -282,36 +282,36 @@ abstract class GuiElement(parent: GuiElement?) {
     var dimensions: Dimensions = Dimensions.None
 
     /**
-     * The exact width pixels of this element as determined by the cached values in the parent [Gui]'s [Gui.Layout].
+     * The exact width of this element as determined by the cached values in the parent [Gui]'s [Gui.Layout].
      */
-    val widthPixels get() = gui.layout.getExactDimensions(this).widthPixels
+    val width get() = gui.layout.getExactDimensions(this).width
 
     /**
-     * The exact height pixels of this element as determined by the cached values in the parent [Gui]'s [Gui.Layout].
+     * The exact height of this element as determined by the cached values in the parent [Gui]'s [Gui.Layout].
      */
-    val heightPixels get() = gui.layout.getExactDimensions(this).heightPixels
+    val height get() = gui.layout.getExactDimensions(this).height
 
     /**
-     * The exact x pixel of this element relative to its parent as determined by the cached values in the parent [Gui]'s [Gui.Layout].
+     * The exact x of this element relative to its parent as determined by the cached values in the parent [Gui]'s [Gui.Layout].
      */
-    open val xPixel: Int
-        get() = gui.layout.getExactPlacement(this).xPixel
+    open val x: Int
+        get() = gui.layout.getExactPlacement(this).x
 
     /**
-     * The x pixel of this element relative to the origin of the screen.
+     * The x of this element relative to the origin of the screen.
      */
-    open val absoluteXPixel: Int get() = parent.absoluteXPixel + xPixel
+    open val absoluteX: Int get() = parent.absoluteX + x
 
     /**
-     * The exact y pixel of this element relative to its parent as determined by the cached values in the parent [Gui]'s [Gui.Layout].
+     * The exact y of this element relative to its parent as determined by the cached values in the parent [Gui]'s [Gui.Layout].
      */
-    open val yPixel: Int
-        get() = gui.layout.getExactPlacement(this).yPixel
+    open val y: Int
+        get() = gui.layout.getExactPlacement(this).y
 
     /**
-     * The y pixel of this element relative to the origin of the screen.
+     * The y of this element relative to the origin of the screen.
      */
-    open val absoluteYPixel: Int get() = parent.absoluteYPixel + yPixel
+    open val absoluteY: Int get() = parent.absoluteY + y
 
     /**
      * A list of [GuiEventListener]s to send events to. [GuiEventListener]s are simple classes that hold a handler function
@@ -326,12 +326,12 @@ abstract class GuiElement(parent: GuiElement?) {
     val attributes = mutableListOf<Attribute>()
 
     /**
-     * Renders this element to the screen at the [absoluteXPixel], [absoluteYPixel] with dimensions [widthPixels] and [heightPixels] and with
+     * Renders this element to the screen at the [absoluteX], [absoluteY] with dimensions [width] and [height] and with
      * [params], and then renders all of its open children elements. If overriden, make sure to call super so that the render
      * event gets pushed out.
      */
     open fun render(params: TextureRenderParams?) {
-        eventListeners.filterIsInstance<GuiRenderListener>().forEach { it.handle(this, absoluteXPixel, absoluteYPixel, params) }
+        eventListeners.filterIsInstance<GuiRenderListener>().forEach { it.handle(this, absoluteX, absoluteY, params) }
         children.forEach { if (it.open) it.render(params) }
     }
 
@@ -347,10 +347,10 @@ abstract class GuiElement(parent: GuiElement?) {
     /**
      * @return a sequence of all children of this element that intersect the given point.
      */
-    fun getChildrenAt(xPixel: Int, yPixel: Int) = children.asSequence().filter {
+    fun getChildrenAt(x: Int, y: Int) = children.asSequence().filter {
         val placement = gui.layout.getExactPlacement(it)
         val dimensions = gui.layout.getExactDimensions(it)
-        Geometry.intersects(placement.xPixel, placement.yPixel, dimensions.widthPixels, dimensions.heightPixels, xPixel, yPixel, 1, 1)
+        Geometry.intersects(placement.x, placement.y, dimensions.width, dimensions.height, x, y, 1, 1)
     }
 
     open fun onOpen() {
@@ -447,7 +447,7 @@ abstract class GuiElement(parent: GuiElement?) {
             inElement.eventListeners.add(GuiUpdateListener(block))
         }
 
-        fun onRender(block: GuiElement.(xPixel: Int, yPixel: Int, TextureRenderParams?) -> Unit) {
+        fun onRender(block: GuiElement.(x: Int, y: Int, TextureRenderParams?) -> Unit) {
             inElement.eventListeners.add(GuiRenderListener(block))
         }
 
@@ -489,18 +489,18 @@ abstract class GuiElement(parent: GuiElement?) {
                     addChild(this, block, Placement.Origin)
                 }
 
-        fun animation(animation: Animation, placement: Placement = currentDefaultPlacement, widthPixels: Int = animation.widthPixels, heightPixels: Int = animation.heightPixels, keepAspect: Boolean = false, params: TextureRenderParams? = null, block: Context.() -> Unit = {}) =
-                renderable(animation, placement, widthPixels, heightPixels, keepAspect, params, block)
+        fun animation(animation: Animation, placement: Placement = currentDefaultPlacement, width: Int = animation.width, height: Int = animation.height, keepAspect: Boolean = false, params: TextureRenderParams? = null, block: Context.() -> Unit = {}) =
+                renderable(animation, placement, width, height, keepAspect, params, block)
 
-        fun texture(texture: TextureRegion, placement: Placement = currentDefaultPlacement, widthPixels: Int = texture.widthPixels, heightPixels: Int = texture.heightPixels, keepAspect: Boolean = false, params: TextureRenderParams? = null, block: Context.() -> Unit = {}) =
-                renderable(Texture(texture), placement, widthPixels, heightPixels, keepAspect, params, block)
+        fun texture(texture: TextureRegion, placement: Placement = currentDefaultPlacement, width: Int = texture.width, height: Int = texture.height, keepAspect: Boolean = false, params: TextureRenderParams? = null, block: Context.() -> Unit = {}) =
+                renderable(Texture(texture), placement, width, height, keepAspect, params, block)
 
-        fun texture(texture: Texture, placement: Placement = currentDefaultPlacement, widthPixels: Int = texture.widthPixels, heightPixels: Int = texture.heightPixels, keepAspect: Boolean = false, params: TextureRenderParams? = null, block: Context.() -> Unit = {}) =
-                renderable(texture, placement, widthPixels, heightPixels, keepAspect, params, block)
+        fun texture(texture: Texture, placement: Placement = currentDefaultPlacement, width: Int = texture.width, height: Int = texture.height, keepAspect: Boolean = false, params: TextureRenderParams? = null, block: Context.() -> Unit = {}) =
+                renderable(texture, placement, width, height, keepAspect, params, block)
 
-        fun renderable(renderable: Renderable, placement: Placement = currentDefaultPlacement, widthPixels: Int = renderable.widthPixels, heightPixels: Int = renderable.heightPixels, keepAspect: Boolean = false, params: TextureRenderParams? = null, block: Context.() -> Unit = {}) =
+        fun renderable(renderable: Renderable, placement: Placement = currentDefaultPlacement, width: Int = renderable.width, height: Int = renderable.height, keepAspect: Boolean = false, params: TextureRenderParams? = null, block: Context.() -> Unit = {}) =
                 ElementRenderable(inElement, renderable, keepAspect, params).apply {
-                    dimensions = Dimensions.Exact(widthPixels, heightPixels)
+                    dimensions = Dimensions.Exact(width, height)
                     addChild(this, block, placement)
                 }
 
@@ -638,13 +638,13 @@ class GroupElement(parent: GuiElement) : GuiElement(parent)
 class ElementRenderable(parent: GuiElement, var renderable: Renderable, var keepAspect: Boolean = false, var params: TextureRenderParams? = null) : GuiElement(parent) {
     override fun render(params: TextureRenderParams?) {
         if (params == null && this.params == null) {
-            renderable.render(absoluteXPixel, absoluteYPixel, widthPixels, heightPixels, keepAspect)
+            renderable.render(absoluteX, absoluteY, width, height, keepAspect)
         } else if (params == null) {
-            renderable.render(absoluteXPixel, absoluteYPixel, widthPixels, heightPixels, keepAspect, this.params!!)
+            renderable.render(absoluteX, absoluteY, width, height, keepAspect, this.params!!)
         } else if (this.params == null) {
-            renderable.render(absoluteXPixel, absoluteYPixel, widthPixels, heightPixels, keepAspect, params)
+            renderable.render(absoluteX, absoluteY, width, height, keepAspect, params)
         } else {
-            renderable.render(absoluteXPixel, absoluteYPixel, widthPixels, heightPixels, keepAspect, this.params!!.combine(params))
+            renderable.render(absoluteX, absoluteY, width, height, keepAspect, this.params!!.combine(params))
         }
         super.render(params)
     }
@@ -653,13 +653,13 @@ class ElementRenderable(parent: GuiElement, var renderable: Renderable, var keep
 class ElementDefaultRectangle(parent: GuiElement, var params: TextureRenderParams? = null) : GuiElement(parent) {
     override fun render(params: TextureRenderParams?) {
         if (params == null && this.params == null) {
-            Renderer.renderDefaultRectangle(absoluteXPixel, absoluteYPixel, widthPixels, heightPixels)
+            Renderer.renderDefaultRectangle(absoluteX, absoluteY, width, height)
         } else if (params == null) {
-            Renderer.renderDefaultRectangle(absoluteXPixel, absoluteYPixel, widthPixels, heightPixels, this.params!!)
+            Renderer.renderDefaultRectangle(absoluteX, absoluteY, width, height, this.params!!)
         } else if (this.params == null) {
-            Renderer.renderDefaultRectangle(absoluteXPixel, absoluteYPixel, widthPixels, heightPixels, params)
+            Renderer.renderDefaultRectangle(absoluteX, absoluteY, width, height, params)
         } else {
-            Renderer.renderDefaultRectangle(absoluteXPixel, absoluteYPixel, widthPixels, heightPixels, this.params!!.combine(params))
+            Renderer.renderDefaultRectangle(absoluteX, absoluteY, width, height, this.params!!.combine(params))
         }
         super.render(params)
     }
@@ -685,9 +685,9 @@ class ElementText(parent: GuiElement, text: String, val allowTags: Boolean = fal
 
     override fun render(params: TextureRenderParams?) {
         if (allowTags) {
-            Renderer.renderTaggedText(taggedText, absoluteXPixel, absoluteYPixel, this.params)
+            Renderer.renderTaggedText(taggedText, absoluteX, absoluteY, this.params)
         } else {
-            Renderer.renderText(text, absoluteXPixel, absoluteYPixel, this.params, ignoreLines)
+            Renderer.renderText(text, absoluteX, absoluteY, this.params, ignoreLines)
         }
         super.render(params)
     }

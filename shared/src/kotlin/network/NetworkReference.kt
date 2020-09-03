@@ -57,21 +57,21 @@ class GhostLevelObjectReference(val obj: GhostLevelObject) : LevelObjectReferenc
 
 open class MovingObjectReference(level: Level, objectId: UUID,
                                  @Id(3)
-                                 val xPixel: Int,
+                                 val x: Int,
                                  @Id(4)
-                                 val yPixel: Int) : LevelObjectReference(level, objectId) {
+                                 val y: Int) : LevelObjectReference(level, objectId) {
 
-    constructor(movingObject: MovingObject) : this(movingObject.level, movingObject.id, movingObject.xPixel, movingObject.yPixel) {
+    constructor(movingObject: MovingObject) : this(movingObject.level, movingObject.id, movingObject.x, movingObject.y) {
         value = movingObject
     }
 
     private constructor() : this(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0)
 
     override fun resolve(): MovingObject? {
-        val xChunk = xPixel shr CHUNK_PIXEL_EXP
-        val yChunk = yPixel shr CHUNK_PIXEL_EXP
+        val xChunk = x shr CHUNK_EXP
+        val yChunk = y shr CHUNK_EXP
         var currentChunkRange = 0
-        var currentChunks = setOf(level.getChunkFromPixel(xPixel, yPixel))
+        var currentChunks = setOf(level.getChunkAt(x, y))
         while (currentChunkRange < Math.max(level.widthChunks - xChunk - 1, xChunk + 1) || currentChunkRange < Math.max(level.heightChunks - yChunk - 1, yChunk + 1)) {
             // while we still have range to go
             for (chunk in currentChunks) {
@@ -90,7 +90,7 @@ open class MovingObjectReference(level: Level, objectId: UUID,
     }
 
     override fun toString(): String {
-        return "MovingObjectReference: $level, $objectId, $xPixel, $yPixel"
+        return "MovingObjectReference: $level, $objectId, $x, $y"
     }
 }
 
@@ -128,7 +128,7 @@ class BlockReference(level: Level, objectId: UUID,
     private constructor() : this(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0)
 
     override fun resolve(): Block? {
-        val block = level.getBlockAt(xTile, yTile)
+        val block = level.getBlockAtTile(xTile, yTile)
         if (block == null) {
             println("no block at $xTile, $yTile")
             //println("blocks in that chunk: ${level.getChunkFromTile(xTile, yTile).data.blocks.joinToString()}")

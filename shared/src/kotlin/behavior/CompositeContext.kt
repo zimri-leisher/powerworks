@@ -80,8 +80,8 @@ class CompositeContext(val node: Composite) {
     }
 
     /**
-     * A leaf node that moves the [Entity] to the given [goal] until it is within [goalThreshold] pixels.
-     * The goal should be of type [PixelCoord]. Will fail after [failAfter] ticks if [failAfter] `!= -1`
+     * A leaf node that moves the [Entity] to the given [goal] until it is within [goalThreshold] units.
+     * The goal should be of type [Coord]. Will fail after [failAfter] ticks if [failAfter] `!= -1`
      */
     fun moveTo(goal: Variable, goalThreshold: Int = 5, failAfter: Int = -1) {
         leaf(MoveTo(parent, goal, goalThreshold, failAfter))
@@ -94,11 +94,6 @@ class CompositeContext(val node: Composite) {
 
     fun getMouseLevelPosition(dest: Variable = DefaultVariable.MOUSE_LEVEL_POSITION): Variable {
         leaf(GetMouseLevelPosition(parent, dest))
-        return dest
-    }
-
-    fun getNearestLevelObject(dest: Variable = DefaultVariable.NEAREST_LEVEL_OBJECT, predicate: (LevelObject) -> Boolean = { true }): Variable {
-        leaf(GetNearestLevelObject(parent, dest, predicate))
         return dest
     }
 

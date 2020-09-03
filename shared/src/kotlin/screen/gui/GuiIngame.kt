@@ -8,8 +8,8 @@ import item.ItemType
 import level.entity.robot.BrainRobot
 import level.update.LevelObjectAdd
 import main.GameState
-import main.heightPixels
-import main.widthPixels
+import main.height
+import main.width
 import player.PlayerManager
 import screen.Camera
 import screen.ScreenLayer
@@ -27,8 +27,8 @@ object GuiIngame : Gui(ScreenLayer.LEVEL_VIEW), ControlEventHandler {
 
     fun initializeFor(brainRobot: BrainRobot) {
         InputManager.register(this, Control.TOGGLE_INVENTORY, Control.SWITCH_LEVEL_VIEW)
-        cameras = arrayOf(Camera(brainRobot.xPixel, brainRobot.yPixel),
-                Camera(brainRobot.xPixel, brainRobot.yPixel))
+        cameras = arrayOf(Camera(brainRobot.x, brainRobot.y),
+                Camera(brainRobot.x, brainRobot.y))
         cameras.forEach { brainRobot.level.modify(LevelObjectAdd(it), true) }
         open = false
         define {
@@ -97,18 +97,18 @@ object GuiIngame : Gui(ScreenLayer.LEVEL_VIEW), ControlEventHandler {
                     horizontalList(verticalAlign = VerticalAlign.BOTTOM) {
                         slotDisplays = (0..7).map { index ->
                             texture(Image.Gui.ITEM_SLOT) {
-                                onRender { xPixel, yPixel, params ->
+                                onRender { x, y, params ->
                                     if (slots[index] != null) {
-                                        slots[index]!!.icon.render(xPixel, yPixel, Image.Gui.ITEM_SLOT.widthPixels, Image.Gui.ITEM_SLOT.heightPixels, true, params
+                                        slots[index]!!.icon.render(x, y, Image.Gui.ITEM_SLOT.width, Image.Gui.ITEM_SLOT.height, true, params
                                                 ?: TextureRenderParams.DEFAULT)
-                                        Renderer.renderText(PlayerManager.localPlayer.brainRobot.inventory.getQuantity(slots[index]!!), xPixel, yPixel)
+                                        Renderer.renderText(PlayerManager.localPlayer.brainRobot.inventory.getQuantity(slots[index]!!), x, y)
                                     }
                                 }
                             }
                         }.toTypedArray()
                     }
                     selectedSlotOverlay = texture(Image.Gui.HOTBAR_SELECTED_SLOT) {
-                        placement = Placement.Dynamic({ selectedSlotIndex * Image.Gui.ITEM_SLOT.widthPixels }, { 0 })
+                        placement = Placement.Dynamic({ selectedSlotIndex * Image.Gui.ITEM_SLOT.width }, { 0 })
                         open = false
                     }
                 }

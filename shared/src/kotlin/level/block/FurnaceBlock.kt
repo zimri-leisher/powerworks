@@ -77,7 +77,7 @@ class FurnaceBlock(type: MachineBlockType<FurnaceBlock>, xTile: Int, yTile: Int,
         }
     }
 
-    override fun onInteractOn(event: ControlEvent, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+    override fun onInteractOn(event: ControlEvent, x: Int, y: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
         if (event.type == ControlEventType.PRESS && !shift && !ctrl && !alt) {
             if (button == Input.Buttons.LEFT) {
                 this.type.guiPool!!.toggle(this)

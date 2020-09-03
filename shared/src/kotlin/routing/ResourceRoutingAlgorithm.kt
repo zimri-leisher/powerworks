@@ -3,7 +3,7 @@ package routing
 import level.pipe.ItemPipeBlock
 import level.pipe.PipeBlock
 import misc.Geometry
-import misc.PixelCoord
+import misc.Coord
 import resource.ResourceNode
 import serialization.Id
 import kotlin.math.absoluteValue
@@ -15,25 +15,25 @@ import kotlin.math.absoluteValue
 fun route(input: ResourceNode, output: ResourceNode, network: PipeNetwork): PackageRoute? {
     val route = route(input.xTile shl 4, input.yTile shl 4, output, network)
             ?: return null
-    val adjustedStartXPixel = (input.xTile shl 4) + 8 * Geometry.getXSign(input.dir)
-    val adjustedStartYPixel = (input.yTile shl 4) + 8 * Geometry.getYSign(input.dir)
+    val adjustedStartX = (input.xTile shl 4) + 8 * Geometry.getXSign(input.dir)
+    val adjustedStartY = (input.yTile shl 4) + 8 * Geometry.getYSign(input.dir)
     // add step to come out from start of block
     val result = arrayOfNulls<RouteStep>(route.size + 1)
     System.arraycopy(route.steps, 0, result, 1, route.steps.size)
-    result[0] = RouteStep(PixelCoord(adjustedStartXPixel, adjustedStartYPixel), Geometry.getOppositeAngle(input.dir))
+    result[0] = RouteStep(Coord(adjustedStartX, adjustedStartY), Geometry.getOppositeAngle(input.dir))
     return PackageRoute(result.requireNoNulls())
 }
 
-fun route(startXPixel: Int, startYPixel: Int, output: ResourceNode, network: PipeNetwork): PackageRoute? {
-    val startXTile = startXPixel shr 4
-    val startYTile = startYPixel shr 4
+fun route(startX: Int, startY: Int, output: ResourceNode, network: PipeNetwork): PackageRoute? {
+    val startXTile = startX shr 4
+    val startYTile = startY shr 4
 
     // starting at the end?
     if (startXTile == output.xTile && startYTile == output.yTile) {
         val instructions = mutableListOf<RouteStep>()
-        instructions.add(RouteStep(PixelCoord(startXTile shl 4, startYTile shl 4), output.dir))
+        instructions.add(RouteStep(Coord(startXTile shl 4, startYTile shl 4), output.dir))
         val attachedToOutput = output.attachedNode!!
-        instructions.add(RouteStep(PixelCoord(attachedToOutput.xTile shl 4, attachedToOutput.yTile shl 4), -1))
+        instructions.add(RouteStep(Coord(attachedToOutput.xTile shl 4, attachedToOutput.yTile shl 4), -1))
         return PackageRoute(instructions.toTypedArray())
     }
 
@@ -91,21 +91,21 @@ fun route(startXPixel: Int, startYPixel: Int, output: ResourceNode, network: Pip
     }
     if (finalNode != null) {
         val instructions = mutableListOf<RouteStep>()
-        val endXPixel = (output.xTile shl 4) + 8 * Geometry.getXSign(output.dir)
-        val endYPixel = (output.yTile shl 4) + 8 * Geometry.getYSign(output.dir)
+        val endX = (output.xTile shl 4) + 8 * Geometry.getXSign(output.dir)
+        val endY = (output.yTile shl 4) + 8 * Geometry.getYSign(output.dir)
         // move inside the end block
-        instructions.add(RouteStep(PixelCoord(endXPixel, endYPixel), -1))
+        instructions.add(RouteStep(Coord(endX, endY), -1))
         // add the last step (cuz it gets skipped by the while loop below)
-        instructions.add(RouteStep(PixelCoord(finalNode.xTile shl 4, finalNode.yTile shl 4), output.dir))
+        instructions.add(RouteStep(Coord(finalNode.xTile shl 4, finalNode.yTile shl 4), output.dir))
         while (finalNode!!.parent != null) {
-            instructions.add(RouteStep(PixelCoord(finalNode.parent!!.xTile shl 4, finalNode.parent!!.yTile shl 4), finalNode.directionFromParent))
+            instructions.add(RouteStep(Coord(finalNode.parent!!.xTile shl 4, finalNode.parent!!.yTile shl 4), finalNode.directionFromParent))
             finalNode = finalNode.parent
         }
         // move to the starting pipe if necessary
         if (startingPipe.xTile != startXTile && startingPipe.yTile != startYTile) {
             println("needed to move extra to get to starting pipe")
             val dirToPipe = Geometry.getDir(startingPipe.xTile - startXTile, startingPipe.yTile - startYTile)
-            instructions.add(RouteStep(PixelCoord(startXPixel, startYPixel), dirToPipe))
+            instructions.add(RouteStep(Coord(startX, startY), dirToPipe))
         }
         instructions.reverse()
         return PackageRoute(instructions.toTypedArray())
@@ -254,8 +254,8 @@ data class PackageRoute(
 
 data class RouteStep(
         @Id(1)
-        val position: PixelCoord,
+        val position: Coord,
         @Id(2)
         val dir: Int) {
-    private constructor() : this(PixelCoord(0, 0), 0)
+    private constructor() : this(Coord(0, 0), 0)
 }

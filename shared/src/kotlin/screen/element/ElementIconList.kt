@@ -3,7 +3,7 @@ package screen.element
 import graphics.Renderer
 import graphics.TextureRenderParams
 import misc.Geometry
-import misc.PixelCoord
+import misc.Coord
 import screen.gui.Dimensions
 import screen.gui.GuiElement
 import screen.Interaction
@@ -15,7 +15,7 @@ import kotlin.math.ceil
 open class ElementIconList(parent: GuiElement,
                            columns: Int,
                            rows: Int,
-                           var renderIcon: ElementIconList.(xPixel: Int, yPixel: Int, index: Int) -> Unit,
+                           var renderIcon: ElementIconList.(x: Int, y: Int, index: Int) -> Unit,
                            startingIconCount: Int = columns * rows,
                            var iconSize: Int = 16,
                            var allowSelection: Boolean = false,
@@ -76,7 +76,7 @@ open class ElementIconList(parent: GuiElement,
 
     override fun onInteractOn(interaction: Interaction) {
         if (allowSelection) {
-            selectedIcon = getIconAt(interaction.xPixel, interaction.yPixel)
+            selectedIcon = getIconAt(interaction.x, interaction.y)
             if (selectedIcon != -1) {
                 onSelectIcon(selectedIcon, interaction)
             }
@@ -88,38 +88,38 @@ open class ElementIconList(parent: GuiElement,
         val actualParams = params ?: TextureRenderParams.DEFAULT
         for (index in 0 until iconCount) {
             val x = (index % columns) * (iconSize + ICON_PADDING)
-            val y = heightPixels - (index / columns + 1) * (iconSize + ICON_PADDING) + ICON_PADDING
+            val y = height - (index / columns + 1) * (iconSize + ICON_PADDING) + ICON_PADDING
             if (index == selectedIcon) {
-                Renderer.renderDefaultRectangle(x + absoluteXPixel, y + absoluteYPixel, iconSize, iconSize, actualParams.combine(TextureRenderParams(brightness = 1.3f, rotation = 180f)))
+                Renderer.renderDefaultRectangle(x + absoluteX, y + absoluteY, iconSize, iconSize, actualParams.combine(TextureRenderParams(brightness = 1.3f, rotation = 180f)))
             } else if (index == highlightedIcon) {
-                Renderer.renderDefaultRectangle(x + absoluteXPixel, y + absoluteYPixel, iconSize, iconSize, actualParams.combine(TextureRenderParams(brightness = 1.1f, rotation = 180f)))
+                Renderer.renderDefaultRectangle(x + absoluteX, y + absoluteY, iconSize, iconSize, actualParams.combine(TextureRenderParams(brightness = 1.1f, rotation = 180f)))
             } else {
-                Renderer.renderDefaultRectangle(x + absoluteXPixel, y + absoluteYPixel, iconSize, iconSize, actualParams.combine(TextureRenderParams(rotation = 180f)))
+                Renderer.renderDefaultRectangle(x + absoluteX, y + absoluteY, iconSize, iconSize, actualParams.combine(TextureRenderParams(rotation = 180f)))
             }
-            renderIcon(x + absoluteXPixel, y + absoluteYPixel, index)
+            renderIcon(x + absoluteX, y + absoluteY, index)
         }
         super.render(params)
     }
 
-    fun getIconAt(xPixel: Int, yPixel: Int): Int {
+    fun getIconAt(x: Int, y: Int): Int {
         for (index in 0 until iconCount) {
-            val x = (index % columns) * (iconSize + ICON_PADDING)
-            val y = heightPixels - (index / columns + 1) * (iconSize + ICON_PADDING) + ICON_PADDING
-            if (Geometry.contains(x + this.absoluteXPixel, y + this.absoluteYPixel, iconSize, iconSize, xPixel, yPixel, 0, 0)) {
+            val iconX = (index % columns) * (iconSize + ICON_PADDING)
+            val iconY = height - (index / columns + 1) * (iconSize + ICON_PADDING) + ICON_PADDING
+            if (Geometry.contains(iconX + this.absoluteX, iconY + this.absoluteY, iconSize, iconSize, x, y, 0, 0)) {
                 return index
             }
         }
         return -1
     }
 
-    fun getIconPosition(index: Int): PixelCoord {
+    fun getIconPosition(index: Int): Coord {
         val x = (index % columns) * (iconSize + ICON_PADDING)
-        val y = heightPixels - (index / columns + 1) * (iconSize + ICON_PADDING) + ICON_PADDING
-        return PixelCoord(x, y)
+        val y = height - (index / columns + 1) * (iconSize + ICON_PADDING) + ICON_PADDING
+        return Coord(x, y)
     }
 
     override fun update() {
-        val newHighlightedIcon = if (mouseOn) getIconAt(Mouse.xPixel, Mouse.yPixel) else -1
+        val newHighlightedIcon = if (mouseOn) getIconAt(Mouse.x, Mouse.y) else -1
         if (newHighlightedIcon != highlightedIcon) {
             if (newHighlightedIcon != -1) {
                 onMouseEnterIcon(newHighlightedIcon)
@@ -139,7 +139,7 @@ open class ElementIconList(parent: GuiElement,
             Tooltips.addScreenTooltipTemplate({
                 if (it is ElementIconList) {
                     if (it.getToolTip != null) {
-                        val index = it.getIconAt(Mouse.xPixel, Mouse.yPixel)
+                        val index = it.getIconAt(Mouse.x, Mouse.y)
                         if (index != -1) {
                             return@addScreenTooltipTemplate it.getToolTip!!.invoke(index)
                         }

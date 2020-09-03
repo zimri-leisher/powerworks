@@ -1,9 +1,5 @@
 package level
 
-import com.esotericsoftware.kryo.Kryo
-import com.esotericsoftware.kryo.io.Input
-import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer
-import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag
 import data.ConcurrentlyModifiableMutableList
 import level.block.Block
 import level.moving.MovingObject
@@ -53,7 +49,7 @@ data class Chunk(
 
     fun addMoving(m: MovingObject) {
         data.moving.add(m)
-        data.moving.sortWith(Comparator { o1, o2 -> o1.yPixel.compareTo(o2.yPixel) })
+        data.moving.sortWith(Comparator { o1, o2 -> o1.y.compareTo(o2.y) })
         if (m.requiresUpdate) {
             addUpdateRequired(m)
         }

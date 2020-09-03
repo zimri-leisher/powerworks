@@ -3,8 +3,8 @@ package level.tile
 import graphics.Renderer
 import level.Level
 import level.LevelManager
-import level.getChunkAt
-import level.getTileAt
+import level.getChunkAtChunk
+import level.getTileAtTile
 import misc.Geometry
 
 private enum class TileState(val indices: List<Int>, val connections: Array<Boolean>) {
@@ -38,7 +38,7 @@ class OreTile(override val type: OreTileType, xTile: Int, yTile: Int, level: Lev
     var amount = ((type.maxAmount - type.minAmount) * Math.random() + 1 + type.minAmount).toInt()
         set(value) {
             if (value < 1) {
-                level.getChunkAt(xChunk, yChunk).setTile(Tile(type.backgroundType, xTile, yTile, level))
+                level.getChunkAtChunk(xChunk, yChunk).setTile(Tile(type.backgroundType, xTile, yTile, level))
                 field = value
             }
         }
@@ -48,7 +48,7 @@ class OreTile(override val type: OreTileType, xTile: Int, yTile: Int, level: Lev
     fun updateState() {
         val array = arrayOf(false, false, false, false)
         for (i in 0..3) {
-            val tileAt = level.getTileAt(xTile + Geometry.getXSign(i), yTile + Geometry.getYSign(i))
+            val tileAt = level.getTileAtTile(xTile + Geometry.getXSign(i), yTile + Geometry.getYSign(i))
             if (tileAt.type == this.type) {
                 array[i] = true
             }
@@ -63,6 +63,6 @@ class OreTile(override val type: OreTileType, xTile: Int, yTile: Int, level: Lev
             firstTimeRendered = true
             updateState()
         }
-        Renderer.renderTexture(texture, xPixel, yPixel)
+        Renderer.renderTexture(texture, x, y)
     }
 }

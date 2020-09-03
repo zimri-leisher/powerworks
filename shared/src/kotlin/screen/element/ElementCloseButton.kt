@@ -5,8 +5,8 @@ import graphics.Renderer
 import graphics.TextureRenderParams
 import io.Control
 import io.ControlEventType
-import main.heightPixels
-import main.widthPixels
+import main.height
+import main.width
 import screen.gui.Dimensions
 import screen.gui.GuiElement
 import screen.Interaction
@@ -14,7 +14,7 @@ import screen.Interaction
 class ElementCloseButton(parent: GuiElement) : GuiElement(parent) {
 
     init {
-        dimensions = Dimensions.Exact(Image.Gui.CLOSE_BUTTON.widthPixels, Image.Gui.CLOSE_BUTTON.heightPixels)
+        dimensions = Dimensions.Exact(Image.Gui.CLOSE_BUTTON.width, Image.Gui.CLOSE_BUTTON.height)
     }
 
     override fun onInteractOn(interaction: Interaction) {
@@ -25,7 +25,7 @@ class ElementCloseButton(parent: GuiElement) : GuiElement(parent) {
     }
 
     override fun render(params: TextureRenderParams?) {
-        Renderer.renderTexture(if (mouseOn) Image.Gui.CLOSE_BUTTON_HIGHLIGHT else Image.Gui.CLOSE_BUTTON, absoluteXPixel, absoluteYPixel)
+        Renderer.renderTexture(if (mouseOn) Image.Gui.CLOSE_BUTTON_HIGHLIGHT else Image.Gui.CLOSE_BUTTON, absoluteX, absoluteY)
         super.render(params)
     }
 }

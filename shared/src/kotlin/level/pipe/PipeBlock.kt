@@ -2,7 +2,7 @@ package level.pipe
 
 import level.block.Block
 import level.block.PipeBlockType
-import level.getBlockAt
+import level.getBlockAtTile
 import level.getResourceNodesAt
 import misc.Geometry
 import resource.ResourceCategory
@@ -121,7 +121,7 @@ abstract class PipeBlock(override val type: PipeBlockType<out PipeBlock>, xTile:
     }
 
     private fun getPipeAt(dir: Int): PipeBlock? {
-        val b = level.getBlockAt(xTile + Geometry.getXSign(dir), yTile + Geometry.getYSign(dir))
+        val b = level.getBlockAtTile(xTile + Geometry.getXSign(dir), yTile + Geometry.getYSign(dir))
         if (b != null && b is PipeBlock) {
             return b
         }

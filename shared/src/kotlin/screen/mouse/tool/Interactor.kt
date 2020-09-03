@@ -16,11 +16,11 @@ object Interactor : Tool(Control.Group.INTERACTION.controls) {
             LevelManager.levelObjectUnderMouse?.isInteractable == true && !Selector.dragging && !BlockPlacer.hasPlacedThisInteraction
         }
     }
-    override fun onUse(event: ControlEvent, mouseLevelXPixel: Int, mouseLevelYPixel: Int): Boolean {
+    override fun onUse(event: ControlEvent, mouseLevelX: Int, mouseLevelY: Int): Boolean {
         if (event.control in Control.Group.SCROLL) {
             LevelManager.levelObjectUnderMouse!!.onScroll(if (event.control == Control.SCROLL_DOWN) -1 else 1)
         } else {
-            LevelManager.levelObjectUnderMouse!!.onInteractOn(event, mouseLevelXPixel, mouseLevelYPixel, Mouse.button,
+            LevelManager.levelObjectUnderMouse!!.onInteractOn(event, mouseLevelX, mouseLevelY, Mouse.button,
                     InputManager.state.isDown(Modifier.SHIFT), InputManager.state.isDown(Modifier.CTRL), InputManager.state.isDown(Modifier.ALT))
         }
         return true
@@ -30,9 +30,9 @@ object Interactor : Tool(Control.Group.INTERACTION.controls) {
         if(level == LevelManager.levelUnderMouse) {
             val s = LevelManager.levelObjectUnderMouse
             if (s is Block)
-                Renderer.renderEmptyRectangle(s.xPixel - 1, s.yPixel - 1, (s.type.widthTiles shl 4) + 2, (s.type.heightTiles shl 4) + 2, params = TextureRenderParams(color = Color(0x1A6AF472)))
+                Renderer.renderEmptyRectangle(s.x - 1, s.y - 1, (s.type.widthTiles shl 4) + 2, (s.type.heightTiles shl 4) + 2, params = TextureRenderParams(color = Color(0x1A6AF472)))
             else if (s is MovingObject)
-                Renderer.renderEmptyRectangle(s.xPixel + s.hitbox.xStart - 1, s.yPixel + s.hitbox.yStart - 1, s.hitbox.width + 2, s.hitbox.height + 2, params = TextureRenderParams(color = Color(0x1A6AF472)))
+                Renderer.renderEmptyRectangle(s.x + s.hitbox.xStart - 1, s.y + s.hitbox.yStart - 1, s.hitbox.width + 2, s.hitbox.height + 2, params = TextureRenderParams(color = Color(0x1A6AF472)))
         }
     }
 }

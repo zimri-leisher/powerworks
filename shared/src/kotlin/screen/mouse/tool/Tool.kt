@@ -17,7 +17,7 @@ abstract class Tool(val use: List<Control>, val activators: List<Control> = list
     var currentlyActive = false
     var activationPredicate: Tool.() -> Boolean = { true }
 
-    abstract fun onUse(event: ControlEvent, mouseLevelXPixel: Int, mouseLevelYPixel: Int): Boolean
+    abstract fun onUse(event: ControlEvent, mouseLevelX: Int, mouseLevelY: Int): Boolean
 
     open fun update() {}
 
@@ -64,7 +64,7 @@ abstract class Tool(val use: List<Control>, val activators: List<Control> = list
                     }
                     tool.currentlyActive = tool.activationPredicate(tool) && tool.activators.all { it in tool.currentlyHeldActivators }
                     if (tool.currentlyActive && event.control in tool.use && !blocked) {
-                        if (tool.onUse(event, LevelManager.mouseLevelXPixel, LevelManager.mouseLevelYPixel)) {
+                        if (tool.onUse(event, LevelManager.mouseLevelX, LevelManager.mouseLevelY)) {
                             blocked = true
                         }
                     }

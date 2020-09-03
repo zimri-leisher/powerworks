@@ -53,21 +53,21 @@ object LevelManager : DirectoryChangeWatcher, MouseMovementListener, CameraMovem
     var levelObjectUnderMouse: LevelObject? = null
         private set
 
-    var mouseLevelXPixel = 0
+    var mouseLevelX = 0
         private set(value) {
             if (field != value) {
                 field = value
                 mouseLevelXTile = value shr 4
-                mouseLevelXChunk = value shr CHUNK_PIXEL_EXP
+                mouseLevelXChunk = value shr CHUNK_EXP
             }
         }
 
-    var mouseLevelYPixel = 0
+    var mouseLevelY = 0
         private set(value) {
             if (field != value) {
                 field = value
                 mouseLevelYTile = value shr 4
-                mouseLevelYChunk = value shr CHUNK_PIXEL_EXP
+                mouseLevelYChunk = value shr CHUNK_EXP
             }
         }
     var mouseLevelXTile = 0
@@ -112,13 +112,13 @@ object LevelManager : DirectoryChangeWatcher, MouseMovementListener, CameraMovem
 
     fun isLevelLoaded(levelId: UUID) = loadedLevels.any { it.id == levelId }
 
-    override fun onMouseMove(pXPixel: Int, pYPixel: Int) {
+    override fun onMouseMove(prevX: Int, prevY: Int) {
         if (GameState.currentState == GameState.INGAME) {
             updateMouseLevelPosition()
         }
     }
 
-    override fun onCameraMove(view: ElementLevelView, pXPixel: Int, pYPixel: Int) {
+    override fun onCameraMove(view: ElementLevelView, prevX: Int, prevY: Int) {
         updateMouseLevelPosition()
     }
 
@@ -149,11 +149,9 @@ object LevelManager : DirectoryChangeWatcher, MouseMovementListener, CameraMovem
             levelUnderMouse = levelViewUnderMouse?.level
         }
         // the level object under the mouse will be the level object at the mouse's level position in the level under the mouse
-        val levelObjectsUnderMouse = levelUnderMouse?.getLevelObjectsAt(mouseLevelXPixel, mouseLevelYPixel)
+        val levelObjectsUnderMouse = levelUnderMouse?.getLevelObjectsAt(mouseLevelX, mouseLevelY)
         val newLevelObjectUnderMouse = levelObjectsUnderMouse?.firstOrNull()
         if (newLevelObjectUnderMouse != levelObjectUnderMouse) {
-            levelObjectUnderMouse?.mouseOn = false
-            newLevelObjectUnderMouse?.mouseOn = true
             levelObjectUnderMouse = newLevelObjectUnderMouse
         }
     }
@@ -162,12 +160,12 @@ object LevelManager : DirectoryChangeWatcher, MouseMovementListener, CameraMovem
         if (levelViewUnderMouse != null) {
             val zoom = levelViewUnderMouse!!.zoomMultiplier
             val viewRectangle = levelViewUnderMouse!!.viewRectangle
-            val pXPixel = mouseLevelXPixel
-            val pYPixel = mouseLevelYPixel
-            mouseLevelXPixel = ((Mouse.xPixel - levelViewUnderMouse!!.absoluteXPixel) / zoom).toInt() + viewRectangle.x
-            mouseLevelYPixel = ((Mouse.yPixel - levelViewUnderMouse!!.absoluteYPixel) / zoom).toInt() + viewRectangle.y
-            if (pXPixel != mouseLevelXPixel || pYPixel != mouseLevelYPixel) {
-                mouseMovementListeners.forEach { it.onMouseMoveRelativeToLevel(pXPixel, pYPixel) }
+            val prevX = mouseLevelX
+            val prevY = mouseLevelY
+            mouseLevelX = ((Mouse.x - levelViewUnderMouse!!.absoluteX) / zoom).toInt() + viewRectangle.x
+            mouseLevelY = ((Mouse.y - levelViewUnderMouse!!.absoluteY) / zoom).toInt() + viewRectangle.y
+            if (prevX != mouseLevelX || prevY != mouseLevelY) {
+                mouseMovementListeners.forEach { it.onMouseMoveRelativeToLevel(prevX, prevY) }
             }
         }
     }

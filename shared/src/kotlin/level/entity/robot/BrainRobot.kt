@@ -6,19 +6,18 @@ import item.Inventory
 import network.BrainRobotReference
 import network.LevelObjectReference
 import network.User
-import player.PlayerManager
 import serialization.Id
 
-class BrainRobot(xPixel: Int, yPixel: Int, rotation: Int,
+class BrainRobot(x: Int, y: Int, rotation: Int,
                  @Id(28)
-                 var user: User) : Robot(RobotType.BRAIN, xPixel, yPixel, rotation) {
+                 var user: User) : Robot(RobotType.BRAIN, x, y, rotation) {
 
     @Id(29)
     val inventory = Inventory(8, 3)
 
     override fun render() {
         super.render()
-        Renderer.renderText("${user.displayName}'s BRAIN", xPixel - 8, yPixel + 44, params = TextRenderParams(size = 10))
+        Renderer.renderText("${user.displayName}'s BRAIN", x - 8, y + 44, params = TextRenderParams(size = 10))
     }
 
     override fun toReference(): LevelObjectReference {

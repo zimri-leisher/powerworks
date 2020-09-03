@@ -55,14 +55,14 @@ class ElementLevelView(parent: GuiElement, camera: LevelObject) : GuiElement(par
         }
 
     /**
-     * The viewWidth/HeightPixels multiplier
+     * The viewWidth/Height multiplier
      */
     var zoomMultiplier = zoomLevel * ZOOM_INCREMENT
         private set
 
-    private var viewWidthPixels = (widthPixels / zoomMultiplier).toInt()
+    private var viewWidth = (width / zoomMultiplier).toInt()
 
-    private var viewHeightPixels = (heightPixels / zoomMultiplier).toInt()
+    private var viewHeight = (height / zoomMultiplier).toInt()
 
     /**
      * The current view rectangle. It will be clamped to the width and height of the level, so that you are never able to see out of bounds
@@ -79,45 +79,45 @@ class ElementLevelView(parent: GuiElement, camera: LevelObject) : GuiElement(par
     }
 
     private fun updateCamera() {
-        cameraMatrix.viewportWidth = widthPixels.toFloat() * Game.SCALE
-        cameraMatrix.viewportHeight = heightPixels.toFloat() * Game.SCALE
+        cameraMatrix.viewportWidth = width.toFloat() * Game.SCALE
+        cameraMatrix.viewportHeight = height.toFloat() * Game.SCALE
         cameraMatrix.zoom = 1 / zoomMultiplier
         cameraMatrix.position.apply {
-            var viewXPixel = camera.xPixel + camera.hitbox.xStart + camera.hitbox.width / 2
-            var viewYPixel = camera.yPixel + camera.hitbox.yStart + camera.hitbox.height / 2
-            if (viewXPixel - viewWidthPixels / 2 < 0) {
-                viewXPixel = viewWidthPixels / 2
-            } else if (viewXPixel + viewWidthPixels / 2 > camera.level.widthPixels) {
-                viewXPixel = camera.level.widthPixels - viewWidthPixels / 2
+            var viewX = camera.x + camera.hitbox.xStart + camera.hitbox.width / 2
+            var viewY = camera.y + camera.hitbox.yStart + camera.hitbox.height / 2
+            if (viewX - viewWidth / 2 < 0) {
+                viewX = viewWidth / 2
+            } else if (viewX + viewWidth / 2 > camera.level.width) {
+                viewX = camera.level.width - viewWidth / 2
             }
-            if (viewYPixel - viewHeightPixels / 2 < 0) {
-                viewYPixel = viewHeightPixels / 2
-            } else if (viewYPixel + viewHeightPixels / 2 > camera.level.heightPixels) {
-                viewYPixel = camera.level.heightPixels - viewHeightPixels / 2
+            if (viewY - viewHeight / 2 < 0) {
+                viewY = viewHeight / 2
+            } else if (viewY + viewHeight / 2 > camera.level.height) {
+                viewY = camera.level.height - viewHeight / 2
             }
-            x = (viewXPixel * Game.SCALE).toFloat()
-            y = (viewYPixel * Game.SCALE).toFloat()
+            x = (viewX * Game.SCALE).toFloat()
+            y = (viewY * Game.SCALE).toFloat()
         }
         cameraMatrix.update()
-        moveListeners.forEach { it.onCameraMove(this, camera.xPixel, camera.yPixel) }
+        moveListeners.forEach { it.onCameraMove(this, camera.x, camera.y) }
     }
 
     private fun updateViewRectangle() {
-        viewWidthPixels = (widthPixels / zoomMultiplier).toInt()
-        viewHeightPixels = (heightPixels / zoomMultiplier).toInt()
-        var viewXPixel = (camera.xPixel + camera.hitbox.xStart + camera.hitbox.width / 2) - viewWidthPixels / 2
-        var viewYPixel = (camera.yPixel + camera.hitbox.yStart + camera.hitbox.height / 2) - viewHeightPixels / 2
-        if (viewXPixel < 0) {
-            viewXPixel = 0
-        } else if (viewXPixel + viewWidthPixels > camera.level.widthPixels) {
-            viewXPixel = camera.level.widthPixels - viewWidthPixels
+        viewWidth = (width / zoomMultiplier).toInt()
+        viewHeight = (height / zoomMultiplier).toInt()
+        var viewX = (camera.x + camera.hitbox.xStart + camera.hitbox.width / 2) - viewWidth / 2
+        var viewY = (camera.y + camera.hitbox.yStart + camera.hitbox.height / 2) - viewHeight / 2
+        if (viewX < 0) {
+            viewX = 0
+        } else if (viewX + viewWidth > camera.level.width) {
+            viewX = camera.level.width - viewWidth
         }
-        if (viewYPixel < 0) {
-            viewYPixel = 0
-        } else if (viewYPixel + viewHeightPixels > camera.level.heightPixels) {
-            viewYPixel = camera.level.heightPixels - viewHeightPixels
+        if (viewY < 0) {
+            viewY = 0
+        } else if (viewY + viewHeight > camera.level.height) {
+            viewY = camera.level.height - viewHeight
         }
-        viewRectangle = Rectangle(viewXPixel, viewYPixel, viewWidthPixels, viewHeightPixels)
+        viewRectangle = Rectangle(viewX, viewY, viewWidth, viewHeight)
     }
 
     override fun onChangeDimensions() {
@@ -131,11 +131,11 @@ class ElementLevelView(parent: GuiElement, camera: LevelObject) : GuiElement(par
         super.onChangePlacement()
     }
 
-    override fun onMove(m: MovingObject, pXPixel: Int, pYPixel: Int) {
+    override fun onMove(m: MovingObject, prevX: Int, prevY: Int) {
         if (open) {
             updateCamera()
             updateViewRectangle()
-            moveListeners.forEach { it.onCameraMove(this, pXPixel, pYPixel) }
+            moveListeners.forEach { it.onCameraMove(this, prevX, prevY) }
         }
     }
 
@@ -158,7 +158,7 @@ class ElementLevelView(parent: GuiElement, camera: LevelObject) : GuiElement(par
         }
         val screenMatrix = Renderer.batch.projectionMatrix.cpy()
         Renderer.batch.projectionMatrix = cameraMatrix.combined
-        Renderer.pushClip(xPixel, yPixel, widthPixels, heightPixels)
+        Renderer.pushClip(absoluteX, absoluteY, width, height)
         camera.level.render(this)
         Renderer.batch.projectionMatrix = screenMatrix
         Renderer.popClip()

@@ -17,7 +17,7 @@ object ResourceNodeEditor : Tool(Control.EDIT_RESOURCE_NODE) {
         }
     }
 
-    override fun onUse(event: ControlEvent, mouseLevelXPixel: Int, mouseLevelYPixel: Int): Boolean {
+    override fun onUse(event: ControlEvent, mouseLevelX: Int, mouseLevelY: Int): Boolean {
         if (event.type == ControlEventType.RELEASE) {
             // TODO open resource node editor
             return true
@@ -26,7 +26,7 @@ object ResourceNodeEditor : Tool(Control.EDIT_RESOURCE_NODE) {
     }
 
     override fun update() {
-        selectedNodes = LevelManager.levelUnderMouse?.getResourceNodesAt(LevelManager.mouseLevelXPixel shr 4, LevelManager.mouseLevelYPixel shr 4)
+        selectedNodes = LevelManager.levelUnderMouse?.getResourceNodesAt(LevelManager.mouseLevelX shr 4, LevelManager.mouseLevelY shr 4)
                 ?: emptySet()
     }
 }

@@ -16,26 +16,26 @@ sealed class Placement {
 
     fun offset(xOffset: Int, yOffset: Int) = Offset(this, xOffset, yOffset)
 
-    class Offset(val base: Placement, val xOffset: Int, val yOffset: Int) : Placement() {
+    class Offset(val base: Placement, val x: Int, val y: Int) : Placement() {
         override fun get(element: GuiElement, gui: Gui): Exact {
             val basePlacement = base.get(element, gui)
             if (basePlacement is Unknown) {
-                return Unknown(xOffset + basePlacement.xPixel, yOffset + basePlacement.yPixel)
+                return Unknown(x + basePlacement.x, y + basePlacement.y)
             }
-            return Exact(xOffset + basePlacement.xPixel, yOffset + basePlacement.yPixel)
+            return Exact(x + basePlacement.x, y + basePlacement.y)
         }
     }
 
-    open class Exact(val xPixel: Int, val yPixel: Int) : Placement() {
+    open class Exact(val x: Int, val y: Int) : Placement() {
 
         override fun get(element: GuiElement, gui: Gui) = this
 
         override fun toString(): String {
-            return "Exact($xPixel, $yPixel)"
+            return "Exact($x, $y)"
         }
     }
 
-    class Unknown(xPixel: Int, yPixel: Int) : Exact(xPixel, yPixel)
+    class Unknown(x: Int, y: Int) : Exact(x, y)
 
     object Origin : Exact(0, 0)
 
@@ -47,17 +47,17 @@ sealed class Placement {
                 return Origin
             }
             val elementDimensions = gui.layout.getExactDimensions(element)
-            val xPixel = when (horizontalAlign) {
+            val x = when (horizontalAlign) {
                 HorizontalAlign.LEFT -> 0
-                HorizontalAlign.CENTER -> parentDimensions.widthPixels / 2 - elementDimensions.widthPixels / 2
-                HorizontalAlign.RIGHT -> parentDimensions.widthPixels - elementDimensions.widthPixels
+                HorizontalAlign.CENTER -> parentDimensions.width / 2 - elementDimensions.width / 2
+                HorizontalAlign.RIGHT -> parentDimensions.width - elementDimensions.width
             }
-            val yPixel = when (verticalAlign) {
+            val y = when (verticalAlign) {
                 VerticalAlign.BOTTOM -> 0
-                VerticalAlign.CENTER -> parentDimensions.heightPixels / 2 - elementDimensions.heightPixels / 2
-                VerticalAlign.TOP -> parentDimensions.heightPixels - elementDimensions.heightPixels
+                VerticalAlign.CENTER -> parentDimensions.height / 2 - elementDimensions.height / 2
+                VerticalAlign.TOP -> parentDimensions.height - elementDimensions.height
             }
-            return if (parentDimensions is Dimensions.Unknown || elementDimensions is Dimensions.Unknown) Unknown(xPixel, yPixel) else Exact(xPixel, yPixel)
+            return if (parentDimensions is Dimensions.Unknown || elementDimensions is Dimensions.Unknown) Unknown(x, y) else Exact(x, y)
         }
 
         object Center : Align(HorizontalAlign.CENTER, VerticalAlign.CENTER)
@@ -73,24 +73,24 @@ sealed class Placement {
                 if (dimensions is Dimensions.Unknown) {
                     anyUnknown = true
                 }
-                heightSoFar += dimensions.heightPixels + padding
+                heightSoFar += dimensions.height + padding
                 if (sibling == element) {
                     break
                 }
             }
-            var xPixel = 0
+            var x = 0
             if (align != HorizontalAlign.LEFT) {
                 val elementDimensions = gui.layout.getExactDimensions(element)
                 val parentDimensions = gui.layout.getExactDimensions(element.parent)
                 anyUnknown = anyUnknown || elementDimensions is Dimensions.Unknown || parentDimensions is Dimensions.Unknown
                 if (align == HorizontalAlign.CENTER) {
-                    xPixel = parentDimensions.widthPixels / 2 - elementDimensions.widthPixels / 2
+                    x = parentDimensions.width / 2 - elementDimensions.width / 2
                 } else {
-                    xPixel = parentDimensions.widthPixels - elementDimensions.widthPixels
+                    x = parentDimensions.width - elementDimensions.width
                 }
             }
-            return if (anyUnknown) Unknown(xPixel, gui.layout.getExactDimensions(element.parent).heightPixels - heightSoFar)
-            else Exact(xPixel, gui.layout.getExactDimensions(element.parent).heightPixels - heightSoFar)
+            return if (anyUnknown) Unknown(x, gui.layout.getExactDimensions(element.parent).height - heightSoFar)
+            else Exact(x, gui.layout.getExactDimensions(element.parent).height - heightSoFar)
         }
     }
 
@@ -107,21 +107,21 @@ sealed class Placement {
                 if (sibling == element) {
                     break
                 }
-                widthSoFar += dimensions.widthPixels + padding
+                widthSoFar += dimensions.width + padding
             }
-            var yPixel = 0
+            var y = 0
             if (align != VerticalAlign.BOTTOM) {
                 val elementDimensions = gui.layout.getExactDimensions(element)
                 val parentDimensions = gui.layout.getExactDimensions(element.parent)
                 anyUnknown = anyUnknown || elementDimensions is Dimensions.Unknown || parentDimensions is Dimensions.Unknown
                 if (align == VerticalAlign.CENTER) {
-                    yPixel = parentDimensions.heightPixels / 2 - elementDimensions.heightPixels / 2
+                    y = parentDimensions.height / 2 - elementDimensions.height / 2
                 } else {
-                    yPixel = parentDimensions.heightPixels - elementDimensions.heightPixels
+                    y = parentDimensions.height - elementDimensions.height
                 }
             }
-            return if (anyUnknown) Unknown(widthSoFar, yPixel)
-            else Exact(widthSoFar, yPixel)
+            return if (anyUnknown) Unknown(widthSoFar, y)
+            else Exact(widthSoFar, y)
         }
     }
 

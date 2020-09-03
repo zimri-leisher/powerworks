@@ -18,7 +18,7 @@ abstract class MachineBlock(override val type: MachineBlockType<out MachineBlock
             } else if (value && !field) {
                 onTurnOn()
                 if (currentSound == null && type.onSound != null) {
-                    AudioManager.play(type.onSound!!, xPixel, yPixel, true)
+                    AudioManager.play(type.onSound!!, x, y, true)
                 }
             }
             field = value

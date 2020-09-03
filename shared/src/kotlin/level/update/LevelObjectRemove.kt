@@ -35,12 +35,12 @@ class LevelObjectRemove(
         if (obj is Block) {
             for (x in 0 until obj.type.widthTiles) {
                 for (y in 0 until obj.type.heightTiles) {
-                    level.getChunkFromTile(obj.xTile + x, obj.yTile + y).removeBlock(obj, obj.xTile + x, obj.yTile + y, (x == 0 && y == 0))
+                    level.getChunkAtTile(obj.xTile + x, obj.yTile + y).removeBlock(obj, obj.xTile + x, obj.yTile + y, (x == 0 && y == 0))
                 }
             }
             obj.inLevel = false
         } else if (obj is MovingObject) {
-            val chunk = level.getChunkAt(obj.xChunk, obj.yChunk)
+            val chunk = level.getChunkAtChunk(obj.xChunk, obj.yChunk)
             if (obj.hitbox != Hitbox.NONE)
                 obj.intersectingChunks.forEach { it.data.movingOnBoundary.remove(obj) }
             chunk.removeMoving(obj)

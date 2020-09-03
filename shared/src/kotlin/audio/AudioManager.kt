@@ -16,14 +16,14 @@ private fun Sound.play(vol: Double = 1.0, pan: Double = 0.0, speed: Double = 1.0
 
 object AudioManager : MovementListener {
 
-    override fun onMove(m: MovingObject, pXPixel: Int, pYPixel: Int) {
+    override fun onMove(m: MovingObject, prevX: Int, prevY: Int) {
         levelSounds.forEach {
-            val vol = getVolume(it.xPixel, it.yPixel)
+            val vol = getVolume(it.x, it.y)
             if (vol != 0.0) {
                 if (!it.playing)
                     it.playing = true
-                it.sound.setVolume(getVolume(it.xPixel, it.yPixel), it.instance)
-                it.sound.setPan(getPan(it.xPixel), it.instance)
+                it.sound.setVolume(getVolume(it.x, it.y), it.instance)
+                it.sound.setPan(getPan(it.x), it.instance)
             } else {
                 if (it.playing)
                     it.playing = false
@@ -36,7 +36,7 @@ object AudioManager : MovementListener {
     /**
      * The distance after which sound cannot be heard
      */
-    val MAX_HEARING_DISTANCE_PIXELS = 100
+    val MAX_HEARING_DISTANCE_UNITS = 100
     var soundEnabled = true
     /**
      * Whether or not to play level sounds
@@ -75,7 +75,7 @@ object AudioManager : MovementListener {
         levelSounds.forEach { it.close() }
     }
 
-    class SoundSource(xPixel: Int, yPixel: Int,
+    class SoundSource(x: Int, y: Int,
                       @Id(1)
                       var instance: Int,
                       @Id(2)
@@ -96,13 +96,13 @@ object AudioManager : MovementListener {
                 field = value
             }
         @Id(5)
-        var xPixel = xPixel
+        var x = x
             set(value) {
                 field = value
                 forceUpdate()
             }
         @Id(6)
-        var yPixel = yPixel
+        var y = y
             set(value) {
                 field = value
                 forceUpdate()
@@ -139,25 +139,25 @@ object AudioManager : MovementListener {
      * @param loop continuously play this
      * @return a SoundSource with relevant methods and information
      */
-    fun play(s: Sound, xPixel: Int, yPixel: Int, loop: Boolean): SoundSource? {
+    fun play(s: Sound, x: Int, y: Int, loop: Boolean): SoundSource? {
         if (!soundEnabled)
             return null
         if (ears == null)
             return null
-        val src = SoundSource(xPixel, yPixel, s.play(
-                getVolume(xPixel, yPixel),
-                getPan(xPixel), 1.0, if (loop) -1 else 0), s, loop)
+        val src = SoundSource(x, y, s.play(
+                getVolume(x, y),
+                getPan(x), 1.0, if (loop) -1 else 0), s, loop)
         if (src.isLegitimate)
             levelSounds.add(src)
         return if (src.isLegitimate) src else null
     }
 
-    private fun getVolume(xPixel: Int, yPixel: Int): Double {
-        return Math.max(MAX_HEARING_DISTANCE_PIXELS - Math.sqrt(Math.pow((xPixel - ears!!.xPixel).toDouble(), 2.0) + Math.pow((yPixel - ears!!.yPixel).toDouble(), 2.0)), 0.0) / MAX_HEARING_DISTANCE_PIXELS * VOLUME_MULTIPLIER
+    private fun getVolume(x: Int, y: Int): Double {
+        return Math.max(MAX_HEARING_DISTANCE_UNITS - Math.sqrt(Math.pow((x - ears!!.x).toDouble(), 2.0) + Math.pow((y - ears!!.y).toDouble(), 2.0)), 0.0) / MAX_HEARING_DISTANCE_UNITS * VOLUME_MULTIPLIER
     }
 
-    private fun getPan(xPixel: Int): Double {
-        return Math.max(Math.min((xPixel - ears!!.xPixel).toFloat() / MAX_HEARING_DISTANCE_PIXELS, 1f), -1f).toDouble()
+    private fun getPan(x: Int): Double {
+        return Math.max(Math.min((x - ears!!.x).toFloat() / MAX_HEARING_DISTANCE_UNITS, 1f), -1f).toDouble()
     }
 
     fun update() {
@@ -166,8 +166,8 @@ object AudioManager : MovementListener {
         if (ears == null)
             return
         forceUpdate.forEach {
-            it.sound.setVolume(getVolume(it.xPixel, it.yPixel), it.instance)
-            it.sound.setPan(getPan(it.xPixel), it.instance)
+            it.sound.setVolume(getVolume(it.x, it.y), it.instance)
+            it.sound.setPan(getPan(it.x), it.instance)
             forceUpdate.remove(it)
         }
     }

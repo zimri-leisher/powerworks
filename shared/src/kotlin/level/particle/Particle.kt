@@ -7,8 +7,8 @@ import misc.Geometry
 
 class Particle(
         val type: ParticleType,
-        var xPixel: Int,
-        var yPixel: Int, var rotation: Int = 0, var level: Level) {
+        var x: Int,
+        var y: Int, var rotation: Int = 0, var level: Level) {
 
     var ticksLeftBeforeRotation = -1
     var ticksExisted = 0
@@ -19,9 +19,9 @@ class Particle(
 
     fun render() {
         if (rotation != 0)
-            Renderer.renderTexture(type.texture, xPixel, yPixel, TextureRenderParams(rotation = 90f * rotation))
+            Renderer.renderTexture(type.texture, x, y, TextureRenderParams(rotation = 90f * rotation))
         else
-            Renderer.renderTexture(type.texture, xPixel, yPixel)
+            Renderer.renderTexture(type.texture, x, y)
     }
 
     fun update() {

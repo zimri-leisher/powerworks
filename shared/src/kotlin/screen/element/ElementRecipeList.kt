@@ -24,13 +24,13 @@ class ElementRecipeList(parent: GuiElement, recipes: List<Recipe>, width: Int, h
         onMouseEnterIcon = { index ->
             val coord = getIconPosition(index)
             println("coord is: $coord")
-            println("absolute screen coord: ${Placement.Exact(coord.xPixel + absoluteXPixel, coord.yPixel + absoluteYPixel - GuiRecipeDisplay.parentElement.heightPixels)}")
-            GuiRecipeDisplay.show(this@ElementRecipeList.recipes[index], Placement.Exact(coord.xPixel + absoluteXPixel, coord.yPixel + absoluteYPixel - GuiRecipeDisplay.parentElement.heightPixels), {
+            println("absolute screen coord: ${Placement.Exact(coord.x + absoluteX, coord.y + absoluteY - GuiRecipeDisplay.parentElement.height)}")
+            GuiRecipeDisplay.show(this@ElementRecipeList.recipes[index], Placement.Exact(coord.x + absoluteX, coord.y + absoluteY - GuiRecipeDisplay.parentElement.height), {
                 onSelectRecipe(this@ElementRecipeList.recipes[index])
             })
         }
-        renderIcon = { xPixel, yPixel, index ->
-            this@ElementRecipeList.recipes[index].iconType.icon.render(xPixel, yPixel, iconSize, iconSize, true)
+        renderIcon = { x, y, index ->
+            this@ElementRecipeList.recipes[index].iconType.icon.render(x, y, iconSize, iconSize, true)
         }
         getToolTip = { index ->
             if(index > recipes.lastIndex) {

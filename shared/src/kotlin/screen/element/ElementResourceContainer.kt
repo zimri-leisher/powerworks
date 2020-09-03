@@ -44,7 +44,7 @@ open class ElementResourceContainer(parent: GuiElement, width: Int, height: Int,
                 onSelect(type, quantity, interaction)
             }
         }
-        renderIcon = { xPixel, yPixel, index -> renderIconAt(xPixel, yPixel, index) }
+        renderIcon = { x, y, index -> renderIconAt(x, y, index) }
         getToolTip = { index ->
             if (index < currentResources.size) {
                 val entry = currentResources[index]
@@ -59,22 +59,22 @@ open class ElementResourceContainer(parent: GuiElement, width: Int, height: Int,
         container.listeners.add(this)
     }
 
-    private fun renderIconAt(xPixel: Int, yPixel: Int, index: Int) {
+    private fun renderIconAt(x: Int, y: Int, index: Int) {
         if (index < currentResources.size) {
             val entry = currentResources[index]
-            entry.key.icon.render(xPixel, yPixel, iconSize, iconSize, true)
-            Renderer.renderText(entry.value, xPixel, yPixel)
+            entry.key.icon.render(x, y, iconSize, iconSize, true)
+            Renderer.renderText(entry.value, x, y)
             val width = TextManager.getStringWidth(entry.value.toString())
             val expectedOfType = container.expected[entry.key]
             if (expectedOfType != 0) {
-                Renderer.renderText("(+$expectedOfType)", xPixel + width, yPixel, TextRenderParams(size = 15))
+                Renderer.renderText("(+$expectedOfType)", x + width, y, TextRenderParams(size = 15))
             }
         } else {
             val expected = container.expected
             if (index - currentResources.size < expected.size) {
                 val (type, quantity) = expected[index - currentResources.size]
-                type.icon.render(xPixel, yPixel, iconSize, iconSize, true, TextureRenderParams(color = toColor(a = 0.6f)))
-                Renderer.renderText(quantity, xPixel, yPixel)
+                type.icon.render(x, y, iconSize, iconSize, true, TextureRenderParams(color = toColor(a = 0.6f)))
+                Renderer.renderText(quantity, x, y)
             }
         }
     }

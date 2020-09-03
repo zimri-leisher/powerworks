@@ -33,8 +33,8 @@ import java.util.*
 
 const val CHUNK_SIZE_TILES = 8
 val CHUNK_TILE_EXP = (Math.log(CHUNK_SIZE_TILES.toDouble()) / Math.log(2.0)).toInt()
-val CHUNK_PIXEL_EXP = CHUNK_TILE_EXP + 4
-val CHUNK_SIZE_PIXELS = CHUNK_SIZE_TILES shl 4
+val CHUNK_EXP = CHUNK_TILE_EXP + 4
+val CHUNK_SIZE = CHUNK_SIZE_TILES shl 4
 
 /**
  * A level consists of the [Tile]s, [Block]s, [MovingObject]s and various other things that make up the actual gameplay.
@@ -73,8 +73,8 @@ abstract class Level(
     val widthTiles = widthChunks shl CHUNK_TILE_EXP
     val heightTiles = widthChunks shl CHUNK_TILE_EXP
 
-    val heightPixels = heightChunks shl CHUNK_PIXEL_EXP
-    val widthPixels = widthChunks shl CHUNK_PIXEL_EXP
+    val height = heightChunks shl CHUNK_EXP
+    val width = widthChunks shl CHUNK_EXP
 
     var loaded = false
         set(value) {
@@ -180,7 +180,7 @@ abstract class Level(
         if (node.inLevel && node.level != this) {
             node.level.remove(node)
         }
-        val c = getChunkFromTile(node.xTile, node.yTile)
+        val c = getChunkAtTile(node.xTile, node.yTile)
         val previousNode: ResourceNode?
         previousNode = c.data.resourceNodes[node.resourceCategory.ordinal].firstOrNull {
             it.xTile == node.xTile && it.yTile == node.yTile && it.dir == node.dir && it.attachedContainer.id == node.attachedContainer.id
@@ -210,7 +210,7 @@ abstract class Level(
         if (node.level != this || !node.inLevel) {
             return false
         }
-        val c = getChunkFromTile(node.xTile, node.yTile)
+        val c = getChunkAtTile(node.xTile, node.yTile)
         if (!c.removeResourceNode(node)) {
             return false
         }
@@ -253,21 +253,21 @@ abstract class Level(
     fun render(view: ElementLevelView) {
         // Assume it is already added to views list
         val r = view.viewRectangle
-        val xPixel0 = r.minX.toInt()
-        val yPixel0 = r.minY.toInt()
-        val xPixel1 = r.maxX.toInt()
-        val yPixel1 = r.maxY.toInt()
-        val xTile0 = xPixel0 shr 4
-        val yTile0 = yPixel0 shr 4
-        val xTile1 = (xPixel1 shr 4) + 1
-        val yTile1 = (yPixel1 shr 4) + 1
+        val x0 = r.minX.toInt()
+        val y0 = r.minY.toInt()
+        val x1 = r.maxX.toInt()
+        val y1 = r.maxY.toInt()
+        val xTile0 = x0 shr 4
+        val yTile0 = y0 shr 4
+        val xTile1 = (x1 shr 4) + 1
+        val yTile1 = (y1 shr 4) + 1
         val maxX = xTile1.coerceAtMost(widthTiles)
         val maxY = yTile1.coerceAtMost(heightTiles)
         val minX = xTile0.coerceAtLeast(0)
         val minY = yTile0.coerceAtLeast(0)
         for (y in (maxY - 1) downTo minY) {
             for (x in minX until maxX) {
-                val c = getChunkFromTile(x, y)
+                val c = getChunkAtTile(x, y)
                 c.getTile(x, y).render()
             }
         }
@@ -282,7 +282,7 @@ abstract class Level(
             val yChunk = y shr CHUNK_TILE_EXP
             // Render the line of blocks
             for (x in minX until maxX) {
-                val c = getChunkAt(x shr CHUNK_TILE_EXP, yChunk)
+                val c = getChunkAtChunk(x shr CHUNK_TILE_EXP, yChunk)
                 if (!noGhostObjects) {
                     ghostBlocks.filter { it.xTile == x && it.yTile == y }.forEach { it.render() }
                 }
@@ -290,7 +290,7 @@ abstract class Level(
             }
             // Render the moving objects in sorted order
             for (xChunk in (minX shr CHUNK_TILE_EXP)..(maxX shr CHUNK_TILE_EXP)) {
-                val c = getChunkAt(xChunk, yChunk)
+                val c = getChunkAtChunk(xChunk, yChunk)
                 if (c.data.moving.isNotEmpty()) {
                     c.data.moving.forEach {
                         if (it.yTile >= y && it.yTile < y + 1) {
@@ -322,7 +322,7 @@ abstract class Level(
         }
         if (Game.currentDebugCode == DebugCode.CHUNK_INFO) {
             for (c in chunksInTileRectangle) {
-                Renderer.renderEmptyRectangle(c.xTile shl 4, c.yTile shl 4, CHUNK_SIZE_PIXELS, CHUNK_SIZE_PIXELS)
+                Renderer.renderEmptyRectangle(c.xTile shl 4, c.yTile shl 4, CHUNK_SIZE, CHUNK_SIZE)
                 Renderer.renderText(
                         "x: ${c.xChunk}, y: ${c.yChunk}\n" +
                                 "updates required: ${c.data.updatesRequired.size}\n" +
@@ -334,7 +334,7 @@ abstract class Level(
             if (pipeUnderMouse != null) {
                 val group = pipeUnderMouse.network
                 for (pipe in group.pipes) {
-                    Renderer.renderFilledRectangle(pipe.xPixel + 4, pipe.yPixel + 4, 8, 8, TextureRenderParams(color = toColor(r = 1f, g = 0f, b = 0f)))
+                    Renderer.renderFilledRectangle(pipe.x + 4, pipe.y + 4, 8, 8, TextureRenderParams(color = toColor(r = 1f, g = 0f, b = 0f)))
                 }
             }
             val nodeUnderMouse = getResourceNodesAt(LevelManager.mouseLevelXTile, LevelManager.mouseLevelYTile).firstOrNull()
@@ -342,7 +342,7 @@ abstract class Level(
                 val network = nodeUnderMouse.network
                 if (network is PipeNetwork) {
                     for (pipe in network.pipes) {
-                        Renderer.renderFilledRectangle(pipe.xPixel + 4, pipe.yPixel + 4, 8, 8, TextureRenderParams(color = toColor(r = 1f, g = 0f, b = 0f)))
+                        Renderer.renderFilledRectangle(pipe.x + 4, pipe.y + 4, 8, 8, TextureRenderParams(color = toColor(r = 1f, g = 0f, b = 0f)))
                     }
                 }
             }

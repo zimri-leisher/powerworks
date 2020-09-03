@@ -27,10 +27,10 @@ object Selector : Tool(Control.Group.SELECTOR_TOOLS.controls) {
     var startPress = false
     var selectingInLevel: Level = LevelManager.EMPTY_LEVEL
     var dragging = false
-    var dragStartXPixel = 0
-    var dragStartYPixel = 0
-    var currentDragXPixel = 0
-    var currentDragYPixel = 0
+    var dragStartX = 0
+    var dragStartY = 0
+    var currentDragX = 0
+    var currentDragY = 0
 
     private var mode = SelectorMode.ALL
 
@@ -48,7 +48,7 @@ object Selector : Tool(Control.Group.SELECTOR_TOOLS.controls) {
         newlySelected.removeIf { it.level != selectingInLevel || !it.inLevel}
     }
 
-    override fun onUse(event: ControlEvent, mouseLevelXPixel: Int, mouseLevelYPixel: Int): Boolean {
+    override fun onUse(event: ControlEvent, mouseLevelX: Int, mouseLevelY: Int): Boolean {
         if (LevelManager.levelUnderMouse == null) {
             return false
         }
@@ -63,16 +63,16 @@ object Selector : Tool(Control.Group.SELECTOR_TOOLS.controls) {
                 currentSelected = mutableSetOf()
             }
             newlySelected = mutableSetOf()
-            dragStartXPixel = mouseLevelXPixel
-            dragStartYPixel = mouseLevelYPixel
-            currentDragXPixel = mouseLevelXPixel
-            currentDragYPixel = mouseLevelYPixel
+            dragStartX = mouseLevelX
+            dragStartY = mouseLevelY
+            currentDragX = mouseLevelX
+            currentDragY = mouseLevelY
             return false
         } else if (event.type == ControlEventType.HOLD) {
             if (startPress) {
-                currentDragXPixel = mouseLevelXPixel
-                currentDragYPixel = mouseLevelYPixel
-                if (Math.abs(dragStartXPixel - currentDragXPixel) > SELECTION_START_THRESHOLD || Math.abs(dragStartYPixel - currentDragYPixel) > SELECTION_START_THRESHOLD) {
+                currentDragX = mouseLevelX
+                currentDragY = mouseLevelY
+                if (Math.abs(dragStartX - currentDragX) > SELECTION_START_THRESHOLD || Math.abs(dragStartY - currentDragY) > SELECTION_START_THRESHOLD) {
                     dragging = true
                     selectingInLevel = LevelManager.levelUnderMouse!!
                     updateSelected()
@@ -102,21 +102,21 @@ object Selector : Tool(Control.Group.SELECTOR_TOOLS.controls) {
 
     private fun updateSelected() {
         if (dragging && LevelManager.levelUnderMouse != null) {
-            val xChange = currentDragXPixel - dragStartXPixel
-            val yChange = currentDragYPixel - dragStartYPixel
-            val x = if (xChange < 0) currentDragXPixel else dragStartXPixel
-            val y = if (yChange < 0) currentDragYPixel else dragStartYPixel
+            val xChange = currentDragX - dragStartX
+            val yChange = currentDragY - dragStartY
+            val x = if (xChange < 0) currentDragX else dragStartX
+            val y = if (yChange < 0) currentDragY else dragStartY
             val w = abs(xChange)
             val h = abs(yChange)
             newlySelected =
-                    (LevelManager.levelUnderMouse!!.getIntersectingBlocksFromPixelRectangle(x, y, w, h).toMutableSet() +
+                    (LevelManager.levelUnderMouse!!.getIntersectingBlocksFromRectangle(x, y, w, h).toMutableSet() +
                             LevelManager.levelUnderMouse!!.getMovingObjectCollisions(x, y, w, h)).toMutableSet()
         }
     }
 
     override fun renderBelow(level: Level) {
         if (dragging && level == selectingInLevel) {
-            Renderer.renderEmptyRectangle(dragStartXPixel, dragStartYPixel, (currentDragXPixel - dragStartXPixel), (currentDragYPixel - dragStartYPixel), params = TextureRenderParams(color = toColor(0.8f, 0.8f, 0.8f)))
+            Renderer.renderEmptyRectangle(dragStartX, dragStartY, (currentDragX - dragStartX), (currentDragY - dragStartY), params = TextureRenderParams(color = toColor(0.8f, 0.8f, 0.8f)))
         }
         val selection = if (dragging) when (mode) {
             SelectorMode.ADD -> currentSelected + newlySelected
@@ -126,9 +126,9 @@ object Selector : Tool(Control.Group.SELECTOR_TOOLS.controls) {
         for (l in selection) {
             if (l.level == level) {
                 if (l is Block) {
-                    Renderer.renderEmptyRectangle(l.xPixel - 1, l.yPixel - 1, (l.type.widthTiles shl 4) + 2, (l.type.heightTiles shl 4) + 2, params = TextureRenderParams(color = toColor(alpha = 0.2f)))
+                    Renderer.renderEmptyRectangle(l.x - 1, l.y - 1, (l.type.widthTiles shl 4) + 2, (l.type.heightTiles shl 4) + 2, params = TextureRenderParams(color = toColor(alpha = 0.2f)))
                 } else if (l is MovingObject && l.hitbox != Hitbox.NONE) {
-                    Renderer.renderEmptyRectangle(l.xPixel + l.hitbox.xStart - 1, l.yPixel + l.hitbox.yStart - 1, l.hitbox.width + 2, l.hitbox.height + 2, params = TextureRenderParams(color = toColor(alpha = 0.2f)))
+                    Renderer.renderEmptyRectangle(l.x + l.hitbox.xStart - 1, l.y + l.hitbox.yStart - 1, l.hitbox.width + 2, l.hitbox.height + 2, params = TextureRenderParams(color = toColor(alpha = 0.2f)))
                 }
             }
         }

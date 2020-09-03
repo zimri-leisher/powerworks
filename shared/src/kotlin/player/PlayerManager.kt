@@ -117,7 +117,7 @@ object PlayerManager : PacketHandler, PlayerEventListener {
         val level = ActualLevel(player.homeLevelId, LevelManager.newLevelInfoForFile(user))
         level.initialize()
         level.load()
-        val brainRobot = BrainRobot(level.widthPixels / 2, level.heightPixels / 2, 2, player.user)
+        val brainRobot = BrainRobot(level.width / 2, level.height / 2, 2, player.user)
         player.brainRobot = brainRobot
         brainRobot.team = player.team
         for (type in ItemType.ALL) {

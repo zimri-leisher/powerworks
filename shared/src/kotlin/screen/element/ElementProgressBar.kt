@@ -15,13 +15,13 @@ class ElementProgressBar(parent: GuiElement, var maxProgress: Int = 0, var getPr
 
     override fun render(params: TextureRenderParams?) {
         val actualParams = params ?: TextureRenderParams.DEFAULT
-        Renderer.renderDefaultRectangle(absoluteXPixel, absoluteYPixel, widthPixels, heightPixels, actualParams)
+        Renderer.renderDefaultRectangle(absoluteX, absoluteY, width, height, actualParams)
         if(currentProgress == 0) {
             return
         }
         val color = actualParams.color
         actualParams.color = toColor(0x00BC06)
-        Renderer.renderFilledRectangle(absoluteXPixel + 1, absoluteYPixel + 1, ((widthPixels - 2) * (currentProgress.toDouble() / maxProgress)).toInt(), heightPixels - 2, params = actualParams)
+        Renderer.renderFilledRectangle(absoluteX + 1, absoluteY + 1, ((width - 2) * (currentProgress.toDouble() / maxProgress)).toInt(), height - 2, params = actualParams)
         actualParams.color = color
         super.render(params)
     }

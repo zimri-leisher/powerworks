@@ -27,20 +27,20 @@ class LevelObjectAdd(
 
     private var ghostLevelObject: GhostLevelObject? = null
 
-    override fun canAct(level: Level) = obj.hitbox == Hitbox.NONE || obj is GhostLevelObject || level.getCollisionsWith(obj.hitbox, obj.xPixel, obj.yPixel).filter { it !is GhostLevelObject }.none()
+    override fun canAct(level: Level) = obj.hitbox == Hitbox.NONE || obj is GhostLevelObject || level.getCollisionsWith(obj.hitbox, obj.x, obj.y).filter { it !is GhostLevelObject }.none()
 
     override fun act(level: Level) {
         if (obj.level != level && obj.inLevel) { // if already in another level
             println("object $obj already in another level")
         }
         if (obj !is GhostLevelObject) {
-            val collidingGhosts = level.data.ghostObjects.getCollisionsWith(obj.hitbox, obj.xPixel, obj.yPixel).toList()
+            val collidingGhosts = level.data.ghostObjects.getCollisionsWith(obj.hitbox, obj.x, obj.y).toList()
             collidingGhosts.forEach { level.remove(it) }
         }
         if (obj is Block) {
             for (x in 0 until obj.type.widthTiles) {
                 for (y in 0 until obj.type.heightTiles) {
-                    level.getChunkFromTile(obj.xTile + x, obj.yTile + y).setBlock(obj, obj.xTile + x, obj.yTile + y, (x == 0 && y == 0))
+                    level.getChunkAtTile(obj.xTile + x, obj.yTile + y).setBlock(obj, obj.xTile + x, obj.yTile + y, (x == 0 && y == 0))
                 }
             }
             obj.level = level
@@ -57,7 +57,7 @@ class LevelObjectAdd(
             }
         } else if (obj is GhostLevelObject) {
             level.data.ghostObjects.add(obj)
-            level.data.ghostObjects.sortWith(Comparator { o1, o2 -> o1.yPixel.compareTo(o2.yPixel) })
+            level.data.ghostObjects.sortWith(Comparator { o1, o2 -> o1.y.compareTo(o2.y) })
             obj.level = level
             obj.inLevel = true
         }
@@ -68,7 +68,7 @@ class LevelObjectAdd(
             act(level)
             return
         }
-        ghostLevelObject = GhostLevelObject(obj.type, obj.xPixel, obj.yPixel, obj.rotation)
+        ghostLevelObject = GhostLevelObject(obj.type, obj.x, obj.y, obj.rotation)
         level.add(ghostLevelObject!!)
     }
 

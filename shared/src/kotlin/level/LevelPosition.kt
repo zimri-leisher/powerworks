@@ -1,26 +1,26 @@
 package level
 
-import misc.PixelCoord
+import misc.Coord
 import misc.TileCoord
 import serialization.Id
 
 data class LevelPosition(
         @Id(1)
-        val xPixel: Int,
+        val x: Int,
         @Id(2)
-        val yPixel: Int,
+        val y: Int,
         @Id(3)
         val level: Level) {
     private constructor() : this(0, 0, LevelManager.EMPTY_LEVEL)
 
-    val xTile get() = xPixel shr 4
-    val yTile get() = yPixel shr 4
-    val xChunk get() = xPixel shr CHUNK_PIXEL_EXP
-    val yChunk get() = yPixel shr CHUNK_PIXEL_EXP
+    val xTile get() = x shr 4
+    val yTile get() = y shr 4
+    val xChunk get() = x shr CHUNK_EXP
+    val yChunk get() = y shr CHUNK_EXP
 
     fun tile() = TileCoord(xTile, yTile)
 
-    fun pixel() = PixelCoord(xPixel, yPixel)
+    fun coord() = Coord(x, y)
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -28,16 +28,16 @@ data class LevelPosition(
 
         other as LevelPosition
 
-        if (xPixel != other.xPixel) return false
-        if (yPixel != other.yPixel) return false
+        if (x != other.x) return false
+        if (y != other.y) return false
         if (level.id != other.level.id) return false
 
         return true
     }
 
     override fun hashCode(): Int {
-        var result = xPixel
-        result = 31 * result + yPixel
+        var result = x
+        result = 31 * result + y
         result = 31 * result + level.id.hashCode()
         return result
     }

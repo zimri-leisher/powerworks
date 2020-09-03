@@ -3,7 +3,7 @@ package behavior.leaves
 import behavior.*
 import level.entity.Entity
 import misc.Geometry
-import misc.PixelCoord
+import misc.Coord
 import misc.TileCoord
 import java.lang.Math.PI
 import kotlin.math.atan
@@ -14,7 +14,7 @@ class MoveTo(parent: BehaviorTree, val goalVar: Variable,
              val goalThreshold: Int = 5,
              val failAfter: Int = -1) : Leaf(parent) {
 
-    lateinit var goal: PixelCoord
+    lateinit var goal: Coord
 
     override fun init(entity: Entity) {
         state = NodeState.RUNNING
@@ -27,8 +27,8 @@ class MoveTo(parent: BehaviorTree, val goalVar: Variable,
             return
         }
         if (nullableGoal is TileCoord) {
-            goal = nullableGoal.pixel()
-        } else if (nullableGoal is PixelCoord) {
+            goal = nullableGoal.toCoord()
+        } else if (nullableGoal is Coord) {
             goal = nullableGoal
         }
     }
@@ -36,11 +36,11 @@ class MoveTo(parent: BehaviorTree, val goalVar: Variable,
     override fun updateState(entity: Entity): NodeState {
         val nullableGoal = getData<Any?>(goalVar) ?: return NodeState.FAILURE
         if (nullableGoal is TileCoord) {
-            goal = nullableGoal.pixel()
-        } else if (nullableGoal is PixelCoord) {
+            goal = nullableGoal.toCoord()
+        } else if (nullableGoal is Coord) {
             goal = nullableGoal
         }
-        val distance = Geometry.distance(entity.xPixel, entity.yPixel, goal.xPixel, goal.yPixel)
+        val distance = Geometry.distance(entity.x, entity.y, goal.x, goal.y)
         if (distance <= goalThreshold) {
             return NodeState.SUCCESS
         } else if (failAfter != -1) {
@@ -54,8 +54,8 @@ class MoveTo(parent: BehaviorTree, val goalVar: Variable,
 
     override fun execute(entity: Entity) {
         if (parent.hasPriority(entity)) {
-            val xDist = goal.xPixel - entity.xPixel
-            val yDist = goal.yPixel - entity.yPixel
+            val xDist = goal.x - entity.x
+            val yDist = goal.y - entity.y
             val angle = atan(yDist.toDouble() / xDist) + if (xDist < 0) PI else 0.0
             entity.xVel += entity.type.moveSpeed * cos(angle)
             entity.yVel += entity.type.moveSpeed * sin(angle)

@@ -12,7 +12,7 @@ class ArmoryBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(MachineB
 
     private constructor() : this(0, 0, 0)
 
-    override fun onInteractOn(event: ControlEvent, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+    override fun onInteractOn(event: ControlEvent, x: Int, y: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
         if (event.type == ControlEventType.PRESS && !shift && !ctrl && !alt) {
             if (button == Input.Buttons.LEFT) {
                 this.type.guiPool!!.toggle(this)
@@ -22,8 +22,8 @@ class ArmoryBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(MachineB
 
     override fun onFinishWork() {
         val entitiesToBeArmored = level.getMovingObjectCollisionsInSquareCenteredOn(
-                xPixel + hitbox.width / 2,
-                yPixel + hitbox.height / 2,
+                x + hitbox.width / 2,
+                y + hitbox.height / 2,
                 256).filterIsInstance<Entity>()
         entitiesToBeArmored.forEach {
             if (it.weapon == null)

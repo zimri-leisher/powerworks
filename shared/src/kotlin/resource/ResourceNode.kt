@@ -10,10 +10,7 @@ import network.ResourceNodeReference
 import player.team.Team
 import routing.ResourceRoutingNetwork
 import serialization.Id
-import serialization.Input
-import serialization.Serializer
 import java.util.*
-import kotlin.reflect.jvm.javaField
 
 /**
  * A node that allows for movement of resources between places on the level. This is not a subclass of [LevelObject].
@@ -41,7 +38,7 @@ class ResourceNode constructor(
     private constructor() : this(0, 0, 0, ResourceCategory.ITEM, Inventory(0, 0), LevelManager.EMPTY_LEVEL)
 
     @Id(99)
-    val team = if (level == LevelManager.EMPTY_LEVEL) Team.NEUTRAL else level.getBlockAt(xTile, yTile)?.team
+    val team = if (level == LevelManager.EMPTY_LEVEL) Team.NEUTRAL else level.getBlockAtTile(xTile, yTile)?.team
             ?: Team.NEUTRAL
 
     /**

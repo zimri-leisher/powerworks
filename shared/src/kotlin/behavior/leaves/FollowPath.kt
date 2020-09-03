@@ -3,7 +3,7 @@ package behavior.leaves
 import behavior.*
 import level.update.EntitySetPath
 import level.entity.Entity
-import misc.PixelCoord
+import misc.Coord
 import network.MovingObjectReference
 
 class FollowPath(parent: BehaviorTree, val pathVar: Variable) : Leaf(parent) {
@@ -19,7 +19,7 @@ class FollowPath(parent: BehaviorTree, val pathVar: Variable) : Leaf(parent) {
             return
         }
         setData(DefaultVariable.PATH_BEING_FOLLOWED, path)
-        entity.level.modify(EntitySetPath(entity.toReference() as MovingObjectReference, PixelCoord(entity.xPixel, entity.yPixel), path))
+        entity.level.modify(EntitySetPath(entity.toReference() as MovingObjectReference, Coord(entity.x, entity.y), path))
     }
 
     override fun updateState(entity: Entity): NodeState {
@@ -31,7 +31,7 @@ class FollowPath(parent: BehaviorTree, val pathVar: Variable) : Leaf(parent) {
             } else {
                 path = recheckPath
                 setData(DefaultVariable.PATH_BEING_FOLLOWED, path)
-                entity.level.modify(EntitySetPath(entity.toReference() as MovingObjectReference, PixelCoord(entity.xPixel, entity.yPixel), path))
+                entity.level.modify(EntitySetPath(entity.toReference() as MovingObjectReference, Coord(entity.x, entity.y), path))
                 if (recheckPath.steps.isEmpty()) {
                     return NodeState.SUCCESS
                 }

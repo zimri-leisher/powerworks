@@ -70,13 +70,13 @@ class FarseekerBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(Machi
         level.modify(FarseekerBlockSetAvailableLevels(toReference() as BlockReference, ProgressionManager.getAvailableEnemyLevels(team.players.first())))
     }
 
-    override fun onInteractOn(event: ControlEvent, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+    override fun onInteractOn(event: ControlEvent, x: Int, y: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
         if (event.type == ControlEventType.PRESS && !shift && !ctrl && !alt) {
             if (button == Input.Buttons.LEFT) {
                 this.type.guiPool!!.toggle(this)
             }
         }
-        super.onInteractOn(event, xPixel, yPixel, button, shift, ctrl, alt)
+        super.onInteractOn(event, x, y, button, shift, ctrl, alt)
     }
 
     override fun onCollide(obj: LevelObject) {

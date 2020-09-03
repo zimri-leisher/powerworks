@@ -3,11 +3,11 @@ package behavior.leaves
 import level.entity.Entity
 import behavior.*
 import level.LevelManager
-import misc.PixelCoord
+import misc.Coord
 
 class GetMouseLevelPosition(parent: BehaviorTree, val dest: Variable) : DataLeaf(parent) {
     override fun run(entity: Entity): Boolean {
-        setData(dest, PixelCoord(LevelManager.mouseLevelXPixel, LevelManager.mouseLevelYPixel))
+        setData(dest, Coord(LevelManager.mouseLevelX, LevelManager.mouseLevelY))
         return true
     }
 

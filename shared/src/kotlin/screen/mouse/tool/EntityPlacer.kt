@@ -26,10 +26,10 @@ object EntityPlacer : Tool(Control.SPAWN_ENTITY) {
         }
     }
 
-    override fun onUse(event: ControlEvent, mouseLevelXPixel: Int, mouseLevelYPixel: Int): Boolean {
+    override fun onUse(event: ControlEvent, mouseLevelX: Int, mouseLevelY: Int): Boolean {
         if (event.type == ControlEventType.RELEASE && event.control == Control.SPAWN_ENTITY) {
             if (canSpawn) {
-                PlayerManager.takeAction(ActionLevelObjectPlace(PlayerManager.localPlayer, type!!.spawnedEntity, mouseLevelXPixel, mouseLevelYPixel, 0, LevelManager.levelUnderMouse!!))
+                PlayerManager.takeAction(ActionLevelObjectPlace(PlayerManager.localPlayer, type!!.spawnedEntity, mouseLevelX, mouseLevelY, 0, LevelManager.levelUnderMouse!!))
             }
             return true
         }
@@ -41,8 +41,8 @@ object EntityPlacer : Tool(Control.SPAWN_ENTITY) {
             if (type != null) {
                 val entity = type!!.spawnedEntity
                 val texture = entity.textures[0]
-                texture.render(LevelManager.mouseLevelXPixel, LevelManager.mouseLevelYPixel, params = TextureRenderParams(color = toColor(alpha = 0.4f)))
-                Renderer.renderEmptyRectangle(LevelManager.mouseLevelXPixel + entity.hitbox.xStart, LevelManager.mouseLevelYPixel + entity.hitbox.yStart, entity.hitbox.width, entity.hitbox.height,
+                texture.render(LevelManager.mouseLevelX, LevelManager.mouseLevelY, params = TextureRenderParams(color = toColor(alpha = 0.4f)))
+                Renderer.renderEmptyRectangle(LevelManager.mouseLevelX + entity.hitbox.xStart, LevelManager.mouseLevelY + entity.hitbox.yStart, entity.hitbox.width, entity.hitbox.height,
                         params = TextureRenderParams(color = toColor(
                                 if (canSpawn) 0f else 1f, if (canSpawn) 1f else 0f, 0f, 0.4f)))
             }
@@ -52,7 +52,7 @@ object EntityPlacer : Tool(Control.SPAWN_ENTITY) {
     override fun update() {
         type = Mouse.heldItemType as? EntityItemType
         if (type != null) {
-            canSpawn = LevelManager.levelObjectUnderMouse == null && LevelManager.levelUnderMouse?.getCollisionsWith(type!!.spawnedEntity.hitbox, LevelManager.mouseLevelXPixel, LevelManager.mouseLevelYPixel)?.none() ?: false
+            canSpawn = LevelManager.levelObjectUnderMouse == null && LevelManager.levelUnderMouse?.getCollisionsWith(type!!.spawnedEntity.hitbox, LevelManager.mouseLevelX, LevelManager.mouseLevelY)?.none() ?: false
         }
     }
 }

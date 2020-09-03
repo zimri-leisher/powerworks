@@ -3,7 +3,7 @@ package level.block
 import com.badlogic.gdx.Input
 import io.ControlEvent
 import io.ControlEventType
-import level.getTileAt
+import level.getTileAtTile
 import level.tile.OreTile
 import serialization.Id
 
@@ -15,7 +15,7 @@ class MinerBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(MachineBl
     override fun onFinishWork() {
         for (x in 0 until type.widthTiles) {
             for (y in 0 until type.heightTiles) {
-                val tile = level.getTileAt(xTile + x, yTile + y)
+                val tile = level.getTileAtTile(xTile + x, yTile + y)
                 if (tile is OreTile) {
                     // fill up the internal inventory
                     if (output.add(tile.type.minedItem, 1)) {
@@ -29,7 +29,7 @@ class MinerBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(MachineBl
         }
     }
 
-    override fun onInteractOn(event: ControlEvent, xPixel: Int, yPixel: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+    override fun onInteractOn(event: ControlEvent, x: Int, y: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
         if (event.type == ControlEventType.PRESS && !shift && !ctrl && !alt) {
             if (button == Input.Buttons.LEFT) {
                 this.type.guiPool!!.toggle(this)

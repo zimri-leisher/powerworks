@@ -10,7 +10,7 @@ private var nextId = 0
 
 open class LevelObjectType<T : LevelObject>(initializer: LevelObjectType<T>.() -> Unit = {}) {
     val id = nextId++
-    var instantiate: (xPixel: Int, yPixel: Int, rotation: Int) -> T = { _, _, _ -> throw Exception("Level object type $id failed to specify an adequate instantiator function") }
+    var instantiate: (x: Int, y: Int, rotation: Int) -> T = { _, _, _ -> throw Exception("Level object type $id failed to specify an adequate instantiator function") }
     var hitbox = Hitbox.NONE
     var requiresUpdate = false
     var textures = LevelObjectTextures(Image.Misc.ERROR)

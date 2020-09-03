@@ -8,7 +8,7 @@ import level.LevelPosition
 import level.update.EntityFireWeapon
 import level.update.EntityPathUpdate
 import main.Game
-import misc.PixelCoord
+import misc.Coord
 import network.MovingObjectReference
 import serialization.Id
 import kotlin.math.*
@@ -74,10 +74,10 @@ class EntityBehavior(
                 return
             }
             if (parent.weapon?.canFire == true) {
-                val xDiff = target.xPixel + target.hitbox.xStart + target.hitbox.width / 2 - parent.xPixel
-                val yDiff = target.yPixel + target.hitbox.yStart + target.hitbox.height / 2 - parent.yPixel
+                val xDiff = target.x + target.hitbox.xStart + target.hitbox.width / 2 - parent.x
+                val yDiff = target.y + target.hitbox.yStart + target.hitbox.height / 2 - parent.y
                 val angle = atan2(yDiff.toFloat(), xDiff.toFloat())
-                parent.level.modify(EntityFireWeapon(PixelCoord(parent.xPixel, parent.yPixel), angle, parent.weapon!!.type.projectileType, parent.toReference() as MovingObjectReference))
+                parent.level.modify(EntityFireWeapon(Coord(parent.x, parent.y), angle, parent.weapon!!.type.projectileType, parent.toReference() as MovingObjectReference))
             }
         }
     }
@@ -90,8 +90,8 @@ class EntityBehavior(
                 return
             }
             val currentStep = path.steps[currentPathStepIndex]
-            moveToPoint(currentStep.xPixel, currentStep.yPixel)
-            val dist = distanceToPoint(currentStep.xPixel, currentStep.yPixel)
+            moveToPoint(currentStep.x, currentStep.y)
+            val dist = distanceToPoint(currentStep.x, currentStep.y)
             if (dist < 1 && timesReachedStep[currentPathStepIndex] == null) { // if we just reached this for the first time
                 // reached step
                 timesReachedStep[currentPathStepIndex] = timeSincePathingStart
@@ -101,29 +101,29 @@ class EntityBehavior(
             timeSincePathingStart++
         } else if (goalPosition != null) {
             val goalPosition = goalPosition!!
-            val dist = distanceToPoint(goalPosition.xPixel, goalPosition.yPixel)
+            val dist = distanceToPoint(goalPosition.x, goalPosition.y)
             if(dist > 16) {
                 movingToGoalPosition = true
             } else if(dist <= 1) {
                 movingToGoalPosition = false
             }
             if(movingToGoalPosition) {
-                moveToPoint(goalPosition.xPixel, goalPosition.yPixel)
+                moveToPoint(goalPosition.x, goalPosition.y)
             }
         }
     }
 
-    private fun distanceToPoint(xPixel: Int, yPixel: Int): Double {
-        val xDist = xPixel - parent.xPixel
-        val yDist = yPixel - parent.yPixel
+    private fun distanceToPoint(x: Int, y: Int): Double {
+        val xDist = x - parent.x
+        val yDist = y - parent.y
         return sqrt(Math.pow(xDist.toDouble(), 2.0) + Math.pow(yDist.toDouble(), 2.0))
     }
 
-    private fun moveToPoint(xPixel: Int, yPixel: Int) {
-        val xDist = xPixel - parent.xPixel
-        val yDist = yPixel - parent.yPixel
+    private fun moveToPoint(x: Int, y: Int) {
+        val xDist = x - parent.x
+        val yDist = y - parent.y
         val angle = atan2(yDist.toDouble(), xDist.toDouble())
-        val speed = parent.type.moveSpeed * 16 / Game.UPDATES_PER_SECOND // convert from tiles per second to pixels per tick
+        val speed = parent.type.moveSpeed * 16 / Game.UPDATES_PER_SECOND // convert from tiles per second to units per tick
         parent.xVel += cos(angle) * speed
         parent.yVel += sin(angle) * speed
     }
@@ -131,10 +131,10 @@ class EntityBehavior(
     private fun getEstimatedTimeToStep(index: Int): Int {
         val path = path!!
         val step = path.steps[index]
-        val xDist = step.xPixel - parent.xPixel
-        val yDist = step.yPixel - parent.yPixel
+        val xDist = step.x - parent.x
+        val yDist = step.y - parent.y
         val dist = sqrt(Math.pow(xDist.toDouble(), 2.0) + Math.pow(yDist.toDouble(), 2.0))
-        val speed = parent.type.moveSpeed * 16 / Game.UPDATES_PER_SECOND // convert from tiles per second to pixels per tick
+        val speed = parent.type.moveSpeed * 16 / Game.UPDATES_PER_SECOND // convert from tiles per second to units per tick
         return (dist / speed).toInt() // approximate number of ticks
     }
 
@@ -163,7 +163,7 @@ class EntityBehavior(
                     val step = path!!.steps[index]
                     timeSincePathingStart = time // synchronize time
                     timesReachedStep[index] = timeSincePathingStart
-                    parent.setPosition(step.xPixel, step.yPixel)
+                    parent.setPosition(step.x, step.y)
                     currentPathStepIndex = index + 1
                 }
             } else {

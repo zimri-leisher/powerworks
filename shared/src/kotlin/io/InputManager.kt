@@ -40,8 +40,8 @@ object InputManager : InputProcessor {
 
     private val handlers = WeakMutableMap<ControlEventHandler, MutableSet<Control>>()
 
-    private var actualMouseXPixel = 0
-    private var actualMouseYPixel = 0
+    private var actualMouseX = 0
+    private var actualMouseY = 0
 
     /**
      * Registers a [ControlEventHandler], ensuring it will receive [ControlEvent]s for the given [controls]. If the
@@ -68,8 +68,8 @@ object InputManager : InputProcessor {
     }
 
     fun update() {
-        Mouse.xPixel = actualMouseXPixel
-        Mouse.yPixel = actualMouseYPixel
+        Mouse.x = actualMouseX
+        Mouse.y = actualMouseY
         state.updateEvents()
         val controlEvents = map.getControlEvents(state)
         if (Game.currentDebugCode == DebugCode.CONTROLS_INFO) {
@@ -92,8 +92,8 @@ object InputManager : InputProcessor {
     }
 
     override fun mouseMoved(screenX: Int, screenY: Int): Boolean {
-        actualMouseXPixel = screenX / Game.SCALE
-        actualMouseYPixel = (Game.HEIGHT - screenY / Game.SCALE)
+        actualMouseX = screenX / Game.SCALE
+        actualMouseY = (Game.HEIGHT - screenY / Game.SCALE)
         return true
     }
 
@@ -130,9 +130,9 @@ object InputManager : InputProcessor {
     }
 
     override fun touchDragged(screenX: Int, screenY: Int, pointer: Int): Boolean {
-        actualMouseXPixel = screenX / Game.SCALE
+        actualMouseX = screenX / Game.SCALE
         // libgdx input is reversed y axis ;-;
-        actualMouseYPixel = (Game.HEIGHT - screenY / Game.SCALE)
+        actualMouseY = (Game.HEIGHT - screenY / Game.SCALE)
         return false
     }
 

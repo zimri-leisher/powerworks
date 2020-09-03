@@ -12,11 +12,11 @@ class LevelObjectTextures(
     constructor(col: ImageCollection) : this(*col.textures)
     private constructor() : this(Image.Misc.ERROR)
 
-    fun render(l: LevelObject, params: TextureRenderParams = TextureRenderParams.DEFAULT) = render(l.xPixel, l.yPixel, l.rotation, params)
+    fun render(l: LevelObject, params: TextureRenderParams = TextureRenderParams.DEFAULT) = render(l.x, l.y, l.rotation, params)
 
-    fun render(xPixel: Int, yPixel: Int, rotation: Int, params: TextureRenderParams = TextureRenderParams.DEFAULT) {
+    fun render(x: Int, y: Int, rotation: Int, params: TextureRenderParams = TextureRenderParams.DEFAULT) {
         val texture = textures[Math.min(rotation, textures.lastIndex)]
-        texture.render(xPixel, yPixel, params = params)
+        texture.render(x, y, params = params)
     }
 
     operator fun get(i: Int) = textures[i]

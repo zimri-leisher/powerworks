@@ -8,7 +8,7 @@ class ElementResourceList(parent: GuiElement, resources: ResourceList, width: In
         ElementIconList(parent,
                 width, height,
                 renderIcon =
-                { xPixel, yPixel, index -> (this as ElementResourceList).renderIcon(xPixel, yPixel, index) }
+                { x, y, index -> (this as ElementResourceList).renderIcon(x, y, index) }
         ) {
     var resources = resources
         set(value) {
@@ -29,11 +29,11 @@ class ElementResourceList(parent: GuiElement, resources: ResourceList, width: In
         }
     }
 
-    private fun renderIcon(xPixel: Int, yPixel: Int, index: Int) {
+    private fun renderIcon(x: Int, y: Int, index: Int) {
         val entry = resources[index]
-        entry.key.icon.render(xPixel, yPixel, iconSize, iconSize, true)
+        entry.key.icon.render(x, y, iconSize, iconSize, true)
         if (displayQuantity) {
-            Renderer.renderText(entry.value, xPixel, yPixel)
+            Renderer.renderText(entry.value, x, y)
         }
     }
 }

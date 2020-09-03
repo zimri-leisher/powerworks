@@ -15,7 +15,7 @@ import level.pipe.PipeBlock
 import main.DebugCode
 import main.Game
 import misc.Geometry
-import misc.PixelCoord
+import misc.Coord
 import network.ResourceNodeReference
 import resource.ResourceCategory
 import resource.ResourceList
@@ -53,7 +53,7 @@ abstract class PipeNetwork(resourceCategory: ResourceCategory, level: Level, pri
         toRemove.forEach { level.remove(it); internalNodes.remove(it) }
         packages.startTraversing()
         for (pack in packages) {
-            if (Geometry.intersects(pipe.xPixel, pipe.yPixel, 16, 16, pack.position.xPixel, pack.position.yPixel + 5, 12, 12)) {
+            if (Geometry.intersects(pipe.x, pipe.y, 16, 16, pack.position.x, pack.position.y + 5, 12, 12)) {
                 // if the package was partially on this tube
                 // drop it and remove it from the network
                 packages.remove(pack)
@@ -192,7 +192,7 @@ abstract class PipeNetwork(resourceCategory: ResourceCategory, level: Level, pri
     private fun reroutePackage(pack: PipeRoutingPackage) {
         val newDestination = findDestinationFor(pack.type, pack.quantity)
         if (newDestination != null) {
-            val route = route(pack.position.xPixel, pack.position.yPixel, newDestination, this)
+            val route = route(pack.position.x, pack.position.y, newDestination, this)
             if (route != null) {
                 if (newDestination.attachedNode!!.attachedContainer.expect(pack.type, pack.quantity)) {
                     println("routing resource: $route")
@@ -202,8 +202,8 @@ abstract class PipeNetwork(resourceCategory: ResourceCategory, level: Level, pri
                     pack.route = route
                     //if the package should be moving on the x axis, look for the nearest step in the same y
                     pack.routeStepIndex = 0
-                    pack.dir = Geometry.getDir(route[0].position.xPixel - pack.position.xPixel, route[0].position.yPixel - pack.position.yPixel)
-                    println("${(route[0].position.xPixel shr 4) - (pack.position.xPixel shr 4)} ${(route[0].position.yPixel shr 4) - (pack.position.yPixel shr 4)}")
+                    pack.dir = Geometry.getDir(route[0].position.x - pack.position.x, route[0].position.y - pack.position.y)
+                    println("${(route[0].position.x shr 4) - (pack.position.x shr 4)} ${(route[0].position.y shr 4) - (pack.position.y shr 4)}")
                     println("${pack.dir}")
                     pack.awaitingRoute = false
                 }
@@ -235,26 +235,26 @@ abstract class PipeNetwork(resourceCategory: ResourceCategory, level: Level, pri
                     pack.dir = pack.currentRouteStep.dir
                     pack.routeStepIndex++
                 }
-                pack.position = PixelCoord(pack.position.xPixel + Geometry.getXSign(pack.dir) * speed, pack.position.yPixel + Geometry.getYSign(pack.dir) * speed)
+                pack.position = Coord(pack.position.x + Geometry.getXSign(pack.dir) * speed, pack.position.y + Geometry.getYSign(pack.dir) * speed)
             }
         }
     }
 
     override fun render() {
         packages.forEach {
-            it.type.icon.render(it.position.xPixel, it.position.yPixel + 5, 12, 12, true)
-            Renderer.renderText(it.quantity, it.position.xPixel + 2, it.position.yPixel + 7, TextRenderParams(size = TextManager.DEFAULT_SIZE - 5))
+            it.type.icon.render(it.position.x, it.position.y + 5, 12, 12, true)
+            Renderer.renderText(it.quantity, it.position.x + 2, it.position.y + 7, TextRenderParams(size = TextManager.DEFAULT_SIZE - 5))
             if (Game.currentDebugCode == DebugCode.TUBE_INFO) {
-                val xDistance = it.currentRouteStep.position.xPixel - it.position.xPixel
-                val yDistance = it.currentRouteStep.position.yPixel - it.position.yPixel
-                Renderer.renderFilledRectangle(it.position.xPixel, it.position.yPixel + 5, if (xDistance == 0) 2 else xDistance, if (yDistance == 0) 2 else yDistance)
+                val xDistance = it.currentRouteStep.position.x - it.position.x
+                val yDistance = it.currentRouteStep.position.y - it.position.y
+                Renderer.renderFilledRectangle(it.position.x, it.position.y + 5, if (xDistance == 0) 2 else xDistance, if (yDistance == 0) 2 else yDistance)
                 for (index in (it.routeStepIndex + 1)..it.route.lastIndex) {
                     val step = it.route[index]
                     val lastStep = it.route[index - 1]
-                    val xDistanceStep = step.position.xPixel - lastStep.position.xPixel
-                    val yDistanceStep = step.position.yPixel - lastStep.position.yPixel
-                    Renderer.renderFilledRectangle(lastStep.position.xPixel, lastStep.position.yPixel + 5, if (xDistanceStep == 0) 2 else xDistanceStep, if (yDistanceStep == 0) 2 else yDistanceStep)
-                    Renderer.renderTexture(Image.Misc.THIN_ARROW, lastStep.position.xPixel, lastStep.position.yPixel, 8, 8, TextureRenderParams(rotation = Geometry.getDegrees(lastStep.dir + 1)))
+                    val xDistanceStep = step.position.x - lastStep.position.x
+                    val yDistanceStep = step.position.y - lastStep.position.y
+                    Renderer.renderFilledRectangle(lastStep.position.x, lastStep.position.y + 5, if (xDistanceStep == 0) 2 else xDistanceStep, if (yDistanceStep == 0) 2 else yDistanceStep)
+                    Renderer.renderTexture(Image.Misc.THIN_ARROW, lastStep.position.x, lastStep.position.y, 8, 8, TextureRenderParams(rotation = Geometry.getDegrees(lastStep.dir + 1)))
                 }
             }
         }
@@ -274,14 +274,14 @@ abstract class PipeNetwork(resourceCategory: ResourceCategory, level: Level, pri
             @Id(6)
             var routeStepIndex: Int = 0,
             @Id(7)
-            var position: PixelCoord = PixelCoord(route[0].position.xPixel, route[0].position.yPixel),
+            var position: Coord = Coord(route[0].position.x, route[0].position.y),
             @Id(8)
             var dir: Int = route[0].dir,
             @Id(9)
             var awaitingRoute: Boolean = false) {
 
         private constructor() : this(ResourceNode(0, 0, 0, ResourceCategory.ITEM, Inventory(0, 0), LevelManager.EMPTY_LEVEL),
-                ResourceNode(0, 0, 0, ResourceCategory.ITEM, Inventory(0, 0), LevelManager.EMPTY_LEVEL), ItemType.ERROR, 0, PackageRoute(arrayOf()), 0, PixelCoord(0, 0), 0)
+                ResourceNode(0, 0, 0, ResourceCategory.ITEM, Inventory(0, 0), LevelManager.EMPTY_LEVEL), ItemType.ERROR, 0, PackageRoute(arrayOf()), 0, Coord(0, 0), 0)
 
         val currentRouteStep
             get() = route[routeStepIndex]

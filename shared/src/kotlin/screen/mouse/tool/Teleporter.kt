@@ -8,9 +8,9 @@ import level.moving.MovingObject
 
 object Teleporter : Tool(Control.TELEPORT) {
 
-    override fun onUse(event: ControlEvent, mouseLevelXPixel: Int, mouseLevelYPixel: Int): Boolean {
+    override fun onUse(event: ControlEvent, mouseLevelX: Int, mouseLevelY: Int): Boolean {
         if (event.type == ControlEventType.PRESS) {
-            (LevelManager.levelViewUnderMouse?.camera as? MovingObject)?.setPosition(LevelManager.mouseLevelXPixel, LevelManager.mouseLevelYPixel)
+            (LevelManager.levelViewUnderMouse?.camera as? MovingObject)?.setPosition(LevelManager.mouseLevelX, LevelManager.mouseLevelY)
             return true
         }
         return false

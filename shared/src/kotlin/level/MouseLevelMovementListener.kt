@@ -1,5 +1,5 @@
 package level
 
 interface MouseLevelMovementListener {
-    fun onMouseMoveRelativeToLevel(pXPixel: Int, pYPixel: Int)
+    fun onMouseMoveRelativeToLevel(prevX: Int, prevY: Int)
 }

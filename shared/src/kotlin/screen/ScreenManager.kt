@@ -32,7 +32,7 @@ enum class ScreenLayer {
     }
 }
 
-data class Interaction(val event: ControlEvent, val xPixel: Int, val yPixel: Int, val shift: Boolean, val ctrl: Boolean, val alt: Boolean)
+data class Interaction(val event: ControlEvent, val x: Int, val y: Int, val shift: Boolean, val ctrl: Boolean, val alt: Boolean)
 
 object ScreenManager : ControlEventHandler {
 
@@ -62,13 +62,13 @@ object ScreenManager : ControlEventHandler {
         if (Game.currentDebugCode == DebugCode.SCREEN_INFO) {
             val gui = elementUnderMouse.gui
             val currentDimensions = gui.layout.getExactDimensions(elementUnderMouse)
-            Renderer.renderEmptyRectangle(elementUnderMouse.absoluteXPixel, elementUnderMouse.absoluteYPixel, currentDimensions.widthPixels, currentDimensions.heightPixels)
+            Renderer.renderEmptyRectangle(elementUnderMouse.absoluteX, elementUnderMouse.absoluteY, currentDimensions.width, currentDimensions.height)
         }
     }
 
     fun update() {
-        guiUnderMouse = getOpenGuisAt(Mouse.xPixel, Mouse.yPixel).last()
-        val newElementsUnderMouse = getOpenElementsAt(Mouse.xPixel, Mouse.yPixel).toList()
+        guiUnderMouse = getOpenGuisAt(Mouse.x, Mouse.y).last()
+        val newElementsUnderMouse = getOpenElementsAt(Mouse.x, Mouse.y).toList()
         for (newElement in newElementsUnderMouse) {
             if (newElement !in elementsUnderMouse) {
                 newElement.mouseOn = true
@@ -93,14 +93,14 @@ object ScreenManager : ControlEventHandler {
         }
     }
 
-    fun getGuisAt(xPixel: Int, yPixel: Int): Sequence<Gui> {
+    fun getGuisAt(x: Int, y: Int): Sequence<Gui> {
         val list = mutableListOf<Gui>()
         var foundGui = false
         for (layer in ScreenLayer.values()) {
             layer.guis.elements.asReversed().forEach {
                 val placement = it.placement
                 val dimensions = it.dimensions
-                if (!foundGui && Geometry.intersects(placement.xPixel, placement.yPixel, dimensions.widthPixels, dimensions.heightPixels, xPixel, yPixel, 1, 1)) {
+                if (!foundGui && Geometry.intersects(placement.x, placement.y, dimensions.width, dimensions.height, x, y, 1, 1)) {
                     list.add(it)
                     foundGui = true
                 }
@@ -111,14 +111,14 @@ object ScreenManager : ControlEventHandler {
         return if (list.isEmpty()) sequenceOf(GuiBackground) else list.asSequence()
     }
 
-    fun getOpenGuisAt(xPixel: Int, yPixel: Int): Sequence<Gui> {
+    fun getOpenGuisAt(x: Int, y: Int): Sequence<Gui> {
         val list = mutableListOf<Gui>()
         var foundGui = false
         for (layer in ScreenLayer.values()) {
             layer.guis.elements.asReversed().forEach {
                 val placement = it.placement
                 val dimensions = it.dimensions
-                if (!foundGui && it.open && Geometry.intersects(placement.xPixel, placement.yPixel, dimensions.widthPixels, dimensions.heightPixels, xPixel, yPixel, 1, 1)) {
+                if (!foundGui && it.open && Geometry.intersects(placement.x, placement.y, dimensions.width, dimensions.height, x, y, 1, 1)) {
                     list.add(it)
                     foundGui = true
                 }
@@ -128,26 +128,26 @@ object ScreenManager : ControlEventHandler {
         return if (list.isEmpty()) sequenceOf(GuiBackground) else list.asSequence()
     }
 
-    fun getElementsAt(xPixel: Int, yPixel: Int): Sequence<GuiElement> {
+    fun getElementsAt(x: Int, y: Int): Sequence<GuiElement> {
 
-        fun recursivelyGetElementsAt(element: GuiElement, xPixel: Int, yPixel: Int): Sequence<GuiElement> {
+        fun recursivelyGetElementsAt(element: GuiElement, x: Int, y: Int): Sequence<GuiElement> {
             val placement = element.gui.layout.getExactPlacement(element)
-            val intersectingChildren = element.getChildrenAt(xPixel - placement.xPixel, yPixel - placement.yPixel)
-            return intersectingChildren + intersectingChildren.flatMap { recursivelyGetElementsAt(it, xPixel - placement.xPixel, yPixel - placement.yPixel) }
+            val intersectingChildren = element.getChildrenAt(x - placement.x, y - placement.y)
+            return intersectingChildren + intersectingChildren.flatMap { recursivelyGetElementsAt(it, x - placement.x, y - placement.y) }
         }
 
-        return getGuisAt(xPixel, yPixel).flatMap { gui -> sequenceOf(gui.parentElement) + recursivelyGetElementsAt(gui.parentElement, xPixel, yPixel) }
+        return getGuisAt(x, y).flatMap { gui -> sequenceOf(gui.parentElement) + recursivelyGetElementsAt(gui.parentElement, x, y) }
     }
 
-    fun getOpenElementsAt(xPixel: Int, yPixel: Int): Sequence<GuiElement> {
+    fun getOpenElementsAt(x: Int, y: Int): Sequence<GuiElement> {
 
-        fun recursivelyGetOpenElementsAt(element: GuiElement, xPixel: Int, yPixel: Int): Sequence<GuiElement> {
+        fun recursivelyGetOpenElementsAt(element: GuiElement, x: Int, y: Int): Sequence<GuiElement> {
             val placement = element.gui.layout.getExactPlacement(element)
-            val intersectingChildren = element.getChildrenAt(xPixel - placement.xPixel, yPixel - placement.yPixel).filter { it.open }
-            return intersectingChildren + intersectingChildren.flatMap { recursivelyGetOpenElementsAt(it, xPixel - placement.xPixel, yPixel - placement.yPixel) }
+            val intersectingChildren = element.getChildrenAt(x - placement.x, y - placement.y).filter { it.open }
+            return intersectingChildren + intersectingChildren.flatMap { recursivelyGetOpenElementsAt(it, x - placement.x, y - placement.y) }
         }
 
-        return getOpenGuisAt(xPixel, yPixel).flatMap { gui -> (if (gui.parentElement.open) sequenceOf(gui.parentElement) + recursivelyGetOpenElementsAt(gui.parentElement, xPixel, yPixel) else sequenceOf()) }
+        return getOpenGuisAt(x, y).flatMap { gui -> (if (gui.parentElement.open) sequenceOf(gui.parentElement) + recursivelyGetOpenElementsAt(gui.parentElement, x, y) else sequenceOf()) }
     }
 
     fun onScreenSizeChange() {
@@ -165,7 +165,7 @@ object ScreenManager : ControlEventHandler {
             val shift = InputManager.state.isDown(Modifier.SHIFT)
             val ctrl = InputManager.state.isDown(Modifier.CTRL)
             val alt = InputManager.state.isDown(Modifier.ALT)
-            val interaction = Interaction(event, Mouse.xPixel, Mouse.yPixel, shift, ctrl, alt)
+            val interaction = Interaction(event, Mouse.x, Mouse.y, shift, ctrl, alt)
             elementsUnderMouse.forEach { element ->
                 element.onInteractOn(interaction)
             }

@@ -76,7 +76,7 @@ object Tooltips {
         } else {
             toolTipDisplay.open = true
             toolTipDisplay.text.text = text
-            toolTipDisplay.parentElement.placement = Placement.Exact(Mouse.xPixel, Mouse.yPixel)
+            toolTipDisplay.parentElement.placement = Placement.Exact(Mouse.x, Mouse.y)
             toolTipDisplay.layout.set()
         }
     }

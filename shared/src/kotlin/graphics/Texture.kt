@@ -2,8 +2,8 @@ package graphics
 
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import data.GameResourceManager
-import main.heightPixels
-import main.widthPixels
+import main.height
+import main.width
 import serialization.Id
 import serialization.Input
 import serialization.Output
@@ -12,23 +12,23 @@ import serialization.Serializer
 class Texture(
         val region: TextureRegion,
         @Id(2)
-        override val xPixelOffset: Int = 0,
+        override val xOffset: Int = 0,
         @Id(3)
-        override val yPixelOffset: Int = 0) : Renderable() {
+        override val yOffset: Int = 0) : Renderable() {
 
     private constructor() : this(Image.Misc.ERROR, 0, 0)
 
     @Id(4)
-    override val widthPixels = region.widthPixels
+    override val width = region.width
 
     @Id(5)
-    override val heightPixels = region.heightPixels
+    override val height = region.height
 
-    override fun render(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int, keepAspect: Boolean, params: TextureRenderParams) {
+    override fun render(x: Int, y: Int, width: Int, height: Int, keepAspect: Boolean, params: TextureRenderParams) {
         if (keepAspect) {
-            Renderer.renderTextureKeepAspect(region, xPixel + xPixelOffset, yPixel + yPixelOffset, widthPixels, heightPixels, params)
+            Renderer.renderTextureKeepAspect(region, x + xOffset, y + yOffset, width, height, params)
         } else {
-            Renderer.renderTexture(region, xPixel + xPixelOffset, yPixel + yPixelOffset, widthPixels, heightPixels, params)
+            Renderer.renderTexture(region, x + xOffset, y + yOffset, width, height, params)
         }
     }
 }

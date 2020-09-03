@@ -9,5 +9,5 @@ interface MouseMovementListener {
      *
      * This object must be added to [Mouse.mouseMovementListeners] for this to work
      */
-    fun onMouseMove(pXPixel: Int, pYPixel: Int)
+    fun onMouseMove(prevX: Int, prevY: Int)
 }

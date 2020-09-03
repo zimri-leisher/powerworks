@@ -2,7 +2,7 @@ package level.block
 
 import level.Level
 import level.LevelObject
-import level.getBlockAt
+import level.getBlockAtTile
 import level.getMovingObjectCollisions
 import level.particle.ParticleEffect
 import network.BlockReference
@@ -53,7 +53,7 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotatio
                 for (y in -1..1) {
                     for (x in -1..1) {
                         if (abs(x) != abs(y)) {
-                            val b = level.getBlockAt(xTile + x + w, yTile + y + h)
+                            val b = level.getBlockAtTile(xTile + x + w, yTile + y + h)
                             if (b != null && b != this)
                                 adjacent.add(b)
                         }
@@ -78,7 +78,7 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotatio
                 for (y in -1..1) {
                     for (x in -1..1) {
                         if (abs(x) != abs(y)) {
-                            val b = level.getBlockAt(xTile + x + w, yTile + y + h)
+                            val b = level.getBlockAtTile(xTile + x + w, yTile + y + h)
                             if (b != null && b != this)
                                 adjacent.add(b)
                         }
@@ -110,16 +110,16 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotatio
         super.update()
     }
 
-    override fun getCollisions(xPixel: Int, yPixel: Int, level: Level): Sequence<LevelObject> {
+    override fun getCollisions(x: Int, y: Int, level: Level): Sequence<LevelObject> {
         // Check if a block is already present
-        val nXTile = xPixel shr 4
-        val nYTile = yPixel shr 4
-        return level.getMovingObjectCollisions(hitbox, xPixel, yPixel) +
+        val nXTile = x shr 4
+        val nYTile = y shr 4
+        return level.getMovingObjectCollisions(hitbox, x, y) +
                 (nXTile until (nXTile + type.widthTiles)).asSequence()
                         .flatMap { x ->
                             (nYTile until (nYTile + type.heightTiles)).asSequence().map { x to it }
                         }
-                        .map { level.getBlockAt(it.first, it.second) }
+                        .map { level.getBlockAtTile(it.first, it.second) }
                         .filterNotNull()
                         .filter { it !== this }
     }

@@ -17,7 +17,7 @@ object BlockPicker : Tool(Control.PICK_BLOCK) {
         }
     }
 
-    override fun onUse(event: ControlEvent, mouseLevelXPixel: Int, mouseLevelYPixel: Int): Boolean {
+    override fun onUse(event: ControlEvent, mouseLevelX: Int, mouseLevelY: Int): Boolean {
         if (event.type == ControlEventType.PRESS) {
             val selectedBlock = LevelManager.levelObjectUnderMouse!!
             if (selectedBlock.type.itemForm != null && PlayerManager.localPlayer.brainRobot.inventory.contains(selectedBlock.type.itemForm!!)) {

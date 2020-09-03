@@ -5,7 +5,7 @@ import graphics.Renderer
 import graphics.TextureRenderParams
 import main.toColor
 import misc.Numbers
-import misc.PixelCoord
+import misc.Coord
 import screen.gui.GuiElement
 import kotlin.math.absoluteValue
 import kotlin.math.ceil
@@ -17,8 +17,8 @@ class ElementProgressArrow(parent: GuiElement, var from: GuiElement, var to: Gui
                            var backgroundColor: Color = toColor(0xFFFFFF),
                            var progressColor: Color = toColor(0x00BC06)) :
         GuiElement(parent) {
-    private var start = PixelCoord(0, 0)
-    private var end = PixelCoord(0, 0)
+    private var start = Coord(0, 0)
+    private var end = Coord(0, 0)
 
     var currentProgress = 0
 
@@ -29,36 +29,36 @@ class ElementProgressArrow(parent: GuiElement, var from: GuiElement, var to: Gui
     }
 
     private fun updateAlignments() {
-        start = PixelCoord(from.absoluteXPixel + getX(from, fromDir), from.absoluteYPixel + getY(from, fromDir))
-        end = PixelCoord(to.absoluteXPixel + getX(to, toDir), to.absoluteYPixel + getY(to, toDir))
+        start = Coord(from.absoluteX + getX(from, fromDir), from.absoluteY + getY(from, fromDir))
+        end = Coord(to.absoluteX + getX(to, toDir), to.absoluteY + getY(to, toDir))
     }
 
     override fun render(params: TextureRenderParams?) {
         val actualParams = params ?: TextureRenderParams.DEFAULT
         if (from.open && to.open) {
             updateAlignments()
-            val changeX = end.xPixel - start.xPixel
-            val changeY = end.yPixel - start.yPixel
-            var pixelsToColor = ceil((changeX.absoluteValue + changeY.absoluteValue + 2) * progress).toInt()
+            val changeX = end.x - start.x
+            val changeY = end.y - start.y
+            var toColor = ceil((changeX.absoluteValue + changeY.absoluteValue + 2) * progress).toInt()
             if (fromDir == 1 || fromDir == 3) {
-                Renderer.renderFilledRectangle(start.xPixel, start.yPixel, changeX + if (changeX > 0) 2 else 0, 2, actualParams.combine(TextureRenderParams(color = backgroundColor)))
-                if (pixelsToColor > 0) {
-                    Renderer.renderFilledRectangle(start.xPixel, start.yPixel, Integer.min((changeX + if (changeX > 0) 2 else 0).absoluteValue, pixelsToColor) * Numbers.sign(changeX), 2, actualParams.combine(TextureRenderParams(color = progressColor)))
-                    pixelsToColor -= (changeX + if (changeX > 0) 2 else 0).absoluteValue
+                Renderer.renderFilledRectangle(start.x, start.y, changeX + if (changeX > 0) 2 else 0, 2, actualParams.combine(TextureRenderParams(color = backgroundColor)))
+                if (toColor > 0) {
+                    Renderer.renderFilledRectangle(start.x, start.y, Integer.min((changeX + if (changeX > 0) 2 else 0).absoluteValue, toColor) * Numbers.sign(changeX), 2, actualParams.combine(TextureRenderParams(color = progressColor)))
+                    toColor -= (changeX + if (changeX > 0) 2 else 0).absoluteValue
                 }
-                Renderer.renderFilledRectangle(end.xPixel, start.yPixel, 2, changeY, actualParams.combine(TextureRenderParams(color = backgroundColor)))
-                if (pixelsToColor > 0) {
-                    Renderer.renderFilledRectangle(end.xPixel, start.yPixel, 2, Integer.min(changeY.absoluteValue, pixelsToColor) * Numbers.sign(changeY), actualParams.combine(TextureRenderParams(color = progressColor)))
+                Renderer.renderFilledRectangle(end.x, start.y, 2, changeY, actualParams.combine(TextureRenderParams(color = backgroundColor)))
+                if (toColor > 0) {
+                    Renderer.renderFilledRectangle(end.x, start.y, 2, Integer.min(changeY.absoluteValue, toColor) * Numbers.sign(changeY), actualParams.combine(TextureRenderParams(color = progressColor)))
                 }
             } else {
-                Renderer.renderFilledRectangle(start.xPixel, start.yPixel, 2, changeY + if (changeY > 0) 2 else 0, params = actualParams.combine(TextureRenderParams(color = backgroundColor)))
-                if (pixelsToColor > 0) {
-                    Renderer.renderFilledRectangle(start.xPixel, start.yPixel, 2, Integer.min((changeY + if (changeY > 0) 2 else 0).absoluteValue, pixelsToColor) * Numbers.sign(changeY), params = actualParams.combine(TextureRenderParams(color = progressColor)))
-                    pixelsToColor -= (changeY + if (changeY > 0) 2 else 0).absoluteValue
+                Renderer.renderFilledRectangle(start.x, start.y, 2, changeY + if (changeY > 0) 2 else 0, params = actualParams.combine(TextureRenderParams(color = backgroundColor)))
+                if (toColor > 0) {
+                    Renderer.renderFilledRectangle(start.x, start.y, 2, Integer.min((changeY + if (changeY > 0) 2 else 0).absoluteValue, toColor) * Numbers.sign(changeY), params = actualParams.combine(TextureRenderParams(color = progressColor)))
+                    toColor -= (changeY + if (changeY > 0) 2 else 0).absoluteValue
                 }
-                Renderer.renderFilledRectangle(start.xPixel, end.yPixel, changeX, 2, params = actualParams.combine(TextureRenderParams(color = backgroundColor)))
-                if (pixelsToColor > 0) {
-                    Renderer.renderFilledRectangle(start.xPixel, end.yPixel, Integer.min(changeX.absoluteValue, pixelsToColor) * Numbers.sign(changeX), 2, params = actualParams.combine(TextureRenderParams(color = progressColor)))
+                Renderer.renderFilledRectangle(start.x, end.y, changeX, 2, params = actualParams.combine(TextureRenderParams(color = backgroundColor)))
+                if (toColor > 0) {
+                    Renderer.renderFilledRectangle(start.x, end.y, Integer.min(changeX.absoluteValue, toColor) * Numbers.sign(changeX), 2, params = actualParams.combine(TextureRenderParams(color = progressColor)))
                 }
             }
         }
@@ -66,15 +66,15 @@ class ElementProgressArrow(parent: GuiElement, var from: GuiElement, var to: Gui
     }
 
     private fun getX(element: GuiElement, dir: Int) = when (dir % 4) {
-        0, 2 -> element.widthPixels / 2
-        1 -> element.widthPixels
+        0, 2 -> element.width / 2
+        1 -> element.width
         3 -> 0
         else -> 0
     }
 
     private fun getY(element: GuiElement, dir: Int) = when (dir % 4) {
-        0 -> element.heightPixels
-        1, 3 -> element.heightPixels / 2
+        0 -> element.height
+        1, 3 -> element.height / 2
         2 -> 0
         else -> 0
     }

@@ -1,20 +1,17 @@
 package screen
 
 import graphics.Renderer
-import level.Hitbox
-import level.LevelObject
-import level.LevelObjectType
 import level.moving.MovingObject
 import level.moving.MovingObjectType
 
-class Camera(xPixel: Int, yPixel: Int) : MovingObject(MovingObjectType.CAMERA, xPixel, yPixel, 0) {
+class Camera(x: Int, y: Int) : MovingObject(MovingObjectType.CAMERA, x, y, 0) {
 
     override fun render() {
-        Renderer.renderEmptyRectangle(xPixel - 4, yPixel - 4, 8, 8)
+        Renderer.renderEmptyRectangle(x - 4, y - 4, 8, 8)
     }
 
     override fun toString(): String {
-        return "Camera at $xPixel, $yPixel (id: $id)"
+        return "Camera at $x, $y (id: $id)"
     }
 
     override fun equals(other: Any?): Boolean {

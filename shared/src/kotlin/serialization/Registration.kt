@@ -44,7 +44,7 @@ import main.DebugCode
 import main.Version
 import main.VersionSerializer
 import main.isKotlinClass
-import misc.PixelCoord
+import misc.Coord
 import misc.TileCoord
 import network.*
 import network.packet.*
@@ -256,7 +256,7 @@ object Registration {
         register(Version::class, VersionSerializer(), 66)
 
         /* MISC */
-        register(PixelCoord::class, 67)
+        register(Coord::class, 67)
         register(TileCoord::class, 68)
 
         /* NETWORK */

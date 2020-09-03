@@ -3,7 +3,7 @@ package level.update
 import level.Level
 import level.entity.Entity
 import level.entity.Formation
-import misc.PixelCoord
+import misc.Coord
 import network.MovingObjectReference
 import player.Player
 import serialization.Id
@@ -16,15 +16,15 @@ class EntitySetFormation(
          * A map of references to entities and their positions in the formation.
          */
         @Id(2)
-        val positions: Map<MovingObjectReference, PixelCoord>,
+        val positions: Map<MovingObjectReference, Coord>,
         /**
          * The center of the formation.
          */
         @Id(3)
-        val center: PixelCoord
+        val center: Coord
 ) : LevelUpdate(LevelUpdateType.ENTITY_SET_FORMATION) {
 
-    private constructor() : this(mapOf(), PixelCoord(0, 0))
+    private constructor() : this(mapOf(), Coord(0, 0))
 
     override val playersToSendTo: Set<Player>?
         get() = null

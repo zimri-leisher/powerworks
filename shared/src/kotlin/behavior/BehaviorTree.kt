@@ -29,13 +29,6 @@ object Behavior {
     }
 
     object Offense {
-        @ExperimentalCoroutinesApi
-        val ATTACK_NEAREST = BehaviorTree {
-            sequence {
-                followPath(findPath(getNearestLevelObject()))
-            }
-        }
-
         val ATTACK_ARG = BehaviorTree {
             target(DefaultVariable.ARGUMENT)
         }

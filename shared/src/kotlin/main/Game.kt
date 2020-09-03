@@ -58,9 +58,9 @@ fun <K, V> MutableMap<K, V>.removeIf(selector: (MutableMap.MutableEntry<K, V>) -
     }
 }
 
-val TextureRegion.widthPixels: Int
+val TextureRegion.width: Int
     get() = regionWidth
-val TextureRegion.heightPixels: Int
+val TextureRegion.height: Int
     get() = regionHeight
 
 fun toColor(r: Int = 255, g: Int = 255, b: Int = 255, a: Int = 255) = Color(r / 255f, g / 255f, b / 255f, a / 255f)

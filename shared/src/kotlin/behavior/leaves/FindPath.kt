@@ -11,7 +11,7 @@ import level.LevelManager
 import level.LevelPosition
 import level.entity.Entity
 import main.toColor
-import misc.PixelCoord
+import misc.Coord
 import misc.TileCoord
 import serialization.Id
 import java.awt.Color
@@ -152,7 +152,7 @@ data class Node(var parent: Node? = null, val pos: TileCoord, val goal: TileCoor
 }
 
 data class EntityPath(
-        @Id(1) val goal: LevelPosition, @Id(2) val steps: List<PixelCoord>) {
+        @Id(1) val goal: LevelPosition, @Id(2) val steps: List<Coord>) {
     private constructor() : this(LevelPosition(0, 0, LevelManager.EMPTY_LEVEL), listOf())
 
     override fun equals(other: Any?): Boolean {
@@ -227,7 +227,7 @@ fun route(entity: Entity, goal: LevelPosition): EntityPath? {
         if (FindPath.renderForEntity == entity) {
             if (step >= FindPath.currentStep / 10) {
                 val usedNodes = backtrack(nextNode)
-                FindPath.lastPathCreated = EntityPath(goal, usedNodes.map { it.pos.pixel() })
+                FindPath.lastPathCreated = EntityPath(goal, usedNodes.map { it.pos.toCoord() })
                 FindPath.openNodes = openNodes
                 FindPath.usedNodes = usedNodes
                 FindPath.closedNodes = closedNodes
@@ -237,7 +237,7 @@ fun route(entity: Entity, goal: LevelPosition): EntityPath? {
     }
     if (finalNode != null) {
         val usedNodes = backtrack(finalNode)
-        val path = EntityPath(goal, usedNodes.map { it.pos.pixel() })
+        val path = EntityPath(goal, usedNodes.map { it.pos.toCoord() })
         if (FindPath.renderForEntity == entity) {
             FindPath.lastPathCreated = path
             FindPath.openNodes = openNodes
@@ -265,7 +265,7 @@ fun smooth(path: EntityPath, forEntity: Entity): EntityPath {
     if (path.steps.size == 2) {
         return path
     }
-    val newPathSteps = mutableListOf<PixelCoord>()
+    val newPathSteps = mutableListOf<Coord>()
     newPathSteps.addAll(path.steps)
     var checkPoint = path.steps[0]
     var currentPointIndex = 1
@@ -286,16 +286,16 @@ fun smooth(path: EntityPath, forEntity: Entity): EntityPath {
 
 const val TRAVERSABLE_CHECK_STEP = 4
 
-fun traversable(start: PixelCoord, end: PixelCoord, entity: Entity): Boolean {
-    val pointsToCheck = mutableListOf<PixelCoord>()
+fun traversable(start: Coord, end: Coord, entity: Entity): Boolean {
+    val pointsToCheck = mutableListOf<Coord>()
     // generate points from the start to the end with steps between them of TRAVERSABLE_CHECK_STEP
-    val angle = atan2(end.yPixel - start.yPixel.toDouble(), end.xPixel - start.xPixel.toDouble())
+    val angle = atan2(end.y - start.y.toDouble(), end.x - start.x.toDouble())
     var currentPoint = start
     var count = 0
     while (currentPoint.distance(end) > TRAVERSABLE_CHECK_STEP) {
         count++
-        currentPoint = PixelCoord(start.xPixel + (TRAVERSABLE_CHECK_STEP * count * cos(angle)).toInt(), start.yPixel + (TRAVERSABLE_CHECK_STEP * count * sin(angle)).toInt())
-        if (entity.getCollisions(currentPoint.xPixel, currentPoint.yPixel).any()) {
+        currentPoint = Coord(start.x + (TRAVERSABLE_CHECK_STEP * count * cos(angle)).toInt(), start.y + (TRAVERSABLE_CHECK_STEP * count * sin(angle)).toInt())
+        if (entity.getCollisions(currentPoint.x, currentPoint.y).any()) {
             return false
         }
     }

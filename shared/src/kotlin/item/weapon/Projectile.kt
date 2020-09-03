@@ -17,9 +17,9 @@ class Projectile(
         @Id(1)
         val type: ProjectileType,
         @Id(2)
-        var xPixel: Int,
+        var x: Int,
         @Id(3)
-        var yPixel: Int,
+        var y: Int,
         @Id(4)
         val angle: Float,
         @Id(5)
@@ -34,10 +34,10 @@ class Projectile(
     var yVel = 0f
 
     @Id(9)
-    var xPixelLeftover = 0f
+    var xRemainder = 0f
 
     @Id(10)
-    var yPixelLeftover = 0f
+    var yRemainder = 0f
 
     @Id(11)
     var ticksLived = 0
@@ -64,7 +64,7 @@ class Projectile(
     }
 
     fun render() {
-        Renderer.renderTexture(Image.Weapon.PROJECTILE, xPixel, yPixel, type.hitbox.width, type.hitbox.height, TextureRenderParams(rotation = Math.toDegrees(angle.toDouble()).toFloat()))
+        Renderer.renderTexture(Image.Weapon.PROJECTILE, x, y, type.hitbox.width, type.hitbox.height, TextureRenderParams(rotation = Math.toDegrees(angle.toDouble()).toFloat()))
     }
 
     fun onCollide(o: LevelObject) {
@@ -90,28 +90,28 @@ class Projectile(
         }
         xVel = type.speed * cos(angle)
         yVel = type.speed * sin(angle)
-        xPixelLeftover += xVel % 1
-        yPixelLeftover += yVel % 1
-        xPixel += xVel.toInt() + xPixelLeftover.toInt()
-        yPixel += yVel.toInt() + yPixelLeftover.toInt()
-        xPixelLeftover %= 1
-        yPixelLeftover %= 1
-        val possibleCollisions = parent.level.getCollisionsWith(xPixel, yPixel, squareSideLength, squareSideLength)
-        val actualCollision = getCollisionsWithPixelRectangle(possibleCollisions, points.map { it.first + xPixel + type.hitbox.width / 2 to it.second + yPixel + type.hitbox.height / 2 }).firstOrNull()
+        xRemainder += xVel % 1
+        yRemainder += yVel % 1
+        x += xVel.toInt() + xRemainder.toInt()
+        y += yVel.toInt() + yRemainder.toInt()
+        xRemainder %= 1
+        yRemainder %= 1
+        val possibleCollisions = parent.level.getCollisionsWith(x, y, squareSideLength, squareSideLength)
+        val actualCollision = getCollisionsWithRectangle(possibleCollisions, points.map { it.first + x + type.hitbox.width / 2 to it.second + y + type.hitbox.height / 2 }).firstOrNull()
         if (actualCollision != null) {
             onCollide(actualCollision)
         }
     }
 }
 
-private fun getCollisionsWithPixelRectangle(possibleColliders: Sequence<LevelObject>, points: List<Pair<Float, Float>>): Sequence<LevelObject> {
+private fun getCollisionsWithRectangle(possibleColliders: Sequence<LevelObject>, points: List<Pair<Float, Float>>): Sequence<LevelObject> {
     if (points.size != 4) {
         throw IllegalArgumentException("Rectangle must be defined by 4 points (had ${points.size})")
     }
 
     fun intersectsRectangle(levelObj: LevelObject): Boolean {
         for (point in points) {
-            if (Geometry.contains(levelObj.xPixel + levelObj.hitbox.xStart, levelObj.yPixel + levelObj.hitbox.yStart, levelObj.hitbox.width, levelObj.hitbox.height, point.first.toInt(), point.second.toInt(), 0, 0)) {
+            if (Geometry.contains(levelObj.x + levelObj.hitbox.xStart, levelObj.y + levelObj.hitbox.yStart, levelObj.hitbox.width, levelObj.hitbox.height, point.first.toInt(), point.second.toInt(), 0, 0)) {
                 return true
             }
         }

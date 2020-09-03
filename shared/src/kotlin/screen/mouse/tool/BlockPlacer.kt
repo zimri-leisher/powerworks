@@ -34,7 +34,7 @@ object BlockPlacer : Tool(Control.PLACE_BLOCK), ControlEventHandler {
         }
     }
 
-    override fun onUse(event: ControlEvent, mouseLevelXPixel: Int, mouseLevelYPixel: Int): Boolean {
+    override fun onUse(event: ControlEvent, mouseLevelX: Int, mouseLevelY: Int): Boolean {
         if (event.control == Control.PLACE_BLOCK) {
             if (event.type != ControlEventType.RELEASE) {
                 if (canPlace && LevelManager.levelUnderMouse != null) {
@@ -80,15 +80,15 @@ object BlockPlacer : Tool(Control.PLACE_BLOCK), ControlEventHandler {
         if (level == LevelManager.levelUnderMouse) {
             if (type != null) {
                 val blockType = type!!.placedBlock
-                val xPixel = xTile shl 4
-                val yPixel = yTile shl 4
-                blockType.textures.render(xPixel, yPixel, rotation, TextureRenderParams(color = Color(1f, 1f, 1f, 0.4f)))
+                val x = xTile shl 4
+                val y = yTile shl 4
+                blockType.textures.render(x, y, rotation, TextureRenderParams(color = Color(1f, 1f, 1f, 0.4f)))
                 for (node in blockType.nodesTemplate.nodes) {
                     val (rotatedXTile, rotatedYTile) = Geometry.rotate(node.xTile, node.yTile, blockType.widthTiles, blockType.heightTiles, rotation)
                     node.render(xTile + rotatedXTile, yTile + rotatedYTile, Geometry.addAngles(rotation, node.dir))
                 }
-                Renderer.renderEmptyRectangle(xPixel, yPixel, blockType.widthTiles shl 4, blockType.heightTiles shl 4, params = TextureRenderParams(color = toColor(if (canPlace) 0x04C900 else 0xC90004, 0.3f)))
-                Renderer.renderTextureKeepAspect(Image.Misc.ARROW, xPixel, yPixel, blockType.widthTiles shl 4, blockType.heightTiles shl 4, TextureRenderParams(rotation = -90f * rotation + 180f))
+                Renderer.renderEmptyRectangle(x, y, blockType.widthTiles shl 4, blockType.heightTiles shl 4, params = TextureRenderParams(color = toColor(if (canPlace) 0x04C900 else 0xC90004, 0.3f)))
+                Renderer.renderTextureKeepAspect(Image.Misc.ARROW, x, y, blockType.widthTiles shl 4, blockType.heightTiles shl 4, TextureRenderParams(rotation = -90f * rotation + 180f))
             }
         }
     }

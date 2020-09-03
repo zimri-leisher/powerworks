@@ -5,7 +5,7 @@ import level.Level
 import level.LevelManager
 import level.LevelPosition
 import level.entity.Entity
-import misc.PixelCoord
+import misc.Coord
 import network.MovingObjectReference
 import player.Player
 import serialization.Id
@@ -22,13 +22,13 @@ class EntitySetPath(
         /**
          * The starting position of that entity.
          */
-        @Id(4) val startPosition: PixelCoord,
+        @Id(4) val startPosition: Coord,
         /**
          * The path to give the [Entity].
          */
         @Id(3) val path: EntityPath) : LevelUpdate(LevelUpdateType.ENTITY_SET_PATH) {
 
-    private constructor() : this(MovingObjectReference(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0), PixelCoord(0, 0), EntityPath(LevelPosition(0, 0, LevelManager.EMPTY_LEVEL), listOf()))
+    private constructor() : this(MovingObjectReference(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0), Coord(0, 0), EntityPath(LevelPosition(0, 0, LevelManager.EMPTY_LEVEL), listOf()))
 
     override val playersToSendTo: Set<Player>?
         get() = null
@@ -39,7 +39,7 @@ class EntitySetPath(
 
     override fun act(level: Level) {
         (entityReference.value!! as Entity).apply {
-            setPosition(startPosition.xPixel, startPosition.yPixel)
+            setPosition(startPosition.x, startPosition.y)
             behavior.follow(path)
         }
     }

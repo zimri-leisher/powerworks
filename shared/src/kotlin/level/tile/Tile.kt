@@ -21,10 +21,10 @@ open class Tile(type: TileType = TileType.GRASS,
     private constructor() : this(TileType.GRASS, 0, 0, LevelManager.EMPTY_LEVEL)
 
     @Id(4)
-    val xPixel = xTile shl 4
+    val x = xTile shl 4
 
     @Id(5)
-    val yPixel = yTile shl 4
+    val y = yTile shl 4
 
     @Id(6)
     val xChunk = xTile shr CHUNK_TILE_EXP
@@ -42,7 +42,7 @@ open class Tile(type: TileType = TileType.GRASS,
     var rotation = nextInt(3)
 
     open fun render() {
-        Renderer.renderTexture(texture, xPixel, yPixel, TextureRenderParams(rotation = rotation * 90f))
+        Renderer.renderTexture(texture, x, y, TextureRenderParams(rotation = rotation * 90f))
     }
 
     override fun toString(): String {

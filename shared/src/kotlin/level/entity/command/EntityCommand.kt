@@ -1,13 +1,10 @@
 package level.entity.command
 
 import behavior.Behavior
-import behavior.BehaviorTree
-import level.Level
 import level.LevelManager
 import level.LevelPosition
 import level.entity.Entity
 import level.entity.EntityGroup
-import misc.PixelCoord
 import serialization.Id
 
 sealed class EntityCommand {

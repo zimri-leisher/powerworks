@@ -48,17 +48,17 @@ class ElementTabs(parent: GuiElement, val padding: Int = 0) : GuiElement(parent)
     }
 
     override fun update() {
-        highlightedTabIndex = if(!mouseOn) -1 else getTabIndexAt(Mouse.xPixel - absoluteXPixel)
+        highlightedTabIndex = if(!mouseOn) -1 else getTabIndexAt(Mouse.x - absoluteX)
         super.update()
     }
 
-    fun getTabIndexAt(xPixel: Int): Int {
-        if(xPixel < 0)
+    fun getTabIndexAt(x: Int): Int {
+        if(x < 0)
             return -1
         var currentX = 0
         for ((index, tab) in tabs.withIndex()) {
             currentX += tab.width + padding * 2
-            if (xPixel <= currentX) {
+            if (x <= currentX) {
                 return index
             }
         }
@@ -70,13 +70,13 @@ class ElementTabs(parent: GuiElement, val padding: Int = 0) : GuiElement(parent)
         var currentX = 0
         for ((index, tab) in tabs.withIndex()) {
             if (index == selectedTabIndex) {
-                Renderer.renderDefaultRectangle(absoluteXPixel + currentX, absoluteYPixel, tab.width + padding * 2, heightPixels, actualParams.combine(TextureRenderParams(brightness = 0.8f, rotation=180f)))
+                Renderer.renderDefaultRectangle(absoluteX + currentX, absoluteY, tab.width + padding * 2, height, actualParams.combine(TextureRenderParams(brightness = 0.8f, rotation=180f)))
             } else if(index == highlightedTabIndex) {
-                Renderer.renderDefaultRectangle(absoluteXPixel + currentX, absoluteYPixel, tab.width + padding * 2, heightPixels, actualParams.combine(TextureRenderParams(brightness = 1.1f)))
+                Renderer.renderDefaultRectangle(absoluteX + currentX, absoluteY, tab.width + padding * 2, height, actualParams.combine(TextureRenderParams(brightness = 1.1f)))
             } else {
-                Renderer.renderDefaultRectangle(absoluteXPixel + currentX, absoluteYPixel, tab.width + padding * 2, heightPixels, actualParams)
+                Renderer.renderDefaultRectangle(absoluteX + currentX, absoluteY, tab.width + padding * 2, height, actualParams)
             }
-            Renderer.renderTaggedText(tab.text, absoluteXPixel + currentX + padding, absoluteYPixel + padding)
+            Renderer.renderTaggedText(tab.text, absoluteX + currentX + padding, absoluteY + padding)
             currentX += tab.width + padding * 2
         }
         super.render(params)

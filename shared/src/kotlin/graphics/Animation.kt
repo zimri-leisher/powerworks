@@ -1,9 +1,9 @@
 package graphics
 
-import main.heightPixels
+import main.height
 import main.toColor
-import main.widthPixels
-import misc.PixelCoord
+import main.width
+import misc.Coord
 import serialization.Input
 import serialization.Output
 import serialization.Serializer
@@ -357,7 +357,7 @@ class Animation(path: String,
                 numberOfFrames: Int,
                 val startPlaying: Boolean = false,
                 val smoothing: Boolean = false,
-                val offsets: List<PixelCoord> = listOf(),
+                val offsets: List<Coord> = listOf(),
                 closure: StepChain.() -> Unit = {}) : Renderable() {
 
     private constructor() : this("misc/error", 1)
@@ -373,13 +373,13 @@ class Animation(path: String,
             field = value
         }
 
-    override val xPixelOffset get() = if (currentFrameIndex > offsets.lastIndex) 0 else offsets[currentFrameIndex].xPixel
-    override val yPixelOffset get() = if (currentFrameIndex > offsets.lastIndex) 0 else offsets[currentFrameIndex].yPixel
+    override val xOffset get() = if (currentFrameIndex > offsets.lastIndex) 0 else offsets[currentFrameIndex].x
+    override val yOffset get() = if (currentFrameIndex > offsets.lastIndex) 0 else offsets[currentFrameIndex].y
     val currentFrame get() = frames[currentFrameIndex]
     private var lastFrame = frames[0]
 
-    override val widthPixels get() = currentFrame.widthPixels
-    override val heightPixels get() = currentFrame.heightPixels
+    override val width get() = currentFrame.width
+    override val height get() = currentFrame.height
 
 
     /**
@@ -503,20 +503,20 @@ class Animation(path: String,
         }
     }
 
-    override fun render(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int, keepAspect: Boolean, params: TextureRenderParams) {
+    override fun render(x: Int, y: Int, width: Int, height: Int, keepAspect: Boolean, params: TextureRenderParams) {
         if (smoothing) {
             if (keepAspect) {
-                Renderer.renderTextureKeepAspect(lastFrame, xPixel + xPixelOffset, yPixel + yPixelOffset, widthPixels, heightPixels)
-                Renderer.renderTextureKeepAspect(currentFrame, xPixel + xPixelOffset, yPixel + yPixelOffset, widthPixels, heightPixels, TextureRenderParams(color = toColor(alpha = currentStepProgress)).combine(params))
+                Renderer.renderTextureKeepAspect(lastFrame, x + xOffset, y + yOffset, width, height)
+                Renderer.renderTextureKeepAspect(currentFrame, x + xOffset, y + yOffset, width, height, TextureRenderParams(color = toColor(alpha = currentStepProgress)).combine(params))
             } else {
-                Renderer.renderTexture(lastFrame, xPixel + xPixelOffset, yPixel + yPixelOffset, widthPixels, heightPixels)
-                Renderer.renderTexture(currentFrame, xPixel + xPixelOffset, yPixel + yPixelOffset, widthPixels, heightPixels, TextureRenderParams(color = toColor(alpha = currentStepProgress)).combine(params))
+                Renderer.renderTexture(lastFrame, x + xOffset, y + yOffset, width, height)
+                Renderer.renderTexture(currentFrame, x + xOffset, y + yOffset, width, height, TextureRenderParams(color = toColor(alpha = currentStepProgress)).combine(params))
             }
         } else {
             if (keepAspect) {
-                Renderer.renderTextureKeepAspect(currentFrame, xPixel + xPixelOffset, yPixel + yPixelOffset, widthPixels, heightPixels, params)
+                Renderer.renderTextureKeepAspect(currentFrame, x + xOffset, y + yOffset, width, height, params)
             } else {
-                Renderer.renderTexture(currentFrame, xPixel + xPixelOffset, yPixel + yPixelOffset, widthPixels, heightPixels, params)
+                Renderer.renderTexture(currentFrame, x + xOffset, y + yOffset, width, height, params)
             }
         }
     }

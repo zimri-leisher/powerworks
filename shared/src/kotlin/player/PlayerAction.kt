@@ -194,16 +194,16 @@ class ActionFarseekerBlockSetLevel(owner: Player,
 }
 
 /**
- * Places a [LevelObject] of the given [levelObjType] at the given [xPixel], [yPixel] and with the given [rotation] in the
+ * Places a [LevelObject] of the given [levelObjType] at the given [x], [y] and with the given [rotation] in the
  * given [level].
  */
 class ActionLevelObjectPlace(owner: Player,
                              @Id(2)
                        val levelObjType: LevelObjectType<*>,
                              @Id(3)
-                       val xPixel: Int,
+                       val x: Int,
                              @Id(4)
-                       val yPixel: Int,
+                       val y: Int,
                              @Id(5)
                        val rotation: Int,
                              @Id(6)
@@ -222,8 +222,8 @@ class ActionLevelObjectPlace(owner: Player,
             println("doesnt contain item form")
             return false
         }
-        if (level.getCollisionsWith(levelObjType.hitbox, xPixel, yPixel).any()) {
-            println("can't add to level $levelObjType $xPixel $yPixel")
+        if (level.getCollisionsWith(levelObjType.hitbox, x, y).any()) {
+            println("can't add to level $levelObjType $x $y")
             return false
         }
         return true
@@ -239,7 +239,7 @@ class ActionLevelObjectPlace(owner: Player,
             println("Should have been able to remove items from brainrobot but wasn't")
             return false
         }
-        val newInstance = levelObjType.instantiate(xPixel, yPixel, rotation)
+        val newInstance = levelObjType.instantiate(x, y, rotation)
         newInstance.team = owner.team
         if (!level.add(newInstance)) {
             println("Should have been able to add block to level but wasn't")
@@ -249,7 +249,7 @@ class ActionLevelObjectPlace(owner: Player,
     }
 
     override fun actGhost() {
-        temporaryGhostObject = GhostLevelObject(levelObjType, xPixel, yPixel, rotation)
+        temporaryGhostObject = GhostLevelObject(levelObjType, x, y, rotation)
         level.add(temporaryGhostObject!!)
     }
 

@@ -13,25 +13,25 @@ sealed class Dimensions {
 
     fun pad(width: Int = 0, height: Int = 0) = Padded(this, width, height)
 
-    open class Exact(val widthPixels: Int, val heightPixels: Int) : Dimensions() {
+    open class Exact(val width: Int, val height: Int) : Dimensions() {
         override fun get(element: GuiElement, gui: Gui) = this
 
         override fun toString(): String {
-            return "Exact($widthPixels, $heightPixels)"
+            return "Exact($width, $height)"
         }
     }
 
     object None : Exact(0, 0)
 
-    class Unknown(widthPixels: Int, heightPixels: Int) : Exact(widthPixels, heightPixels)
+    class Unknown(width: Int, height: Int) : Exact(width, height)
 
     class Padded(val base: Dimensions, val widthPad: Int, val heightPad: Int) : Dimensions() {
         override fun get(element: GuiElement, gui: Gui): Exact {
             val baseDimensions = base.get(element, gui)
             if(baseDimensions is Unknown) {
-                return Unknown(baseDimensions.widthPixels + widthPad, baseDimensions.heightPixels + heightPad)
+                return Unknown(baseDimensions.width + widthPad, baseDimensions.height + heightPad)
             }
-            return Exact(baseDimensions.widthPixels + widthPad, baseDimensions.heightPixels + heightPad)
+            return Exact(baseDimensions.width + widthPad, baseDimensions.height + heightPad)
         }
     }
 
@@ -44,17 +44,17 @@ sealed class Dimensions {
                 if (placement is Placement.Unknown || dimensions is Unknown) {
                     anyUnknown = true
                 }
-                if (placement.xPixel < xRange.first) {
-                    xRange = placement.xPixel..xRange.last
+                if (placement.x < xRange.first) {
+                    xRange = placement.x..xRange.last
                 }
-                if (placement.xPixel + dimensions.widthPixels > xRange.last) {
-                    xRange = xRange.first..(placement.xPixel + dimensions.widthPixels)
+                if (placement.x + dimensions.width > xRange.last) {
+                    xRange = xRange.first..(placement.x + dimensions.width)
                 }
-                if (placement.yPixel < yRange.first) {
-                    yRange = placement.yPixel..yRange.last
+                if (placement.y < yRange.first) {
+                    yRange = placement.y..yRange.last
                 }
-                if (placement.yPixel + dimensions.heightPixels > yRange.last) {
-                    yRange = yRange.first..(placement.yPixel + dimensions.heightPixels)
+                if (placement.y + dimensions.height > yRange.last) {
+                    yRange = yRange.first..(placement.y + dimensions.height)
                 }
             }
             return if (anyUnknown) Unknown(max(0, xRange.last) - max(0, xRange.first), max(0, yRange.last) - max(0, yRange.first))
@@ -65,18 +65,18 @@ sealed class Dimensions {
     class VerticalList(val padding: Int) : Dimensions() {
         override fun get(element: GuiElement, gui: Gui): Exact {
             val dimensions = element.children.map { gui.layout.getExactDimensions(it) }
-            return if (dimensions.any { it is Unknown }) Unknown(dimensions.maxBy { it.widthPixels }?.widthPixels
-                    ?: 0, dimensions.sumBy { it.heightPixels + padding } - padding)
-            else Exact(dimensions.maxBy { it.widthPixels }?.widthPixels ?: 0, dimensions.sumBy { it.heightPixels + padding } - padding)
+            return if (dimensions.any { it is Unknown }) Unknown(dimensions.maxBy { it.width }?.width
+                    ?: 0, dimensions.sumBy { it.height + padding } - padding)
+            else Exact(dimensions.maxBy { it.width }?.width ?: 0, dimensions.sumBy { it.height + padding } - padding)
         }
     }
 
     class HorizontalList(val padding: Int) : Dimensions() {
         override fun get(element: GuiElement, gui: Gui): Exact {
             val dimensions = element.children.map { gui.layout.getExactDimensions(it) }
-            return if (dimensions.any { it is Unknown }) Unknown(dimensions.sumBy { it.widthPixels + padding } - padding,
-                    dimensions.maxBy { it.heightPixels }?.heightPixels ?: 0)
-            else Exact(dimensions.sumBy { it.widthPixels + padding } - padding, dimensions.maxBy { it.heightPixels }?.heightPixels ?: 0)
+            return if (dimensions.any { it is Unknown }) Unknown(dimensions.sumBy { it.width + padding } - padding,
+                    dimensions.maxBy { it.height }?.height ?: 0)
+            else Exact(dimensions.sumBy { it.width + padding } - padding, dimensions.maxBy { it.height }?.height ?: 0)
         }
     }
 

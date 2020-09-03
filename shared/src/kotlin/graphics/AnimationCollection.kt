@@ -1,6 +1,6 @@
 package graphics
 
-import misc.PixelCoord
+import misc.Coord
 import serialization.Input
 import serialization.Output
 import serialization.Serializer
@@ -17,7 +17,7 @@ class AnimationCollection(val animations: List<Animation>) {
                 numberOfFrames: Int,
                 startPlaying: Boolean = false,
                 smoothing: Boolean = false,
-                offsets: List<PixelCoord> = listOf(),
+                offsets: List<Coord> = listOf(),
                 closure: StepChain.() -> Unit = {}) : this(List(numberOfAnimations) { index -> Animation(path + "_$index", numberOfFrames, startPlaying, smoothing, offsets, closure) })
 
     init {

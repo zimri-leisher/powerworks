@@ -1,7 +1,5 @@
 package item.weapon
 
-import graphics.Animation
-import graphics.AnimationCollection
 import level.entity.Entity
 import serialization.Id
 
@@ -30,7 +28,7 @@ class Weapon(
 
     fun render() {
         if (parent != null) {
-            fireAnimation[parent!!.rotation].render(parent!!.xPixel, parent!!.yPixel)
+            fireAnimation[parent!!.rotation].render(parent!!.x, parent!!.y)
         }
     }
 
@@ -40,7 +38,7 @@ class Weapon(
         }
         fireAnimation[parent!!.rotation].playFrom("start")
         cooldown = type.cooldown
-        parent!!.level.add(Projectile(type.projectileType, parent!!.xPixel, parent!!.yPixel, angle, parent!!))
+        parent!!.level.add(Projectile(type.projectileType, parent!!.x, parent!!.y, angle, parent!!))
         return true
     }
 

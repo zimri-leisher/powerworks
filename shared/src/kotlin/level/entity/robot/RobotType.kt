@@ -22,13 +22,13 @@ class RobotType<T : Robot>(initializer: RobotType<T>.() -> Unit) : EntityType<T>
         val ALL = mutableListOf<RobotType<*>>()
 
         val STANDARD = RobotType<Robot> {
-            instantiate = { xPixel, yPixel, rotation -> Robot(this, xPixel, yPixel, rotation) }
+            instantiate = { x, y, rotation -> Robot(this, x, y, rotation) }
             textures = LevelObjectTextures(ImageCollection.ROBOT)
             hitbox = Hitbox.STANDARD_ROBOT
         }
 
         val BRAIN = RobotType<BrainRobot> {
-            instantiate = { xPixel, yPixel, rotation -> BrainRobot(xPixel, yPixel, rotation, User(UUID.randomUUID(), "")) }
+            instantiate = { x, y, rotation -> BrainRobot(x, y, rotation, User(UUID.randomUUID(), "")) }
             textures = LevelObjectTextures(ImageCollection.ROBOT)
             hitbox = Hitbox.STANDARD_ROBOT
             damageable = false

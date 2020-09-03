@@ -24,7 +24,7 @@ open class MovingObjectType<T : MovingObject>(initializer: MovingObjectType<T>.(
         val ALL = mutableListOf<MovingObjectType<*>>()
 
         val ERROR = MovingObjectType<DefaultMovingObject> {
-            instantiate = { xPixel, yPixel, rotation -> DefaultMovingObject(this, xPixel, yPixel, rotation) }
+            instantiate = { x, y, rotation -> DefaultMovingObject(this, x, y, rotation) }
             textures = LevelObjectTextures(Image.Misc.ERROR)
             hitbox = Hitbox.NONE
         }
@@ -32,7 +32,7 @@ open class MovingObjectType<T : MovingObject>(initializer: MovingObjectType<T>.(
         val CAMERA = MovingObjectType<Camera> {
             maxSpeed = 1.5
             hitbox = Hitbox.NONE
-            instantiate = { xPixel, yPixel, _ -> Camera(xPixel, yPixel) }
+            instantiate = { x, y, _ -> Camera(x, y) }
         }
     }
 }
