@@ -6,13 +6,14 @@ import graphics.Renderer
 import graphics.TextureRenderParams
 import io.*
 import item.BlockItemType
+import level.Level
 import level.LevelManager
 import level.block.BlockType
 import level.getCollisionsWith
 import main.GameState
 import main.toColor
 import misc.Geometry
-import player.PlaceLevelObject
+import player.ActionLevelObjectPlace
 import player.PlayerManager
 import screen.mouse.Mouse
 
@@ -36,9 +37,9 @@ object BlockPlacer : Tool(Control.PLACE_BLOCK), ControlEventHandler {
     override fun onUse(event: ControlEvent, mouseLevelXPixel: Int, mouseLevelYPixel: Int): Boolean {
         if (event.control == Control.PLACE_BLOCK) {
             if (event.type != ControlEventType.RELEASE) {
-                if (canPlace) {
+                if (canPlace && LevelManager.levelUnderMouse != null) {
                     val blockType = type!!.placedBlock
-                    PlayerManager.takeAction(PlaceLevelObject(PlayerManager.localPlayer, blockType, xTile shl 4, yTile shl 4, rotation, LevelManager.levelUnderMouse!!))
+                    PlayerManager.takeAction(ActionLevelObjectPlace(PlayerManager.localPlayer, blockType, xTile shl 4, yTile shl 4, rotation, LevelManager.levelUnderMouse!!))
                     canPlace = false
                     hasPlacedThisInteraction = true
                     return true
@@ -75,18 +76,20 @@ object BlockPlacer : Tool(Control.PLACE_BLOCK), ControlEventHandler {
         }
     }
 
-    override fun renderAbove() {
-        if (type != null) {
-            val blockType = type!!.placedBlock
-            val xPixel = xTile shl 4
-            val yPixel = yTile shl 4
-            blockType.textures.render(xPixel, yPixel, rotation, TextureRenderParams(color = Color(1f, 1f, 1f, 0.4f)))
-            for (node in blockType.nodesTemplate.nodes) {
-                val (rotatedXTile, rotatedYTile) = Geometry.rotate(node.xTile, node.yTile, blockType.widthTiles, blockType.heightTiles, rotation)
-                node.render(xTile + rotatedXTile, yTile + rotatedYTile, Geometry.addAngles(rotation, node.dir))
+    override fun renderAbove(level: Level) {
+        if (level == LevelManager.levelUnderMouse) {
+            if (type != null) {
+                val blockType = type!!.placedBlock
+                val xPixel = xTile shl 4
+                val yPixel = yTile shl 4
+                blockType.textures.render(xPixel, yPixel, rotation, TextureRenderParams(color = Color(1f, 1f, 1f, 0.4f)))
+                for (node in blockType.nodesTemplate.nodes) {
+                    val (rotatedXTile, rotatedYTile) = Geometry.rotate(node.xTile, node.yTile, blockType.widthTiles, blockType.heightTiles, rotation)
+                    node.render(xTile + rotatedXTile, yTile + rotatedYTile, Geometry.addAngles(rotation, node.dir))
+                }
+                Renderer.renderEmptyRectangle(xPixel, yPixel, blockType.widthTiles shl 4, blockType.heightTiles shl 4, params = TextureRenderParams(color = toColor(if (canPlace) 0x04C900 else 0xC90004, 0.3f)))
+                Renderer.renderTextureKeepAspect(Image.Misc.ARROW, xPixel, yPixel, blockType.widthTiles shl 4, blockType.heightTiles shl 4, TextureRenderParams(rotation = -90f * rotation + 180f))
             }
-            Renderer.renderEmptyRectangle(xPixel, yPixel, blockType.widthTiles shl 4, blockType.heightTiles shl 4, params = TextureRenderParams(color = toColor(if (canPlace) 0x04C900 else 0xC90004, 0.3f)))
-            Renderer.renderTextureKeepAspect(Image.Misc.ARROW, xPixel, yPixel, blockType.widthTiles shl 4, blockType.heightTiles shl 4, TextureRenderParams(rotation = -90f * rotation + 180f))
         }
     }
 }

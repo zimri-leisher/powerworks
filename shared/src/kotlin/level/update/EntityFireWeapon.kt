@@ -11,13 +11,28 @@ import serialization.Id
 import java.util.*
 import kotlin.math.absoluteValue
 
+/**
+ * A level update for the firing of an [Entity]'s weapon.
+ */
 class EntityFireWeapon(
+        /**
+         * The position of the [Entity] when it fired.
+         */
         @Id(2)
         val positionWhenFired: PixelCoord,
+        /**
+         * The angle the [Entity] fired at.
+         */
         @Id(3)
         val angleFired: Float,
+        /**
+         * The type of [Projectile] fired.
+         */
         @Id(4)
         val projectileType: ProjectileType,
+        /**
+         * A reference to the [Entity] that fired.
+         */
         @Id(5)
         val entityReference: MovingObjectReference
 ) : LevelUpdate(LevelUpdateType.ENTITY_FIRE_WEAPON) {

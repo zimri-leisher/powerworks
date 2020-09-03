@@ -10,7 +10,13 @@ import player.Player
 import serialization.Id
 import java.util.*
 
+/**
+ * A level update for removing a [LevelObject] from a level.
+ */
 class LevelObjectRemove(
+        /**
+         * A reference to the [LevelObject] to remove.
+         */
         @Id(2)
         val objReference: LevelObjectReference
 ) : LevelUpdate(LevelUpdateType.LEVEL_OBJECT_REMOVE) {

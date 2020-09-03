@@ -77,7 +77,7 @@ object Registration {
 
     fun registerAll() {
 
-        // max 267
+        // max 271
         /* COLLECTIONS */
         val singletonList = listOf(1)
         register(singletonList::class, CollectionSerializer { it.toList() }, 209)
@@ -184,7 +184,10 @@ object Registration {
         register(EntitySetTarget::class, 246)
         register(EntityFireWeapon::class, 253)
         register(FarseekerBlockSetAvailableLevels::class, 263)
+        register(FarseekerBlockSetDestinationLevel::class, 269)
         register(ResourceNodeBehaviorEdit::class, 265)
+        register(LevelObjectSwitchLevelsTo::class, 270)
+        register(LevelPosition::class, 271)
 
         /* /BLOCK */
         register(BlockType::class, IDSerializer({ BlockType.ALL }, { it.id }), 22)
@@ -285,13 +288,14 @@ object Registration {
 
         /* PLAYER */
         register(Player::class, PlayerSerializer(), 85)
-        register(PlaceLevelObject::class, 202)
-        register(RemoveLevelObjectAction::class, 203)
-        register(SelectCrafterRecipeAction::class, 206)
-        register(ControlEntityAction::class, 207)
-        register(EditResourceNodeBehaviorAction::class, 208)
-        register(EntityCreateGroup::class, 241)
-        register(TransferItemsBetweenBlock::class, 245)
+        register(ActionLevelObjectPlace::class, 202)
+        register(ActionLevelObjectRemove::class, 203)
+        register(ActionSelectCrafterRecipe::class, 206)
+        register(ActionControlEntity::class, 207)
+        register(ActionEditResourceNodeBehavior::class, 208)
+        register(ActionEntityCreateGroup::class, 241)
+        register(ActionTransferItemsBetweenBlock::class, 245)
+        register(ActionFarseekerBlockSetLevel::class, 268)
         register(Team::class, 255)
 
         /* RESOURCE */

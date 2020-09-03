@@ -37,5 +37,13 @@ enum class DebugCode {
     /**
      * Information about the resources nodes at the mouse position in the level
      */
-    RESOURCE_NODES_INFO
+    RESOURCE_NODES_INFO,
+    /**
+     * Information about input/control presses
+     */
+    CONTROLS_INFO,
+    /**
+     * Information about levels and level objects
+     */
+    LEVEL_INFO
 }

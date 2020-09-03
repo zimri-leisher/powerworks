@@ -6,7 +6,6 @@ import io.ControlEventType
 import level.LevelManager
 import level.getResourceNodesAt
 import resource.ResourceNode
-import screen.RoutingLanguageEditor
 
 object ResourceNodeEditor : Tool(Control.EDIT_RESOURCE_NODE) {
 
@@ -20,8 +19,7 @@ object ResourceNodeEditor : Tool(Control.EDIT_RESOURCE_NODE) {
 
     override fun onUse(event: ControlEvent, mouseLevelXPixel: Int, mouseLevelYPixel: Int): Boolean {
         if (event.type == ControlEventType.RELEASE) {
-            RoutingLanguageEditor.node = selectedNodes.first()
-            RoutingLanguageEditor.open = true
+            // TODO open resource node editor
             return true
         }
         return false

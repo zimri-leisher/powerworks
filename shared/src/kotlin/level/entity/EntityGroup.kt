@@ -2,9 +2,10 @@ package level.entity
 
 import data.WeakMutableList
 import graphics.Renderer
+import level.Level
 import level.LevelManager
-import level.update.EntitySetFormation
 import level.canAdd
+import level.update.EntitySetFormation
 import misc.Geometry
 import misc.PixelCoord
 import network.MovingObjectReference
@@ -20,10 +21,9 @@ data class Formation(
     private constructor() : this(PixelCoord(0, 0), mapOf())
 
     @Id(3)
-    val boundaries: Rectangle
+    val boundaries: Rectangle = Rectangle()
 
     init {
-        boundaries = Rectangle()
         for ((entity, position) in positions) {
             boundaries.add(Rectangle(
                     position.xPixel + entity.hitbox.xStart + entity.hitbox.width / 2,
@@ -34,18 +34,25 @@ data class Formation(
     }
 }
 
+/**
+ * A mutable group of [Entity]s. Used for commanding multiple entities at once instead of just one. This is where the
+ * group [Formation] is stored.
+ */
 class EntityGroup(
-        @Id(1)
-        val entities: List<Entity>) {
+        entities: List<Entity> = listOf()) {
+
+    @Id(1)
+    private val mutableEntities = mutableListOf<Entity>()
+
+    val entities: List<Entity>
+        get() = mutableEntities
 
     @Id(2)
-    val level = entities.map { it.level }.distinct().apply {
-        if (size > 1) {
-            throw Exception("Entity group created with entities in multiple levels!")
-        }
-    }.firstOrNull() ?: LevelManager.EMPTY_LEVEL
+    var level: Level = LevelManager.EMPTY_LEVEL
 
-    private constructor() : this(listOf())
+    init {
+        entities.forEach { add(it) }
+    }
 
     @Id(3)
     var formation: Formation? = null
@@ -67,6 +74,21 @@ class EntityGroup(
         ALL.add(this)
     }
 
+    fun add(entity: Entity) {
+        if (level == LevelManager.EMPTY_LEVEL) {
+            level = entity.level
+        } else if (entity.level != level) {
+            throw IllegalArgumentException("Tried to add an entity to entity group that had a different level than the group")
+        }
+        entity.group = this
+        mutableEntities.add(entity)
+    }
+
+    fun remove(entity: Entity) {
+        entity.group = null
+        mutableEntities.remove(entity)
+    }
+
     fun createFormationAround(xPixel: Int, yPixel: Int, padding: Int) {
         if (entities.isEmpty()) {
             return
@@ -78,7 +100,6 @@ class EntityGroup(
 
         val biggestHitbox = entities.map { it.hitbox }.maxBy { it.width * it.height }!!
 
-        val center = PixelCoord(xPixel, yPixel)
         val formationPositions = mutableListOf<PixelCoord>()
 
         // start by adding the first entity

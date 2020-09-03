@@ -46,10 +46,10 @@ open class CrafterBlock(override val type: CrafterBlockType<*>, xTile: Int, yTil
     private val inputNodes = nodes.filter { it.behavior.allowIn.possible()?.isEmpty() == true } // nodes that start out allowing all types out
 
     @Id(26)
-    protected val inputContainer = inputNodes.getAttachedContainers().first()
+    val inputContainer = inputNodes.getAttachedContainers().first()
 
     @Id(27)
-    protected val outputContainer = nodes.filter { it.behavior.allowOut.possible()?.isEmpty() == true }.getAttachedContainers().first()
+    val outputContainer = nodes.filter { it.behavior.allowOut.possible()?.isEmpty() == true }.getAttachedContainers().first()
 
     init {
         inputContainer.listeners.add(this)
@@ -89,7 +89,7 @@ open class CrafterBlock(override val type: CrafterBlockType<*>, xTile: Int, yTil
     private fun enoughToCraft() = currentResources.containsAtLeastAll(recipe!!.consume)
 
     override fun onFinishWork() {
-        if(recipe == null) {
+        if (recipe == null) {
             return
         }
         if (outputContainer.spaceFor(recipe!!.produce) && inputContainer.contains(recipe!!.consume)) {

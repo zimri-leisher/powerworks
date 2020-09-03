@@ -8,10 +8,26 @@ import player.Player
 import serialization.Id
 import java.util.*
 
-class EntityPathUpdate(@Id(2) val entityReference: MovingObjectReference,
-                       @Id(5) val pathIndex: Int,
-                       @Id(6) val timeReachedStep: Int,
-                       @Id(4) val pathHash: Int) : LevelUpdate(LevelUpdateType.ENTITY_UPDATE_PATH_POSITION) {
+/**
+ * A level update specifying the time and place an [Entity] reached a path step. Useful for ensuring synchronized movement between client and server.
+ */
+class EntityPathUpdate(
+        /**
+         * A reference to the [Entity] which reached the path step.
+         */
+        @Id(2) val entityReference: MovingObjectReference,
+        /**
+         * The index of that path step in the overall path.
+         */
+        @Id(5) val pathIndex: Int,
+        /**
+         * The time, in ticks since the [Level] started updating, that the entity reached that path step.
+         */
+        @Id(6) val timeReachedStep: Int,
+        /**
+         * The hash of the path. Useful for synchronization.
+         */
+        @Id(4) val pathHash: Int) : LevelUpdate(LevelUpdateType.ENTITY_UPDATE_PATH_POSITION) {
 
     private constructor() : this(MovingObjectReference(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0), 0, 0, 0)
 

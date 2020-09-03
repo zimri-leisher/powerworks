@@ -1,11 +1,12 @@
 package screen.mouse.tool
 
 import io.*
+import level.Level
 import level.LevelManager
 import main.Game
 import main.GameState
-import screen.gui2.ElementLevelView
-import screen.gui2.ScreenManager
+import screen.element.ElementLevelView
+import screen.ScreenManager
 import java.util.*
 
 abstract class Tool(val use: List<Control>, val activators: List<Control> = listOf()) {
@@ -20,9 +21,9 @@ abstract class Tool(val use: List<Control>, val activators: List<Control> = list
 
     open fun update() {}
 
-    open fun renderBelow() {}
+    open fun renderBelow(level: Level) {}
 
-    open fun renderAbove() {}
+    open fun renderAbove(level: Level) {}
 
     companion object : ControlEventHandler {
         val ALL = mutableListOf<Tool>()
@@ -73,12 +74,12 @@ abstract class Tool(val use: List<Control>, val activators: List<Control> = list
             ALL.forEach { it.update() }
         }
 
-        fun renderBelow() {
-            ALL.forEach { it.renderBelow() }
+        fun renderBelow(level: Level) {
+            ALL.forEach { it.renderBelow(level) }
         }
 
-        fun renderAbove() {
-            ALL.forEach { it.renderAbove() }
+        fun renderAbove(level: Level) {
+            ALL.forEach { it.renderAbove(level) }
         }
 
         override fun handleControlEvent(event: ControlEvent) {

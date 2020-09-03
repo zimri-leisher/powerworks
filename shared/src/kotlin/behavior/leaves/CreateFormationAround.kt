@@ -14,7 +14,7 @@ class CreateFormationAround(parent: BehaviorTree, val around: Variable, val padd
         }
         val aroundPos = getData<Any>(around) ?: return false
         val actualAroundPos =
-                if (aroundPos is TileCoord) aroundPos.toPixel()
+                if (aroundPos is TileCoord) aroundPos.pixel()
                 else if (aroundPos is PixelCoord) aroundPos
                 else return false
         entity.group!!.createFormationAround(actualAroundPos.xPixel, actualAroundPos.yPixel, padding)

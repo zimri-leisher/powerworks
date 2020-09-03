@@ -4,6 +4,7 @@ import behavior.BehaviorTree
 import behavior.DefaultVariable
 import behavior.leaves.EntityPath
 import level.LevelObject
+import level.LevelPosition
 import level.update.EntityFireWeapon
 import level.update.EntityPathUpdate
 import main.Game
@@ -12,13 +13,17 @@ import network.MovingObjectReference
 import serialization.Id
 import kotlin.math.*
 
+/**
+ * A class for managing the behavior of an [Entity]. Stores currently running [BehaviorTree]s, [EntityPath] and [attack] information.
+ *
+ */
 class EntityBehavior(
         @Id(0)
         private val parent: Entity) {
 
     private constructor() : this(DefaultEntity(EntityType.ERROR, 0, 0))
 
-    // ignore these all. client side only for now.
+    // TODO make these not transient
     val running = mutableMapOf<BehaviorTree, Int>()
 
     private val _toAdd = mutableMapOf<BehaviorTree, Int>()
@@ -40,7 +45,13 @@ class EntityBehavior(
     private var timesReachedStep = arrayOfNulls<Int>(0)
 
     @Id(9)
-    var target: LevelObject? = null
+    var attackTarget: LevelObject? = null
+
+    @Id(10)
+    var goalPosition: LevelPosition? = null
+
+    @Id(11)
+    private var movingToGoalPosition = false
 
     fun update() {
         traversing = true
@@ -52,14 +63,14 @@ class EntityBehavior(
         _toRemove.clear()
 
         moveToFollowPath()
-        attackTarget()
+        attack()
     }
 
-    private fun attackTarget() {
-        if (target != null && parent.weapon != null) {
-            val target = target!!
+    private fun attack() {
+        if (attackTarget != null && parent.weapon != null) {
+            val target = attackTarget!!
             if (target.level != parent.level || !target.inLevel) {
-                this.target = null
+                this.attackTarget = null
                 return
             }
             if (parent.weapon?.canFire == true) {
@@ -74,14 +85,13 @@ class EntityBehavior(
     private fun moveToFollowPath() {
         if (path != null && currentPathStepIndex < path!!.steps.size) {
             val path = path!!
+            if (parent.level != path.goal.level || !parent.inLevel) {
+                stopFollowingPath()
+                return
+            }
             val currentStep = path.steps[currentPathStepIndex]
-            val xDist = currentStep.xPixel - parent.xPixel
-            val yDist = currentStep.yPixel - parent.yPixel
-            val angle = atan2(yDist.toDouble(), xDist.toDouble())
-            val speed = parent.type.moveSpeed * 16 / 60 // convert from tiles per second to pixels per tick
-            parent.xVel += cos(angle) * speed
-            parent.yVel += sin(angle) * speed
-            val dist = sqrt(Math.pow(xDist.toDouble(), 2.0) + Math.pow(yDist.toDouble(), 2.0))
+            moveToPoint(currentStep.xPixel, currentStep.yPixel)
+            val dist = distanceToPoint(currentStep.xPixel, currentStep.yPixel)
             if (dist < 1 && timesReachedStep[currentPathStepIndex] == null) { // if we just reached this for the first time
                 // reached step
                 timesReachedStep[currentPathStepIndex] = timeSincePathingStart
@@ -89,10 +99,36 @@ class EntityBehavior(
                 currentPathStepIndex++
             }
             timeSincePathingStart++
+        } else if (goalPosition != null) {
+            val goalPosition = goalPosition!!
+            val dist = distanceToPoint(goalPosition.xPixel, goalPosition.yPixel)
+            if(dist > 16) {
+                movingToGoalPosition = true
+            } else if(dist <= 1) {
+                movingToGoalPosition = false
+            }
+            if(movingToGoalPosition) {
+                moveToPoint(goalPosition.xPixel, goalPosition.yPixel)
+            }
         }
     }
 
-    fun getEstimatedTimeToStep(index: Int): Int {
+    private fun distanceToPoint(xPixel: Int, yPixel: Int): Double {
+        val xDist = xPixel - parent.xPixel
+        val yDist = yPixel - parent.yPixel
+        return sqrt(Math.pow(xDist.toDouble(), 2.0) + Math.pow(yDist.toDouble(), 2.0))
+    }
+
+    private fun moveToPoint(xPixel: Int, yPixel: Int) {
+        val xDist = xPixel - parent.xPixel
+        val yDist = yPixel - parent.yPixel
+        val angle = atan2(yDist.toDouble(), xDist.toDouble())
+        val speed = parent.type.moveSpeed * 16 / Game.UPDATES_PER_SECOND // convert from tiles per second to pixels per tick
+        parent.xVel += cos(angle) * speed
+        parent.yVel += sin(angle) * speed
+    }
+
+    private fun getEstimatedTimeToStep(index: Int): Int {
         val path = path!!
         val step = path.steps[index]
         val xDist = step.xPixel - parent.xPixel

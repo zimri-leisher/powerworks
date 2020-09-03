@@ -4,9 +4,6 @@ import audio.AudioManager
 import data.DirectoryChangeWatcher
 import data.FileManager
 import data.GameDirectoryIdentifier
-import data.WeakMutableList
-import io.ControlEventHandler
-import io.InputManager
 import io.MouseMovementListener
 import level.generator.LevelType
 import main.Game
@@ -14,9 +11,8 @@ import main.GameState
 import network.User
 import resource.ResourceNode
 import screen.CameraMovementListener
-import screen.elements.GUILevelView
-import screen.gui2.ElementLevelView
-import screen.gui2.ScreenManager
+import screen.element.ElementLevelView
+import screen.ScreenManager
 import screen.mouse.Mouse
 import java.nio.file.Path
 import java.time.LocalDateTime
@@ -103,7 +99,6 @@ object LevelManager : DirectoryChangeWatcher, MouseMovementListener, CameraMovem
 
     override fun onLevelEvent(level: Level, event: LevelEvent) {
         if(event == LevelEvent.LOAD) {
-            loadedLevels.add(level)
         } else if(event == LevelEvent.UNLOAD) {
             loadedLevels.remove(level)
         }

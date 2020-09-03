@@ -1,5 +1,6 @@
 package item.weapon
 
+import graphics.Image
 import graphics.Renderer
 import graphics.TextureRenderParams
 import level.LevelObject
@@ -63,7 +64,7 @@ class Projectile(
     }
 
     fun render() {
-        Renderer.renderFilledRectangle(xPixel, yPixel, type.hitbox.width, type.hitbox.height, TextureRenderParams(rotation = Math.toDegrees(angle.toDouble()).toFloat()))
+        Renderer.renderTexture(Image.Weapon.PROJECTILE, xPixel, yPixel, type.hitbox.width, type.hitbox.height, TextureRenderParams(rotation = Math.toDegrees(angle.toDouble()).toFloat()))
     }
 
     fun onCollide(o: LevelObject) {

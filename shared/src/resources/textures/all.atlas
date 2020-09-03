@@ -13,14 +13,14 @@ block/armory
   index: -1
 block/chest_large
   rotate: false
-  xy: 1042, 156
+  xy: 404, 92
   size: 16, 32
   orig: 16, 32
   offset: 0, 0
   index: -1
 block/chest_small
   rotate: false
-  xy: 1006, 156
+  xy: 386, 80
   size: 16, 32
   orig: 16, 32
   offset: 0, 0
@@ -34,7 +34,7 @@ block/crafter
   index: -1
 block/frame-16
   rotate: false
-  xy: 1024, 156
+  xy: 368, 80
   size: 16, 32
   orig: 16, 32
   offset: 0, 0
@@ -48,7 +48,7 @@ block/frame-32
   index: -1
 block/furnace
   rotate: false
-  xy: 1950, 220
+  xy: 988, 154
   size: 32, 34
   orig: 32, 34
   offset: 0, 0
@@ -111,91 +111,91 @@ block/miner
   index: 8
 block/pipe/2_way_horizontal
   rotate: false
-  xy: 243, 67
+  xy: 620, 70
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
 block/pipe/2_way_vertical
   rotate: false
-  xy: 1133, 154
+  xy: 746, 88
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
 block/pipe/3_way
   rotate: false
-  xy: 240, 49
+  xy: 458, 114
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 1
+block/pipe/3_way
+  rotate: false
+  xy: 440, 96
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 2
 block/pipe/3_way
   rotate: false
-  xy: 258, 49
+  xy: 476, 114
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 3
 block/pipe/3_way
   rotate: false
-  xy: 276, 49
+  xy: 440, 78
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 4
-block/pipe/3_way
-  rotate: false
-  xy: 1223, 154
-  size: 16, 16
-  orig: 16, 16
-  offset: 0, 0
-  index: 1
 block/pipe/4_way
   rotate: false
-  xy: 1808, 182
+  xy: 674, 106
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
 block/pipe/corner
   rotate: false
-  xy: 1123, 172
+  xy: 1375, 172
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 1
 block/pipe/corner
   rotate: false
-  xy: 1141, 172
+  xy: 1393, 172
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 2
 block/pipe/corner
   rotate: false
-  xy: 1159, 172
+  xy: 1411, 172
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 3
 block/pipe/corner
   rotate: false
-  xy: 1177, 172
+  xy: 1429, 172
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 4
 block/pipe/down_close
   rotate: false
-  xy: 366, 103
+  xy: 782, 95
   size: 8, 9
   orig: 8, 9
   offset: 0, 0
   index: -1
 block/pipe/left_close
   rotate: false
-  xy: 1898, 191
+  xy: 2043, 224
   size: 2, 8
   orig: 2, 8
   offset: 0, 0
@@ -209,7 +209,7 @@ block/pipe/right_close
   index: -1
 block/pipe/up_close
   rotate: false
-  xy: 1904, 201
+  xy: 2016, 207
   size: 8, 4
   orig: 8, 4
   offset: 0, 0
@@ -230,21 +230,21 @@ block/robot_crafter
   index: -1
 block/solidifier
   rotate: false
-  xy: 1836, 201
-  size: 32, 53
-  orig: 32, 53
-  offset: 0, 0
-  index: 1
-block/solidifier
-  rotate: false
-  xy: 874, 135
+  xy: 1902, 201
   size: 32, 53
   orig: 32, 53
   offset: 0, 0
   index: 2
 block/solidifier
   rotate: false
-  xy: 1870, 201
+  xy: 874, 135
+  size: 32, 53
+  orig: 32, 53
+  offset: 0, 0
+  index: 1
+block/solidifier
+  rotate: false
+  xy: 1936, 201
   size: 32, 53
   orig: 32, 53
   offset: 0, 0
@@ -258,105 +258,105 @@ block/solidifier
   index: 4
 block/tube/2_way_horizontal
   rotate: false
-  xy: 1986, 207
+  xy: 1177, 169
   size: 16, 19
   orig: 16, 19
   offset: 0, 0
   index: -1
 block/tube/2_way_vertical
   rotate: false
-  xy: 350, 80
+  xy: 1159, 169
   size: 16, 19
   orig: 16, 19
   offset: 0, 0
   index: -1
 block/tube/3_way
   rotate: false
-  xy: 453, 111
+  xy: 1213, 169
   size: 16, 19
   orig: 16, 19
   offset: 0, 0
   index: 1
 block/tube/3_way
   rotate: false
-  xy: 471, 111
+  xy: 1231, 169
   size: 16, 19
   orig: 16, 19
   offset: 0, 0
   index: 2
 block/tube/3_way
   rotate: false
-  xy: 841, 110
+  xy: 1249, 169
   size: 16, 19
   orig: 16, 19
   offset: 0, 0
   index: 3
 block/tube/3_way
   rotate: false
-  xy: 859, 110
+  xy: 1267, 169
   size: 16, 19
   orig: 16, 19
   offset: 0, 0
   index: 4
 block/tube/4_way
   rotate: false
-  xy: 435, 111
+  xy: 1195, 169
   size: 16, 19
   orig: 16, 19
   offset: 0, 0
   index: -1
 block/tube/corner
   rotate: false
-  xy: 877, 114
+  xy: 1285, 169
   size: 16, 19
   orig: 16, 19
   offset: 0, 0
   index: 1
 block/tube/corner
   rotate: false
-  xy: 895, 114
+  xy: 1303, 169
   size: 16, 19
   orig: 16, 19
   offset: 0, 0
   index: 2
 block/tube/corner
   rotate: false
-  xy: 913, 114
+  xy: 1321, 169
   size: 16, 19
   orig: 16, 19
   offset: 0, 0
   index: 3
 block/tube/corner
   rotate: false
-  xy: 931, 114
+  xy: 1339, 169
   size: 16, 19
   orig: 16, 19
   offset: 0, 0
   index: 4
 block/tube/down_close
   rotate: false
-  xy: 607, 106
+  xy: 494, 106
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
 block/tube/left_close
   rotate: false
-  xy: 1255, 150
+  xy: 101, 7
   size: 2, 20
   orig: 2, 20
   offset: 0, 0
   index: -1
 block/tube/right_close
   rotate: false
-  xy: 1250, 150
+  xy: 2043, 234
   size: 3, 20
   orig: 3, 20
   offset: 0, 0
   index: -1
 block/tube/up_close
   rotate: false
-  xy: 399, 114
+  xy: 368, 68
   size: 16, 10
   orig: 16, 10
   offset: 0, 0
@@ -370,63 +370,63 @@ block/tube/up_connect
   index: -1
 cursor/cursor_default
   rotate: false
-  xy: 1375, 172
+  xy: 243, 67
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
 cursor/typing_cursor
   rotate: false
-  xy: 1231, 172
+  xy: 1483, 172
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
 fluid/molten_copper
   rotate: false
-  xy: 1078, 155
+  xy: 331, 82
   size: 17, 17
   orig: 17, 17
   offset: 0, 0
   index: -1
 fluid/molten_iron
   rotate: false
-  xy: 331, 82
+  xy: 1140, 171
   size: 17, 17
   orig: 17, 17
   offset: 0, 0
   index: -1
 gui/black_filler
   rotate: false
-  xy: 874, 132
+  xy: 24, 2
   size: 1, 1
   orig: 1, 1
   offset: 0, 0
   index: -1
 gui/chat_bar
   rotate: false
-  xy: 985, 129
+  xy: 1060, 141
   size: 1, 1
   orig: 1, 1
   offset: 0, 0
   index: -1
 gui/close_button
   rotate: false
-  xy: 1259, 155
+  xy: 810, 117
   size: 5, 5
   orig: 5, 5
   offset: 0, 0
   index: -1
 gui/close_button_highlight
   rotate: false
-  xy: 2041, 242
+  xy: 28, 2
   size: 5, 5
   orig: 5, 5
   offset: 0, 0
   index: -1
 gui/crafting_arrow
   rotate: false
-  xy: 64, 11
+  xy: 422, 77
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
@@ -440,86 +440,93 @@ gui/default/background
   index: -1
 gui/default/right_edge
   rotate: false
-  xy: 985, 135
+  xy: 1056, 159
   size: 1, 1
   orig: 1, 1
   offset: 0, 0
   index: -1
 gui/default/bottom_edge
   rotate: false
-  xy: 985, 135
+  xy: 1056, 159
   size: 1, 1
   orig: 1, 1
   offset: 0, 0
   index: -1
 gui/default/top_edge
   rotate: false
-  xy: 985, 132
+  xy: 1056, 156
   size: 1, 1
   orig: 1, 1
   offset: 0, 0
   index: -1
 gui/default/left_edge
   rotate: false
-  xy: 985, 132
+  xy: 1056, 156
   size: 1, 1
   orig: 1, 1
   offset: 0, 0
   index: -1
 gui/dimension_drag_grip
   rotate: false
-  xy: 942, 135
+  xy: 434, 126
   size: 4, 4
   orig: 4, 4
   offset: 0, 0
   index: -1
 gui/drag_grip
   rotate: false
-  xy: 1006, 131
+  xy: 800, 107
   size: 5, 5
   orig: 5, 5
   offset: 0, 0
   index: -1
 gui/drag_grip_highlight
   rotate: false
-  xy: 2013, 197
+  xy: 1078, 153
   size: 7, 7
   orig: 7, 7
   offset: 0, 0
   index: -1
 gui/entity_controller
   rotate: false
-  xy: 1724, 200
+  xy: 1734, 200
   size: 54, 54
   orig: 54, 54
   offset: 0, 0
   index: -1
 gui/entity_controller_attack_selected
   rotate: false
-  xy: 1556, 200
+  xy: 1678, 200
   size: 54, 54
   orig: 54, 54
   offset: 0, 0
   index: -1
 gui/entity_controller_defend_selected
   rotate: false
-  xy: 1668, 200
+  xy: 1846, 200
   size: 54, 54
   orig: 54, 54
   offset: 0, 0
   index: -1
 gui/entity_controller_move_selected
   rotate: false
-  xy: 1780, 200
+  xy: 1622, 200
   size: 54, 54
   orig: 54, 54
   offset: 0, 0
   index: -1
 gui/entity_controller_stop_selected
   rotate: false
-  xy: 1612, 200
+  xy: 1790, 200
   size: 54, 54
   orig: 54, 54
+  offset: 0, 0
+  index: -1
+gui/entity_controller_two
+  rotate: false
+  xy: 1028, 190
+  size: 64, 64
+  orig: 64, 64
   offset: 0, 0
   index: -1
 gui/escape_menu_background
@@ -535,7 +542,7 @@ gui/flash
   size: 64, 64
   orig: 64, 64
   offset: 0, 0
-  index: 6
+  index: 7
 gui/flash
   rotate: false
   xy: 566, 190
@@ -556,38 +563,38 @@ gui/flash
   size: 64, 64
   orig: 64, 64
   offset: 0, 0
-  index: 4
+  index: 3
 gui/flash
   rotate: false
   xy: 764, 190
   size: 64, 64
   orig: 64, 64
   offset: 0, 0
-  index: 7
+  index: 4
 gui/flash
   rotate: false
   xy: 830, 190
   size: 64, 64
   orig: 64, 64
   offset: 0, 0
-  index: 8
+  index: 6
 gui/flash
   rotate: false
   xy: 896, 190
   size: 64, 64
   orig: 64, 64
   offset: 0, 0
-  index: 9
+  index: 8
 gui/flash
   rotate: false
-  xy: 1358, 190
+  xy: 962, 190
   size: 64, 64
   orig: 64, 64
   offset: 0, 0
-  index: 3
+  index: 9
 gui/flash
   rotate: false
-  xy: 1490, 190
+  xy: 1556, 190
   size: 64, 64
   orig: 64, 64
   offset: 0, 0
@@ -601,42 +608,42 @@ gui/grey_filler
   index: -1
 gui/hotbar_slot
   rotate: false
-  xy: 751, 106
+  xy: 548, 106
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
 gui/hotbar_slot_selected
   rotate: false
-  xy: 1393, 172
+  xy: 279, 67
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
 gui/item_slot
   rotate: false
-  xy: 222, 51
+  xy: 258, 49
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
 gui/item_slot_click
   rotate: false
-  xy: 1169, 154
+  xy: 746, 70
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
 gui/item_slot_display
   rotate: false
-  xy: 1610, 182
+  xy: 602, 106
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
 gui/item_slot_highlight
   rotate: false
-  xy: 1006, 138
+  xy: 692, 88
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
@@ -664,336 +671,364 @@ gui/main_menu_logo
   index: -1
 gui/minus
   rotate: false
-  xy: 297, 67
+  xy: 404, 74
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
-gui/play_button
+gui/planet_normal
   rotate: false
-  xy: 962, 190
-  size: 64, 64
-  orig: 64, 64
+  xy: 1022, 156
+  size: 32, 32
+  orig: 32, 32
   offset: 0, 0
-  index: 7
-gui/play_button
-  rotate: false
-  xy: 1028, 190
-  size: 64, 64
-  orig: 64, 64
-  offset: 0, 0
-  index: 1
+  index: -1
 gui/play_button
   rotate: false
   xy: 1094, 190
   size: 64, 64
   orig: 64, 64
   offset: 0, 0
-  index: 2
+  index: 1
 gui/play_button
   rotate: false
   xy: 1160, 190
   size: 64, 64
   orig: 64, 64
   offset: 0, 0
-  index: 3
+  index: 2
 gui/play_button
   rotate: false
   xy: 1226, 190
   size: 64, 64
   orig: 64, 64
   offset: 0, 0
-  index: 4
+  index: 3
 gui/play_button
   rotate: false
   xy: 1292, 190
   size: 64, 64
   orig: 64, 64
   offset: 0, 0
-  index: 6
+  index: 4
+gui/play_button
+  rotate: false
+  xy: 1358, 190
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: 5
 gui/play_button
   rotate: false
   xy: 1424, 190
   size: 64, 64
   orig: 64, 64
   offset: 0, 0
-  index: 5
+  index: 6
+gui/play_button
+  rotate: false
+  xy: 1490, 190
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: 7
 gui/plus
   rotate: false
-  xy: 1592, 182
+  xy: 764, 70
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
 gui/resource_display_slot
   rotate: false
-  xy: 1195, 172
+  xy: 1447, 172
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
 gui/scroll_bar_bottom
   rotate: false
-  xy: 28, 2
+  xy: 874, 131
   size: 6, 2
   orig: 6, 2
   offset: 0, 0
   index: -1
 gui/scroll_bar_click_bottom
   rotate: false
-  xy: 2031, 206
+  xy: 494, 124
   size: 4, 2
   orig: 4, 2
   offset: 0, 0
   index: -1
 gui/scroll_bar_click_mid
   rotate: false
-  xy: 1250, 147
+  xy: 1113, 171
   size: 4, 1
   orig: 4, 1
   offset: 0, 0
   index: -1
 gui/scroll_bar_highlight_mid
   rotate: false
-  xy: 1250, 147
+  xy: 1113, 171
   size: 4, 1
   orig: 4, 1
   offset: 0, 0
   index: -1
 gui/scroll_bar_highlight_bottom
   rotate: false
-  xy: 435, 108
+  xy: 18, 2
   size: 4, 1
   orig: 4, 1
   offset: 0, 0
   index: -1
 gui/scroll_bar_click_top
   rotate: false
-  xy: 435, 108
+  xy: 18, 2
   size: 4, 1
   orig: 4, 1
   offset: 0, 0
   index: -1
 gui/scroll_bar_highlight_top
   rotate: false
-  xy: 36, 2
+  xy: 494, 128
   size: 4, 2
   orig: 4, 2
   offset: 0, 0
   index: -1
 gui/scroll_bar_middle
   rotate: false
-  xy: 18, 2
+  xy: 91, 2
   size: 6, 1
   orig: 6, 1
   offset: 0, 0
   index: -1
 gui/scroll_bar_top
   rotate: false
-  xy: 2040, 224
+  xy: 141, 49
   size: 6, 2
   orig: 6, 2
   offset: 0, 0
   index: -1
 gui/scroll_bar_unhighlight_bottom
   rotate: false
-  xy: 877, 111
+  xy: 99, 2
   size: 4, 1
   orig: 4, 1
   offset: 0, 0
   index: -1
 gui/scroll_bar_unhighlight_mid
   rotate: false
-  xy: 985, 126
+  xy: 1357, 169
   size: 4, 1
   orig: 4, 1
   offset: 0, 0
   index: -1
 gui/scroll_bar_unhighlight_top
   rotate: false
-  xy: 841, 106
+  xy: 942, 137
   size: 4, 2
   orig: 4, 2
   offset: 0, 0
   index: -1
 gui/select_entities
   rotate: false
-  xy: 28, 6
+  xy: 494, 60
   size: 8, 8
   orig: 8, 8
   offset: 0, 0
   index: -1
 gui/selected_slot
   rotate: false
-  xy: 1574, 182
+  xy: 584, 88
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
+gui/star_large
+  rotate: false
+  xy: 2034, 216
+  size: 7, 7
+  orig: 7, 7
+  offset: 0, 0
+  index: -1
+gui/star_medium
+  rotate: false
+  xy: 1084, 162
+  size: 7, 7
+  orig: 7, 7
+  offset: 0, 0
+  index: -1
+gui/star_small
+  rotate: false
+  xy: 504, 63
+  size: 5, 5
+  orig: 5, 5
+  offset: 0, 0
+  index: -1
 gui/test/test
   rotate: false
-  xy: 1357, 172
+  xy: 1591, 172
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 4
 gui/test/test
   rotate: false
-  xy: 625, 106
+  xy: 494, 88
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 1
 gui/test/test
   rotate: false
-  xy: 643, 106
+  xy: 512, 106
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 2
 gui/test/test
   rotate: false
-  xy: 661, 106
+  xy: 494, 70
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 3
 gui/test/test
   rotate: false
-  xy: 679, 106
+  xy: 512, 88
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 5
 gui/test/test
   rotate: false
-  xy: 697, 106
+  xy: 530, 106
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 6
 gui/test/test
   rotate: false
-  xy: 715, 106
+  xy: 512, 70
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 7
 gui/test/test
   rotate: false
-  xy: 733, 106
+  xy: 530, 88
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 8
 gui/view_selector_close
   rotate: false
-  xy: 949, 116
+  xy: 792, 99
   size: 5, 5
   orig: 5, 5
   offset: 0, 0
   index: -1
 gui/view_selector_close_highlight
   rotate: false
-  xy: 2041, 235
+  xy: 782, 88
   size: 5, 5
   orig: 5, 5
   offset: 0, 0
   index: -1
 gui/view_selector_open
   rotate: false
-  xy: 1269, 165
+  xy: 1093, 164
   size: 5, 5
   orig: 5, 5
   offset: 0, 0
   index: -1
 gui/view_selector_open_highlight
   rotate: false
-  xy: 2041, 249
+  xy: 28, 9
   size: 5, 5
   orig: 5, 5
   offset: 0, 0
   index: -1
 gui/warning_stripes
   rotate: false
-  xy: 988, 147
+  xy: 2016, 213
   size: 16, 41
   orig: 16, 41
   offset: 0, 0
   index: -1
 gui/white_filler
   rotate: false
-  xy: 985, 138
+  xy: 399, 123
   size: 1, 1
   orig: 1, 1
   offset: 0, 0
   index: -1
 item/cable
   rotate: false
-  xy: 1411, 172
+  xy: 297, 67
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
 item/circuit
   rotate: false
-  xy: 1968, 202
+  xy: 440, 60
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
 item/copper_ingot
   rotate: false
-  xy: 1213, 172
+  xy: 1465, 172
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
 item/copper_ore_raw
   rotate: false
-  xy: 82, 11
+  xy: 386, 62
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
 item/iron_ingot
   rotate: false
-  xy: 1187, 154
+  xy: 764, 88
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
 item/iron_ore_raw
   rotate: false
-  xy: 1429, 172
+  xy: 168, 51
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
 item/logic_control_unit
   rotate: false
-  xy: 330, 64
+  xy: 458, 78
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
 item/pipe
   rotate: false
-  xy: 489, 108
+  xy: 91, 5
   size: 8, 22
   orig: 8, 22
   offset: 0, 0
   index: -1
 item/tube
   rotate: false
-  xy: 1060, 157
+  xy: 350, 68
   size: 16, 31
   orig: 16, 31
   offset: 0, 0
   index: -1
 misc/arrow
   rotate: false
-  xy: 787, 106
+  xy: 548, 88
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
@@ -1007,14 +1042,14 @@ misc/back_arrow
   index: -1
 misc/error
   rotate: false
-  xy: 769, 106
+  xy: 530, 70
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
 misc/gear
   rotate: false
-  xy: 1984, 228
+  xy: 1056, 162
   size: 26, 26
   orig: 26, 26
   offset: 0, 0
@@ -1028,466 +1063,466 @@ misc/logo
   index: -1
 misc/teleport_icon
   rotate: false
-  xy: 1447, 172
+  xy: 186, 51
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
 misc/thin_arrow
   rotate: false
-  xy: 376, 104
+  xy: 800, 114
   size: 8, 8
   orig: 8, 8
   offset: 0, 0
   index: -1
 particle/block_place
   rotate: false
-  xy: 1259, 162
+  xy: 1622, 190
   size: 8, 8
   orig: 8, 8
   offset: 0, 0
   index: -1
 robot/robot
   rotate: false
-  xy: 1904, 207
+  xy: 1970, 207
   size: 21, 47
   orig: 21, 47
   offset: 0, 0
-  index: 1
+  index: 4
 robot/robot
   rotate: false
   xy: 942, 141
   size: 21, 47
   orig: 21, 47
   offset: 0, 0
-  index: 2
+  index: 1
 robot/robot
   rotate: false
-  xy: 1927, 207
+  xy: 1993, 207
   size: 21, 47
   orig: 21, 47
   offset: 0, 0
-  index: 3
+  index: 2
 robot/robot
   rotate: false
   xy: 965, 141
   size: 21, 47
   orig: 21, 47
   offset: 0, 0
-  index: 4
+  index: 3
 tile/grass
   rotate: false
-  xy: 1826, 182
+  xy: 656, 70
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 1
 tile/grass
   rotate: false
-  xy: 1844, 183
+  xy: 674, 88
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 2
 tile/grass
   rotate: false
-  xy: 1862, 183
+  xy: 692, 106
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 3
 tile/grass
   rotate: false
-  xy: 1880, 183
+  xy: 674, 70
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 4
 tile/grass_copper_ore
-  rotate: false
-  xy: 1483, 172
-  size: 16, 16
-  orig: 16, 16
-  offset: 0, 0
-  index: 2
-tile/grass_copper_ore
-  rotate: false
-  xy: 1501, 172
-  size: 16, 16
-  orig: 16, 16
-  offset: 0, 0
-  index: 3
-tile/grass_copper_ore
-  rotate: false
-  xy: 261, 67
-  size: 16, 16
-  orig: 16, 16
-  offset: 0, 0
-  index: 1
-tile/grass_copper_ore
-  rotate: false
-  xy: 1151, 154
-  size: 16, 16
-  orig: 16, 16
-  offset: 0, 0
-  index: 4
-tile/grass_iron_ore
-  rotate: false
-  xy: 949, 123
-  size: 16, 16
-  orig: 16, 16
-  offset: 0, 0
-  index: 1
-tile/grass_iron_ore
-  rotate: false
-  xy: 967, 123
-  size: 16, 16
-  orig: 16, 16
-  offset: 0, 0
-  index: 2
-tile/grass_iron_ore
-  rotate: false
-  xy: 1556, 182
-  size: 16, 16
-  orig: 16, 16
-  offset: 0, 0
-  index: 3
-tile/rock
-  rotate: false
-  xy: 1465, 172
-  size: 16, 16
-  orig: 16, 16
-  offset: 0, 0
-  index: 1
-tile/rock
-  rotate: false
-  xy: 1519, 172
-  size: 16, 16
-  orig: 16, 16
-  offset: 0, 0
-  index: 4
-tile/rock
-  rotate: false
-  xy: 1537, 172
-  size: 16, 16
-  orig: 16, 16
-  offset: 0, 0
-  index: 5
-tile/rock
-  rotate: false
-  xy: 168, 51
-  size: 16, 16
-  orig: 16, 16
-  offset: 0, 0
-  index: 6
-tile/rock
-  rotate: false
-  xy: 186, 51
-  size: 16, 16
-  orig: 16, 16
-  offset: 0, 0
-  index: 7
-tile/rock
   rotate: false
   xy: 204, 51
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
+  index: 1
+tile/grass_copper_ore
+  rotate: false
+  xy: 222, 51
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 2
+tile/grass_copper_ore
+  rotate: false
+  xy: 988, 136
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 3
+tile/grass_copper_ore
+  rotate: false
+  xy: 764, 106
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 4
+tile/grass_iron_ore
+  rotate: false
+  xy: 566, 88
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 1
+tile/grass_iron_ore
+  rotate: false
+  xy: 584, 106
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 2
+tile/grass_iron_ore
+  rotate: false
+  xy: 566, 70
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 3
+tile/rock
+  rotate: false
+  xy: 1006, 136
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 4
+tile/rock
+  rotate: false
+  xy: 1024, 138
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 5
+tile/rock
+  rotate: false
+  xy: 1042, 138
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 6
+tile/rock
+  rotate: false
+  xy: 1609, 172
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 7
+tile/rock
+  rotate: false
+  xy: 240, 49
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
   index: 8
 tile/rock
   rotate: false
-  xy: 294, 49
+  xy: 458, 96
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 2
 tile/rock
   rotate: false
-  xy: 1205, 154
+  xy: 728, 70
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 1
+tile/rock
+  rotate: false
+  xy: 782, 106
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 3
 tile/rock_copper_ore
   rotate: false
-  xy: 1105, 172
+  xy: 1357, 172
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 18
 tile/rock_copper_ore
   rotate: false
-  xy: 1249, 172
+  xy: 1501, 172
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 10
 tile/rock_copper_ore
   rotate: false
-  xy: 1267, 172
-  size: 16, 16
-  orig: 16, 16
-  offset: 0, 0
-  index: 11
-tile/rock_copper_ore
-  rotate: false
-  xy: 1285, 172
+  xy: 1519, 172
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 12
 tile/rock_copper_ore
   rotate: false
-  xy: 1303, 172
+  xy: 1537, 172
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 13
 tile/rock_copper_ore
   rotate: false
-  xy: 1321, 172
+  xy: 1555, 172
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 14
 tile/rock_copper_ore
   rotate: false
-  xy: 1339, 172
+  xy: 1573, 172
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 15
 tile/rock_copper_ore
   rotate: false
-  xy: 1950, 202
+  xy: 261, 67
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 7
+tile/rock_copper_ore
+  rotate: false
+  xy: 276, 49
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 11
+tile/rock_copper_ore
+  rotate: false
+  xy: 440, 114
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 17
 tile/rock_copper_ore
   rotate: false
-  xy: 348, 62
+  xy: 476, 96
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 1
 tile/rock_copper_ore
   rotate: false
-  xy: 1986, 189
+  xy: 476, 78
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 2
 tile/rock_copper_ore
   rotate: false
-  xy: 417, 108
+  xy: 1060, 144
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 3
 tile/rock_copper_ore
   rotate: false
-  xy: 499, 106
+  xy: 330, 64
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 4
 tile/rock_copper_ore
   rotate: false
-  xy: 517, 106
+  xy: 404, 56
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 5
 tile/rock_copper_ore
   rotate: false
-  xy: 535, 106
+  xy: 422, 59
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 6
 tile/rock_copper_ore
   rotate: false
-  xy: 553, 106
-  size: 16, 16
-  orig: 16, 16
-  offset: 0, 0
-  index: 7
-tile/rock_copper_ore
-  rotate: false
-  xy: 571, 106
-  size: 16, 16
-  orig: 16, 16
-  offset: 0, 0
-  index: 8
-tile/rock_copper_ore
-  rotate: false
-  xy: 589, 106
+  xy: 458, 60
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 9
 tile/rock_copper_ore
   rotate: false
-  xy: 805, 106
+  xy: 566, 106
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 16
+tile/rock_copper_ore
+  rotate: false
+  xy: 548, 70
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 8
 tile/rock_iron_ore
   rotate: false
-  xy: 279, 67
+  xy: 294, 49
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 9
 tile/rock_iron_ore
   rotate: false
-  xy: 823, 106
+  xy: 476, 60
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
-  index: 7
+  index: 5
 tile/rock_iron_ore
   rotate: false
-  xy: 1628, 182
+  xy: 584, 70
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 10
 tile/rock_iron_ore
   rotate: false
-  xy: 1646, 182
+  xy: 602, 88
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 11
 tile/rock_iron_ore
   rotate: false
-  xy: 1664, 182
+  xy: 620, 106
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 12
 tile/rock_iron_ore
   rotate: false
-  xy: 1682, 182
+  xy: 602, 70
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 13
 tile/rock_iron_ore
   rotate: false
-  xy: 1700, 182
+  xy: 620, 88
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 14
 tile/rock_iron_ore
   rotate: false
-  xy: 1718, 182
+  xy: 638, 106
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 15
 tile/rock_iron_ore
   rotate: false
-  xy: 1736, 182
-  size: 16, 16
-  orig: 16, 16
-  offset: 0, 0
-  index: 16
-tile/rock_iron_ore
-  rotate: false
-  xy: 1754, 182
+  xy: 638, 88
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 17
 tile/rock_iron_ore
   rotate: false
-  xy: 1772, 182
+  xy: 656, 106
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 18
 tile/rock_iron_ore
   rotate: false
-  xy: 1790, 182
+  xy: 638, 70
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 19
 tile/rock_iron_ore
   rotate: false
-  xy: 1024, 138
+  xy: 656, 88
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 16
+tile/rock_iron_ore
+  rotate: false
+  xy: 710, 106
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 1
 tile/rock_iron_ore
   rotate: false
-  xy: 1042, 138
+  xy: 692, 70
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 2
 tile/rock_iron_ore
   rotate: false
-  xy: 1060, 139
+  xy: 710, 88
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 3
 tile/rock_iron_ore
   rotate: false
-  xy: 1078, 137
+  xy: 728, 106
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 4
 tile/rock_iron_ore
   rotate: false
-  xy: 988, 129
-  size: 16, 16
-  orig: 16, 16
-  offset: 0, 0
-  index: 5
-tile/rock_iron_ore
-  rotate: false
-  xy: 1097, 154
+  xy: 710, 70
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 6
 tile/rock_iron_ore
   rotate: false
-  xy: 1115, 154
+  xy: 728, 88
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 7
+tile/rock_iron_ore
+  rotate: false
+  xy: 746, 106
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: 8
 weapon/machine_gun/fire_dir_0
   rotate: false
-  xy: 2004, 197
-  size: 7, 29
-  orig: 7, 29
-  offset: 0, 0
-  index: 1
-weapon/machine_gun/fire_dir_0
-  rotate: false
-  xy: 2013, 206
+  xy: 2034, 225
   size: 7, 29
   orig: 7, 29
   offset: 0, 0
   index: 2
 weapon/machine_gun/fire_dir_0
   rotate: false
-  xy: 2022, 206
+  xy: 422, 95
   size: 7, 29
   orig: 7, 29
   offset: 0, 0
   index: 3
+weapon/machine_gun/fire_dir_0
+  rotate: false
+  xy: 431, 95
+  size: 7, 29
+  orig: 7, 29
+  offset: 0, 0
+  index: 1
 weapon/machine_gun/fire_dir_1
   rotate: false
   xy: 79, 29
@@ -1511,21 +1546,21 @@ weapon/machine_gun/fire_dir_1
   index: 2
 weapon/machine_gun/fire_dir_2
   rotate: false
-  xy: 100, 2
+  xy: 64, 2
   size: 7, 25
   orig: 7, 25
   offset: 0, 0
   index: 2
 weapon/machine_gun/fire_dir_2
   rotate: false
-  xy: 2031, 210
+  xy: 73, 2
   size: 7, 25
   orig: 7, 25
   offset: 0, 0
   index: 1
 weapon/machine_gun/fire_dir_2
   rotate: false
-  xy: 1241, 145
+  xy: 82, 2
   size: 7, 25
   orig: 7, 25
   offset: 0, 0
@@ -1539,21 +1574,21 @@ weapon/machine_gun/fire_dir_3
   index: 1
 weapon/machine_gun/fire_dir_3
   rotate: false
-  xy: 1078, 174
+  xy: 141, 53
   size: 25, 14
   orig: 25, 14
   offset: 0, 0
   index: 2
 weapon/machine_gun/fire_dir_3
   rotate: false
-  xy: 141, 53
+  xy: 1113, 174
   size: 25, 14
   orig: 25, 14
   offset: 0, 0
   index: 3
 weapon/machine_gun/proj
   rotate: false
-  xy: 2040, 228
+  xy: 1632, 193
   size: 6, 5
   orig: 6, 5
   offset: 0, 0
@@ -1595,14 +1630,14 @@ weapon/weapon2/dir
   index: 2
 weapon/weapon2/dir
   rotate: false
-  xy: 2012, 237
+  xy: 1084, 171
   size: 27, 17
   orig: 27, 17
   offset: 0, 0
   index: 0
 weapon/weapon2/proj
   rotate: false
-  xy: 2004, 190
+  xy: 840, 124
   size: 8, 5
   orig: 8, 5
   offset: 0, 0
@@ -1616,7 +1651,7 @@ weapon/weapon3/dir
   index: 1
 weapon/weapon3/proj
   rotate: false
-  xy: 141, 47
+  xy: 1970, 201
   size: 9, 4
   orig: 9, 4
   offset: 0, 0

@@ -9,8 +9,17 @@ import player.Player
 import serialization.Id
 import java.util.*
 
+/**
+ * A level update for changing the [Recipe] of a [CrafterBlock].
+ */
 class CrafterBlockSelectRecipe(
+        /**
+         * A reference to the [CrafterBlock] to modify.
+         */
         @Id(2) val crafterReference: BlockReference,
+        /**
+         * The recipe to set the [CrafterBlock]'s recipe to.
+         */
         @Id(3) val recipe: Recipe?
 ) : LevelUpdate(LevelUpdateType.CRAFTER_SELECT_RECIPE) {
 

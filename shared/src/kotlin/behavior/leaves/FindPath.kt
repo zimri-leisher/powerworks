@@ -7,6 +7,8 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
+import level.LevelManager
+import level.LevelPosition
 import level.entity.Entity
 import main.toColor
 import misc.PixelCoord
@@ -23,16 +25,10 @@ class FindPath(parent: BehaviorTree, val goalVar: Variable, val pathDestVar: Var
 
     override fun init(entity: Entity) {
         state = NodeState.RUNNING
-        val goalAny = getData<Any?>(goalVar)
-        if (goalAny == null) {
+        val goal = getData<LevelPosition>(goalVar)
+        if (goal == null) {
             state = NodeState.SUCCESS
             return
-        }
-        val goal: TileCoord
-        if (goalAny is PixelCoord) {
-            goal = goalAny.toTile()
-        } else {
-            goal = goalAny as TileCoord
         }
         if (useCoroutines) {
             val result = GlobalScope.async {
@@ -156,37 +152,50 @@ data class Node(var parent: Node? = null, val pos: TileCoord, val goal: TileCoor
 }
 
 data class EntityPath(
-        @Id(1) val goal: PixelCoord, @Id(2) val steps: List<PixelCoord>) {
-    private constructor() : this(PixelCoord(0, 0), listOf())
+        @Id(1) val goal: LevelPosition, @Id(2) val steps: List<PixelCoord>) {
+    private constructor() : this(LevelPosition(0, 0, LevelManager.EMPTY_LEVEL), listOf())
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as EntityPath
+
+        if (goal != other.goal) return false
+        if (steps != other.steps) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = goal.hashCode()
+        result = 31 * result + steps.hashCode()
+        return result
+    }
 }
 
 fun heuristic(node: Node): Double {
     return Math.sqrt(Math.pow(node.xTile - node.goal.xTile.toDouble(), 2.0) + Math.pow(node.yTile - node.goal.yTile.toDouble(), 2.0))
 }
 
-fun route(entity: Entity, goal: TileCoord): EntityPath? {
+fun route(entity: Entity, goal: LevelPosition): EntityPath? {
     if (entity.xTile == goal.xTile && entity.yTile == goal.yTile) {
-        return EntityPath(goal.toPixel(), listOf())
+        return EntityPath(goal, listOf())
     }
 
     var nodeCount = 0
     var step = 0
 
-    val startNode = Node(null, TileCoord(entity.xTile, entity.yTile), goal, entity, 0.0)
+    val startNode = Node(null, TileCoord(entity.xTile, entity.yTile), goal.tile(), entity, 0.0)
 
     val openNodes = mutableListOf(startNode)
     val closedNodes = mutableListOf<Node>()
 
     var finalNode: Node? = null
 
-    if (FindPath.renderForEntity == entity && FindPath.goal != goal) {
-        FindPath.goal = goal
-        FindPath.currentStep = 0
-    }
-
     while (openNodes.isNotEmpty()) {
         val nextNode = openNodes.minBy { it.f }!!
-        if (nextNode.pos == goal) {
+        if (nextNode.pos == goal.tile()) {
             finalNode = nextNode
             break
         }
@@ -218,7 +227,7 @@ fun route(entity: Entity, goal: TileCoord): EntityPath? {
         if (FindPath.renderForEntity == entity) {
             if (step >= FindPath.currentStep / 10) {
                 val usedNodes = backtrack(nextNode)
-                FindPath.lastPathCreated = EntityPath(goal.toPixel(), usedNodes.map { it.pos.toPixel() })
+                FindPath.lastPathCreated = EntityPath(goal, usedNodes.map { it.pos.pixel() })
                 FindPath.openNodes = openNodes
                 FindPath.usedNodes = usedNodes
                 FindPath.closedNodes = closedNodes
@@ -228,7 +237,7 @@ fun route(entity: Entity, goal: TileCoord): EntityPath? {
     }
     if (finalNode != null) {
         val usedNodes = backtrack(finalNode)
-        val path = EntityPath(goal.toPixel(), usedNodes.map { it.pos.toPixel() })
+        val path = EntityPath(goal, usedNodes.map { it.pos.pixel() })
         if (FindPath.renderForEntity == entity) {
             FindPath.lastPathCreated = path
             FindPath.openNodes = openNodes

@@ -6,7 +6,7 @@ import io.ControlEventType
 import level.LevelManager
 import level.block.Block
 import player.PlayerManager
-import screen.gui2.GuiIngame
+import screen.gui.GuiIngame
 import screen.mouse.Mouse
 
 object BlockPicker : Tool(Control.PICK_BLOCK) {

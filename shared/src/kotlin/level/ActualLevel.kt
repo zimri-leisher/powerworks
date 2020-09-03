@@ -10,8 +10,15 @@ import player.lobby.Lobby
 import serialization.Serialization
 import java.util.*
 
+/**
+ * As opposed to the [RemoteLevel], an [ActualLevel] is an authoritative instance of the state of the level with the
+ * given [id] and [info]. [LevelUpdate]s in this level will be sent over the network to clients in the [currentLobby].
+ */
 class ActualLevel(id: UUID, info: LevelInfo) : Level(id, info), PacketHandler {
 
+    /**
+     * The current [Lobby] this level is loaded in. Used for determining who to send [LevelUpdate]s to.
+     */
     var currentLobby: Lobby? = null
 
     override fun initialize() {
@@ -44,15 +51,6 @@ class ActualLevel(id: UUID, info: LevelInfo) : Level(id, info), PacketHandler {
         return true
     }
 
-    override fun add(l: LevelObject): Boolean {
-        val copy = Serialization.copy(l) // TODO add preadding references
-        val success = super.modify(LevelObjectAdd(l), false)
-        if (success) {
-            currentLobby?.sendPacket(LevelUpdatePacket(LevelObjectAdd(copy), this))
-        }
-        return success
-    }
-
     override fun handleClientPacket(packet: Packet) {
         if (packet is RequestLevelDataPacket) {
             if (packet.levelId == id) {
@@ -70,6 +68,15 @@ class ActualLevel(id: UUID, info: LevelInfo) : Level(id, info), PacketHandler {
                 }
             }
         }
+    }
+
+    override fun add(l: LevelObject): Boolean {
+        val copy = Serialization.copy(l) // TODO add preadding references
+        val success = super.modify(LevelObjectAdd(l), false)
+        if (success) {
+            currentLobby?.sendPacket(LevelUpdatePacket(LevelObjectAdd(copy), this))
+        }
+        return success
     }
 
     override fun handleServerPacket(packet: Packet) {

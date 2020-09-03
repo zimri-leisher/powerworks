@@ -11,7 +11,7 @@ import level.entity.Entity
 import level.moving.MovingObject
 import main.toColor
 import network.MovingObjectReference
-import player.EntityCreateGroup
+import player.ActionEntityCreateGroup
 import player.PlayerManager
 import screen.mouse.Mouse
 import kotlin.math.abs
@@ -25,6 +25,7 @@ object Selector : Tool(Control.Group.SELECTOR_TOOLS.controls) {
     private const val SELECTION_START_THRESHOLD = 2
 
     var startPress = false
+    var selectingInLevel: Level = LevelManager.EMPTY_LEVEL
     var dragging = false
     var dragStartXPixel = 0
     var dragStartYPixel = 0
@@ -43,11 +44,14 @@ object Selector : Tool(Control.Group.SELECTOR_TOOLS.controls) {
     }
 
     override fun update() {
-        currentSelected.removeIf { !it.inLevel }
-        newlySelected.removeIf { !it.inLevel }
+        currentSelected.removeIf { it.level != selectingInLevel || !it.inLevel }
+        newlySelected.removeIf { it.level != selectingInLevel || !it.inLevel}
     }
 
     override fun onUse(event: ControlEvent, mouseLevelXPixel: Int, mouseLevelYPixel: Int): Boolean {
+        if (LevelManager.levelUnderMouse == null) {
+            return false
+        }
         when (event.control) {
             Control.START_SELECTION -> mode = SelectorMode.ALL
             Control.START_SELECTION_ADD -> mode = SelectorMode.ADD
@@ -70,6 +74,7 @@ object Selector : Tool(Control.Group.SELECTOR_TOOLS.controls) {
                 currentDragYPixel = mouseLevelYPixel
                 if (Math.abs(dragStartXPixel - currentDragXPixel) > SELECTION_START_THRESHOLD || Math.abs(dragStartYPixel - currentDragYPixel) > SELECTION_START_THRESHOLD) {
                     dragging = true
+                    selectingInLevel = LevelManager.levelUnderMouse!!
                     updateSelected()
                 }
             }
@@ -84,7 +89,7 @@ object Selector : Tool(Control.Group.SELECTOR_TOOLS.controls) {
                 }.toMutableSet()
                 val entitiesSelected = currentSelected.filterIsInstance<Entity>()
                 if (entitiesSelected.isNotEmpty()) {
-                    PlayerManager.takeAction(EntityCreateGroup(PlayerManager.localPlayer, entitiesSelected.map { it.toReference() as MovingObjectReference }))
+                    PlayerManager.takeAction(ActionEntityCreateGroup(PlayerManager.localPlayer, entitiesSelected.map { it.toReference() as MovingObjectReference }))
                 }
                 newlySelected = mutableSetOf()
                 dragging = false
@@ -109,8 +114,8 @@ object Selector : Tool(Control.Group.SELECTOR_TOOLS.controls) {
         }
     }
 
-    override fun renderBelow() {
-        if (dragging) {
+    override fun renderBelow(level: Level) {
+        if (dragging && level == selectingInLevel) {
             Renderer.renderEmptyRectangle(dragStartXPixel, dragStartYPixel, (currentDragXPixel - dragStartXPixel), (currentDragYPixel - dragStartYPixel), params = TextureRenderParams(color = toColor(0.8f, 0.8f, 0.8f)))
         }
         val selection = if (dragging) when (mode) {
@@ -119,10 +124,12 @@ object Selector : Tool(Control.Group.SELECTOR_TOOLS.controls) {
             SelectorMode.SUBTRACT -> currentSelected - newlySelected
         } else currentSelected
         for (l in selection) {
-            if (l is Block) {
-                Renderer.renderEmptyRectangle(l.xPixel - 1, l.yPixel - 1, (l.type.widthTiles shl 4) + 2, (l.type.heightTiles shl 4) + 2, params = TextureRenderParams(color = toColor(alpha = 0.2f)))
-            } else if (l is MovingObject && l.hitbox != Hitbox.NONE) {
-                Renderer.renderEmptyRectangle(l.xPixel + l.hitbox.xStart - 1, l.yPixel + l.hitbox.yStart - 1, l.hitbox.width + 2, l.hitbox.height + 2, params = TextureRenderParams(color = toColor(alpha = 0.2f)))
+            if (l.level == level) {
+                if (l is Block) {
+                    Renderer.renderEmptyRectangle(l.xPixel - 1, l.yPixel - 1, (l.type.widthTiles shl 4) + 2, (l.type.heightTiles shl 4) + 2, params = TextureRenderParams(color = toColor(alpha = 0.2f)))
+                } else if (l is MovingObject && l.hitbox != Hitbox.NONE) {
+                    Renderer.renderEmptyRectangle(l.xPixel + l.hitbox.xStart - 1, l.yPixel + l.hitbox.yStart - 1, l.hitbox.width + 2, l.hitbox.height + 2, params = TextureRenderParams(color = toColor(alpha = 0.2f)))
+                }
             }
         }
     }

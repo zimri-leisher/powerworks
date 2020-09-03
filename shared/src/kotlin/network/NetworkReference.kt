@@ -82,7 +82,7 @@ open class MovingObjectReference(level: Level, objectId: UUID,
             }
             currentChunkRange++
             if (currentChunkRange > 3) {
-                println("Resolving reference taking abnormally long, possible desync")
+                println("Resolving reference $this taking abnormally long, possible desync")
             }
             currentChunks = level.getChunksFromChunkRectangle(xChunk - currentChunkRange, yChunk - currentChunkRange, xChunk + currentChunkRange, yChunk + currentChunkRange).toSet()
         }
@@ -97,7 +97,7 @@ open class MovingObjectReference(level: Level, objectId: UUID,
 class BrainRobotReference(
         @Id(5)
         val brainRobotId: UUID
-) : MovingObjectReference(LevelManager.allLevels.firstOrNull { it.data.brainRobots.any { it.id == brainRobotId } }
+) : MovingObjectReference(LevelManager.loadedLevels.firstOrNull { it.data.brainRobots.any { it.id == brainRobotId } }
         ?: LevelManager.EMPTY_LEVEL, brainRobotId, 0, 0) {
 
     private constructor() : this(UUID.randomUUID())
@@ -110,6 +110,9 @@ class BrainRobotReference(
         return level.data.brainRobots.firstOrNull { it.id == brainRobotId }
     }
 
+    override fun toString(): String {
+        return "BrainRobotReference: $level, $brainRobotId"
+    }
 }
 
 class BlockReference(level: Level, objectId: UUID,
@@ -128,7 +131,7 @@ class BlockReference(level: Level, objectId: UUID,
         val block = level.getBlockAt(xTile, yTile)
         if (block == null) {
             println("no block at $xTile, $yTile")
-            println("blocks in that chunk: ${level.getChunkFromTile(xTile, yTile).data.blocks.joinToString()}")
+            //println("blocks in that chunk: ${level.getChunkFromTile(xTile, yTile).data.blocks.joinToString()}")
             return null
         }
         if (block.id != objectId) {

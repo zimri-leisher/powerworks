@@ -8,7 +8,13 @@ import player.Player
 import serialization.Id
 import java.util.*
 
+/**
+ * A level update for finishing a [MachineBlock]'s work cycle. Used to ensure factories are synchronized.
+ */
 class MachineBlockFinishWork(
+        /**
+         * A reference to the [MachineBlock] whose work is finished.
+         */
         @Id(2) val blockReference: BlockReference
 ) : LevelUpdate(LevelUpdateType.MACHINE_BLOCK_FINISH_WORK) {
 

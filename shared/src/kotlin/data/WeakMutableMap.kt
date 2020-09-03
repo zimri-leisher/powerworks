@@ -42,7 +42,7 @@ class WeakMutableMap<K, V> {
         }
     }
 
-    fun get(key: K): V? {
+    operator fun get(key: K): V? {
         for ((k, v) in map) {
             if (k.get() == key) {
                 return v

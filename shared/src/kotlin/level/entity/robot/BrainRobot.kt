@@ -14,7 +14,7 @@ class BrainRobot(xPixel: Int, yPixel: Int, rotation: Int,
                  var user: User) : Robot(RobotType.BRAIN, xPixel, yPixel, rotation) {
 
     @Id(29)
-    val inventory = Inventory(8, 6)
+    val inventory = Inventory(8, 3)
 
     override fun render() {
         super.render()

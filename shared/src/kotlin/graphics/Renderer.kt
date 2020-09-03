@@ -45,7 +45,7 @@ object Renderer {
     /**
      * Will not render outside of this clip
      */
-    fun setClip(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int) {
+    fun pushClip(xPixel: Int, yPixel: Int, widthPixels: Int, heightPixels: Int) {
         batch.flush()
         ScissorStack.pushScissors(Rectangle((xPixel * Game.SCALE).toFloat(), (yPixel * Game.SCALE).toFloat(), (widthPixels * Game.SCALE).toFloat(), (heightPixels * Game.SCALE).toFloat()))
     }
@@ -53,7 +53,7 @@ object Renderer {
     /**
      * Removes the clip
      */
-    fun resetClip() {
+    fun popClip() {
         try {
             batch.flush()
             ScissorStack.popScissors()
@@ -78,23 +78,23 @@ object Renderer {
         batch.color = params.color
         val originX = absoluteWidthPixels / 2
         val originY = absoluteHeightPixels / 2
-        batch.draw(Image.GUI.DEFAULT_BACKGROUND, absoluteXPixel, absoluteYPixel, originX, originY,
+        batch.draw(Image.Gui.DEFAULT_BACKGROUND, absoluteXPixel, absoluteYPixel, originX, originY,
                 absoluteWidthPixels, absoluteHeightPixels, params)
-        with(Image.GUI.DEFAULT_EDGE_BOTTOM) {
+        with(Image.Gui.DEFAULT_EDGE_BOTTOM) {
             batch.draw(this, absoluteXPixel, absoluteYPixel, originX, originY,
                     absoluteWidthPixels, (this.heightPixels * Game.SCALE).toFloat(), params)
         }
-        with(Image.GUI.DEFAULT_EDGE_LEFT) {
+        with(Image.Gui.DEFAULT_EDGE_LEFT) {
             batch.draw(this, absoluteXPixel, absoluteYPixel, originX, originY,
                     (this.widthPixels * Game.SCALE).toFloat(), absoluteHeightPixels, params)
         }
         // origins need adjusting to keep them relative to the center of the rectangle not the texture
-        with(Image.GUI.DEFAULT_EDGE_RIGHT) {
+        with(Image.Gui.DEFAULT_EDGE_RIGHT) {
             val imgWidth = (this.widthPixels * Game.SCALE).toFloat()
             batch.draw(this, absoluteXPixel + absoluteWidthPixels - imgWidth, absoluteYPixel, -(absoluteWidthPixels / 2) + imgWidth, originY,
                     imgWidth, absoluteHeightPixels, params)
         }
-        with(Image.GUI.DEFAULT_EDGE_TOP) {
+        with(Image.Gui.DEFAULT_EDGE_TOP) {
             val imgHeight = (this.heightPixels * Game.SCALE).toFloat()
             batch.draw(this, absoluteXPixel, absoluteYPixel + absoluteHeightPixels - imgHeight, originX, -(absoluteHeightPixels / 2) + imgHeight,
                     absoluteWidthPixels, imgHeight, params)
@@ -117,21 +117,21 @@ object Renderer {
         val absoluteWidthPixels = (widthPixels * Game.SCALE).toFloat()
         val absoluteHeightPixels = (heightPixels * Game.SCALE).toFloat()
         // background
-        batch.draw(Image.GUI.DEFAULT_BACKGROUND, absoluteXPixel, absoluteYPixel, absoluteWidthPixels, absoluteHeightPixels)
+        batch.draw(Image.Gui.DEFAULT_BACKGROUND, absoluteXPixel, absoluteYPixel, absoluteWidthPixels, absoluteHeightPixels)
         // edges
-        with(Image.GUI.DEFAULT_EDGE_RIGHT) {
+        with(Image.Gui.DEFAULT_EDGE_RIGHT) {
             batch.draw(this, absoluteXPixel + absoluteWidthPixels - (this.widthPixels * Game.SCALE), absoluteYPixel,
                     (this.widthPixels * Game.SCALE).toFloat(), absoluteHeightPixels)
         }
-        with(Image.GUI.DEFAULT_EDGE_BOTTOM) {
+        with(Image.Gui.DEFAULT_EDGE_BOTTOM) {
             batch.draw(this, absoluteXPixel, absoluteYPixel,
                     absoluteWidthPixels, (this.heightPixels * Game.SCALE).toFloat())
         }
-        with(Image.GUI.DEFAULT_EDGE_LEFT) {
+        with(Image.Gui.DEFAULT_EDGE_LEFT) {
             batch.draw(this, absoluteXPixel, absoluteYPixel,
                     (this.widthPixels * Game.SCALE).toFloat(), absoluteHeightPixels)
         }
-        with(Image.GUI.DEFAULT_EDGE_TOP) {
+        with(Image.Gui.DEFAULT_EDGE_TOP) {
             batch.draw(this, absoluteXPixel, absoluteYPixel + absoluteHeightPixels - (this.heightPixels * Game.SCALE),
                     absoluteWidthPixels, (this.heightPixels * Game.SCALE).toFloat())
         }
@@ -146,7 +146,7 @@ object Renderer {
         val originY = absoluteHeightPixels / 2
         val oldColor = batch.color
         batch.color = params.color
-        batch.draw(Image.GUI.WHITE_FILLER, absoluteXPixel, absoluteYPixel, originX, originY, absoluteWidthPixels, absoluteHeightPixels, params)
+        batch.draw(Image.Gui.WHITE_FILLER, absoluteXPixel, absoluteYPixel, originX, originY, absoluteWidthPixels, absoluteHeightPixels, params)
         batch.color = oldColor
     }
 
@@ -155,20 +155,20 @@ object Renderer {
         val absoluteYPixel = ((yPixel + yPixelOffset) * Game.SCALE).toFloat()
         val absoluteWidthPixels = (widthPixels * Game.SCALE).toFloat()
         val absoluteHeightPixels = (heightPixels * Game.SCALE).toFloat()
-        batch.draw(Image.GUI.WHITE_FILLER, absoluteXPixel, absoluteYPixel, absoluteWidthPixels, absoluteHeightPixels)
+        batch.draw(Image.Gui.WHITE_FILLER, absoluteXPixel, absoluteYPixel, absoluteWidthPixels, absoluteHeightPixels)
     }
 
     private fun brightPatch(absoluteXPixel: Float, absoluteYPixel: Float, originX: Float, originY: Float, absoluteWidthPixels: Float, absoluteHeightPixels: Float, params: TextureRenderParams) {
         val oldColor = batch.color
         batch.setColor(1f, 1f, 1f, params.brightness - 1f)
-        batch.draw(Image.GUI.WHITE_FILLER, absoluteXPixel, absoluteYPixel, originX, originY, absoluteWidthPixels, absoluteHeightPixels, params)
+        batch.draw(Image.Gui.WHITE_FILLER, absoluteXPixel, absoluteYPixel, originX, originY, absoluteWidthPixels, absoluteHeightPixels, params)
         batch.color = oldColor
     }
 
     private fun darkPatch(absoluteXPixel: Float, absoluteYPixel: Float, originX: Float, originY: Float, absoluteWidthPixels: Float, absoluteHeightPixels: Float, params: TextureRenderParams) {
         val oldColor = batch.color
         batch.setColor(1f, 1f, 1f, 1f - params.brightness)
-        batch.draw(Image.GUI.BLACK_FILLER, absoluteXPixel, absoluteYPixel, originX, originY, absoluteWidthPixels, absoluteHeightPixels, params)
+        batch.draw(Image.Gui.BLACK_FILLER, absoluteXPixel, absoluteYPixel, originX, originY, absoluteWidthPixels, absoluteHeightPixels, params)
         batch.color = oldColor
     }
 
@@ -186,13 +186,13 @@ object Renderer {
         val originX = absoluteWidthPixels / 2
         val originY = absoluteHeightPixels / 2
         // bottom
-        batch.draw(Image.GUI.WHITE_FILLER, absoluteXPixel, absoluteYPixel, originX, originY, absoluteWidthPixels, absBorderThickness, params)
+        batch.draw(Image.Gui.WHITE_FILLER, absoluteXPixel, absoluteYPixel, originX, originY, absoluteWidthPixels, absBorderThickness, params)
         // left
-        batch.draw(Image.GUI.WHITE_FILLER, absoluteXPixel, absoluteYPixel, originX, originY, absBorderThickness, absoluteHeightPixels, params)
+        batch.draw(Image.Gui.WHITE_FILLER, absoluteXPixel, absoluteYPixel, originX, originY, absBorderThickness, absoluteHeightPixels, params)
         // right
-        batch.draw(Image.GUI.WHITE_FILLER, absoluteXPixel + absoluteWidthPixels - absBorderThickness, absoluteYPixel, originX, originY, absBorderThickness, absoluteHeightPixels, params)
+        batch.draw(Image.Gui.WHITE_FILLER, absoluteXPixel + absoluteWidthPixels - absBorderThickness, absoluteYPixel, originX, originY, absBorderThickness, absoluteHeightPixels, params)
         // top
-        batch.draw(Image.GUI.WHITE_FILLER, absoluteXPixel, absoluteYPixel + absoluteHeightPixels - absBorderThickness, originX, originY, absoluteWidthPixels, absBorderThickness, params)
+        batch.draw(Image.Gui.WHITE_FILLER, absoluteXPixel, absoluteYPixel + absoluteHeightPixels - absBorderThickness, originX, originY, absoluteWidthPixels, absBorderThickness, params)
         batch.color = oldColor
     }
 
@@ -206,13 +206,13 @@ object Renderer {
         val absoluteHeightPixels = (Math.abs(heightPixels) * Game.SCALE).toFloat()
         val absBorderThickness = borderThickness * Game.SCALE
         // bottom
-        batch.draw(Image.GUI.WHITE_FILLER, absoluteXPixel, absoluteYPixel, absoluteWidthPixels, absBorderThickness)
+        batch.draw(Image.Gui.WHITE_FILLER, absoluteXPixel, absoluteYPixel, absoluteWidthPixels, absBorderThickness)
         // left
-        batch.draw(Image.GUI.WHITE_FILLER, absoluteXPixel, absoluteYPixel, absBorderThickness, absoluteHeightPixels)
+        batch.draw(Image.Gui.WHITE_FILLER, absoluteXPixel, absoluteYPixel, absBorderThickness, absoluteHeightPixels)
         // right
-        batch.draw(Image.GUI.WHITE_FILLER, absoluteXPixel + absoluteWidthPixels - absBorderThickness, absoluteYPixel, absBorderThickness, absoluteHeightPixels)
+        batch.draw(Image.Gui.WHITE_FILLER, absoluteXPixel + absoluteWidthPixels - absBorderThickness, absoluteYPixel, absBorderThickness, absoluteHeightPixels)
         // top
-        batch.draw(Image.GUI.WHITE_FILLER, absoluteXPixel, absoluteYPixel + absoluteHeightPixels - absBorderThickness, absoluteWidthPixels, absBorderThickness)
+        batch.draw(Image.Gui.WHITE_FILLER, absoluteXPixel, absoluteYPixel + absoluteHeightPixels - absBorderThickness, absoluteWidthPixels, absBorderThickness)
     }
 
     /**

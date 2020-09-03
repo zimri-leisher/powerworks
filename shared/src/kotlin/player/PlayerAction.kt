@@ -7,6 +7,7 @@ import item.ItemType
 import level.*
 import level.block.Block
 import level.block.CrafterBlock
+import level.block.FarseekerBlock
 import level.entity.Entity
 import level.update.*
 import network.*
@@ -43,7 +44,7 @@ sealed class PlayerAction(
     abstract fun cancelActGhost()
 }
 
-class ErrorAction : PlayerAction(Player(User(UUID.randomUUID(), ""), UUID.randomUUID(), UUID.randomUUID())) {
+class ActionError : PlayerAction(Player(User(UUID.randomUUID(), ""), UUID.randomUUID(), UUID.randomUUID())) {
 
     override fun verify(): Boolean {
         return false
@@ -64,14 +65,14 @@ class ErrorAction : PlayerAction(Player(User(UUID.randomUUID(), ""), UUID.random
  * Adds or removes items from the container matching the given [containerId] in the given [blockReference], and removes or
  * adds them to/from the [owner]'s brain robot inventory
  */
-class TransferItemsBetweenBlock(owner: Player,
-                                @Id(2)
+class ActionTransferItemsBetweenBlock(owner: Player,
+                                      @Id(2)
                                 val blockReference: BlockReference,
-                                @Id(3)
+                                      @Id(3)
                                 val add: Boolean,
-                                @Id(4)
+                                      @Id(4)
                                 val resources: ResourceList,
-                                @Id(5)
+                                      @Id(5)
                                 val containerId: UUID) : PlayerAction(owner) {
 
     private constructor() : this(Player(User(UUID.randomUUID(), ""), UUID.randomUUID(), UUID.randomUUID()),
@@ -115,8 +116,8 @@ class TransferItemsBetweenBlock(owner: Player,
 /**
  * Creates an [level.entity.EntityGroup] consisting of the given [entities]
  */
-class EntityCreateGroup(owner: Player,
-                        @Id(2)
+class ActionEntityCreateGroup(owner: Player,
+                              @Id(2)
                         val entities: List<MovingObjectReference>) : PlayerAction(owner) {
 
     private constructor() : this(Player(User(UUID.randomUUID(), ""), UUID.randomUUID(), UUID.randomUUID()), listOf())
@@ -155,20 +156,57 @@ class EntityCreateGroup(owner: Player,
 
 }
 
+class ActionFarseekerBlockSetLevel(owner: Player,
+                                   @Id(2)
+                             val blockReference: BlockReference,
+                                   @Id(3)
+                             val level: Level) : PlayerAction(owner) {
+
+    private constructor() : this(Player(User(UUID.randomUUID(), ""), UUID.randomUUID(), UUID.randomUUID()), BlockReference(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0), LevelManager.EMPTY_LEVEL)
+
+    override fun verify(): Boolean {
+        if (blockReference.value == null) {
+            println("Reference was null")
+            return false
+        }
+        if (blockReference.value!! !is FarseekerBlock) {
+            println("Reference was not to farseeker")
+            return false
+        }
+        if (level.id !in (blockReference.value!! as FarseekerBlock).availableDestinations.keys) {
+            println("Level not available to go to")
+            return false
+        }
+        return true
+    }
+
+    override fun act(): Boolean { // TODO clarify what act returns and what verify returns
+        val level = blockReference.value?.level ?: return false
+        level.modify(FarseekerBlockSetDestinationLevel(blockReference, this.level))
+        return true
+    }
+
+    override fun actGhost() {
+    }
+
+    override fun cancelActGhost() {
+    }
+}
+
 /**
  * Places a [LevelObject] of the given [levelObjType] at the given [xPixel], [yPixel] and with the given [rotation] in the
  * given [level].
  */
-class PlaceLevelObject(owner: Player,
-                       @Id(2)
+class ActionLevelObjectPlace(owner: Player,
+                             @Id(2)
                        val levelObjType: LevelObjectType<*>,
-                       @Id(3)
+                             @Id(3)
                        val xPixel: Int,
-                       @Id(4)
+                             @Id(4)
                        val yPixel: Int,
-                       @Id(5)
+                             @Id(5)
                        val rotation: Int,
-                       @Id(6)
+                             @Id(6)
                        val level: Level) : PlayerAction(owner) {
 
     private var temporaryGhostObject: GhostLevelObject? = null
@@ -225,7 +263,7 @@ class PlaceLevelObject(owner: Player,
  * Removes the [LevelObject]s specified by the given [references] from their respective [Level]s, and adds their item forms,
  * if they exist, to the [owner]'s brain robot inventory
  */
-class RemoveLevelObjectAction(owner: Player,
+class ActionLevelObjectRemove(owner: Player,
                               @Id(2)
                               val references: List<LevelObjectReference>) : PlayerAction(owner) {
 
@@ -278,7 +316,7 @@ class RemoveLevelObjectAction(owner: Player,
 /**
  * Runs the given [behavior] with the given [arg] on the [entityReferences]
  */
-class ControlEntityAction(owner: Player,
+class ActionControlEntity(owner: Player,
                           @Id(2)
                           val entityReferences: List<MovingObjectReference>,
                           @Id(3)
@@ -328,7 +366,7 @@ class ControlEntityAction(owner: Player,
 /**
  * Changes the recipe of the given [crafter] to [recipe]
  */
-class SelectCrafterRecipeAction(owner: Player,
+class ActionSelectCrafterRecipe(owner: Player,
                                 @Id(2)
                                 val crafter: BlockReference,
                                 @Id(3)
@@ -367,7 +405,7 @@ class SelectCrafterRecipeAction(owner: Player,
 /**
  * Changes the [ResourceNodeBehavior] of the given [node] to [behavior]
  */
-class EditResourceNodeBehaviorAction(owner: Player,
+class ActionEditResourceNodeBehavior(owner: Player,
                                      @Id(2)
                                      val node: ResourceNodeReference,
                                      @Id(3)

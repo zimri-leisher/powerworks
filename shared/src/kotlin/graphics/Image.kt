@@ -8,14 +8,18 @@ object Image {
     init {
         Misc
         Block
-        GUI
+        Gui
         Fluid
         Particle
         Item
+        Weapon
+    }
+
+    object Weapon {
+        val PROJECTILE = GameResourceManager.getAtlasTexture("weapon/machine_gun/proj")
     }
 
     object Misc {
-        // TODO definitely rethink how weapon textures are done, apply this to other things in the future like block textures
         val ERROR = GameResourceManager.getAtlasTexture("misc/error")
         val ARROW = GameResourceManager.getAtlasTexture("misc/arrow")
         val TELEPORT_ICON = GameResourceManager.getAtlasTexture("misc/teleport_icon")
@@ -48,7 +52,11 @@ object Image {
         val PIPE_LEFT_CLOSE = GameResourceManager.getAtlasTexture("block/pipe/left_close")
     }
 
-    object GUI {
+    object Gui {
+        val PLANET_NORMAL = GameResourceManager.getAtlasTexture("gui/planet_normal")
+        val STAR_SMALL = GameResourceManager.getAtlasTexture("gui/star_small")
+        val STAR_MEDIUM = GameResourceManager.getAtlasTexture("gui/star_medium")
+        val STAR_LARGE = GameResourceManager.getAtlasTexture("gui/star_large")
         val SELECT_ENTITIES = GameResourceManager.getAtlasTexture("gui/select_entities")
         val MINUS = GameResourceManager.getAtlasTexture("gui/minus")
         val PLUS = GameResourceManager.getAtlasTexture("gui/plus")
@@ -93,6 +101,7 @@ object Image {
         val LEVEL_SELECTOR_BUTTON_HIGHLIGHT = GameResourceManager.getAtlasTexture("gui/level_selector_button_highlight")
         val CRAFTING_ARROW = GameResourceManager.getAtlasTexture("gui/crafting_arrow")
         val ENTITY_CONTROLLER_MENU = GameResourceManager.getAtlasTexture("gui/entity_controller")
+        val ENTITY_CONTROLLER_MENU2 = GameResourceManager.getAtlasTexture("gui/entity_controller_two")
         val ENTITY_CONTROLLER_MENU_STOP_SELECTED = GameResourceManager.getAtlasTexture("gui/entity_controller_stop_selected")
         val ENTITY_CONTROLLER_MENU_DEFEND_SELECTED = GameResourceManager.getAtlasTexture("gui/entity_controller_defend_selected")
         val ENTITY_CONTROLLER_MENU_ATTACK_SELECTED = GameResourceManager.getAtlasTexture("gui/entity_controller_attack_selected")

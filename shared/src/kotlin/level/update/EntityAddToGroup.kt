@@ -7,7 +7,14 @@ import network.MovingObjectReference
 import player.Player
 import serialization.Id
 
-class EntityAddToGroup(@Id(2) val entitiesInGroup: List<MovingObjectReference>) : LevelUpdate(LevelUpdateType.ENTITY_ADD_TO_GROUP) {
+/**
+ * A level update for adding entities to an [EntityGroup].
+ */
+class EntityAddToGroup(
+        /**
+         * A list of references to entities to add to the group.
+         */
+        @Id(2) val entitiesInGroup: List<MovingObjectReference>) : LevelUpdate(LevelUpdateType.ENTITY_ADD_TO_GROUP) {
 
     private constructor() : this(listOf())
 

@@ -139,7 +139,7 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, xPixel: In
         }
     }
 
-    override fun onCollide(o: LevelObject) {
+    override fun onCollide(obj: LevelObject) {
 
     }
 

@@ -24,7 +24,7 @@ import network.ServerNetworkManager
 import resource.ResourceNode
 import routing.PipeNetwork
 import routing.ResourceRoutingNetwork
-import screen.gui2.ElementLevelView
+import screen.element.ElementLevelView
 import screen.mouse.tool.Tool
 import serialization.Input
 import serialization.Output
@@ -45,8 +45,14 @@ val CHUNK_SIZE_PIXELS = CHUNK_SIZE_TILES shl 4
  * over direct access to chunks and their [LevelObject]s.
  *
  * [ActualLevel]s, which are usually on a central [ServerNetworkManager], represent the real, true data, whereas [RemoteLevel]s are only
- * copies for the [ClientNetworkManager] to have. [RemoteLevel]s are trivial to create and don't actually generate or load anything on their own.
+ * copies for the [ClientNetworkManager] to have.
  *
+ * Level instantiating is trivial and doesn't affect the game state. To load a level, first call [initialize], which adds
+ * this level to various event handlers and listeners and actually adds it to [LevelManager.allLevels]. Then call [load],
+ * which, depending on what kind of level this is, will either load it from the disk or request that the [LevelData] be sent
+ * to it over the network.
+ *
+ * @param id the [UUID] of this level.
  * @param info the information describing the [Level]
  */
 abstract class Level(
@@ -76,8 +82,10 @@ abstract class Level(
                 field = value
                 if (generator !is EmptyLevelGenerator) {
                     if (field) {
+                        LevelManager.loadedLevels.add(this)
                         LevelManager.pushLevelStateEvent(this, LevelEvent.LOAD)
                     } else if (!field) {
+                        LevelManager.loadedLevels.remove(this)
                         LevelManager.pushLevelStateEvent(this, LevelEvent.UNLOAD)
                     }
                 }
@@ -120,7 +128,7 @@ abstract class Level(
         loaded = true
     }
 
-    open fun canModify(update: LevelUpdate) = update.canAct(this)
+    open fun canModify(update: LevelUpdate) = loaded && update.canAct(this)
 
     open fun modify(update: LevelUpdate, transient: Boolean = false): Boolean {
         if (!canModify(update)) {
@@ -263,7 +271,7 @@ abstract class Level(
                 c.getTile(x, y).render()
             }
         }
-        Tool.renderBelow()
+        Tool.renderBelow(this)
         data.particles.forEach {
             it.render()
         }
@@ -302,7 +310,7 @@ abstract class Level(
 
         ResourceRoutingNetwork.ALL.forEach { if (it.level == this) it.render() }
         data.projectiles.forEach { it.render() }
-        Tool.renderAbove()
+        Tool.renderAbove(this)
 
         val chunksInTileRectangle = getChunksFromTileRectangle(minX, minY, maxX - minX - 1, maxY - minY - 1)
         for (c in chunksInTileRectangle) {
@@ -354,6 +362,24 @@ abstract class Level(
     // 19 now, and bam, its all gone to [LevelManager] or [LevelUtility]. 2:22 am mohican outdoor center
 
     override fun toString() = "${javaClass.simpleName}-id: $id, info: $info"
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as Level
+
+        if (id != other.id) return false
+        if (info != other.info) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = id.hashCode()
+        result = 31 * result + info.hashCode()
+        return result
+    }
+
 }
 
 class NonexistentLevelException(message: String) : Exception(message)

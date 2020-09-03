@@ -105,7 +105,7 @@ class BlockItemType(initializer: BlockItemType.() -> Unit) : ItemType() {
 
         val FARSEEKER = BlockItemType {
             name = "Farseeker"
-            placedBlock = BlockType.FARSEEKER
+            placedBlock = MachineBlockType.FARSEEKER
         }
 
         val MINER = BlockItemType {

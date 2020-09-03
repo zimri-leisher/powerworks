@@ -79,14 +79,18 @@ class Player(
                     }
                 }
             }
-            if (level == homeLevel) {
+            if (level.id == homeLevelId) {
                 playing = true
             }
         } else if (event == LevelEvent.UNLOAD) {
-            if (level == homeLevel) {
+            if (level.id == homeLevelId) {
                 playing = false
             }
         }
+    }
+
+    override fun toString(): String {
+        return "Player(user=$user, homeLevelId=$homeLevelId, brainRobotId=$brainRobotId)"
     }
 
     override fun equals(other: Any?): Boolean {

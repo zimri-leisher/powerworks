@@ -3,22 +3,33 @@ package io
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputProcessor
 import data.WeakMutableMap
+import main.DebugCode
 import main.Game
+import screen.gui.GuiDebugInfo
 import screen.mouse.Mouse
 import java.awt.event.KeyEvent
 
+/**
+ * Classes implementing this interface should use [InputManager.register] to receive [ControlEvent]s for wanted [Control]s
+ */
 interface ControlEventHandler {
     fun handleControlEvent(event: ControlEvent)
 }
 
 object InputManager : InputProcessor {
 
+    /**
+     * The current [InputState] of the keyboard and mouse, as seen by the game.
+     */
     val state = InputState()
 
+    /**
+     * The current [ControlMap], used for translating input into controls.
+     */
     var map = ControlMap.DEFAULT
 
     /**
-     * The characters that will be sent to the text handler
+     * A queue of characters to be sent to the current [textHandler].
      */
     val charsTyped = mutableListOf<Char>()
 
@@ -27,17 +38,33 @@ object InputManager : InputProcessor {
      */
     var textHandler: TextHandler? = null
 
-    val handlers = WeakMutableMap<ControlEventHandler, Set<Control>>()
+    private val handlers = WeakMutableMap<ControlEventHandler, MutableSet<Control>>()
 
     private var actualMouseXPixel = 0
     private var actualMouseYPixel = 0
 
+    /**
+     * Registers a [ControlEventHandler], ensuring it will receive [ControlEvent]s for the given [controls]. If the
+     * handler is already registered with some other controls, it will receive events for those controls and the new ones.
+     */
     fun register(handler: ControlEventHandler, controls: Control.Group) = register(handler, controls.controls)
 
+    /**
+     * Registers a [ControlEventHandler], ensuring it will receive [ControlEvent]s for the given [controls]. If the
+     * handler is already registered with some other controls, it will receive events for those controls and the new ones.
+     */
     fun register(handler: ControlEventHandler, vararg controls: Control) = register(handler, controls.toSet())
 
+    /**
+     * Registers a [ControlEventHandler], ensuring it will receive [ControlEvent]s for the given [controls]. If the
+     * handler is already registered with some other controls, it will receive events for those controls and the new ones.
+     */
     fun register(handler: ControlEventHandler, controls: Collection<Control> = setOf()) {
-        handlers.put(handler, controls.toSet())
+        if (handlers.contains(handler)) {
+            handlers[handler]!!.addAll(controls)
+        } else {
+            handlers.put(handler, controls.toMutableSet())
+        }
     }
 
     fun update() {
@@ -45,7 +72,9 @@ object InputManager : InputProcessor {
         Mouse.yPixel = actualMouseYPixel
         state.updateEvents()
         val controlEvents = map.getControlEvents(state)
-        println("controls: $controlEvents")
+        if (Game.currentDebugCode == DebugCode.CONTROLS_INFO) {
+            GuiDebugInfo.show(this, controlEvents.map { it.toString() })
+        }
         for (controlEvent in controlEvents) {
             handlers.forEach { controlEventHandler, controls ->
                 if (controls.isEmpty() || controlEvent.control in controls) {
@@ -55,6 +84,9 @@ object InputManager : InputProcessor {
         }
     }
 
+    /**
+     * Shuts down the [InputManager]. Should be called on game exit.
+     */
     fun shutdown() {
         map.save()
     }
@@ -66,7 +98,7 @@ object InputManager : InputProcessor {
     }
 
     override fun keyDown(keycode: Int): Boolean {
-        state.setKeyState(getKeyName(keycode), ButtonState.DOWN)
+        state.setButtonState(getKeyName(keycode), ButtonState.DOWN)
         return true
     }
 
@@ -86,7 +118,7 @@ object InputManager : InputProcessor {
     }
 
     override fun keyUp(keycode: Int): Boolean {
-        state.setKeyState(getKeyName(keycode), ButtonState.UP)
+        state.setButtonState(getKeyName(keycode), ButtonState.UP)
         return true
     }
 
@@ -106,13 +138,13 @@ object InputManager : InputProcessor {
 
     override fun touchUp(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
         Mouse.button = button
-        state.setMouseButtonState("MOUSE_${getButtonName(button)}", ButtonState.UP)
+        state.setButtonState("MOUSE_${getButtonName(button)}", ButtonState.UP)
         return false
     }
 
     override fun touchDown(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
         Mouse.button = button
-        state.setMouseButtonState("MOUSE_${getButtonName(button)}", ButtonState.DOWN)
+        state.setButtonState("MOUSE_${getButtonName(button)}", ButtonState.DOWN)
         return false
     }
 

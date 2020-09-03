@@ -172,7 +172,7 @@ abstract class LevelObject protected constructor(
     /**
      * Called if this collides with something or something else collides with it
      */
-    open fun onCollide(o: LevelObject) {
+    open fun onCollide(obj: LevelObject) {
     }
 
     /**

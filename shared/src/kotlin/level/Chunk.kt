@@ -12,9 +12,9 @@ import resource.ResourceNode
 import serialization.Id
 
 /**
- * This is just for holding data. Interaction with the level should be done through the [Level] object and not any of these
+ * This is just for holding data. Interaction with the level should be done through the [Level] and [LevelUpdate]s, not any of these
  */
-class Chunk(
+data class Chunk(
         @Id(1)
         val xChunk: Int,
         @Id(2)

@@ -3,59 +3,25 @@ package screen.mouse.tool
 import behavior.Behavior
 import behavior.BehaviorTree
 import graphics.Image
-import graphics.Texture
+import graphics.Renderer
 import io.Control
 import io.ControlEvent
 import io.ControlEventType
+import level.Level
 import level.LevelManager
+import level.LevelPosition
 import level.entity.Entity
 import level.entity.EntityGroup
+import main.heightPixels
+import main.widthPixels
 import misc.Geometry
 import misc.PixelCoord
 import network.MovingObjectReference
-import player.ControlEntityAction
+import player.ActionControlEntity
 import player.PlayerManager
-import screen.elements.GUIMouseOverRegion
-import screen.elements.GUITexturePane
-import screen.elements.GUIWindow
 import screen.mouse.Mouse
-
-object ControllerMenu : GUIWindow("Entity controller window",
-        0, 0, 55, 55) {
-
-    var background: GUITexturePane
-
-    init {
-        background = GUITexturePane(this, "Entity controller background", 0, 0, Image.GUI.ENTITY_CONTROLLER_MENU)
-        background.apply {
-            GUIMouseOverRegion(this, "move command mouse region", { 20 }, { 38 }, { 14 }, { 14 }, onEnter = {
-                EntityController.currentlyHoveringCommand = Behavior.Movement.PATH_TO_FORMATION
-                background.renderable = Texture(Image.GUI.ENTITY_CONTROLLER_MENU_MOVE_SELECTED)
-            }, onLeave = {
-                EntityController.currentlyHoveringCommand = null
-            })
-            GUIMouseOverRegion(this, "attack command mouse region", { 20 }, { 3 }, { 14 }, { 14 }, onEnter = {
-                EntityController.currentlyHoveringCommand = Behavior.Offense.ATTACK_ARG
-                background.renderable = Texture(Image.GUI.ENTITY_CONTROLLER_MENU_ATTACK_SELECTED)
-            }, onLeave = {
-                EntityController.currentlyHoveringCommand = null
-            })
-            GUIMouseOverRegion(this, "defend command mouse region", { 3 }, { 20 }, { 14 }, { 14 }, onEnter = {
-                EntityController.currentlyHoveringCommand = null // DEF
-                background.renderable = Texture(Image.GUI.ENTITY_CONTROLLER_MENU_DEFEND_SELECTED)
-            }, onLeave = {
-                EntityController.currentlyHoveringCommand = null
-            })
-            GUIMouseOverRegion(this, "stop command mouse region", { 37 }, { 20 }, { 14 }, { 14 }, onEnter = {
-                EntityController.currentlyHoveringCommand = null // STP
-                background.renderable = Texture(Image.GUI.ENTITY_CONTROLLER_MENU_STOP_SELECTED)
-            }, onLeave = {
-                EntityController.currentlyHoveringCommand = null
-            })
-        }
-        transparentToInteraction = true
-    }
-}
+import kotlin.math.PI
+import kotlin.math.atan2
 
 object EntityController : Tool(Control.USE_ENTITY_COMMAND) {
 
@@ -63,31 +29,48 @@ object EntityController : Tool(Control.USE_ENTITY_COMMAND) {
 
     var startXPixel = 0
     var startYPixel = 0
+    var startLevelXPixel = 0
+    var startLevelYPixel = 0
+    var active = false
 
     var currentlyHoveringCommand: BehaviorTree? = null
     var selectedCommand: BehaviorTree? = null
 
     override fun onUse(event: ControlEvent, mouseLevelXPixel: Int, mouseLevelYPixel: Int): Boolean {
         if (event.control == Control.USE_ENTITY_COMMAND) {
-            if (event.type ==ControlEventType.PRESS) {
+            if (event.type == ControlEventType.PRESS) {
                 startXPixel = Mouse.xPixel
                 startYPixel = Mouse.yPixel
-                println("start: $startXPixel, $startYPixel")
-            } else if (false) { // TODO should be if held
-                if (Geometry.distance(Mouse.xPixel, Mouse.yPixel, startXPixel, startYPixel) > DRAG_DISTANCE_BEFORE_MENU_OPEN) {
-                    val startXCopy = startXPixel
-                    val startYCopy = startYPixel // the unhappy (sometimes) magic of lambdas
-                    ControllerMenu.alignments.x = { startXCopy - ControllerMenu.alignments.width() / 2 }
-                    ControllerMenu.alignments.y = { startYCopy - ControllerMenu.alignments.height() / 2 }
-                    ControllerMenu.open = true
+                startLevelXPixel = LevelManager.mouseLevelXPixel
+                startLevelYPixel = LevelManager.mouseLevelYPixel
+            } else if (event.type == ControlEventType.HOLD) { // TODO should be if held
+                if (!active && Geometry.distance(Mouse.xPixel, Mouse.yPixel, startXPixel, startYPixel) > DRAG_DISTANCE_BEFORE_MENU_OPEN) {
+                    active = true
+                }
+                if (active) {
+                    val angle = atan2(Mouse.yPixel - startYPixel.toDouble(), Mouse.xPixel - startXPixel.toDouble())
+                    if (angle > 3 * PI / 4 || angle < -3 * PI / 4) {
+                        // left
+                        currentlyHoveringCommand = Behavior.Offense.ATTACK_ARG
+                    } else if (angle <= 3 * PI / 4 && angle >= PI / 4) {
+                        // top
+                        currentlyHoveringCommand = Behavior.Movement.PATH_TO_FORMATION
+                    } else if (angle < PI / 4 && angle >= -PI / 4) {
+                        // right
+                        currentlyHoveringCommand = null // should be stop
+                    } else {
+                        // bottom
+                        currentlyHoveringCommand = null // should be defend
+                    }
                 }
             } else {
-                if (ControllerMenu.open) {
+                if (active) {
                     selectedCommand = currentlyHoveringCommand
-                    ControllerMenu.open = false
+                    println("selected $selectedCommand")
+                    active = false
                 }
-                if(!Selector.dragging) {
-                    if (selectedCommand != null && !ControllerMenu.open) {
+                if (!Selector.dragging) {
+                    if (selectedCommand != null && !active) {
                         controlEntities(selectedCommand!!)
                         return true
                     }
@@ -95,6 +78,14 @@ object EntityController : Tool(Control.USE_ENTITY_COMMAND) {
             }
         }
         return false
+    }
+
+    override fun renderAbove(level: Level) {
+        if(level == LevelManager.levelUnderMouse) {
+            if (active) {
+                Renderer.renderTexture(Image.Gui.ENTITY_CONTROLLER_MENU2, startLevelXPixel - Image.Gui.ENTITY_CONTROLLER_MENU2.widthPixels / 2, startLevelYPixel - Image.Gui.ENTITY_CONTROLLER_MENU2.heightPixels / 2)
+            }
+        }
     }
 
     private fun controlEntities(command: BehaviorTree) {
@@ -109,12 +100,12 @@ object EntityController : Tool(Control.USE_ENTITY_COMMAND) {
                         }
                     }
                 }
-                PlayerManager.takeAction(ControlEntityAction(PlayerManager.localPlayer,
+                PlayerManager.takeAction(ActionControlEntity(PlayerManager.localPlayer,
                         Selector.currentSelected.filterIsInstance<Entity>().map { it.toReference() as MovingObjectReference },
-                        command, PixelCoord(LevelManager.mouseLevelXPixel, LevelManager.mouseLevelYPixel)))
+                        command, LevelPosition(LevelManager.mouseLevelXPixel, LevelManager.mouseLevelYPixel, LevelManager.levelUnderMouse!!)))
             }
             Behavior.Offense.ATTACK_ARG -> {
-                PlayerManager.takeAction(ControlEntityAction(PlayerManager.localPlayer,
+                PlayerManager.takeAction(ActionControlEntity(PlayerManager.localPlayer,
                         Selector.currentSelected.filterIsInstance<Entity>().map { it.toReference() as MovingObjectReference },
                         command, LevelManager.levelObjectUnderMouse?.toReference()))
             }

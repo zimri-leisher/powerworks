@@ -15,9 +15,6 @@ class ConcurrentlyModifiableMutableList<T>(
     @Id(4)
     val toRemove = mutableListOf<T>()
 
-    @Id(5)
-    private var sorter: Comparator<T>? = null
-
     fun add(l: T) {
         if (beingTraversed)
             toAdd.add(l)
@@ -67,14 +64,6 @@ class ConcurrentlyModifiableMutableList<T>(
         toAdd.clear()
         elements.removeAll(toRemove)
         toRemove.clear()
-        if (sorter != null) {
-            elements.sortWith(sorter!!)
-            sorter = null
-        }
-    }
-
-    fun sortWith(c: Comparator<T>) {
-        sorter = c
     }
 
     fun filter(pred: (T) -> Boolean): ConcurrentlyModifiableMutableList<T> {

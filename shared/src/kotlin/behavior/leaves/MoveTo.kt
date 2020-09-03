@@ -27,7 +27,7 @@ class MoveTo(parent: BehaviorTree, val goalVar: Variable,
             return
         }
         if (nullableGoal is TileCoord) {
-            goal = nullableGoal.toPixel()
+            goal = nullableGoal.pixel()
         } else if (nullableGoal is PixelCoord) {
             goal = nullableGoal
         }
@@ -36,7 +36,7 @@ class MoveTo(parent: BehaviorTree, val goalVar: Variable,
     override fun updateState(entity: Entity): NodeState {
         val nullableGoal = getData<Any?>(goalVar) ?: return NodeState.FAILURE
         if (nullableGoal is TileCoord) {
-            goal = nullableGoal.toPixel()
+            goal = nullableGoal.pixel()
         } else if (nullableGoal is PixelCoord) {
             goal = nullableGoal
         }

@@ -24,7 +24,9 @@ import network.packet.Packet
 import network.packet.PacketHandler
 import network.packet.PacketType
 import player.PlayerManager
-import screen.gui2.ScreenManager
+import screen.ScreenManager
+import screen.gui.GuiDebugInfo
+import screen.gui.GuiDebugMenu
 import screen.mouse.Mouse
 import screen.mouse.Tooltips
 import screen.mouse.tool.Tool
@@ -177,7 +179,9 @@ object Game : ApplicationAdapter(), ControlEventHandler, PacketHandler {
         ClientNetworkManager.registerServerPacketHandler(this, PacketType.LOAD_GAME)
         AudioManager.load()
         Gdx.input.inputProcessor = InputManager
-        InputManager.register(this, Control.PIPE_INFO, Control.ESCAPE, Control.TURN_OFF_DEBUG_INFO, Control.TAKE_SCREENSHOT, Control.POSITION_INFO, Control.RESOURCE_NODES_INFO, Control.RENDER_HITBOXES, Control.SCREEN_INFO, Control.CHUNK_INFO, Control.TOGGLE_INVENTORY, Control.TUBE_INFO)
+        InputManager.register(this, Control.PIPE_INFO, Control.TURN_OFF_DEBUG_INFO, Control.TAKE_SCREENSHOT, Control.POSITION_INFO, Control.RESOURCE_NODES_INFO, Control.RENDER_HITBOXES, Control.SCREEN_INFO, Control.CHUNK_INFO, Control.TUBE_INFO)
+        GuiDebugMenu.open = false
+        GuiDebugInfo.open = true
         GameState.setState(GameState.MAIN_MENU)
     }
 
@@ -242,7 +246,7 @@ object Game : ApplicationAdapter(), ControlEventHandler, PacketHandler {
         if (IS_SERVER) return
         WIDTH = width / SCALE
         HEIGHT = height / SCALE
-        //ScreenManager.screenSizeChange()
+        ScreenManager.onScreenSizeChange()
         Renderer.batch.projectionMatrix.setToOrtho2D(0f, 0f, width.toFloat(), height.toFloat())
     }
 
@@ -268,17 +272,6 @@ object Game : ApplicationAdapter(), ControlEventHandler, PacketHandler {
                 Control.TUBE_INFO -> currentDebugCode = DebugCode.TUBE_INFO
                 Control.SCREEN_INFO -> currentDebugCode = DebugCode.SCREEN_INFO
                 Control.POSITION_INFO -> currentDebugCode = DebugCode.POSITION_INFO
-                Control.ESCAPE -> {
-                    /*
-                    for (group in ScreenManager.windowGroups) {
-                        val highestCloseableWindow = group.windows.sortedBy { it.layer }.firstOrNull { it.allowEscapeToClose && it.open }
-                        if (highestCloseableWindow != null) {
-                            highestCloseableWindow.open = false
-                            break
-                        }
-                    }
-                     */
-                }
             }
     }
 

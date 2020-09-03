@@ -2,9 +2,8 @@ package main
 
 import audio.AudioManager
 import player.PlayerManager
-import screen.RecipeSelectorGUI
-import screen.gui2.GuiIngame
-import screen.gui2.GuiMainMenu
+import screen.gui.GuiIngame
+import screen.gui.GuiMainMenu
 import screen.mouse.Mouse
 
 class GameState(val activate: () -> Unit, val deactivate: () -> Unit) {
@@ -24,7 +23,6 @@ class GameState(val activate: () -> Unit, val deactivate: () -> Unit) {
             PlayerManager.localPlayer.brainRobot.inventory.listeners.add(Mouse)
 
             AudioManager.ears = GuiIngame.cameras[0]
-            RecipeSelectorGUI
         }, {
         })
 

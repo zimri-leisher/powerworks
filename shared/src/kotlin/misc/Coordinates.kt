@@ -6,9 +6,9 @@ import java.lang.Math.abs
 
 data class PixelCoord(
         @Id(1)
-        var xPixel: Int,
+        val xPixel: Int,
         @Id(2)
-        var yPixel: Int) {
+        val yPixel: Int) {
 
     private constructor() : this(0, 0)
 
@@ -24,10 +24,7 @@ data class PixelCoord(
 
     fun enforceBounds(level: Level) = enforceBounds(0, level.widthPixels, 0, level.heightPixels)
 
-    fun enforceBounds(xMin: Int, xMax: Int, yMin: Int, yMax: Int) {
-        xPixel = Math.min(xMax, Math.max(xMin, xPixel))
-        yPixel = Math.min(yMax, Math.max(yMin, yPixel))
-    }
+    fun enforceBounds(xMin: Int, xMax: Int, yMin: Int, yMax: Int) = PixelCoord(Math.min(xMax, Math.max(xMin, xPixel)), Math.min(yMax, Math.max(yMin, yPixel)))
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -50,20 +47,17 @@ data class PixelCoord(
 
 data class TileCoord(
         @Id(1)
-        var xTile: Int,
+        val xTile: Int,
         @Id(2)
-        var yTile: Int) {
+        val yTile: Int) {
 
     private constructor() : this(0, 0)
 
-    fun toPixel() = PixelCoord(xTile shl 4, yTile shl 4)
+    fun pixel() = PixelCoord(xTile shl 4, yTile shl 4)
 
     fun enforceBounds(level: Level) = enforceBounds(0, level.widthTiles, 0, level.heightTiles)
 
-    fun enforceBounds(xMin: Int, xMax: Int, yMin: Int, yMax: Int) {
-        xTile = Math.min(xMax, Math.max(xMin, xTile))
-        yTile = Math.min(yMax, Math.max(yMin, yTile))
-    }
+    fun enforceBounds(xMin: Int, xMax: Int, yMin: Int, yMax: Int) = TileCoord(Math.min(xMax, Math.max(xMin, xTile)), Math.min(yMax, Math.max(yMin, yTile)))
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

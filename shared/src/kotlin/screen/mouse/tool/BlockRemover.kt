@@ -7,7 +7,7 @@ import level.LevelManager
 import level.block.Block
 import network.BlockReference
 import player.PlayerManager
-import player.RemoveLevelObjectAction
+import player.ActionLevelObjectRemove
 
 object BlockRemover : Tool(Control.REMOVE_BLOCK) {
 
@@ -28,7 +28,7 @@ object BlockRemover : Tool(Control.REMOVE_BLOCK) {
                     listOf()
                 if (toRemove.isNotEmpty()) {
                     toRemove.forEach { Selector.currentSelected.remove(it) }
-                    PlayerManager.takeAction(RemoveLevelObjectAction(PlayerManager.localPlayer, toRemove.map { BlockReference(it) }))
+                    PlayerManager.takeAction(ActionLevelObjectRemove(PlayerManager.localPlayer, toRemove.map { BlockReference(it) }))
                 }
                 return true
             }

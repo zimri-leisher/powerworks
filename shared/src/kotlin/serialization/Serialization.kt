@@ -57,10 +57,12 @@ private fun <R> catchAndPrintIfSafe(block: () -> R): R {
     try {
         return block()
     } catch (e: Exception) {
-        if (safe && !alreadyPrinted) {
-            alreadyPrinted = true
-            for (line in lastLinesBuffer) {
-                System.err.println(line)
+        synchronized(lastLinesBuffer) {
+            if (safe && !alreadyPrinted) {
+                alreadyPrinted = true
+                for (line in lastLinesBuffer) {
+                    System.err.println(line)
+                }
             }
         }
         throw e

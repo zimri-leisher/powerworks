@@ -12,9 +12,21 @@ import serialization.Id
 import java.util.*
 import kotlin.math.absoluteValue
 
+/**
+ * A level update for modifying the [Inventory] of the specified [BrainRobot]
+ */
 class BrainRobotInvModify(
+        /**
+         * A reference to the [BrainRobot] whose inventory will be modified.
+         */
         @Id(4) val brainReference: MovingObjectReference,
+        /**
+         * The [ItemType] to add/remove.
+         */
         @Id(2) val itemType: ItemType,
+        /**
+         * The quantity to add/remove. If positive, it will add, if negative, will subtract
+         */
         @Id(3) val quantity: Int
 ) : LevelUpdate(LevelUpdateType.BRAIN_ROBOT_GIVE_ITEM) {
 

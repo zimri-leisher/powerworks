@@ -16,10 +16,10 @@ import java.util.*
 import kotlin.reflect.jvm.javaField
 
 /**
- * A node that allows for movement of resources between places on the level. This is not a subclass of LevelObject.
+ * A node that allows for movement of resources between places on the level. This is not a subclass of [LevelObject].
  *
- * An example of a place where they appear is the MinerBlock, which uses one to produce the ore it mines
- * from the ground and either put it into the connected inventory or place it on the ground.
+ * An example of a place where they appear is the [MinerBlock], which uses one to produce the ore it mines
+ * from the ground and either put it into the connected inventory or into a tube network.
  */
 class ResourceNode constructor(
         @Id(1)

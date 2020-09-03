@@ -8,9 +8,18 @@ import network.MovingObjectReference
 import player.Player
 import serialization.Id
 
+/**
+ * A level update for setting the formation positions of a group of entities.
+ */
 class EntitySetFormation(
+        /**
+         * A map of references to entities and their positions in the formation.
+         */
         @Id(2)
         val positions: Map<MovingObjectReference, PixelCoord>,
+        /**
+         * The center of the formation.
+         */
         @Id(3)
         val center: PixelCoord
 ) : LevelUpdate(LevelUpdateType.ENTITY_SET_FORMATION) {
@@ -36,6 +45,9 @@ class EntitySetFormation(
     }
 
     override fun act(level: Level) {
+        if(positions.isEmpty()) {
+            return
+        }
         val group = (positions.keys.first().value!! as Entity).group!!
         val formation = Formation(center, positions.mapKeys { it.key.value!! as Entity })
         group.formation = formation

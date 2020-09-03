@@ -8,11 +8,29 @@ import resource.ResourceList
 import serialization.Id
 import java.util.*
 
+/**
+ * A level update for transferring resources through a [ResourceNode].
+ */
 class ResourceNodeTransferThrough(
+        /**
+         * A reference to the [ResourceNode] to transfer resources through.
+         */
         @Id(2) val nodeReference: ResourceNodeReference,
+        /**
+         * The resources to transfer through the node.
+         */
         @Id(3) val resources: ResourceList,
+        /**
+         * If true, it will try to output the resources, if false, it will try to input them.
+         */
         @Id(4) val output: Boolean,
+        /**
+         * If true, this will check if able first.
+         */
         @Id(5) val checkIfAble: Boolean,
+        /**
+         * Whether or not to actually make sure that the resources can A) fit and B) exist in an attached container.
+         */
         @Id(6) val mustContainOrHaveSpace: Boolean
 ) : LevelUpdate(LevelUpdateType.RESOURCE_NODE_TRANSFER_THROUGH) {
 

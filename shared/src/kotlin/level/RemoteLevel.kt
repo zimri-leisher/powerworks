@@ -1,6 +1,5 @@
 package level
 
-import data.ConcurrentlyModifiableMutableList
 import level.update.LevelObjectAdd
 import level.update.LevelObjectRemove
 import level.update.LevelUpdate
@@ -19,8 +18,10 @@ import java.util.*
  */
 class RemoteLevel(id: UUID, info: LevelInfo) : Level(id, info), PacketHandler {
 
-    val outgoingModifications = mutableMapOf<LevelUpdate, Int>()
-    val incomingModifications = mutableMapOf<LevelUpdate, Int>()
+    val outgoingUpdates = mutableMapOf<LevelUpdate, Int>()
+
+    // level update - the update, boolean - whether or not it was acted on, int - time received
+    val incomingUpdates = mutableMapOf<Pair<LevelUpdate, Boolean>, Int>()
 
     override fun initialize() {
         println("initialize remote level with id $id")
@@ -47,16 +48,21 @@ class RemoteLevel(id: UUID, info: LevelInfo) : Level(id, info), PacketHandler {
     }
 
     override fun modify(update: LevelUpdate, transient: Boolean): Boolean {
+        if (!transient && incomingUpdates.any { (updateAndHasActed, _) -> updateAndHasActed.first.equivalent(update) && updateAndHasActed.second }) {
+            // if there are any incoming updates that are equivalent to this action and have already been taken
+            // return true because this action has already happened
+            return true
+        }
         if (!canModify(update)) {
             return false
         }
         if (transient) {
             update.act(this)
         } else {
-            val equivalent = incomingModifications.keys.filter { it.equivalent(update) }
+            val equivalent = incomingUpdates.keys.filter { it.first.equivalent(update) }
             if (equivalent.isEmpty()) {
                 update.actGhost(this)
-                outgoingModifications.put(update, updatesCount)
+                outgoingUpdates.put(update, updatesCount)
             } else {
                 // there are equivalent modifications waiting to be taken that are from the server
                 // take them instead, ignore this
@@ -70,35 +76,45 @@ class RemoteLevel(id: UUID, info: LevelInfo) : Level(id, info), PacketHandler {
             return
         }
         super.update()
-        val outgoingIterator = outgoingModifications.iterator()
-        for ((_, time) in outgoingIterator) {
+        val outgoingIterator = outgoingUpdates.iterator()
+        for ((update, time) in outgoingIterator) {
             if (updatesCount - time > 300) {
+                update.cancelActGhost(this)
                 outgoingIterator.remove()
             }
         }
-        val incomingIterator = incomingModifications.iterator()
-        for ((update, time) in incomingIterator) {
-            if (update.canAct(this)) {
+        val incomingIterator = incomingUpdates.iterator()
+        val updatesActedOn = mutableMapOf<Pair<LevelUpdate, Boolean>, Int>()
+        for ((updateAndHasActed, time) in incomingIterator) {
+            val (update, hasActed) = updateAndHasActed
+            val equivalentOutgoings = outgoingUpdates.filterKeys { it.equivalent(update) }
+            equivalentOutgoings.forEach { t, u -> t.cancelActGhost(this) }
+            outgoingUpdates.removeIfKey { it in equivalentOutgoings }
+            if (!hasActed && update.canAct(this)) {
                 update.act(this)
                 incomingIterator.remove()
+                updatesActedOn.put(update to true, time)
             } else {
-                if ((updatesCount - time) % 10 == 0) {
+                if (!hasActed && (updatesCount - time) % 10 == 0) {
                     update.resolveReferences()
                 }
                 if (updatesCount - time > 60) {
                     incomingIterator.remove()
-                    println("client has been unable to take server action $update for more than a second")
+                    if (!hasActed) {
+                        println("client has been unable to take server action $update for more than a second")
+                    }
                 }
             }
         }
+        incomingUpdates.removeIfKey { it.first in updatesActedOn.keys.map { inner -> inner.first } }
+        updatesActedOn.forEach { incomingUpdates.put(it.key, it.value) }
     }
 
     override fun handleServerPacket(packet: Packet) {
         if (packet.type == PacketType.LEVEL_UPDATE) {
             packet as LevelUpdatePacket
             if (packet.level == this) {
-                outgoingModifications.removeIfKey { it.equivalent(packet.update) }
-                incomingModifications.put(packet.update, updatesCount)
+                incomingUpdates.put(packet.update to false, updatesCount)
             }
         } else if (packet is ChunkDataPacket) {
             if (packet.levelId == id) {

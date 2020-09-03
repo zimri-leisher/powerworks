@@ -9,10 +9,25 @@ import resource.ResourceList
 import serialization.Id
 import java.util.*
 
+/**
+ * A level update for changing of the resources inside of a [ResourceContainer] inside of a [Block].
+ */
 class BlockContainerModify(
+        /**
+         * A reference to the [Block] to modify.
+         */
         @Id(2) val blockReference: BlockReference,
+        /**
+         * The [UUID] of the [ResourceContainer] to modify.
+         */
         @Id(5) val containerId: UUID,
+        /**
+         * The resources to add/remove.
+         */
         @Id(3) val resources: ResourceList,
+        /**
+         * If true, add the resources, if false, remove them.
+         */
         @Id(4) val add: Boolean
 ) : LevelUpdate(LevelUpdateType.BLOCK_CONTAINER_MODIFY) {
 

@@ -10,9 +10,18 @@ import player.Player
 import serialization.Id
 import java.util.*
 
+/**
+ * A level update for setting the shooting target of an [Entity]
+ */
 class EntitySetTarget(
+        /**
+         * A reference to the [Entity] to set the target of.
+         */
         @Id(2)
         val entityReference: MovingObjectReference,
+        /**
+         * A reference to the target, or null if there is none.
+         */
         @Id(3)
         val target: LevelObjectReference?
 ) : LevelUpdate(LevelUpdateType.ENTITY_SET_TARGET) {
@@ -33,7 +42,7 @@ class EntitySetTarget(
     }
 
     override fun act(level: Level) {
-        (entityReference.value!! as Entity).behavior.target = target?.value
+        (entityReference.value!! as Entity).behavior.attackTarget = target?.value
     }
 
     override fun actGhost(level: Level) {

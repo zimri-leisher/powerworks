@@ -4,6 +4,7 @@ import com.badlogic.gdx.graphics.Color
 import graphics.Renderer
 import graphics.TextureRenderParams
 import io.*
+import level.Level
 import level.LevelManager
 import level.block.Block
 import level.moving.MovingObject
@@ -25,11 +26,13 @@ object Interactor : Tool(Control.Group.INTERACTION.controls) {
         return true
     }
 
-    override fun renderBelow() {
-        val s = LevelManager.levelObjectUnderMouse
-        if (s is Block)
-            Renderer.renderEmptyRectangle(s.xPixel - 1, s.yPixel - 1, (s.type.widthTiles shl 4) + 2, (s.type.heightTiles shl 4) + 2, params = TextureRenderParams(color = Color(0x1A6AF472)))
-        else if (s is MovingObject)
-            Renderer.renderEmptyRectangle(s.xPixel + s.hitbox.xStart - 1, s.yPixel + s.hitbox.yStart - 1, s.hitbox.width + 2, s.hitbox.height + 2, params = TextureRenderParams(color = Color(0x1A6AF472)))
+    override fun renderBelow(level: Level) {
+        if(level == LevelManager.levelUnderMouse) {
+            val s = LevelManager.levelObjectUnderMouse
+            if (s is Block)
+                Renderer.renderEmptyRectangle(s.xPixel - 1, s.yPixel - 1, (s.type.widthTiles shl 4) + 2, (s.type.heightTiles shl 4) + 2, params = TextureRenderParams(color = Color(0x1A6AF472)))
+            else if (s is MovingObject)
+                Renderer.renderEmptyRectangle(s.xPixel + s.hitbox.xStart - 1, s.yPixel + s.hitbox.yStart - 1, s.hitbox.width + 2, s.hitbox.height + 2, params = TextureRenderParams(color = Color(0x1A6AF472)))
+        }
     }
 }

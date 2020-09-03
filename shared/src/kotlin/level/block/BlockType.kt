@@ -22,9 +22,7 @@ import misc.Geometry
 import misc.Geometry.rotate
 import resource.*
 import routing.script.RoutingLanguage
-import screen.*
-import screen.elements.BlockGUI
-import screen.gui2.*
+import screen.gui.*
 import java.util.*
 
 /**
@@ -47,7 +45,7 @@ import java.util.*
  * You are able to define [ResourceNode] placement and [ResourceContainer]s--see [BlockNodesTemplate]. Because of the
  * [RoutingLanguage], you can often set most of the resource-based functionality of a [Block] through its type. This is the recommended
  * way to add new features, as opposed to putting code directly inside classes.
- * You are also able to define a [BlockGUIPool] which will allow easy creation and deletion of [BlockGUI]s from a pool
+ * You are also able to define a [GuiPool] which will allow easy creation and deletion of [Gui]s from a pool
  */
 open class BlockType<T : Block>(initializer: BlockType<T>.() -> Unit = {}) : LevelObjectType<T>() {
 
@@ -72,8 +70,8 @@ open class BlockType<T : Block>(initializer: BlockType<T>.() -> Unit = {}) : Lev
     var nodesTemplate = BlockNodesTemplate()
 
     /**
-     * The [BlockGUIPool] for [Block]s of this [BlockType]. This is meant for [Block]s which have a single, standard
-     * [BlockGUI] across all instances, and is usually accessed in the [Block.onInteractOn] method (e.g. `guiPool.open(this)`)
+     * The [GuiPool] for [Block]s of this [BlockType]. This is meant for [Block]s which have a single, standard
+     * [Gui] across all instances, and is usually accessed in the [Block.onInteractOn] method (e.g. `guiPool.open(this)`)
      */
     var guiPool: GuiPool<*>? = null
 
@@ -94,14 +92,6 @@ open class BlockType<T : Block>(initializer: BlockType<T>.() -> Unit = {}) : Lev
         val ALL = mutableListOf<BlockType<*>>()
 
         val ERROR = BlockType<DefaultBlock>()
-
-        val FARSEEKER = BlockType<FarseekerBlock> {
-            instantiate = { xPixel, yPixel, rotation -> FarseekerBlock(xPixel shr 4, yPixel shr 4, rotation) }
-            name = "Farseeker"
-            widthTiles = 4
-            heightTiles = 4
-            hitbox = Hitbox.TILE4X4
-        }
 
         init {
             MachineBlockType
@@ -313,6 +303,15 @@ open class MachineBlockType<T : MachineBlock>(initializer: MachineBlockType<T>.(
 
         val ALL = mutableListOf<MachineBlockType<*>>()
 
+        val FARSEEKER = MachineBlockType<FarseekerBlock> {
+            instantiate = { xPixel, yPixel, rotation -> FarseekerBlock(xPixel shr 4, yPixel shr 4, rotation) }
+            name = "Farseeker"
+            widthTiles = 4
+            heightTiles = 4
+            hitbox = Hitbox.TILE4X4
+            guiPool = GuiPool({ GuiFarseekerBlock(it as FarseekerBlock) })
+        }
+
         val MINER = MachineBlockType<MinerBlock> {
             name = "Miner"
             instantiate = { xPixel, yPixel, rotation -> MinerBlock(xPixel shr 4, yPixel shr 4, rotation) }
@@ -355,7 +354,6 @@ open class MachineBlockType<T : MachineBlock>(initializer: MachineBlockType<T>.(
             hitbox = Hitbox.TILE2X2
             nodeTemplate {
                 val tank = FluidTank(10)
-                // TODO only allow in molten ore fluid types
                 val out = Inventory(1, 1)
                 node(0, 1, 0, tank, "true", ResourceTypeGroup.MOLTEN_ORE_FLUIDS.types, "false")
                 node(0, 0, 2, out, "false", allowOut = "true", forceOut = "true")
@@ -371,7 +369,7 @@ open class MachineBlockType<T : MachineBlock>(initializer: MachineBlockType<T>.(
             loop = true
             startOn = true
             hitbox = Hitbox.TILE2X2
-            //guiPool = BlockGUIPool({ ArmoryBlockGUI(it as ArmoryBlock) }, 3)
+            guiPool = GuiPool({ GuiArmoryBlock(it as ArmoryBlock) }, 3)
             nodeTemplate {
                 val inputInv = Inventory(3, 1)
                 node(0, 1, 0, inputInv, "true", allowOut = "false")
@@ -391,7 +389,7 @@ class CrafterBlockType<T : CrafterBlock>(initializer: CrafterBlockType<T>.() -> 
     init {
         widthTiles = 2
         heightTiles = 2
-//        guiPool = BlockGUIPool({ CrafterBlockGUI(it as CrafterBlock) })
+        guiPool = GuiPool({ GuiCrafterBlock(it as CrafterBlock) })
         initializer()
         ALL.add(this)
     }

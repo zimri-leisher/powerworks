@@ -235,8 +235,7 @@ abstract class PipeNetwork(resourceCategory: ResourceCategory, level: Level, pri
                     pack.dir = pack.currentRouteStep.dir
                     pack.routeStepIndex++
                 }
-                pack.position.xPixel += Geometry.getXSign(pack.dir) * speed
-                pack.position.yPixel += Geometry.getYSign(pack.dir) * speed
+                pack.position = PixelCoord(pack.position.xPixel + Geometry.getXSign(pack.dir) * speed, pack.position.yPixel + Geometry.getYSign(pack.dir) * speed)
             }
         }
     }

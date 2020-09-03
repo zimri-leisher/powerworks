@@ -1,6 +1,6 @@
 package network.packet
 
-import player.ErrorAction
+import player.ActionError
 import player.PlayerAction
 import serialization.Id
 import java.util.*
@@ -8,7 +8,7 @@ import java.util.*
 class PlayerActionPacket(
         @Id(2)
         val action: PlayerAction) : Packet(PacketType.PLAYER_ACTION) {
-    private constructor() : this(ErrorAction())
+    private constructor() : this(ActionError())
 }
 
 class AcknowledgePlayerActionPacket(

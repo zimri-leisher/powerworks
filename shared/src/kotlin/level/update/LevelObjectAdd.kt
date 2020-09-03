@@ -9,7 +9,13 @@ import level.moving.MovingObject
 import player.Player
 import serialization.Id
 
+/**
+ * A level update for adding a [LevelObject] to a [Level].
+ */
 class LevelObjectAdd(
+        /**
+         * The [LevelObject] to add to the level.
+         */
         @Id(2)
         val obj: LevelObject
 ) : LevelUpdate(LevelUpdateType.LEVEL_OBJECT_ADD) {
@@ -25,7 +31,7 @@ class LevelObjectAdd(
 
     override fun act(level: Level) {
         if (obj.level != level && obj.inLevel) { // if already in another level
-            obj.level.remove(obj)
+            println("object $obj already in another level")
         }
         if (obj !is GhostLevelObject) {
             val collidingGhosts = level.data.ghostObjects.getCollisionsWith(obj.hitbox, obj.xPixel, obj.yPixel).toList()

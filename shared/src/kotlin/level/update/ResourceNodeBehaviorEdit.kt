@@ -8,10 +8,20 @@ import resource.ResourceNodeBehavior
 import serialization.Id
 import java.util.*
 
-class ResourceNodeBehaviorEdit(@Id(3)
-                               val nodeReference: ResourceNodeReference,
-                               @Id(4)
-                               val behavior: ResourceNodeBehavior
+/**
+ * A level update for editing the [ResourceNodeBehavior] of [ResourceNode]s.
+ */
+class ResourceNodeBehaviorEdit(
+        /**
+         * A reference to the [ResourceNode] to set the behavior of.
+         */
+        @Id(3)
+        val nodeReference: ResourceNodeReference,
+        /**
+         * The [ResourceNodeBehavior] to set the behavior to.
+         */
+        @Id(4)
+        val behavior: ResourceNodeBehavior
 ) : LevelUpdate(LevelUpdateType.RESOURCE_NODE_BEHAVIOR_EDIT) {
 
     private constructor() : this(ResourceNodeReference(0, 0, LevelManager.EMPTY_LEVEL, UUID.randomUUID()), ResourceNodeBehavior.EMPTY_BEHAVIOR)

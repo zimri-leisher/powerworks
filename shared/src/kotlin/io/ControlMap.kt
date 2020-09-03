@@ -22,8 +22,15 @@ enum class ControlEventType {
     PRESS, RELEASE, HOLD
 }
 
+/**
+ * Represents an event of type [type] for control [control]. Obtained from [ControlMap.getControlEvents]. Classes may request
+ * control events be sent to them through [InputManager.register].
+ */
 data class ControlEvent(val control: Control, val type: ControlEventType)
 
+/**
+ * A class for loading and saving [ControlBind]s, and creating [ControlEvent]s from the current [InputState]
+ */
 class ControlMap(val name: String) {
 
     var activeControls = mutableListOf<Control>()
@@ -33,6 +40,10 @@ class ControlMap(val name: String) {
         load()
     }
 
+    /**
+     * Loads the control binds from the file located in the `GameDirectoryIdentifier.CONTROLS` directory named $[name].txt. This
+     * is called on init of this class so there should be no need to call it further.
+     */
     fun load() {
         val fileInput = FileReader(FileManager.tryGetFile(GameDirectoryIdentifier.CONTROLS, "$name.txt")
                 ?: throw ReadException("Unable to load control file $name.txt"))
@@ -41,11 +52,11 @@ class ControlMap(val name: String) {
                 continue
             }
             // each line specifies a control
-            val words = line.split(" ").map { it.replace(" ", "") }
+            val words = line.split(" ").map { it.replace(" ", "") }.filter { !it.isBlank() }
             val control = Control.valueOf(words[0].toUpperCase())
             val button = words[1].replace("2x", "")
             val double = words[1].contains("2x")
-            val modifiers = if (words.lastIndex == 1) listOf() else words[2].split(",").map { it.replace(",", "") }
+            val modifiers = if (words.lastIndex == 1) listOf() else words[2].split(",").map { it.replace(",", "") }.filter { !it.isBlank() }
             val optionalModifiers = modifiers.filter { it.startsWith("?") }.map { it.replace("?", "") }
             val requiredModifiers = modifiers.filterNot { it.startsWith("?") }
             val toggle = words.any { it == "TOGGLE" }
@@ -53,6 +64,9 @@ class ControlMap(val name: String) {
         }
     }
 
+    /**
+     * Saves the control binds in this map to the `GameDirectoryIdentifier.CONTROLS` directory under `$[name].txt`.
+     */
     fun save() {
         val text = StringBuilder()
         for (bind in binds) {
@@ -74,6 +88,9 @@ class ControlMap(val name: String) {
         output.flush()
     }
 
+    /**
+     * @return a list of [ControlEvent]s as defined by the current [state] and the [binds] of this ControlMap.
+     */
     fun getControlEvents(state: InputState): List<ControlEvent> {
         val newControls = mutableListOf<Control>()
         for (bind in binds) {

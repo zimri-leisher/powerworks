@@ -13,6 +13,7 @@ enum class Control {
     REMOVE_BLOCK,
     TELEPORT,
     EDIT_RESOURCE_NODE,
+    SWITCH_LEVEL_VIEW,
 
     ESCAPE, DELETE,
 
