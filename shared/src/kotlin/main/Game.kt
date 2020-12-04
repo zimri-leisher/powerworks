@@ -33,8 +33,6 @@ import screen.mouse.tool.Tool
 import serialization.Registration
 import serialization.Serialization
 import setting.Settings
-import java.util.*
-import kotlin.streams.asSequence
 import kotlin.system.exitProcess
 import kotlin.system.measureTimeMillis
 
@@ -122,10 +120,12 @@ object Game : ApplicationAdapter(), ControlEventHandler, PacketHandler {
 
     // temporary random user generation
     val source = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    val USER = User(UUID.randomUUID(), Random().ints(5, 0, source.length)
+    val USER = User(OS.getUUID(), System.getProperty("user.name")) /*
+            User(UUID.randomUUID(), Random().ints(5, 0, source.length)
             .asSequence()
             .map(source::get)
-            .joinToString("")) //User(OS.getUUID(), System.getProperty("user.name"))
+            .joinToString(""))
+            */
 
     val VERSION = Version.`0_5_0`
 

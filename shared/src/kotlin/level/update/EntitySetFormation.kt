@@ -1,6 +1,8 @@
 package level.update
 
 import level.Level
+import level.LevelManager
+import level.LevelPosition
 import level.entity.Entity
 import level.entity.Formation
 import misc.Coord
@@ -16,15 +18,15 @@ class EntitySetFormation(
          * A map of references to entities and their positions in the formation.
          */
         @Id(2)
-        val positions: Map<MovingObjectReference, Coord>,
+        val positions: Map<MovingObjectReference, LevelPosition>,
         /**
          * The center of the formation.
          */
         @Id(3)
-        val center: Coord
+        val center: LevelPosition
 ) : LevelUpdate(LevelUpdateType.ENTITY_SET_FORMATION) {
 
-    private constructor() : this(mapOf(), Coord(0, 0))
+    private constructor() : this(mapOf(), LevelPosition(0, 0, LevelManager.EMPTY_LEVEL))
 
     override val playersToSendTo: Set<Player>?
         get() = null

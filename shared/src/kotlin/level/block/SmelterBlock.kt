@@ -1,20 +1,23 @@
 package level.block
 
 import com.badlogic.gdx.Input
-import fluid.FluidTank
-import io.*
+import io.ControlEvent
+import io.ControlEventType
 import item.Inventory
 import item.OreItemType
-import resource.*
+import resource.ResourceContainer
+import resource.ResourceContainerChangeListener
+import resource.ResourceList
+import resource.resourceListOf
 import serialization.Id
 
-class FurnaceBlock(type: MachineBlockType<FurnaceBlock>, xTile: Int, yTile: Int, rotation: Int = 0) : MachineBlock(type, xTile, yTile, rotation), ResourceContainerChangeListener {
-
-    // the internal inventory, not the internal tank
+class SmelterBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(MachineBlockType.SMELTER, xTile, yTile, rotation), ResourceContainerChangeListener {
     @Id(23)
-    val queue = containers.first { it is Inventory } as Inventory
+    val input: Inventory = nodes.first { it.behavior.allowIn.statements.keys.first().text == "true" }.attachedContainer as Inventory
+
     @Id(24)
-    val tank = containers.first { it is FluidTank } as FluidTank
+    val output: Inventory = nodes.first { it.behavior.allowOut.statements.keys.first().text == "true" }.attachedContainer as Inventory
+
     @Id(25)
     var currentlySmelting: OreItemType? = null
 
@@ -23,14 +26,14 @@ class FurnaceBlock(type: MachineBlockType<FurnaceBlock>, xTile: Int, yTile: Int,
     }
 
     override fun onContainerClear(container: ResourceContainer) {
-        if (container.id == queue.id) {
+        if (container.id == input.id) {
             currentlySmelting = null
             on = false
         }
     }
 
     override fun onAddToContainer(container: ResourceContainer, resources: ResourceList) {
-        if (container.id == queue.id) {
+        if (container.id == input.id) {
             if (currentlySmelting == null) {
                 currentlySmelting = resources[0].key as OreItemType
                 on = true
@@ -39,7 +42,7 @@ class FurnaceBlock(type: MachineBlockType<FurnaceBlock>, xTile: Int, yTile: Int,
     }
 
     override fun onRemoveFromContainer(container: ResourceContainer, resources: ResourceList) {
-        if (container.id == queue.id) {
+        if (container.id == input.id) {
             if (currentlySmelting == null) {
                 currentlySmelting = resources[0].key as OreItemType
                 on = true
@@ -48,27 +51,24 @@ class FurnaceBlock(type: MachineBlockType<FurnaceBlock>, xTile: Int, yTile: Int,
     }
 
     override fun update() {
-        if(tank.totalQuantity > 0) {
-            nodes.output(tank.currentFluidType!!, 1)
-        }
-        on = queue.totalQuantity > 0 && tank.totalQuantity < tank.maxAmount
+        on = input.totalQuantity > 1 && !(output[0] != null && output[0]!!.quantity >= output[0]!!.type.maxStack)
         super.update()
     }
 
     override fun onFinishWork() {
-        if(currentlySmelting == null) {
+        if (currentlySmelting == null) {
             // some desync
             return
         }
-        if (tank.canAddAll(resourceListOf(currentlySmelting!!.moltenForm to 1))) {
-            if (queue.remove(currentlySmelting!!, 1)) {
-                tank.add(currentlySmelting!!.moltenForm, 1, checkIfAble = false)
+        if (output.canAddAll(resourceListOf(currentlySmelting!!.moltenForm.ingot to 1))) {
+            if (input.remove(currentlySmelting!!, 2)) {
+                output.add(currentlySmelting!!.moltenForm.ingot, 1, checkIfAble = false)
             }
         }
-        if (queue.totalQuantity > 0) {
+        if (input.totalQuantity > 1) {
             // start smelting another item
-            if (queue.getQuantity(currentlySmelting!!) == 0) {
-                currentlySmelting = queue.toResourceList()[0].key as OreItemType
+            if (input.getQuantity(currentlySmelting!!) == 0) {
+                currentlySmelting = input.toResourceList()[0].key as OreItemType
             }
             // do nothing, old item still has quantity
         } else {

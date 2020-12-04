@@ -1,25 +1,25 @@
 package screen.gui
 
 import level.block.FurnaceBlock
+import level.block.SmelterBlock
 import screen.ScreenLayer
-import screen.element.ElementFluidTank
 import screen.element.ElementProgressBar
 import screen.element.ElementResourceContainer
 
-class GuiFurnaceBlock(block: FurnaceBlock) : Gui(ScreenLayer.MENU), PoolableGui {
+class GuiSmelterBlock(block: SmelterBlock) : Gui(ScreenLayer.MENU), PoolableGui {
     var block = block
         set(value) {
             if (field != value) {
                 field = value
-                input.container = value.queue
+                input.container = value.input
                 progressBar.maxProgress = value.type.maxWork
-                output.tank = value.tank
+                output.container = value.output
             }
         }
 
     lateinit var input: ElementResourceContainer
     lateinit var progressBar: ElementProgressBar
-    lateinit var output: ElementFluidTank
+    lateinit var output: ElementResourceContainer
 
     init {
         define {
@@ -29,11 +29,11 @@ class GuiFurnaceBlock(block: FurnaceBlock) : Gui(ScreenLayer.MENU), PoolableGui 
                 makeDraggable()
                 dimensions = Dimensions.FitChildren.pad(4, 9)
                 closeButton(Placement.Align(HorizontalAlign.RIGHT, VerticalAlign.TOP).offset(-1, -1))
-                text("Furnace", Placement.Align(HorizontalAlign.LEFT, VerticalAlign.TOP).offset(1, -1)) { makeDraggable() }
+                text("Smelter", Placement.Align(HorizontalAlign.LEFT, VerticalAlign.TOP).offset(1, -1)) { makeDraggable() }
                 list(Placement.Align(HorizontalAlign.CENTER, VerticalAlign.BOTTOM).offset(0, 2)) {
-                    input = inventory(block.queue)
-                    progressBar = progressBar(block.type.maxWork, { this@GuiFurnaceBlock.block.currentWork })
-                    output = fluidTank(block.tank)
+                    input = inventory(block.input)
+                    progressBar = progressBar(block.type.maxWork, { this@GuiSmelterBlock.block.currentWork })
+                    output = inventory(block.output)
                 }
             }
         }
@@ -42,7 +42,7 @@ class GuiFurnaceBlock(block: FurnaceBlock) : Gui(ScreenLayer.MENU), PoolableGui 
     override fun canDisplay(obj: Any?) = obj is FurnaceBlock
 
     override fun display(obj: Any?) {
-        block = obj as FurnaceBlock
+        block = obj as SmelterBlock
     }
 
     override fun isDisplaying(obj: Any?) = obj == block

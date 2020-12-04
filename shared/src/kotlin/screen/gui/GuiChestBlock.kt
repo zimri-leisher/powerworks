@@ -2,14 +2,17 @@ package screen.gui
 
 import level.block.ChestBlock
 import screen.ScreenLayer
+import screen.attribute.AttributeResourceContainerLink
 import screen.element.ElementInventory
 
 class GuiChestBlock(val block: ChestBlock) : Gui(ScreenLayer.MENU), PoolableGui {
 
     lateinit var inventoryView: ElementInventory
+    lateinit var containerLink: AttributeResourceContainerLink
 
     init {
         define {
+            containerLink = linkToContainer(block.inventory)
             openAtMouse()
             keepInsideScreen()
             background {
@@ -27,6 +30,7 @@ class GuiChestBlock(val block: ChestBlock) : Gui(ScreenLayer.MENU), PoolableGui 
     override fun display(obj: Any?) {
         obj as ChestBlock
         inventoryView.container = obj.inventory
+        containerLink.container = obj.inventory
     }
 
     override fun isDisplaying(obj: Any?) = obj == block

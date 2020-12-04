@@ -4,6 +4,7 @@ import data.WeakMutableList
 import graphics.Renderer
 import level.Level
 import level.LevelManager
+import level.LevelPosition
 import level.canAdd
 import level.update.EntitySetFormation
 import misc.Geometry
@@ -14,11 +15,11 @@ import java.awt.Rectangle
 
 data class Formation(
         @Id(1)
-        val center: Coord,
+        val center: LevelPosition,
         @Id(2)
-        val positions: Map<Entity, Coord>) {
+        val positions: Map<Entity, LevelPosition>) {
 
-    private constructor() : this(Coord(0, 0), mapOf())
+    private constructor() : this(LevelPosition(0, 0, LevelManager.EMPTY_LEVEL), mapOf())
 
     @Id(3)
     val boundaries: Rectangle = Rectangle()
@@ -152,7 +153,8 @@ class EntityGroup(
         }
 
         val level = entities.first().level
-        level.modify(EntitySetFormation(newFormation.mapKeys { it.key.toReference() as MovingObjectReference }, Coord(x, y)))
+        println("creating formation")
+        level.modify(EntitySetFormation(newFormation.mapKeys { it.key.toReference() as MovingObjectReference }.mapValues { LevelPosition(it.value.x, it.value.y, level) }, LevelPosition(x, y, level)))
     }
 
     fun render() {

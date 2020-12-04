@@ -40,7 +40,7 @@ open class CrafterBlock(override val type: CrafterBlockType<*>, xTile: Int, yTil
         }
 
     @Id(24)
-    private var currentResources = ResourceList()
+    private var currentResources = mutableResourceListOf()
 
     @Id(25)
     private val inputNodes = nodes.filter { it.behavior.allowIn.possible()?.isEmpty() == true } // nodes that start out allowing all types out
@@ -65,11 +65,11 @@ open class CrafterBlock(override val type: CrafterBlockType<*>, xTile: Int, yTil
     override fun onContainerClear(container: ResourceContainer) {
         // basically, refresh the current resource list
         currentResources.clear()
-        currentResources = containers.toResourceList()
+        currentResources = containers.toMutableResourceList()
     }
 
     override fun onAddToContainer(container: ResourceContainer, resources: ResourceList) {
-        currentResources.addAll(resources)
+        currentResources.putAll(resources)
         val canCraft = enoughToCraft()
         if (on && !canCraft) {
             currentWork = 0

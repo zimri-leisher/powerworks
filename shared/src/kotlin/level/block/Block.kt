@@ -32,13 +32,10 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotatio
     @Id(18)
     val nodes: MutableList<ResourceNode> = type.nodesTemplate.instantiate(xTile, yTile, rotation, id).toMutableList()
 
-    /**
-     * The specific local containers as specified by [BlockType.nodesTemplate]
-     *
-     * For example, for a block of type [ChestBlockType.SMALL], this would consist of a single 8x3 inventory
-     */
-    @Id(19)
-    val containers = nodes.getAttachedContainers()
+    init {
+        containers = nodes.getAttachedContainers()
+        containers.forEach { it.attachedLevelObject = this }
+    }
 
     /**
      * Don't forget to call super.onAddToLevel() in subclasses overriding this so that the [onAdjacentBlockAdd] methods of adjacent blocks are called

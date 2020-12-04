@@ -1,11 +1,13 @@
 package screen
 
 import data.ConcurrentlyModifiableMutableList
+import data.ConcurrentlyModifiableMutableMap
 import graphics.Renderer
 import io.*
 import main.DebugCode
 import main.Game
 import misc.Geometry
+import resource.ResourceContainer
 import screen.gui.Gui
 import screen.gui.GuiBackground
 import screen.gui.GuiElement
@@ -24,7 +26,7 @@ enum class ScreenLayer {
     val guis = ConcurrentlyModifiableMutableList<Gui>()
 
     fun bringToTop(gui: Gui) {
-        if(gui !in guis) {
+        if (gui !in guis) {
             return
         }
         guis.remove(gui)
@@ -45,6 +47,8 @@ object ScreenManager : ControlEventHandler {
     var elementsUnderMouse = listOf(GuiBackground.backgroundElement)
 
     var guiUnderMouse: Gui = GuiBackground
+
+    val resourceContainerDisplays = mutableMapOf<Gui, ResourceContainer>()
 
     init {
         InputManager.register(this, Control.Group.INTERACTION)
@@ -150,6 +154,28 @@ object ScreenManager : ControlEventHandler {
         return getOpenGuisAt(x, y).flatMap { gui -> (if (gui.parentElement.open) sequenceOf(gui.parentElement) + recursivelyGetOpenElementsAt(gui.parentElement, x, y) else sequenceOf()) }
     }
 
+    /**
+     * Gets the highest [ResourceContainer] that is being displayed that isn't [other] but is of the same category.
+     */
+    fun getSecondaryResourceContainer(other: ResourceContainer): ResourceContainer? {
+        var highestContainer: ResourceContainer? = null
+        var highestGui: Gui? = null
+        for((gui, container) in resourceContainerDisplays) {
+            if(gui.open && container.id != other.id && container.resourceCategory == other.resourceCategory) {
+                if(highestContainer == null || gui.layer.ordinal > highestGui!!.layer.ordinal){
+                    highestContainer = container
+                    highestGui = gui
+                } else if(gui.layer.ordinal == highestGui.layer.ordinal) {
+                    if(gui.layer.guis.elements.indexOf(gui) > highestGui.layer.guis.elements.indexOf(highestGui)) {
+                        highestContainer = container
+                        highestGui = gui
+                    }
+                }
+            }
+        }
+        return highestContainer
+    }
+
     fun onScreenSizeChange() {
         ScreenLayer.BACKGROUND.guis.forEach { it.layout.set() }
         ScreenLayer.LEVEL_VIEW.guis.forEach { it.layout.set() }
@@ -161,6 +187,7 @@ object ScreenManager : ControlEventHandler {
             if (event.type == ControlEventType.PRESS) {
                 elementLastInteractedWith = elementUnderMouse
                 guiLastInteractedWith = guiUnderMouse
+                guiUnderMouse.layer.bringToTop(guiUnderMouse)
             }
             val shift = InputManager.state.isDown(Modifier.SHIFT)
             val ctrl = InputManager.state.isDown(Modifier.CTRL)
@@ -169,7 +196,7 @@ object ScreenManager : ControlEventHandler {
             elementsUnderMouse.forEach { element ->
                 element.onInteractOn(interaction)
             }
-        } else if(event.control == Control.ESCAPE && event.type == ControlEventType.PRESS) {
+        } else if (event.control == Control.ESCAPE && event.type == ControlEventType.PRESS) {
             val highest = ScreenLayer.MENU.guis.elements.filter { it.open }
             highest.lastOrNull()?.open = false
         }

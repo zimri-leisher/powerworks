@@ -77,7 +77,7 @@ object Registration {
 
     fun registerAll() {
 
-        // max 271
+        // max 276
         /* COLLECTIONS */
         val singletonList = listOf(1)
         register(singletonList::class, CollectionSerializer { it.toList() }, 209)
@@ -92,8 +92,11 @@ object Registration {
         register(Set::class.java, MutableCollectionSerializer<LinkedHashSet<Any?>>(), 153)
         register(Polygon::class, Serializer.AllFields<Polygon>(), 251)
         register(Rectangle::class, Serializer.AllFields<Rectangle>(), 254)
-        register(emptyMap<Nothing, Nothing>()::class, EmptyMapSerializer(),261)
+        register(emptyMap<Nothing, Nothing>()::class, EmptyMapSerializer(), 261)
         register(mapOf(1 to 1)::class, MapSerializer { it.toMap() }, 262)
+        register(setOf(1)::class, CollectionSerializer { it.toSet() }, 274)
+        register(emptySet<Int>()::class, CollectionSerializer { it.toSet() }, 275)
+
 
         FrameworkMessage.RegisterTCP::class.register(147, Serializer.AllFields<FrameworkMessage.RegisterTCP>())
         FrameworkMessage.RegisterUDP::class.register(148, Serializer.AllFields<FrameworkMessage.RegisterUDP>())
@@ -173,8 +176,6 @@ object Registration {
         register(DefaultLevelUpdate::class, 226)
         register(LevelUpdateType::class, EnumSerializer<LevelUpdateType>(), 227)
         register(CrafterBlockSelectRecipe::class, 229)
-        register(BrainRobotInvModify::class, 230)
-        register(BlockContainerModify::class, 231)
         register(ResourceNodeTransferThrough::class, 232)
         register(MachineBlockFinishWork::class, 233)
         register(EntitySetPath::class, 237)
@@ -188,6 +189,7 @@ object Registration {
         register(ResourceNodeBehaviorEdit::class, 265)
         register(LevelObjectSwitchLevelsTo::class, 270)
         register(LevelPosition::class, 271)
+        register(LevelObjectResourceContainerModify::class, 273)
 
         /* /BLOCK */
         register(BlockType::class, IDSerializer({ BlockType.ALL }, { it.id }), 22)
@@ -212,6 +214,7 @@ object Registration {
         register(RobotFactoryBlock::class, 217)
         register(ArmoryBlock::class, 247)
         register(FarseekerBlock::class, 260)
+        register(SmelterBlock::class, 272)
 
         /* /ENTITY */
         register(Entity::class, 32)
@@ -294,7 +297,7 @@ object Registration {
         register(ActionControlEntity::class, 207)
         register(ActionEditResourceNodeBehavior::class, 208)
         register(ActionEntityCreateGroup::class, 241)
-        register(ActionTransferItemsBetweenBlock::class, 245)
+        register(ActionTransferResourcesBetweenLevelObjects::class, 245)
         register(ActionFarseekerBlockSetLevel::class, 268)
         register(Team::class, 255)
 
@@ -302,6 +305,7 @@ object Registration {
         register(ResourceCategory::class, EnumSerializer<ResourceCategory>(), 86)
         register(ResourceContainer::class, 87)
         register(ResourceList::class, 89)
+        register(MutableResourceList::class, 276)
         register(ResourceNode::class, 90)
         register(ResourceNodeBehavior::class, 91)
         register(RoutingLanguageIORule::class, 92)
@@ -406,14 +410,14 @@ object Registration {
         }
         // this line here will initialize the object if it is an object
         try {
-            if(type.isKotlinClass()) {
+            if (type.isKotlinClass()) {
                 with(type.kotlin) {
                     objectInstance
                     companionObjectInstance
                 }
             }
         } catch (e: IllegalAccessException) {
-            if(!e.message!!.contains("can not access a member of class")) {
+            if (!e.message!!.contains("access a member of class")) {
                 throw e
             }
         }

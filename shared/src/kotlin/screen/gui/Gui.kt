@@ -22,10 +22,7 @@ import resource.ResourceList
 import resource.ResourceType
 import screen.Interaction
 import screen.ScreenLayer
-import screen.attribute.Attribute
-import screen.attribute.AttributeDraggable
-import screen.attribute.AttributeKeepInScreen
-import screen.attribute.AttributeOpenAtMouse
+import screen.attribute.*
 import screen.element.*
 import java.util.*
 
@@ -95,7 +92,7 @@ open class Gui(val layer: ScreenLayer, block: GuiElement.Context.() -> Unit = {}
      * Lets you use [GuiElement.Context] to define the layout of this GUI. Used in alternative to passing in a block
      * in the constructor, when you dont know it at construction time.
      */
-    fun define(block: GuiElement.Context.() -> Unit) {
+    protected fun define(block: GuiElement.Context.() -> Unit) {
         block(internalContext)
         layout.set()
     }
@@ -455,17 +452,16 @@ abstract class GuiElement(parent: GuiElement?) {
             inElement.attributes.add(attribute)
         }
 
-        fun makeDraggable() = inElement.apply {
-            addAttribute(AttributeDraggable(inElement))
-        }
+        fun makeDraggable() = AttributeDraggable(inElement).apply { addAttribute(this) }
 
-        fun openAtMouse() = inElement.apply {
-            addAttribute(AttributeOpenAtMouse(inElement))
-        }
+        fun makeResizable() = AttributeResizable(inElement).apply { addAttribute(this) }
 
-        fun keepInsideScreen() = inElement.apply {
-            addAttribute(AttributeKeepInScreen(inElement))
-        }
+        fun openAtMouse() = AttributeOpenAtMouse(inElement).apply { addAttribute(this) }
+
+        fun keepInsideScreen() = AttributeKeepInScreen(inElement).apply { addAttribute(this) }
+
+        fun linkToContainer(container: ResourceContainer) =
+                AttributeResourceContainerLink(inElement, container).apply { addAttribute(this) }
 
         fun at(placement: Placement, lock: Boolean = false, block: Context.() -> Unit) {
             val oldPlacement = currentDefaultPlacement
@@ -557,8 +553,8 @@ abstract class GuiElement(parent: GuiElement?) {
                     addChild(this, block, placement)
                 }
 
-        fun resourceContainerView(container: ResourceContainer, width: Int, height: Int, placement: Placement = currentDefaultPlacement, allowSelection: Boolean = false, onSelect: (type: ResourceType, quantity: Int, interaction: Interaction) -> Unit = { _, _, _ -> }, block: Context.() -> Unit = {}) =
-                ElementResourceContainer(inElement, width, height, container, allowSelection, onSelect).apply {
+        fun resourceContainerView(container: ResourceContainer, width: Int, height: Int, placement: Placement = currentDefaultPlacement, allowSelection: Boolean = false, allowModification: Boolean = false, onSelect: (type: ResourceType, quantity: Int, interaction: Interaction) -> Unit = { _, _, _ -> }, block: Context.() -> Unit = {}) =
+                ElementResourceContainer(inElement, width, height, container, allowSelection, allowModification, onSelect).apply {
                     addChild(this, block, placement)
                 }
 

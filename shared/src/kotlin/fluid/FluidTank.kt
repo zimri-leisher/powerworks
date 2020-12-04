@@ -2,6 +2,7 @@ package fluid
 
 import resource.*
 import serialization.Id
+import java.lang.Integer.min
 
 class FluidTank(
         @Id(7)
@@ -27,14 +28,14 @@ class FluidTank(
     @Id(11)
     var expectedAmount = 0
 
-    override val expected get() = if (expectedFluidType == null) ResourceList() else ResourceList(expectedFluidType!! to expectedAmount)
+    override val expected get() = if (expectedFluidType == null) emptyResourceList() else resourceListOf(expectedFluidType!! to expectedAmount)
 
     override val totalQuantity: Int
         get() = currentAmount
 
     override fun add(resources: ResourceList, from: ResourceNode?, checkIfAble: Boolean): Boolean {
         if (checkIfAble)
-            if (!canAdd(resources))
+            if (!canAddAll(resources))
                 return false
         list@ for ((resource, quantity) in resources) {
             if (currentFluidType == null)
@@ -45,30 +46,26 @@ class FluidTank(
         return true
     }
 
-    override fun spaceFor(list: ResourceList): Boolean {
-        if (list.size != 1) {
-            return false
+    override fun mostPossibleToAdd(list: ResourceList): ResourceList {
+        if (currentFluidType != null) {
+            if (currentAmount == maxAmount) {
+                return emptyResourceList()
+            } else {
+                val desiredAddition = list[currentFluidType!!]
+                return resourceListOf(currentFluidType!! to min(maxAmount - currentAmount, desiredAddition))
+            }
+        } else {
+            val biggestEntry = list.filterKeys { it.category == ResourceCategory.FLUID }.maxBy { (_, value) -> value }
+                    ?: return emptyResourceList()
+            return resourceListOf(biggestEntry.key to min(maxAmount, biggestEntry.value))
         }
-        val resource = list[0]!!.key
-        val quantity = list[0]!!.value
-        return currentFluidType == null || (resource == currentFluidType && currentAmount + quantity <= maxAmount)
-    }
-
-    override fun getSpaceForType(type: ResourceType): Int {
-        if (currentFluidType == null) {
-            return maxAmount
-        }
-        if (type == currentFluidType) {
-            return maxAmount - currentAmount
-        }
-        return 0
     }
 
     override fun remove(resources: ResourceList, to: ResourceNode?, checkIfAble: Boolean): Boolean {
         if (checkIfAble)
-            if (!canRemove(resources))
+            if (!canRemoveAll(resources))
                 return false
-        val (resource, quantity) = resources[0]!!
+        val (_, quantity) = resources[0]
         currentAmount -= quantity
         if (currentAmount == 0)
             currentFluidType = null
@@ -76,31 +73,30 @@ class FluidTank(
         return true
     }
 
+    override fun mostPossibleToRemove(list: ResourceList): ResourceList {
+        if(currentFluidType == null || currentAmount == 0) {
+            return emptyResourceList()
+        }
+        val desiredRemoval = list[currentFluidType!!]
+        return resourceListOf(currentFluidType!! to min(currentAmount, desiredRemoval))
+    }
+
     override fun expect(resources: ResourceList): Boolean {
-        val currentExpected = if (expectedFluidType == null) resources else resources + ResourceList(expectedFluidType!! to expectedAmount)
-        if (!canAdd(currentExpected)) {
+        val currentExpected = if (expectedFluidType == null) resources else resources + resourceListOf(expectedFluidType!! to expectedAmount)
+        if (!canAddAll(currentExpected)) {
             return false
         }
-        expectedFluidType = resources[0]!!.key as FluidType
-        expectedAmount += resources[0]!!.value
+        expectedFluidType = resources[0].key as FluidType
+        expectedAmount += resources[0].value
         return true
     }
 
     override fun cancelExpectation(resources: ResourceList): Boolean {
-        if (resources[0]?.key == expectedFluidType && expectedAmount != 0) {
-            expectedAmount = Math.max(0, expectedAmount - resources[0]!!.value)
+        if (resources[0].key == expectedFluidType && expectedAmount != 0) {
+            expectedAmount = Math.max(0, expectedAmount - resources[0].value)
             return true
         }
         return false
-    }
-
-    override fun contains(list: ResourceList): Boolean {
-        if (list.size != 1) {
-            return false
-        }
-        val resource = list[0]!!.key
-        val quantity = list[0]!!.value
-        return currentFluidType == resource && quantity <= currentAmount
     }
 
     override fun clear() {

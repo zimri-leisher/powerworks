@@ -25,8 +25,9 @@ class ConcurrentlyModifiableMutableList<T>(
     fun remove(l: T) {
         if (beingTraversed) {
             toRemove.add(l)
-        } else
+        } else {
             elements.remove(l)
+        }
     }
 
     operator fun contains(l: T) = !toRemove.contains(l) && (elements.contains(l) || toAdd.contains(l))
@@ -62,6 +63,8 @@ class ConcurrentlyModifiableMutableList<T>(
         beingTraversed = false
         elements.addAll(toAdd)
         toAdd.clear()
+        if(toRemove.isNotEmpty()) {
+        }
         elements.removeAll(toRemove)
         toRemove.clear()
     }

@@ -1,6 +1,6 @@
 package resource
 
-typealias ResourceContainerGroup = MutableList<ResourceContainer>
+typealias ResourceContainerGroup = List<ResourceContainer>
 
 /**
  * Same as the add method except gets called for each individual resource-quantity pairs
@@ -59,8 +59,17 @@ fun ResourceContainerGroup.take(resource: ResourceType, quantity: Int, to: Resou
  * Returns a list of all the resources in this group
  */
 fun ResourceContainerGroup.toResourceList(): ResourceList {
-    val list = ResourceList()
-    forEach { list.addAll(it.toResourceList()) }
+    val list = mutableResourceListOf()
+    forEach { list.putAll(it.toResourceList()) }
+    return list
+}
+
+/**
+ * Returns a list of all the resources in this group
+ */
+fun ResourceContainerGroup.toMutableResourceList(): MutableResourceList {
+    val list = mutableResourceListOf()
+    forEach { list.putAll(it.toResourceList()) }
     return list
 }
 

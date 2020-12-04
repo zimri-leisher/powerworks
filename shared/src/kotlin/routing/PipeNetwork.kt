@@ -17,11 +17,9 @@ import main.Game
 import misc.Geometry
 import misc.Coord
 import network.ResourceNodeReference
-import resource.ResourceCategory
-import resource.ResourceList
-import resource.ResourceNode
-import resource.ResourceType
+import resource.*
 import serialization.Id
+import java.util.*
 import kotlin.math.absoluteValue
 
 abstract class PipeNetwork(resourceCategory: ResourceCategory, level: Level, private val speed: Int = 1) : ResourceRoutingNetwork(resourceCategory, level) {
@@ -172,6 +170,7 @@ abstract class PipeNetwork(resourceCategory: ResourceCategory, level: Level, pri
     }
 
     override fun transferResources(type: ResourceType, quantity: Int, from: ResourceNode, to: ResourceNode): Boolean {
+        println("from $from ${from.isInternalNetworkNode} to $to ${to.isInternalNetworkNode} and ${to.attachedNode!!.isInternalNetworkNode}")
         val route = route(from, to, this)
         if (route != null) {
             val expectSuccess = to.attachedNode!!.attachedContainer.expect(type, quantity)
@@ -222,13 +221,13 @@ abstract class PipeNetwork(resourceCategory: ResourceCategory, level: Level, pri
             }
             return false
         }
-
         packages.forEach { pack ->
+
             if (pack.awaitingRoute || pack.to.attachedNode == null || !pack.to.attachedNode!!.canInput(pack.type, pack.quantity)) {
                 reroutePackage(pack)
             } else if (atDestination(pack)) {
                 level.modify(ResourceNodeTransferThrough(ResourceNodeReference(pack.to.attachedNode!!),
-                        ResourceList(pack.type to pack.quantity), false, false, true))
+                        resourceListOf(pack.type to pack.quantity), false, false, true))
                 packages.remove(pack)
             } else {
                 if (pack.position.manhattanDistance(pack.currentRouteStep.position) < speed) {
@@ -280,10 +279,29 @@ abstract class PipeNetwork(resourceCategory: ResourceCategory, level: Level, pri
             @Id(9)
             var awaitingRoute: Boolean = false) {
 
+
+        @Id(10)
+        val id = UUID.randomUUID()!!
+
         private constructor() : this(ResourceNode(0, 0, 0, ResourceCategory.ITEM, Inventory(0, 0), LevelManager.EMPTY_LEVEL),
                 ResourceNode(0, 0, 0, ResourceCategory.ITEM, Inventory(0, 0), LevelManager.EMPTY_LEVEL), ItemType.ERROR, 0, PackageRoute(arrayOf()), 0, Coord(0, 0), 0)
 
         val currentRouteStep
             get() = route[routeStepIndex]
+
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (javaClass != other?.javaClass) return false
+
+            other as PipeRoutingPackage
+
+            if (id != other.id) return false
+
+            return true
+        }
+
+        override fun hashCode(): Int {
+            return id.hashCode()
+        }
     }
 }

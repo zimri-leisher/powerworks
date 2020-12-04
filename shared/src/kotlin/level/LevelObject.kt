@@ -8,6 +8,8 @@ import main.DebugCode
 import main.Game
 import network.LevelObjectReference
 import player.team.Team
+import resource.ResourceContainer
+import resource.ResourceContainerGroup
 import serialization.Id
 import serialization.Input
 import serialization.Output
@@ -90,6 +92,9 @@ abstract class LevelObject protected constructor(
 
     @Id(992)
     var team = Team.NEUTRAL
+
+    @Id(993)
+    var containers: ResourceContainerGroup = emptyList()
 
     /**
      * If this has been added to a [Level] (one that isn't [LevelManager.EMPTY_LEVEL])

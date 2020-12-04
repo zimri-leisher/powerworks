@@ -3,6 +3,7 @@ package behavior.leaves
 import behavior.BehaviorTree
 import behavior.DataLeaf
 import behavior.Variable
+import level.LevelPosition
 import level.entity.Entity
 import misc.Coord
 import misc.TileCoord
@@ -13,11 +14,10 @@ class CreateFormationAround(parent: BehaviorTree, val around: Variable, val padd
             return false
         }
         val aroundPos = getData<Any>(around) ?: return false
-        val actualAroundPos =
-                if (aroundPos is TileCoord) aroundPos.toCoord()
-                else if (aroundPos is Coord) aroundPos
-                else return false
-        entity.group!!.createFormationAround(actualAroundPos.x, actualAroundPos.y, padding)
+        if(aroundPos !is LevelPosition) {
+            return false
+        }
+        entity.group!!.createFormationAround(aroundPos.x, aroundPos.y, padding)
         return true
     }
 }

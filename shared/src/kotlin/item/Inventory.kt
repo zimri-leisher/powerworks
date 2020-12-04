@@ -2,6 +2,7 @@ package item
 
 import resource.*
 import serialization.Id
+import java.lang.Integer.min
 
 class Inventory(
         @Id(11)
@@ -22,7 +23,7 @@ class Inventory(
         }
 
     @Id(9)
-    override val expected = ResourceList()
+    override val expected = mutableResourceListOf()
 
     @Id(10)
     override var totalQuantity = 0
@@ -30,7 +31,7 @@ class Inventory(
 
     override fun add(resources: ResourceList, from: ResourceNode?, checkIfAble: Boolean): Boolean {
         if (checkIfAble)
-            if (!canAdd(resources))
+            if (!canAddAll(resources))
                 return false
 
         cancelExpectation(resources)
@@ -72,7 +73,7 @@ class Inventory(
         if (resources.keys.any { !isRightType(it) })
             return false
         if (spaceFor(expected + resources)) {
-            expected.addAll(resources)
+            expected.putAll(resources)
             return true
         }
         return false
@@ -83,46 +84,45 @@ class Inventory(
         return ret
     }
 
-    override fun getSpaceForType(type: ResourceType): Int {
-        return 0
-    }
-
     override fun getQuantity(resource: ResourceType) = items.filter { it?.type == resource }.sumBy { it?.quantity ?: 0 }
-
-    fun indexOf(resource: ItemType): Int {
-        for (i in items.indices.reversed()) {
-            if (items[i]?.type == resource) {
-                return i
-            }
-        }
-        return -1
-    }
 
     fun add(i: Item): Boolean {
         return add(i.type, i.quantity)
     }
 
-    override fun spaceFor(list: ResourceList): Boolean {
+    override fun mostPossibleToAdd(list: ResourceList): ResourceList {
+        val possible = mutableResourceListOf()
         var extraSlots = items.count { it == null }
-        for ((resource, quantity) in list) {
-            resource as ItemType
-            // the extra space on existing stacks of this type
-            val extraSpace = items.filter { it?.type == resource && it.quantity != resource.maxStack }.sumBy { resource.maxStack - it!!.quantity }
-            if (extraSpace < quantity) {
-                // if we can't fit all we want to add in existing stacks
-                // we need to use up a new slot for each stack we want to add
-                extraSlots -= Math.ceil((quantity - extraSpace) / resource.maxStack.toDouble()).toInt()
-                if(extraSlots < 0) {
-                    return false
+        for ((type, quantity) in list) {
+            if (type !is ItemType) {
+                continue
+            }
+            var existingStackAmount = 0
+            for (item in items) {
+                if (item != null && item.type == type && item.quantity < item.type.maxStack) {
+                    existingStackAmount = item.quantity
+                }
+            }
+            if (existingStackAmount > 0 && type.maxStack - existingStackAmount >= quantity ) {
+                possible.put(type, quantity)
+            } else {
+                val extraStackAmount = type.maxStack - existingStackAmount
+                val neededEmptyStacks = Math.ceil((quantity - extraStackAmount).toDouble() / type.maxStack).toInt()
+                if (neededEmptyStacks <= extraSlots) {
+                    possible.put(type, quantity)
+                    extraSlots -= neededEmptyStacks
+                } else {
+                    possible.put(type, extraStackAmount + extraSlots * type.maxStack)
+                    extraSlots = 0
                 }
             }
         }
-        return true
+        return possible
     }
 
     override fun remove(resources: ResourceList, to: ResourceNode?, checkIfAble: Boolean): Boolean {
         if (checkIfAble)
-            if (!canRemove(resources))
+            if (!canRemoveAll(resources))
                 return false
         list@ for ((resource, quantity) in resources) {
             var amountLeftToRemove = quantity
@@ -150,21 +150,13 @@ class Inventory(
         return remove(i.type, i.quantity)
     }
 
-    override fun contains(list: ResourceList): Boolean {
-        for ((resource, quantity) in list) {
-            var contains = 0
-            for (i in items.indices) {
-                if (items[i] != null) {
-                    val item = items[i]!!
-                    if (item.type == resource) {
-                        contains += item.quantity
-                    }
-                }
-            }
-            if (contains < quantity)
-                return false
+    override fun mostPossibleToRemove(list: ResourceList): ResourceList {
+        val possible = mutableResourceListOf()
+        for ((type, quantity) in list) {
+            val existingQuantityOfType = items.sumBy { if (it != null && it.type == type) it.quantity else 0 }
+            possible.put(type, min(quantity, existingQuantityOfType))
         }
-        return true
+        return possible
     }
 
     override fun toResourceList(): ResourceList {

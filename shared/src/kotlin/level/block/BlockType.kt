@@ -303,9 +303,26 @@ open class MachineBlockType<T : MachineBlock>(initializer: MachineBlockType<T>.(
 
         val ALL = mutableListOf<MachineBlockType<*>>()
 
+        val SMELTER = MachineBlockType<SmelterBlock> {
+            instantiate = { x, y, rotation -> SmelterBlock(x shr 4, y shr 4, rotation) }
+            name = "Smelter"
+            textures = LevelObjectTextures(Image.Block.SMELTER)
+            widthTiles = 2
+            heightTiles = 2
+            hitbox = Hitbox.TILE2X2
+            nodeTemplate {
+                val internalInventory = Inventory(1, 1)
+                node(0, 1, 0, internalInventory, allowIn = "true", allowInTypes = ResourceTypeGroup.ORE_ITEMS.types)
+                val internalOutputInventory = Inventory(1, 1)
+                node(0, 0, 2, internalOutputInventory, allowOut = "true", forceOut = "true")
+            }
+            guiPool = GuiPool({ GuiSmelterBlock(it as SmelterBlock) })
+        }
+
         val FARSEEKER = MachineBlockType<FarseekerBlock> {
             instantiate = { x, y, rotation -> FarseekerBlock(x shr 4, y shr 4, rotation) }
             name = "Farseeker"
+            textures = LevelObjectTextures(Image.Block.FARSEEKER)
             widthTiles = 4
             heightTiles = 4
             hitbox = Hitbox.TILE4X4

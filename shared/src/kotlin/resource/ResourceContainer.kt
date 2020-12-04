@@ -1,6 +1,6 @@
 package resource
 
-import com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag
+import level.LevelObject
 import serialization.Id
 import java.util.*
 
@@ -19,6 +19,12 @@ abstract class ResourceContainer(
     @Id(3)
     val listeners = mutableListOf<ResourceContainerChangeListener>()
 
+    /**
+     * A [LevelObject] associated with this container.
+     */
+    @Id(1001)
+    var attachedLevelObject: LevelObject? = null
+
     abstract val expected: ResourceList
 
     abstract val totalQuantity: Int
@@ -31,7 +37,7 @@ abstract class ResourceContainer(
      * @param from the node that is adding to this, null if none
      * @return true if resources were added
      */
-    fun add(resource: ResourceType, quantity: Int = 1, from: ResourceNode? = null, checkIfAble: Boolean = true) = add(ResourceList(resource to quantity), from, checkIfAble)
+    fun add(resource: ResourceType, quantity: Int = 1, from: ResourceNode? = null, checkIfAble: Boolean = true) = add(resourceListOf(resource to quantity), from, checkIfAble)
 
     /**
      * Adds all the resources in the [resources] list to this container, and notifies listeners of this event
@@ -47,14 +53,28 @@ abstract class ResourceContainer(
      * If this is able to accept the specified resource in the specified quantity. Doesn't take into account expected resources because
      * they aren't yet present
      */
-    open fun spaceFor(resource: ResourceType, quantity: Int = 1) = spaceFor(ResourceList(resource to quantity))
+    fun spaceFor(resource: ResourceType, quantity: Int = 1) = spaceFor(resourceListOf(resource to quantity))
 
     /**
      * If this is able to accept the specified resources. Doesn't take into account expected resources
      */
-     abstract fun spaceFor(list: ResourceList): Boolean
+    fun spaceFor(list: ResourceList) = mostPossibleToAdd(list) == list
 
-     abstract fun getSpaceForType(type: ResourceType): Int
+    abstract fun mostPossibleToAdd(list: ResourceList): ResourceList
+
+    /**
+     * If this has the specified resource in the specified quantity. Doesn't take into account expected resources because
+     * they aren't yet present
+     */
+    fun contains(resource: ResourceType, quantity: Int = 1) = contains(resourceListOf(resource to quantity))
+
+    /**
+     * If this has the specified resource in the specified quantity. Doesn't take into account expected resources because
+     * they aren't yet present
+     */
+    fun contains(list: ResourceList) = mostPossibleToRemove(list) == list
+
+    abstract fun mostPossibleToRemove(list: ResourceList): ResourceList
 
     /**
      * Removes the specified resource with the specified quantity from this container, and notifies listeners of this event
@@ -64,7 +84,7 @@ abstract class ResourceContainer(
      * @param to the node that is removing from this, null if none
      * @return true if resources were removed
      */
-    fun remove(resource: ResourceType, quantity: Int = 1, to: ResourceNode? = null, checkIfAble: Boolean = true) = remove(ResourceList(resource to quantity), to, checkIfAble)
+    fun remove(resource: ResourceType, quantity: Int = 1, to: ResourceNode? = null, checkIfAble: Boolean = true) = remove(resourceListOf(resource to quantity), to, checkIfAble)
 
     /**
      * Removes the [resources] from this container, and notifies listeners of this event
@@ -86,7 +106,7 @@ abstract class ResourceContainer(
      *
      * @return true if the container will be able to fit these resources (in addition to other expected resources)
      */
-    fun expect(resource: ResourceType, quantity: Int = 1) = expect(ResourceList(resource to quantity))
+    fun expect(resource: ResourceType, quantity: Int = 1) = expect(resourceListOf(resource to quantity))
 
     /**
      * Tells the container to expect some resources to be added later. These are not able to be used by the player.
@@ -106,7 +126,7 @@ abstract class ResourceContainer(
      * be removed from expectations.
      * @return true if the resources were expected (and are no longer)
      */
-    fun cancelExpectation(resource: ResourceType, quantity: Int = 1) = cancelExpectation(ResourceList(resource to quantity))
+    fun cancelExpectation(resource: ResourceType, quantity: Int = 1) = cancelExpectation(resourceListOf(resource to quantity))
 
     /**
      * Removes the [resources] from the expected resources (which are added with [expect]). Expected resources are not able
@@ -117,25 +137,17 @@ abstract class ResourceContainer(
     abstract fun cancelExpectation(resources: ResourceList): Boolean
 
     /**
-     * If this has the specified resource in the specified quantity. Doesn't take into account expected resources because
-     * they aren't yet present
-     */
-    open fun contains(resource: ResourceType, quantity: Int = 1) = contains(ResourceList(resource to quantity))
-
-    /**
-     * If this has the specified resource in the specified quantity. Doesn't take into account expected resources because
-     * they aren't yet present
-     */
-    abstract fun contains(list: ResourceList): Boolean
-
-    /**
      * Removes all resources from this container
      */
     abstract fun clear()
 
-    fun canAdd(resources: ResourceList) = resources.keys.all { isRightType(it) } && spaceFor(resources)
+    fun canAddAll(resources: ResourceList) = resources.keys.all { isRightType(it) } && spaceFor(resources)
 
-    fun canRemove(resources: ResourceList) = resources.keys.all { isRightType(it) } && contains(resources)
+    fun canAddSome(resources: ResourceList) = mostPossibleToAdd(resources.filterKeys { isRightType(it) }.toResourceList())
+
+    fun canRemoveAll(resources: ResourceList) = resources.keys.all { isRightType(it) } && contains(resources)
+
+    fun canRemoveSome(resources: ResourceList) = mostPossibleToRemove(resources.filterKeys { isRightType(it) }.toResourceList())
 
     fun isRightType(resource: ResourceType) = resource.category == resourceCategory
 
@@ -150,10 +162,13 @@ abstract class ResourceContainer(
 
     abstract fun toResourceList(): ResourceList
 
+    fun toMutableResourceList() = toResourceList().toMutableResourceList()
+
     /**
      * @return a set of [ResourceType]s present with quantity greater than 0
      */
     fun toTypeList(): Set<ResourceType> = toResourceList().keys
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
@@ -168,5 +183,4 @@ abstract class ResourceContainer(
     override fun hashCode(): Int {
         return id.hashCode()
     }
-
 }

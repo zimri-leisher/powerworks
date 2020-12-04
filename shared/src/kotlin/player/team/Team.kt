@@ -5,12 +5,12 @@ import serialization.Id
 
 class Team(
         @Id(1)
-        val players: List<Player>,
+        val players: Set<Player>,
         val color: Int = 0x0000FF) {
 
-    private constructor() : this(listOf())
+    private constructor() : this(setOf())
 
-    constructor(player: Player) : this(listOf(player))
+    constructor(player: Player) : this(setOf(player))
 
     fun check(permission: TeamPermission, player: Player): Boolean {
         if (players.isEmpty()) {
@@ -39,6 +39,6 @@ class Team(
     }
 
     companion object {
-        val NEUTRAL = Team(listOf())
+        val NEUTRAL = Team(setOf())
     }
 }

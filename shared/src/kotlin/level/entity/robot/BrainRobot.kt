@@ -15,6 +15,11 @@ class BrainRobot(x: Int, y: Int, rotation: Int,
     @Id(29)
     val inventory = Inventory(8, 3)
 
+    init {
+        inventory.attachedLevelObject = this
+        containers = listOf(inventory)
+    }
+
     override fun render() {
         super.render()
         Renderer.renderText("${user.displayName}'s BRAIN", x - 8, y + 44, params = TextRenderParams(size = 10))

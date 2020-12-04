@@ -8,6 +8,7 @@ import misc.Geometry
 import resource.*
 import routing.script.RoutingLanguage
 import serialization.Id
+import java.lang.Integer.min
 import java.util.*
 
 class InvalidFunctionCallException(message: String) : Exception(message)
@@ -59,7 +60,7 @@ open class ResourceRoutingNetwork(category: ResourceCategory,
 
     override fun add(resources: ResourceList, from: ResourceNode?, checkIfAble: Boolean): Boolean {
         if (checkIfAble) {
-            if (!canAdd(resources)) {
+            if (!canAddAll(resources)) {
                 return false
             }
         }
@@ -67,18 +68,10 @@ open class ResourceRoutingNetwork(category: ResourceCategory,
         return true
     }
 
-    override fun spaceFor(list: ResourceList): Boolean {
-        for ((type, quantity) in list) {
-            if (findDestinationFor(type, quantity) == null) {
-                return false
-            }
-        }
-        return true
-    }
-
     override fun remove(resources: ResourceList, to: ResourceNode?, checkIfAble: Boolean): Boolean {
+        println("checking if can remove $resources")
         if (checkIfAble) {
-            if (!canRemove(resources)) {
+            if (!canRemoveAll(resources)) {
                 return false
             }
         }
@@ -94,16 +87,57 @@ open class ResourceRoutingNetwork(category: ResourceCategory,
         attachedNodes.getAttachedContainers().forEach { it.clear() }
     }
 
-    override fun contains(list: ResourceList): Boolean {
-        for ((resource, quantity) in list) {
-            if (!contains(resource, quantity)) {
-                return false
+    override fun mostPossibleToAdd(list: ResourceList): ResourceList {
+        // the most possible to add is dictated by how much can flow through each node to each container
+        // if two nodes go to the same container, their max possible add is potentially mutually exclusive
+        // so we just check both of them and go with whichever is bigger
+        val possibleToContainer = mutableMapOf<ResourceContainer, ResourceList>()
+        for (attachedNode in attachedNodes) {
+            val mostPossibleThroughThisNode = attachedNode.mostPossibleToInput(list)
+            val alreadyPossibleThroughOtherNode = possibleToContainer[attachedNode.attachedContainer]
+            if (alreadyPossibleThroughOtherNode != null) {
+                // if a possible addition to this container has already been found
+                if (alreadyPossibleThroughOtherNode.totalQuantity < mostPossibleThroughThisNode.totalQuantity) {
+                    // keep the one with higher quantity
+                    possibleToContainer[attachedNode.attachedContainer] = mostPossibleThroughThisNode
+                }
+            } else {
+                possibleToContainer[attachedNode.attachedContainer] = mostPossibleThroughThisNode
             }
         }
-        return true
+        val possibleOverall = mutableResourceListOf()
+        // now that we've found the max possible flow to each resource ocntainer, we need to figure out which ones to
+        // include and which ones to ignore
+        val possibleIter = possibleToContainer.iterator()
+        while (possibleOverall.totalQuantity < list.totalQuantity && possibleIter.hasNext()) {
+            val (_, resources) = possibleIter.next()
+            possibleOverall.putAll(resources)
+        }
+        return possibleOverall
     }
 
-    override fun getSpaceForType(type: ResourceType) = attachedNodes.getAttachedContainers().sumBy { it.getSpaceForType(type) }
+    override fun mostPossibleToRemove(list: ResourceList): ResourceList {
+        // just like above
+        val possibleToContainer = mutableMapOf<ResourceContainer, ResourceList>()
+        for (attachedNode in attachedNodes) {
+            val mostPossibleThroughThisNode = attachedNode.mostPossibleToOutput(list)
+            val alreadyPossibleThroughOtherNode = possibleToContainer[attachedNode.attachedContainer]
+            if (alreadyPossibleThroughOtherNode != null) {
+                if (alreadyPossibleThroughOtherNode.totalQuantity < mostPossibleThroughThisNode.totalQuantity) {
+                    possibleToContainer[attachedNode.attachedContainer] = mostPossibleThroughThisNode
+                }
+            } else {
+                possibleToContainer[attachedNode.attachedContainer] = mostPossibleThroughThisNode
+            }
+        }
+        val possibleOverall = mutableResourceListOf()
+        val possibleIter = possibleToContainer.iterator()
+        while (possibleOverall.totalQuantity < list.totalQuantity && possibleIter.hasNext()) {
+            val (_, resources) = possibleIter.next()
+            possibleOverall.putAll(resources)
+        }
+        return possibleOverall
+    }
 
     override fun copy(): ResourceContainer {
         return ResourceRoutingNetwork(resourceCategory, level)
@@ -111,36 +145,75 @@ open class ResourceRoutingNetwork(category: ResourceCategory,
 
     override fun toResourceList(): ResourceList {
         val all = attachedNodes.getAttachedContainers().toList().map { it.toResourceList() }
-        val final = ResourceList()
-        all.forEach { final.addAll(it) }
+        val final = mutableResourceListOf()
+        all.forEach { final.putAll(it) }
         return final
     }
-
-    override fun contains(resource: ResourceType, quantity: Int) = attachedNodes.getAttachedContainers().sumBy { it.getQuantity(resource) } >= quantity
 
     override fun getQuantity(resource: ResourceType) = attachedNodes.getAttachedContainers().sumBy { it.getQuantity(resource) }
 
     open fun onAddResources(resources: ResourceList, from: ResourceNode?) {
         if (from == null) throw java.lang.IllegalArgumentException("Resource networks cannot accept resources from non-ResourceNode sources. What a tounge-twister.")
         for ((resource, quantity) in resources) {
-            val destination = findDestinationFor(resource, quantity, { it.attachedNode != from })
-            // there must be a destination because otherwise nothing would be able to be added
-            destination!!
-            transferResources(resource, quantity, from, destination)
+            val destinations = findDestinationsFor(resource, quantity, { it.attachedNode != from && it != from })
+            for ((destination, specificQuantity) in destinations) {
+                transferResources(resource, specificQuantity, from, destination)
+            }
         }
     }
 
-    open fun onRemoveResource(resources: ResourceList, to: ResourceNode?) {}
+    open fun onRemoveResource(resources: ResourceList, to: ResourceNode?) {
+        println("removing resourcers to $to $resources")
+        if (to == null) throw java.lang.IllegalArgumentException("Resource networks cannot send resources to non-ResourceNode sources. What a tounge-twister.")
+        for ((resource, quantity) in resources) {
+            val sources = findSourcesFor(resource, quantity, { it.attachedNode != to && it != to })
+            for ((source, specificQuantity) in sources) {
+                source.attachedNode!!.attachedContainer.remove(resource, specificQuantity, to, false)
+                transferResources(resource, specificQuantity, source, to)
+            }
+        }
+    }
 
     /**
      * @return an internal node that is attached to a node able to receive the given resources, with preference for nodes
      * which are trying to force input, which passes the [onlyTo] predicate
      */
     protected open fun findDestinationFor(type: ResourceType, quantity: Int, onlyTo: (ResourceNode) -> Boolean = { true }): ResourceNode? {
-        val possibleSendToAttached = attachedNodes.getInputters(type, quantity, onlyTo, accountForExpected = true).map { it.attachedNode!! }
-        val possibleForceInputter = possibleSendToAttached.getForceInputter(type, quantity, onlyTo, accountForExpected = true)?.attachedNode
-        return possibleForceInputter
-                ?: possibleSendToAttached.minBy { if (it.attachedNode!!.attachedContainer in containersSentTo) 1 else 0 }
+        val possibleSendToAttached = attachedNodes.filter(onlyTo).getInputters(type, quantity, accountForExpected = true)
+        val possibleForceInputter = possibleSendToAttached.getForceInputter(type, quantity, accountForExpected = true)
+        return (possibleForceInputter
+                ?: possibleSendToAttached.minBy { if (it.attachedContainer in containersSentTo) 1 else 0 })?.attachedNode
+    }
+
+    open fun findDestinationsFor(type: ResourceType, quantity: Int, onlyTo: (ResourceNode) -> Boolean = { true }): Map<ResourceNode, Int> {
+        val actualQuantity = if (quantity != -1) quantity else Int.MAX_VALUE
+
+        val possibleSendTo = attachedNodes.filter(onlyTo).getPartialInputters(resourceListOf(type to quantity))
+
+        val actualSendTo = mutableMapOf<ResourceNode, Int>()
+        // if the quantity is -1, we want to fill this node with as much possible
+        // TODO maybe we could try to balance which resources get sent where
+        var remainingQuantity = actualQuantity
+        for ((from, resources) in possibleSendTo) {
+            if (from.behavior.forceIn.check(type)) {
+                val quantityToSend = min(resources[0].value, remainingQuantity)
+                actualSendTo[from] = quantityToSend
+                remainingQuantity -= quantityToSend
+                if (remainingQuantity <= 0) {
+                    return actualSendTo.mapKeys { it.key.attachedNode!! }
+                }
+            }
+        }
+        for ((from, resources) in possibleSendTo
+                .entries.sortedBy { it.key.attachedContainer.totalQuantity }) {
+            val quantityToTake = min(resources[0].value, remainingQuantity)
+            actualSendTo[from] = quantityToTake
+            remainingQuantity -= quantityToTake
+            if (remainingQuantity <= 0) {
+                return actualSendTo.mapKeys { it.key.attachedNode!! }
+            }
+        }
+        return actualSendTo.mapKeys { it.key.attachedNode!! }
     }
 
     /**
@@ -148,10 +221,40 @@ open class ResourceRoutingNetwork(category: ResourceCategory,
      * which are trying to force output, which passes the [onlyFrom] predicate
      */
     protected open fun findSourceFor(type: ResourceType, quantity: Int, onlyFrom: (ResourceNode) -> Boolean = { true }): ResourceNode? {
-        val possibleTakeFromAttached = attachedNodes.getOutputters(type, quantity, onlyFrom)
-        val takeFromAttached = possibleTakeFromAttached.getForceOutputter(type, quantity, onlyFrom)
+        val possibleTakeFromAttached = attachedNodes.filter(onlyFrom).getOutputters(type, quantity)
+        val takeFromAttached = possibleTakeFromAttached.getForceOutputter(type, quantity)
                 ?: possibleTakeFromAttached.firstOrNull()
         return takeFromAttached?.attachedNode
+    }
+
+    protected open fun findSourcesFor(type: ResourceType, quantity: Int, onlyFrom: (ResourceNode) -> Boolean = { true }): Map<ResourceNode, Int> {
+        val actualQuantity = if (quantity != -1) quantity else Int.MAX_VALUE
+
+        val possibleTakeFrom = attachedNodes.filter(onlyFrom).getPartialOutputters(resourceListOf(type to actualQuantity))
+
+        val actualTakeFrom = mutableMapOf<ResourceNode, Int>()
+        // if the quantity is -1, we want to fill this node with as much possible
+        // TODO maybe we could try to balance which resources get sent where
+        var remainingQuantity = actualQuantity
+        for ((from, resources) in possibleTakeFrom) {
+            if (from.behavior.forceOut.check(type)) {
+                val quantityToTake = min(resources[0].value, remainingQuantity)
+                actualTakeFrom[from] = quantityToTake
+                remainingQuantity -= quantityToTake
+                if (remainingQuantity <= 0) {
+                    return actualTakeFrom.mapKeys { it.key.attachedNode!! }
+                }
+            }
+        }
+        for ((from, resources) in possibleTakeFrom.entries.sortedByDescending { it.key.attachedContainer.totalQuantity }) {
+            val quantityToTake = min(resources[0].value, remainingQuantity)
+            actualTakeFrom[from] = quantityToTake
+            remainingQuantity -= quantityToTake
+            if (remainingQuantity <= 0) {
+                return actualTakeFrom.mapKeys { it.key.attachedNode!! }
+            }
+        }
+        return actualTakeFrom.mapKeys { it.key.attachedNode!! }
     }
 
     fun attachNode(node: ResourceNode, fromBlock: PipeBlock) {
@@ -211,34 +314,6 @@ open class ResourceRoutingNetwork(category: ResourceCategory,
             }
         }
         return success
-    }
-
-    /**
-     * Sends some resources to a node in this network, if it is able to accept them and another node in this network is
-     * able to output those resources. Prioritizes sending resources to a node that is forcing output
-     * @param node the node in this network to send the resources to. It can either be an internal node (one created by the network)
-     * or an attached node (one that corresponds to an actual block/machine/etc. and is attached to an internal node)
-     */
-    open fun forceSendTo(node: ResourceNode, type: ResourceType, quantity: Int) {
-        val sendTo = if (!node.isInternalNetworkNode) node.attachedNode!! else node
-        val takeFrom = findSourceFor(type, quantity, { it.attachedNode != sendTo })
-        if (takeFrom != null) {
-            if (transferResources(type, quantity, takeFrom, sendTo)) {
-                takeFrom.attachedNode!!.attachedContainer.remove(type, quantity, sendTo)
-            }
-        }
-    }
-
-    /**
-     * Takes resources from this node and sends it elsewhere in the network, if this node is able to give them up and
-     * there is a node in the network which can accept them. Prioritizes sending the resources to a node that is forcing
-     * input.
-     * @param node the node in this network to take them from. It can either be an internal node (one created by the network)
-     * or an attached node (one that corresponds to an actual block/machine/etc. and is attached to an internal node)
-     */
-    open fun forceTakeFrom(node: ResourceNode, type: ResourceType, quantity: Int) {
-        val takeFrom = if (node.isInternalNetworkNode) node.attachedNode!! else node
-        takeFrom.output(type, quantity)
     }
 
     open fun update() {}

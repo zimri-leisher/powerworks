@@ -3,6 +3,8 @@ package player
 import data.ConcurrentlyModifiableWeakMutableList
 import data.FileManager
 import data.GameDirectoryIdentifier
+import item.BlockItemType
+import item.IngotItemType
 import item.ItemType
 import level.ActualLevel
 import level.LevelManager
@@ -13,6 +15,8 @@ import network.ClientNetworkManager
 import network.ServerNetworkManager
 import network.User
 import network.packet.*
+import resource.ResourceList
+import resource.resourceListOf
 import java.util.*
 
 object PlayerManager : PacketHandler, PlayerEventListener {
@@ -24,6 +28,9 @@ object PlayerManager : PacketHandler, PlayerEventListener {
     val actionsAwaitingAck = mutableListOf<PlayerActionPacket>()
 
     val playerEventListeners = mutableListOf<PlayerEventListener>()
+
+    private val startingInventory = resourceListOf(BlockItemType.ITEM_PIPE to 10, BlockItemType.MINER to 2, BlockItemType.SMELTER to 2, BlockItemType.CHEST_SMALL to 1,
+            BlockItemType.CRAFTER to 1)
 
     fun isLocalPlayerLoaded() = localPlayerDelegate.initialized
 
@@ -120,9 +127,10 @@ object PlayerManager : PacketHandler, PlayerEventListener {
         val brainRobot = BrainRobot(level.width / 2, level.height / 2, 2, player.user)
         player.brainRobot = brainRobot
         brainRobot.team = player.team
-        for (type in ItemType.ALL) {
-            brainRobot.inventory.add(type, type.maxStack)
-        }
+        println("adding items")
+        println("KHJSFDKHJ ${brainRobot.inventory.spaceFor(startingInventory)}")
+        println("${brainRobot.inventory.mostPossibleToAdd(startingInventory)} == $startingInventory: ${brainRobot.inventory.mostPossibleToAdd(startingInventory) == startingInventory}")
+        brainRobot.inventory.add(startingInventory)
         level.add(brainRobot)
         brainRobot.id = player.brainRobotId
         LevelManager.saveLevelDataFile(level.id, level.data)

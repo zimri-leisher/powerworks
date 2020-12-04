@@ -10,17 +10,24 @@ import java.lang.Integer.max
 import java.lang.Integer.min
 
 class AttributeKeepInScreen(element: GuiElement) : Attribute(element) {
+
+    var hasMoved = false
+
     init {
         element.gui.parentElement.eventListeners.add(GuiChangePlacementListener {
-            if (!Geometry.contains(0, 0, Game.WIDTH, Game.HEIGHT, absoluteX, absoluteY, width, height)) {
+            if (!hasMoved && !Geometry.contains(0, 0, Game.WIDTH, Game.HEIGHT, absoluteX, absoluteY, width, height)) {
                 placement = getNewPlacement()
                 gui.layout.recalculateExactPlacement(this)
+                hasMoved = true
+            } else {
+                hasMoved = false
             }
         })
         element.gui.parentElement.eventListeners.add(GuiChangeDimensionListener {
-            if (!Geometry.contains(0, 0, Game.WIDTH, Game.HEIGHT, absoluteX, absoluteY, width, height)) {
+            if (!hasMoved && !Geometry.contains(0, 0, Game.WIDTH, Game.HEIGHT, absoluteX, absoluteY, width, height)) {
                 placement = getNewPlacement()
                 gui.layout.recalculateExactPlacement(this)
+                hasMoved = true
             }
         })
     }

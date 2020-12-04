@@ -1,27 +1,36 @@
 package screen.element
 
+import io.Control
 import io.ControlEventType
 import item.Inventory
 import item.ItemType
-import screen.ScreenLayer
-import screen.gui.*
+import player.ActionTransferResourcesBetweenLevelObjects
+import player.PlayerManager
+import resource.resourceListOf
+import screen.ScreenManager
+import screen.gui.GuiElement
+import screen.gui.GuiIngame
 import screen.mouse.Mouse
 
 open class ElementInventory(parent: GuiElement, inventory: Inventory) : ElementResourceContainer(parent, inventory.width, inventory.height, inventory) {
 
     init {
+        allowModification = true
         allowSelection = true
         onSelectIcon = { index, interaction ->
-            if(index < currentResources.size) {
+            if (index < currentResources.size) {
                 val (type, quantity) = currentResources[index]
                 if (interaction.event.type == ControlEventType.PRESS) {
-                    if (interaction.shift) {
-                        val other = getSecondaryInventory()
-                        if (other != null) {
-                            other.add(type, quantity)
-                            inventory.remove(type, quantity)
-                        } else {
-                            GuiIngame.Hotbar.addItemType(type as ItemType)
+                    if (interaction.event.control == Control.SECONDARY_INTERACT) {
+                        GuiIngame.Hotbar.addItemType(type as ItemType)
+                    } else if (interaction.shift) {
+                        val other = ScreenManager.getSecondaryResourceContainer(container)
+                        if (other?.attachedLevelObject != null && container.attachedLevelObject != null) {
+                            // verification will check whether or not this is possible
+                            PlayerManager.takeAction(ActionTransferResourcesBetweenLevelObjects(PlayerManager.localPlayer,
+                                    container.attachedLevelObject!!.toReference(),
+                                    container.id, other.attachedLevelObject!!.toReference(),
+                                    other.id, resourceListOf(type to quantity)))
                         }
                     } else {
                         Mouse.heldItemType = type as ItemType?
@@ -29,18 +38,5 @@ open class ElementInventory(parent: GuiElement, inventory: Inventory) : ElementR
                 }
             }
         }
-    }
-
-    private fun getSecondaryInventory(): Inventory? {
-        for(gui in ScreenLayer.WINDOWS.guis.elements) {
-            if(gui.open && gui != this.gui) {
-                if(gui is GuiChestBlock) {
-                    return gui.block.inventory
-                } else if(gui is GuiBrainRobot) {
-                    return gui.brainRobot.inventory
-                }
-            }
-        }
-        return null
     }
 }

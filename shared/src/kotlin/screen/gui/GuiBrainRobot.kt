@@ -4,8 +4,10 @@ import level.entity.robot.BrainRobot
 import screen.ScreenLayer
 
 class GuiBrainRobot(val brainRobot: BrainRobot) : Gui(ScreenLayer.MENU) {
+
     init {
         define {
+            linkToContainer(brainRobot.inventory)
             openAtMouse()
             keepInsideScreen()
             background {

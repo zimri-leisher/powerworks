@@ -5,6 +5,7 @@ import level.LevelManager
 import network.ResourceNodeReference
 import player.Player
 import resource.ResourceList
+import resource.emptyResourceList
 import serialization.Id
 import java.util.*
 
@@ -34,7 +35,7 @@ class ResourceNodeTransferThrough(
         @Id(6) val mustContainOrHaveSpace: Boolean
 ) : LevelUpdate(LevelUpdateType.RESOURCE_NODE_TRANSFER_THROUGH) {
 
-    private constructor() : this(ResourceNodeReference(0, 0, LevelManager.EMPTY_LEVEL, UUID.randomUUID()), ResourceList(), false, false, false)
+    private constructor() : this(ResourceNodeReference(0, 0, LevelManager.EMPTY_LEVEL, UUID.randomUUID()), emptyResourceList(), false, false, false)
 
     override val playersToSendTo: Set<Player>?
         get() = null
@@ -45,7 +46,7 @@ class ResourceNodeTransferThrough(
         }
         val node = nodeReference.value!!
         if (output) {
-            if (!node.canOutput(resources, mustContainOrHaveSpace)) {
+            if (!node.canOutputAll(resources, mustContainOrHaveSpace)) {
                 return false
             }
         } else {

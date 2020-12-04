@@ -3,17 +3,14 @@ package player
 import behavior.Behavior
 import behavior.BehaviorTree
 import crafting.Recipe
-import item.ItemType
 import level.*
-import level.block.Block
 import level.block.CrafterBlock
 import level.block.FarseekerBlock
 import level.entity.Entity
 import level.update.*
 import network.*
 import player.team.TeamPermission
-import resource.ResourceList
-import resource.ResourceNodeBehavior
+import resource.*
 import serialization.Id
 import java.util.*
 
@@ -62,47 +59,51 @@ class ActionError : PlayerAction(Player(User(UUID.randomUUID(), ""), UUID.random
 }
 
 /**
- * Adds or removes items from the container matching the given [containerId] in the given [blockReference], and removes or
+ * Adds or removes items from the container matching the given [toContainerId] in the given [blockReference], and removes or
  * adds them to/from the [owner]'s brain robot inventory
  */
-class ActionTransferItemsBetweenBlock(owner: Player,
-                                      @Id(2)
-                                val blockReference: BlockReference,
-                                      @Id(3)
-                                val add: Boolean,
-                                      @Id(4)
-                                val resources: ResourceList,
-                                      @Id(5)
-                                val containerId: UUID) : PlayerAction(owner) {
+class ActionTransferResourcesBetweenLevelObjects(owner: Player,
+                                                 @Id(2)
+                                                 val fromReference: LevelObjectReference,
+                                                 @Id(6)
+                                                 val fromContainerId: UUID,
+                                                 @Id(3)
+                                                 val toReference: LevelObjectReference,
+                                                 @Id(5)
+                                                 val toContainerId: UUID,
+                                                 @Id(4)
+                                                 val resources: ResourceList) : PlayerAction(owner) {
 
     private constructor() : this(Player(User(UUID.randomUUID(), ""), UUID.randomUUID(), UUID.randomUUID()),
-            BlockReference(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0), false, ResourceList(), UUID.randomUUID())
+            GhostLevelObjectReference(GhostLevelObject(LevelObjectType.ERROR, 0, 0, 0)), UUID.randomUUID(),
+            GhostLevelObjectReference(GhostLevelObject(LevelObjectType.ERROR, 0, 0, 0)), UUID.randomUUID(), resourceListOf())
 
     override fun verify(): Boolean {
-        if (blockReference.value == null) {
+        println("verifying")
+        if (fromReference.value == null || toReference.value == null) {
             return false
         }
-        val block = blockReference.value!! as Block
-        if (!block.team.check(TeamPermission.MODIFY_LEVEL_OBJECTS, owner)) {
+        val from = fromReference.value!!
+        if (!from.team.check(TeamPermission.MODIFY_LEVEL_OBJECTS, owner)) {
             return false
         }
-        val container = block.containers.firstOrNull { it.id == containerId } ?: return false
-        if (resources.keys.any { it !is ItemType }) {
+        val to = toReference.value!!
+        if (!to.team.check(TeamPermission.MODIFY_LEVEL_OBJECTS, owner)) {
             return false
         }
-        return if (add) {
-            container.canAdd(resources) && owner.brainRobot.inventory.canRemove(resources)
-        } else {
-            container.canRemove(resources) && owner.brainRobot.inventory.canAdd(resources)
+        val fromContainer = from.containers.firstOrNull { it.id == fromContainerId } ?: return false
+        val toContainer = to.containers.firstOrNull { it.id == toContainerId } ?: return false
+        if (fromContainer.resourceCategory != toContainer.resourceCategory) {
+            return false
         }
+        println("final verification: ${fromContainer.canRemoveAll(resources)}, ${toContainer.canAddAll(resources)}")
+        return fromContainer.canRemoveAll(resources) && toContainer.canAddAll(resources)
     }
 
     override fun act(): Boolean {
-        blockReference.level.modify(BlockContainerModify(blockReference, containerId, resources, add))
-        for ((type, quantity) in resources) {
-            blockReference.level.modify(BrainRobotInvModify(owner.brainRobot.toReference() as MovingObjectReference, type as ItemType, quantity))
-        }
-        return true
+        println("acting")
+        return fromReference.level.modify(LevelObjectResourceContainerModify(fromReference, fromContainerId, false, resources)) &&
+                toReference.level.modify(LevelObjectResourceContainerModify(toReference, toContainerId, true, resources))
     }
 
     override fun actGhost() {
@@ -118,7 +119,7 @@ class ActionTransferItemsBetweenBlock(owner: Player,
  */
 class ActionEntityCreateGroup(owner: Player,
                               @Id(2)
-                        val entities: List<MovingObjectReference>) : PlayerAction(owner) {
+                              val entities: List<MovingObjectReference>) : PlayerAction(owner) {
 
     private constructor() : this(Player(User(UUID.randomUUID(), ""), UUID.randomUUID(), UUID.randomUUID()), listOf())
 
@@ -158,9 +159,9 @@ class ActionEntityCreateGroup(owner: Player,
 
 class ActionFarseekerBlockSetLevel(owner: Player,
                                    @Id(2)
-                             val blockReference: BlockReference,
+                                   val blockReference: BlockReference,
                                    @Id(3)
-                             val level: Level) : PlayerAction(owner) {
+                                   val level: Level) : PlayerAction(owner) {
 
     private constructor() : this(Player(User(UUID.randomUUID(), ""), UUID.randomUUID(), UUID.randomUUID()), BlockReference(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0), LevelManager.EMPTY_LEVEL)
 
@@ -199,15 +200,15 @@ class ActionFarseekerBlockSetLevel(owner: Player,
  */
 class ActionLevelObjectPlace(owner: Player,
                              @Id(2)
-                       val levelObjType: LevelObjectType<*>,
+                             val levelObjType: LevelObjectType<*>,
                              @Id(3)
-                       val x: Int,
+                             val x: Int,
                              @Id(4)
-                       val y: Int,
+                             val y: Int,
                              @Id(5)
-                       val rotation: Int,
+                             val rotation: Int,
                              @Id(6)
-                       val level: Level) : PlayerAction(owner) {
+                             val level: Level) : PlayerAction(owner) {
 
     private var temporaryGhostObject: GhostLevelObject? = null
 
@@ -234,7 +235,7 @@ class ActionLevelObjectPlace(owner: Player,
             println("Should have been an item form of $levelObjType but wasn't")
             return false
         }
-        val removeItem = BrainRobotInvModify(owner.brainRobot.toReference() as MovingObjectReference, levelObjType.itemForm!!, -1)
+        val removeItem = LevelObjectResourceContainerModify(owner.brainRobot, false, resourceListOf(levelObjType.itemForm!! to 1))
         if (!level.modify(removeItem)) {
             println("Should have been able to remove items from brainrobot but wasn't")
             return false
@@ -282,7 +283,7 @@ class ActionLevelObjectRemove(owner: Player,
     }
 
     override fun act(): Boolean {
-        val resourcesToGiveToPlayer = ResourceList()
+        val resourcesToGiveToPlayer = mutableResourceListOf()
         // 99 percent of the time all the levels of the objects will be the same level
         // so we make a lil optimization
         for (reference in references) {
@@ -293,11 +294,11 @@ class ActionLevelObjectRemove(owner: Player,
             val value = reference.value!!
             value.level.remove(value)
             if (value.type.itemForm != null) {
-                resourcesToGiveToPlayer.add(value.type.itemForm!!, 1)
+                resourcesToGiveToPlayer.put(value.type.itemForm!!, 1)
             }
         }
         for ((type, quantity) in resourcesToGiveToPlayer) {
-            references.first().level.modify(BrainRobotInvModify(owner.brainRobot.toReference() as MovingObjectReference, type as ItemType, quantity))
+            references.first().level.modify(LevelObjectResourceContainerModify(owner.brainRobot, true, resourceListOf(type to quantity)))
         }
         return true
     }
@@ -341,6 +342,7 @@ class ActionControlEntity(owner: Player,
     }
 
     override fun act(): Boolean {
+        println("trying to act for control entity action")
         for (reference in entityReferences) {
             if (reference.value == null) {
                 println("Reference should have been able to be resolved, but wasn't")

@@ -4,7 +4,10 @@ import graphics.Image
 import graphics.Renderer
 import graphics.TextureRenderParams
 import item.Inventory
-import level.*
+import level.Level
+import level.LevelManager
+import level.LevelObject
+import level.getBlockAtTile
 import misc.Geometry
 import network.ResourceNodeReference
 import player.team.Team
@@ -85,12 +88,12 @@ class ResourceNode constructor(
      * @return if the resource is the right type and this node allows output and the attached container is able to remove the resources.
      * Additionally, if there is an attached node, it must be able to input the resources
      */
-    fun canOutput(resources: ResourceList, mustContainEnough: Boolean = true): Boolean {
+    fun canOutputAll(resources: ResourceList, mustContainEnough: Boolean = true): Boolean {
         if (resources.keys.any { !isRightType(it) || !behavior.allowOut.check(it) }) {
             return false
         }
         if (mustContainEnough) {
-            if (!attachedContainer.canRemove(resources)) {
+            if (!attachedContainer.canRemoveAll(resources)) {
                 return false
             }
         }
@@ -98,13 +101,32 @@ class ResourceNode constructor(
             if (!attachedNode!!.canInput(resources)) {
                 return false
             }
-        } else if (attachedNode == null) {
+        } else {
             return false
         }
         return true
     }
 
-    fun canOutput(type: ResourceType, quantity: Int, mustContainEnough: Boolean = true) = canOutput(ResourceList(type to quantity), mustContainEnough)
+    fun canOutputAll(type: ResourceType, quantity: Int, mustContainEnough: Boolean = true) = canOutputAll(resourceListOf(type to quantity), mustContainEnough)
+
+    fun mostPossibleToOutput(resources: ResourceList, mustContainEnough: Boolean = true): ResourceList {
+        if (attachedNode == null) {
+            // node is not attached, cannot output anything
+            return emptyResourceList()
+        }
+        val filtered = resources.toMutableResourceList()
+        for ((type, _) in resources) {
+            if (!isRightType(type) || !behavior.allowOut.check(type)) {
+                filtered.remove(type)
+            }
+        }
+        val possibleToRemove = if (mustContainEnough) {
+            attachedContainer.mostPossibleToRemove(filtered)
+        } else {
+            filtered
+        }
+        return attachedNode!!.mostPossibleToInput(possibleToRemove)
+    }
 
     /**
      * @param mustHaveSpace whether or not to check if the attached container has enough space. Set to false if you know
@@ -118,17 +140,40 @@ class ResourceNode constructor(
             return false
         if (mustHaveSpace) {
             if (accountForExpected) {
-                if (!attachedContainer.canAdd(resources + attachedContainer.expected))
+                if (!attachedContainer.canAddAll(resources + attachedContainer.expected))
                     return false
             } else {
-                if (!attachedContainer.canAdd(resources))
+                if (!attachedContainer.canAddAll(resources))
                     return false
             }
         }
         return true
     }
 
-    fun canInput(type: ResourceType, quantity: Int, mustHaveSpace: Boolean = true, accountForExpected: Boolean = false) = canInput(ResourceList(type to quantity), mustHaveSpace, accountForExpected)
+    fun canInput(type: ResourceType, quantity: Int, mustHaveSpace: Boolean = true, accountForExpected: Boolean = false) = canInput(resourceListOf(type to quantity), mustHaveSpace, accountForExpected)
+
+    fun mostPossibleToInput(resources: ResourceList, mustHaveSpace: Boolean = true, accountForExpected: Boolean = false): ResourceList {
+        val filtered = resources.toMutableResourceList()
+        for ((type, _) in resources) {
+            if (!isRightType(type) || !behavior.allowIn.check(type)) {
+                filtered.remove(type)
+            }
+        }
+        if (mustHaveSpace) {
+            if (accountForExpected) {
+                // ensure that when accounting for expected, we dont return resources from expected in the list
+                val mostPossibleToAddIncludingExpected = attachedContainer.mostPossibleToAdd(filtered + attachedContainer.expected).toMutableResourceList()
+                for ((type, quantity) in mostPossibleToAddIncludingExpected) {
+                    if (filtered[type] < quantity) {
+                        filtered[type] = quantity
+                    }
+                }
+                return mostPossibleToAddIncludingExpected
+            }
+            return attachedContainer.mostPossibleToAdd(filtered)
+        }
+        return filtered
+    }
 
     /**
      * Outputs the resources either directly to the level or into a connected node
@@ -141,7 +186,7 @@ class ResourceNode constructor(
      */
     fun output(resources: ResourceList, checkIfAble: Boolean = true, mustContainEnough: Boolean = true): Boolean {
         if (checkIfAble) {
-            if (!canOutput(resources, mustContainEnough))
+            if (!canOutputAll(resources, mustContainEnough))
                 return false
         }
         if (attachedNode != null) {
@@ -152,7 +197,18 @@ class ResourceNode constructor(
         return true
     }
 
-    fun output(type: ResourceType, quantity: Int, checkIfAble: Boolean = true, mustContainEnough: Boolean = true) = output(ResourceList(type to quantity), checkIfAble, mustContainEnough)
+    fun output(type: ResourceType, quantity: Int, checkIfAble: Boolean = true, mustContainEnough: Boolean = true) = output(resourceListOf(type to quantity), checkIfAble, mustContainEnough)
+
+    fun requestOutput(resources: ResourceList): Boolean {
+        if(mostPossibleToOutput(resources) == emptyResourceList()) {
+            return false
+        }
+        attachedContainer.remove(resources, this, false)
+        if(attachedContainer !is ResourceRoutingNetwork && attachedNode != null) {
+            attachedNode!!.input(resources, false)
+        }
+        return true
+    }
 
     /**
      * Inputs the resources into the attached container
@@ -171,15 +227,19 @@ class ResourceNode constructor(
         return true
     }
 
-    fun input(type: ResourceType, quantity: Int, checkIfAble: Boolean = true, mustHaveSpace: Boolean = true) = input(ResourceList(type to quantity), checkIfAble, mustHaveSpace)
+    fun input(type: ResourceType, quantity: Int, checkIfAble: Boolean = true, mustHaveSpace: Boolean = true) = input(resourceListOf(type to quantity), checkIfAble, mustHaveSpace)
 
     fun update() {
         for ((type, quantity) in attachedContainer.toResourceList()) {
-            if (behavior.forceIn.check(type)) {
-                network.forceSendTo(this, type, quantity)
-            }
             if (behavior.forceOut.check(type)) {
-                network.forceTakeFrom(this, type, quantity)
+                output(type, quantity)
+            }
+        }
+        for ((statement, types) in behavior.forceIn.statements) {
+            if (statement.evaluate(this)) {
+                for (type in if (types.isEmpty()) ResourceType.ALL else types) {
+                    attachedNode?.requestOutput(resourceListOf(type to Int.MAX_VALUE))
+                }
             }
         }
     }

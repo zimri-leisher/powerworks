@@ -1,10 +1,7 @@
 package level.tile
 
 import graphics.Renderer
-import level.Level
-import level.LevelManager
-import level.getChunkAtChunk
-import level.getTileAtTile
+import level.*
 import misc.Geometry
 
 private enum class TileState(val indices: List<Int>, val connections: Array<Boolean>) {
@@ -48,9 +45,11 @@ class OreTile(override val type: OreTileType, xTile: Int, yTile: Int, level: Lev
     fun updateState() {
         val array = arrayOf(false, false, false, false)
         for (i in 0..3) {
-            val tileAt = level.getTileAtTile(xTile + Geometry.getXSign(i), yTile + Geometry.getYSign(i))
-            if (tileAt.type == this.type) {
-                array[i] = true
+            if(level.isTileWithinBounds(xTile + Geometry.getXSign(i), yTile + Geometry.getYSign(i))) {
+                val tileAt = level.getTileAtTile(xTile + Geometry.getXSign(i), yTile + Geometry.getYSign(i))
+                if (tileAt.type == this.type) {
+                    array[i] = true
+                }
             }
         }
         state = TileState.values().first { it.connections.contentEquals(array) }

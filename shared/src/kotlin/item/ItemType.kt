@@ -106,6 +106,13 @@ class BlockItemType(initializer: BlockItemType.() -> Unit) : ItemType() {
         val FARSEEKER = BlockItemType {
             name = "Farseeker"
             placedBlock = MachineBlockType.FARSEEKER
+            icon = Texture(Image.Block.FARSEEKER)
+        }
+
+        val SMELTER = BlockItemType {
+            name = "Smelter"
+            icon = Texture(Image.Block.SMELTER)
+            placedBlock = MachineBlockType.SMELTER
         }
 
         val MINER = BlockItemType {

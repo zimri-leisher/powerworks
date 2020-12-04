@@ -28,6 +28,8 @@ object Image {
     }
 
     object Block {
+        val FARSEEKER = GameResourceManager.getAtlasTexture("block/farseeker")
+        val SMELTER = GameResourceManager.getAtlasTexture("block/smelter")
         val ARMORY = GameResourceManager.getAtlasTexture("block/armory")
         val CHEST_SMALL = GameResourceManager.getAtlasTexture("block/chest_small")
         val CHEST_LARGE = GameResourceManager.getAtlasTexture("block/chest_large")

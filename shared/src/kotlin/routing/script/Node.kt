@@ -108,7 +108,8 @@ class Not(token: Token, arg: Node<Boolean>) : UnaryOperator<Boolean, Boolean>(to
 
 class QuantityOf(token: Token, arg: Node<ResourceType>) : UnaryOperator<ResourceType, Int>(token, arg) {
     override fun visit(context: ResourceNode): Int {
-        return context.attachedContainer.getQuantity(arg.visit(context)) + context.attachedContainer.expected[arg.visit(context)]
+        val type = arg.visit(context)
+        return context.attachedContainer.getQuantity(type) + context.attachedContainer.expected[type]
     }
 
 }

@@ -2,21 +2,33 @@ package resource
 
 import serialization.Id
 
+fun emptyResourceList() = EmptyResourceList
+
+fun resourceListOf(vararg pairs: Pair<ResourceType, Int>) = ResourceList(*pairs)
+
+fun Map<ResourceType, Int>.toResourceList() = ResourceList(this)
 
 /**
  * A list of [ResourceType] - quantity pairs with some convenience methods
  */
-class ResourceList(
-        @Id(1)
-        private val resources: MutableMap<ResourceType, Int> = mutableMapOf()
+open class ResourceList(
+        @Id(1) protected val resources: Map<ResourceType, Int> = mapOf()
 ) : Map<ResourceType, Int> {
 
-    constructor(vararg pairs: Pair<ResourceType, Int>) : this(pairs.toMap().toMutableMap())
+    constructor(vararg pairs: Pair<ResourceType, Int>) : this(pairs.toMap())
 
     override val size: Int
         get() = resources.size
 
-    val totalQuantity get() = values.sum()
+    @Id(2)
+    open val totalQuantity = resources.values.sum()
+
+    override val entries: Set<Map.Entry<ResourceType, Int>>
+        get() = resources.entries
+    override val keys: Set<ResourceType>
+        get() = resources.keys
+    override val values: Collection<Int>
+        get() = resources.values
 
     override fun containsKey(key: ResourceType) = resources.containsKey(key)
 
@@ -62,74 +74,9 @@ class ResourceList(
 
     override fun isEmpty() = resources.isEmpty()
 
-    override val entries: MutableSet<MutableMap.MutableEntry<ResourceType, Int>>
-        get() = resources.entries
-    override val keys: MutableSet<ResourceType>
-        get() = resources.keys
-    override val values: MutableCollection<Int>
-        get() = resources.values
-
-    fun clear() = resources.clear()
-
-    /**
-     * Adds [quantity] of [type] to this list. If there is already an entry for [type], it will just add on [quantity] to its value.
-     * Otherwise, makes a new entry for the [type].
-     * @return the previously existing quantity under [type], or null if there was none
-     */
-    fun add(type: ResourceType, quantity: Int): Int? {
-        val alreadyExistingQuantity = get(type)
-        if (alreadyExistingQuantity != 0) {
-            resources.replace(type, alreadyExistingQuantity + quantity)
-            return alreadyExistingQuantity
-        } else {
-            resources.put(type, quantity)
-            return null
-        }
-    }
-
-    /**
-     * Adds all resources from the [from] list to this list. See [add] for specifics on what happens
-     */
-    fun addAll(from: Map<out ResourceType, Int>) {
-        for ((key, value) in from) {
-            add(key, value)
-        }
-    }
-
-    /**
-     * Removes the (key, value) entry with the given [key] from this list
-     */
-    fun remove(key: ResourceType) = resources.remove(key)
-
-    /**
-     * Removes [quantity] of the [type] from this resource list. If this resource list contains less than [quantity] of
-     * [type], it removes as much as it can. If the resulting quantity is 0, it removes the [type] entry from this list.
-     * @return true if any resources were removed
-     */
-    fun take(type: ResourceType, quantity: Int): Boolean {
-        val currentQuantity = get(type)
-        if(currentQuantity == 0 || quantity == 0) {
-            return false
-        }
-        if (currentQuantity <= quantity) {
-            remove(type)
-        } else {
-            resources.replace(type, currentQuantity - quantity)
-        }
-        return true
-    }
-
-    /**
-     * Removes the [resources] from this resource list.
-     * @return true if any resources were removed
-     */
-    fun takeAll(resources: ResourceList) = resources.all { (type, quantity) -> take(type, quantity) }
-
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as ResourceList
+        if (other !is ResourceList) return false
 
         if (other.resources.size != resources.size) return false
         for ((type, quantity) in other.resources) {
@@ -141,11 +88,8 @@ class ResourceList(
         return true
     }
 
-    operator fun plus(other: ResourceList): ResourceList {
-        val list = ResourceList()
-        list.addAll(other)
-        list.addAll(this)
-        return list
+    open operator fun plus(other: ResourceList): ResourceList {
+        return ResourceList(other.resources + resources)
     }
 
     override fun hashCode(): Int {
@@ -156,4 +100,7 @@ class ResourceList(
         return resources.entries.joinToString()
     }
 
+    open fun copy() = ResourceList(*resources.entries.map { (key, value) -> key to value }.toTypedArray())
 }
+
+object EmptyResourceList : ResourceList()
