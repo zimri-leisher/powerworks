@@ -3,12 +3,12 @@ package screen.gui
 import level.entity.robot.BrainRobot
 import screen.ScreenLayer
 
-class GuiBrainRobot(val brainRobot: BrainRobot) : Gui(ScreenLayer.MENU) {
+class GuiBrainRobot(val brainRobot: BrainRobot) : Gui(ScreenLayer.MENU_1) {
 
     init {
         define {
             linkToContainer(brainRobot.inventory)
-            openAtMouse()
+            openAtCenter(2)
             keepInsideScreen()
             background {
                 makeDraggable()

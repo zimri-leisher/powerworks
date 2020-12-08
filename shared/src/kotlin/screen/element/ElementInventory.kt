@@ -21,20 +21,25 @@ open class ElementInventory(parent: GuiElement, inventory: Inventory) : ElementR
             if (index < currentResources.size) {
                 val (type, quantity) = currentResources[index]
                 if (interaction.event.type == ControlEventType.PRESS) {
-                    if (interaction.event.control == Control.SECONDARY_INTERACT) {
-                        GuiIngame.Hotbar.addItemType(type as ItemType)
-                    } else if (interaction.shift) {
+                    if(interaction.event.control == Control.INTERACT) {
                         val other = ScreenManager.getSecondaryResourceContainer(container)
                         if (other?.attachedLevelObject != null && container.attachedLevelObject != null) {
-                            // verification will check whether or not this is possible
                             PlayerManager.takeAction(ActionTransferResourcesBetweenLevelObjects(PlayerManager.localPlayer,
                                     container.attachedLevelObject!!.toReference(),
                                     container.id, other.attachedLevelObject!!.toReference(),
                                     other.id, resourceListOf(type to quantity)))
                         }
-                    } else {
-                        Mouse.heldItemType = type as ItemType?
+                    } else if(interaction.event.control == Control.SECONDARY_INTERACT) {
+                        GuiIngame.Hotbar.addItemType(type as ItemType)
                     }
+                }
+            } else if (Mouse.heldItemType != null) {
+                val quantity = PlayerManager.localPlayer.brainRobot.inventory.getQuantity(Mouse.heldItemType!!)
+                if (quantity > 0) {
+                    PlayerManager.takeAction(ActionTransferResourcesBetweenLevelObjects(PlayerManager.localPlayer,
+                            PlayerManager.localPlayer.brainRobot.toReference(), PlayerManager.localPlayer.brainRobot.inventory.id,
+                            container.attachedLevelObject!!.toReference(),
+                            container.id, resourceListOf(Mouse.heldItemType!! to quantity)))
                 }
             }
         }

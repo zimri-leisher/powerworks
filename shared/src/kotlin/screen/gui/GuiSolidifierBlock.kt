@@ -6,7 +6,7 @@ import screen.element.ElementFluidTank
 import screen.element.ElementInventory
 import screen.element.ElementProgressBar
 
-class GuiSolidifierBlock(block: SolidifierBlock) : Gui(ScreenLayer.MENU), PoolableGui {
+class GuiSolidifierBlock(block: SolidifierBlock) : Gui(ScreenLayer.MENU_1), PoolableGui {
     var block = block
         set(value) {
             if (field != value) {
@@ -22,7 +22,7 @@ class GuiSolidifierBlock(block: SolidifierBlock) : Gui(ScreenLayer.MENU), Poolab
 
     init {
         define {
-            openAtMouse()
+            openAtCenter(0)
             background {
                 makeDraggable()
                 dimensions = Dimensions.FitChildren.pad(4, 10)

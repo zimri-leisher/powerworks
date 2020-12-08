@@ -5,7 +5,7 @@ import screen.ScreenLayer
 import screen.attribute.AttributeResourceContainerLink
 import screen.element.ElementInventory
 
-class GuiChestBlock(val block: ChestBlock) : Gui(ScreenLayer.MENU), PoolableGui {
+class GuiChestBlock(val block: ChestBlock) : Gui(ScreenLayer.MENU_1), PoolableGui {
 
     lateinit var inventoryView: ElementInventory
     lateinit var containerLink: AttributeResourceContainerLink
@@ -13,7 +13,7 @@ class GuiChestBlock(val block: ChestBlock) : Gui(ScreenLayer.MENU), PoolableGui 
     init {
         define {
             containerLink = linkToContainer(block.inventory)
-            openAtMouse()
+            openAtCenter(0)
             keepInsideScreen()
             background {
                 makeDraggable()

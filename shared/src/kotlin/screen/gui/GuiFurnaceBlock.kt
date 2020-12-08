@@ -6,7 +6,7 @@ import screen.element.ElementFluidTank
 import screen.element.ElementProgressBar
 import screen.element.ElementResourceContainer
 
-class GuiFurnaceBlock(block: FurnaceBlock) : Gui(ScreenLayer.MENU), PoolableGui {
+class GuiFurnaceBlock(block: FurnaceBlock) : Gui(ScreenLayer.MENU_1), PoolableGui {
     var block = block
         set(value) {
             if (field != value) {
@@ -23,7 +23,7 @@ class GuiFurnaceBlock(block: FurnaceBlock) : Gui(ScreenLayer.MENU), PoolableGui 
 
     init {
         define {
-            openAtMouse()
+            openAtCenter(0)
             keepInsideScreen()
             background {
                 makeDraggable()

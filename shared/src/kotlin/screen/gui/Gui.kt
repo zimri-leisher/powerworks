@@ -8,7 +8,7 @@ import graphics.*
 import graphics.text.TaggedText
 import graphics.text.TextManager
 import graphics.text.TextRenderParams
-import io.ControlEventType
+import io.ControlBind
 import item.Inventory
 import level.LevelInfo
 import level.LevelObject
@@ -43,6 +43,8 @@ open class Gui(val layer: ScreenLayer, block: GuiElement.Context.() -> Unit = {}
         override val absoluteY get() = y
         override val gui: Gui
             get() = this@Gui
+
+        override val isRoot get() = true
 
         init {
             placement = Placement.Origin
@@ -156,7 +158,7 @@ open class Gui(val layer: ScreenLayer, block: GuiElement.Context.() -> Unit = {}
 
         /**
          * Recalculates the layout caches from scratch based on the dimensions and placements of this gui's children. Must
-         * call this before rendering. This is called automatically at initialize and after calling [define]
+         * call this before rendering. This is called automatically at initialize and after calling [defineIn]
          */
         fun set() {
             dimensions.clear()
@@ -194,6 +196,23 @@ open class Gui(val layer: ScreenLayer, block: GuiElement.Context.() -> Unit = {}
     }
 }
 
+open class GroupElement(parent: GuiElement) : GuiElement(parent)
+
+class MutableGroupElement(parent: GuiElement) : GroupElement(parent) {
+
+    private val mutableChildren get() = children as MutableList<GuiElement>
+
+    fun add(element: GuiElement, index: Int = mutableChildren.size) {
+        mutableChildren.add(index, element)
+        gui.layout.set()
+    }
+
+    fun remove(element: GuiElement) {
+        mutableChildren.remove(element)
+        gui.layout.set()
+    }
+}
+
 /**
  * A class for defining parts of GUIs. GuiElements may have children, parents, a [Placement], [Dimensions] and [eventListeners].
  * They can be opened and closed, rendered and update.
@@ -221,7 +240,7 @@ abstract class GuiElement(parent: GuiElement?) {
     /**
      * @return true if this is the parent element of a [Gui].
      */
-    val isRoot get() = mutableParent == null
+    open val isRoot get() = false
 
     /**
      * The [Gui] this element is in.
@@ -463,6 +482,8 @@ abstract class GuiElement(parent: GuiElement?) {
         fun linkToContainer(container: ResourceContainer) =
                 AttributeResourceContainerLink(inElement, container).apply { addAttribute(this) }
 
+        fun openAtCenter(order: Int = 0) = AttributeOpenAtCenter(inElement, order = order).apply { addAttribute(this) }
+
         fun at(placement: Placement, lock: Boolean = false, block: Context.() -> Unit) {
             val oldPlacement = currentDefaultPlacement
             currentDefaultPlacement = placement
@@ -500,10 +521,24 @@ abstract class GuiElement(parent: GuiElement?) {
                     addChild(this, block, placement)
                 }
 
+        fun mutableGroup(placement: Placement = currentDefaultPlacement, block: Context.() -> Unit = {}) =
+                MutableGroupElement(inElement).apply {
+                    dimensions = Dimensions.FitChildren
+                    addChild(this, block, placement)
+                }
+
         fun group(placement: Placement = currentDefaultPlacement, block: Context.() -> Unit = {}) =
                 GroupElement(inElement).apply {
                     dimensions = Dimensions.FitChildren
                     addChild(this, block, placement)
+                }
+
+        fun mutableList(placement: Placement = currentDefaultPlacement, horizontalAlign: HorizontalAlign = HorizontalAlign.CENTER, padding: Int = 0, block: Context.() -> Unit = {}) =
+                mutableGroup(placement) {
+                    dimensions = Dimensions.VerticalList(padding)
+                    at(Placement.VerticalList(padding, horizontalAlign), true) {
+                        block()
+                    }
                 }
 
         fun list(placement: Placement = currentDefaultPlacement, horizontalAlign: HorizontalAlign = HorizontalAlign.CENTER, padding: Int = 0, block: Context.() -> Unit = {}) =
@@ -527,25 +562,17 @@ abstract class GuiElement(parent: GuiElement?) {
                     addChild(this, block, placement)
                 }
 
-        fun button(placement: Placement = currentDefaultPlacement, onPress: GuiElement.(Interaction) -> Unit = {}, onRelease: GuiElement.(Interaction) -> Unit = {}, block: Context.() -> Unit = {}) =
-                GroupElement(inElement).apply {
+        fun button(placement: Placement = currentDefaultPlacement, onRelease: GuiElement.(Interaction) -> Unit = {}, onPress: GuiElement.(Interaction) -> Unit = {}, toggle: Boolean = false, renderDefaultButton: Boolean = false, block: Context.() -> Unit = {}) =
+                ElementButton(inElement, renderDefaultButton, toggle, onPress, onRelease).apply {
                     dimensions = Dimensions.FitChildren
-                    eventListeners.add(GuiInteractOnListener {
-                        if (it.event.type == ControlEventType.PRESS) {
-                            onPress(it)
-                        } else if (it.event.type == ControlEventType.RELEASE) {
-                            onRelease(it)
-                        }
-                    })
                     addChild(this, block, placement)
                 }
 
-        fun button(text: String, onPress: GuiElement.(Interaction) -> Unit = {}, onRelease: GuiElement.(Interaction) -> Unit = {}, placement: Placement = currentDefaultPlacement, block: Context.() -> Unit = {}) =
-                button(placement, onPress, onRelease, {
-                    background {
-                        text(text, Placement.Align.Center)
-                        block()
-                    }
+        fun button(text: String, onRelease: GuiElement.(Interaction) -> Unit = {}, onPress: GuiElement.(Interaction) -> Unit = {}, toggle: Boolean = false, padding: Int = 0, allowTags: Boolean = false, ignoreLines: Boolean = false, params: TextRenderParams = TextRenderParams(), placement: Placement = currentDefaultPlacement, block: Context.() -> Unit = {}) =
+                button(placement, onRelease, onPress, toggle, true, {
+                    dimensions = dimensions.pad(padding, padding)
+                    text(text, Placement.Align.Center, allowTags, ignoreLines, params)
+                    block()
                 })
 
         fun levelView(placement: Placement = currentDefaultPlacement, camera: LevelObject, block: Context.() -> Unit = {}) =
@@ -616,6 +643,12 @@ abstract class GuiElement(parent: GuiElement?) {
                     addChild(this, block, placement)
                 }
 
+        fun controlBind(bind: ControlBind, placement: Placement = currentDefaultPlacement, dimensions: Dimensions = Dimensions.Exact(48, 16), block: Context.() -> Unit = {}) =
+                ElementControlBind(inElement, bind).apply {
+                    this.dimensions = dimensions
+                    addChild(this, block, placement)
+                }
+
         class Tab(inElement: ElementTabs) : Context(inElement) {
             fun tab(text: String, onClick: (index: Int) -> Unit): ElementTabs.Tab {
                 val taggedText = TextManager.parseTags(text)
@@ -628,8 +661,6 @@ abstract class GuiElement(parent: GuiElement?) {
         }
     }
 }
-
-class GroupElement(parent: GuiElement) : GuiElement(parent)
 
 class ElementRenderable(parent: GuiElement, var renderable: Renderable, var keepAspect: Boolean = false, var params: TextureRenderParams? = null) : GuiElement(parent) {
     override fun render(params: TextureRenderParams?) {

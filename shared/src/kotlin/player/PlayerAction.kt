@@ -79,7 +79,6 @@ class ActionTransferResourcesBetweenLevelObjects(owner: Player,
             GhostLevelObjectReference(GhostLevelObject(LevelObjectType.ERROR, 0, 0, 0)), UUID.randomUUID(), resourceListOf())
 
     override fun verify(): Boolean {
-        println("verifying")
         if (fromReference.value == null || toReference.value == null) {
             return false
         }
@@ -96,12 +95,10 @@ class ActionTransferResourcesBetweenLevelObjects(owner: Player,
         if (fromContainer.resourceCategory != toContainer.resourceCategory) {
             return false
         }
-        println("final verification: ${fromContainer.canRemoveAll(resources)}, ${toContainer.canAddAll(resources)}")
         return fromContainer.canRemoveAll(resources) && toContainer.canAddAll(resources)
     }
 
     override fun act(): Boolean {
-        println("acting")
         return fromReference.level.modify(LevelObjectResourceContainerModify(fromReference, fromContainerId, false, resources)) &&
                 toReference.level.modify(LevelObjectResourceContainerModify(toReference, toContainerId, true, resources))
     }
@@ -415,13 +412,10 @@ class ActionEditResourceNodeBehavior(owner: Player,
     private constructor() : this(Player(User(UUID.randomUUID(), ""), UUID.randomUUID(), UUID.randomUUID()), ResourceNodeReference(0, 0, LevelManager.EMPTY_LEVEL, UUID.randomUUID()), ResourceNodeBehavior.EMPTY_BEHAVIOR)
 
     override fun verify(): Boolean {
-        println("verifying :")
         if (node.value == null) {
-            println("node is false")
             return false
         }
         if (!node.value!!.team.check(TeamPermission.MODIFY_RESOURCE_NODE, owner)) {
-            println("no permission")
             return false
         }
         return true
@@ -429,10 +423,8 @@ class ActionEditResourceNodeBehavior(owner: Player,
 
     override fun act(): Boolean {
         if (node.value == null) {
-            println("Reference should have been able to be resolved but wasn't")
             return false
         }
-        println("player action taken")
         node.level.modify(ResourceNodeBehaviorEdit(node, behavior))
         return true
     }

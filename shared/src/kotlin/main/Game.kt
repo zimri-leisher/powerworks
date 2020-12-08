@@ -27,6 +27,7 @@ import player.PlayerManager
 import screen.ScreenManager
 import screen.gui.GuiDebugInfo
 import screen.gui.GuiDebugMenu
+import screen.gui.GuiEscapeMenu
 import screen.mouse.Mouse
 import screen.mouse.Tooltips
 import screen.mouse.tool.Tool
@@ -74,7 +75,7 @@ fun toColor(color: Int = 0xFFFFFF, alpha: Float = 1f): Color {
 
 fun <K, V> Map<K, V>.joinToString() = toList().joinToString()
 
-const val SERVER_IP = "127.0.0.1"
+const val SERVER_IP = "72.79.52.121"
 const val SERVER_PORT = 9412
 
 fun main(args: Array<String>) {
@@ -181,6 +182,7 @@ object Game : ApplicationAdapter(), ControlEventHandler, PacketHandler {
         Gdx.input.inputProcessor = InputManager
         InputManager.register(this, Control.PIPE_INFO, Control.TURN_OFF_DEBUG_INFO, Control.TAKE_SCREENSHOT, Control.POSITION_INFO, Control.RESOURCE_NODES_INFO, Control.RENDER_HITBOXES, Control.SCREEN_INFO, Control.CHUNK_INFO, Control.TUBE_INFO)
         GuiDebugMenu.open = false
+        GuiEscapeMenu.open = false
         GuiDebugInfo.open = true
         GameState.setState(GameState.MAIN_MENU)
     }

@@ -9,7 +9,7 @@ import player.PlayerManager
 import screen.ScreenLayer
 import screen.element.ElementLevelSelector
 
-class GuiFarseekerBlock(block: FarseekerBlock) : Gui(ScreenLayer.MENU), PoolableGui {
+class GuiFarseekerBlock(block: FarseekerBlock) : Gui(ScreenLayer.MENU_1), PoolableGui {
 
     var block = block
         set(value) {
@@ -26,7 +26,7 @@ class GuiFarseekerBlock(block: FarseekerBlock) : Gui(ScreenLayer.MENU), Poolable
 
     init {
         define {
-            openAtMouse()
+            openAtCenter(-1)
             keepInsideScreen()
             background {
                 makeDraggable()

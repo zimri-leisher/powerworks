@@ -42,6 +42,8 @@ enum class Control {
 
     DESELECT_HOTBAR,
     ROTATE_BLOCK,
+
+    TOGGLE_ESCAPE_MENU
     ;
 
     enum class Group(vararg controls: Control) {

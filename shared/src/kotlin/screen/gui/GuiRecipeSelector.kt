@@ -10,7 +10,7 @@ import graphics.TextureRenderParams
 import screen.ScreenLayer
 import screen.element.ElementRecipeList
 
-object GuiRecipeSelector : Gui(ScreenLayer.WINDOWS) {
+object GuiRecipeSelector : Gui(ScreenLayer.MENU_2) {
 
     private var onSelect: (recipe: Recipe) -> Unit = {}
 

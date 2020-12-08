@@ -98,7 +98,6 @@ object Mouse : ResourceContainerChangeListener {
                                 "    container: ${n.attachedContainer}")
                     }
                     Renderer.renderText("Resource nodes at ${LevelManager.mouseLevelX shr 4}, ${LevelManager.mouseLevelY shr 4}:\n$s", x, y, TextRenderParams(color = toColor(r = 255, g = 0, b = 0)))
-
                 }
             }
             DebugCode.SCREEN_INFO -> {

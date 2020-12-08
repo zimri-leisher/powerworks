@@ -8,7 +8,7 @@ import network.ClientNetworkManager
 import network.packet.RequestLoadGamePacket
 import screen.ScreenLayer
 
-object GuiMainMenu : Gui(ScreenLayer.MENU, {
+object GuiMainMenu : Gui(ScreenLayer.MENU_0, {
     texture(Image.Gui.MAIN_MENU_BACKGROUND) {
         dimensions = Dimensions.Fullscreen
         list(Placement.Align.Center) {
@@ -35,8 +35,8 @@ object GuiMainMenu : Gui(ScreenLayer.MENU, {
                         }
                     }
                     text("PLAY",
-                            Placement.Align(HorizontalAlign.RIGHT, VerticalAlign.TOP),
-                            params = TextRenderParams(size = 30)
+                            Placement.Align(HorizontalAlign.CENTER, VerticalAlign.CENTER),
+                            params = TextRenderParams(size = 40)
                     )
                 }
             }

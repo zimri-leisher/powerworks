@@ -4,7 +4,7 @@ import level.block.ArmoryBlock
 import screen.ScreenLayer
 import screen.element.ElementProgressBar
 
-class GuiArmoryBlock(block: ArmoryBlock) : Gui(ScreenLayer.MENU), PoolableGui {
+class GuiArmoryBlock(block: ArmoryBlock) : Gui(ScreenLayer.MENU_1), PoolableGui {
     var block = block
         set(value) {
             if (field != value) {
@@ -17,7 +17,7 @@ class GuiArmoryBlock(block: ArmoryBlock) : Gui(ScreenLayer.MENU), PoolableGui {
 
     init {
         define {
-            openAtMouse()
+            openAtCenter(0)
             keepInsideScreen()
             background {
                 makeDraggable()

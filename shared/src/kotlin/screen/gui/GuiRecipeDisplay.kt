@@ -7,7 +7,7 @@ import screen.Interaction
 import screen.ScreenLayer
 import screen.element.ElementResourceList
 
-object GuiRecipeDisplay : Gui(ScreenLayer.INFO) {
+object GuiRecipeDisplay : Gui(ScreenLayer.MENU_3) {
 
     private var recipe = Recipe.ERROR
         set(value) {

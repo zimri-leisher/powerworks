@@ -39,6 +39,12 @@ sealed class Placement {
 
     object Origin : Exact(0, 0)
 
+    class Follow(val element: GuiElement) : Placement() {
+        override fun get(element: GuiElement, gui: Gui): Exact {
+            return Exact(element.absoluteX, element.absoluteY)
+        }
+    }
+
     open class Align(val horizontalAlign: HorizontalAlign = HorizontalAlign.CENTER, val verticalAlign: VerticalAlign = VerticalAlign.CENTER) : Placement() {
 
         override fun get(element: GuiElement, gui: Gui): Exact {
@@ -66,7 +72,7 @@ sealed class Placement {
     class VerticalList(val padding: Int, val align: HorizontalAlign = HorizontalAlign.CENTER) : Placement() {
         override fun get(element: GuiElement, gui: Gui): Exact {
             val siblingDimensions = element.parent.children.map { it to gui.layout.getExactDimensions(it) }.toMap()
-            val siblingsInList = siblingDimensions.filterKeys { it.placement is VerticalList }
+            val siblingsInList = siblingDimensions.filterKeys { it.placement is VerticalList && it.open }
             var heightSoFar = 0
             var anyUnknown = false
             for ((sibling, dimensions) in siblingsInList) {
@@ -97,7 +103,7 @@ sealed class Placement {
     class HorizontalList(val padding: Int, val align: VerticalAlign = VerticalAlign.CENTER) : Placement() {
         override fun get(element: GuiElement, gui: Gui): Exact {
             val siblingDimensions = element.parent.children.map { it to gui.layout.getExactDimensions(it) }.toMap()
-            val siblingsInList = siblingDimensions.filterKeys { it.placement is HorizontalList }
+            val siblingsInList = siblingDimensions.filterKeys { it.placement is HorizontalList && it.open }
             var widthSoFar = 0
             var anyUnknown = false
             for ((sibling, dimensions) in siblingsInList) {

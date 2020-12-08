@@ -8,7 +8,7 @@ import network.ClientNetworkManager
 import player.PlayerManager
 import screen.ScreenLayer
 
-object GuiLevelLoadingScreen : Gui(ScreenLayer.MENU) {
+object GuiLevelLoadingScreen : Gui(ScreenLayer.MENU_1) {
 
     lateinit var loadingScreen: GuiElement
     lateinit var connectingScreen: GuiElement

@@ -5,7 +5,7 @@ import screen.ScreenLayer
 import screen.element.ElementProgressBar
 import screen.element.ElementResourceContainer
 
-class GuiMinerBlock(block: MinerBlock) : Gui(ScreenLayer.MENU), PoolableGui {
+class GuiMinerBlock(block: MinerBlock) : Gui(ScreenLayer.MENU_1), PoolableGui {
 
     var block = block
         set(value) {
@@ -20,7 +20,7 @@ class GuiMinerBlock(block: MinerBlock) : Gui(ScreenLayer.MENU), PoolableGui {
 
     init {
         define {
-            openAtMouse()
+            openAtCenter(0)
             background {
                 makeDraggable()
                 dimensions = Dimensions.FitChildren.pad(4, 9)

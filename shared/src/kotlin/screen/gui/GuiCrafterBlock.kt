@@ -9,7 +9,7 @@ import screen.element.ElementProgressBar
 import screen.element.ElementRecipeButton
 import screen.element.ElementResourceContainer
 
-class GuiCrafterBlock(block: CrafterBlock) : Gui(ScreenLayer.MENU), PoolableGui {
+class GuiCrafterBlock(block: CrafterBlock) : Gui(ScreenLayer.MENU_1), PoolableGui {
     var block = block
         set(value) {
             if (field != value) {
@@ -35,7 +35,7 @@ class GuiCrafterBlock(block: CrafterBlock) : Gui(ScreenLayer.MENU), PoolableGui 
                     GuiRecipeSelector.open = false
                 }
             }
-            openAtMouse()
+            openAtCenter(0)
             keepInsideScreen()
             background {
                 makeDraggable()

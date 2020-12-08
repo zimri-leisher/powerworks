@@ -6,7 +6,7 @@ import screen.ScreenLayer
 import screen.element.ElementProgressBar
 import screen.element.ElementResourceContainer
 
-class GuiSmelterBlock(block: SmelterBlock) : Gui(ScreenLayer.MENU), PoolableGui {
+class GuiSmelterBlock(block: SmelterBlock) : Gui(ScreenLayer.MENU_1), PoolableGui {
     var block = block
         set(value) {
             if (field != value) {
@@ -23,7 +23,7 @@ class GuiSmelterBlock(block: SmelterBlock) : Gui(ScreenLayer.MENU), PoolableGui 
 
     init {
         define {
-            openAtMouse()
+            openAtCenter(0)
             keepInsideScreen()
             background {
                 makeDraggable()

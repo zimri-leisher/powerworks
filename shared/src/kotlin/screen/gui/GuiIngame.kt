@@ -67,6 +67,30 @@ object GuiIngame : Gui(ScreenLayer.LEVEL_VIEW), ControlEventHandler {
         }
     }
 
+    object CenterMenuGroup : Gui(ScreenLayer.MENU_1) {
+//        val menuGroups = mutableMapOf<HorizontalAlign, MutableMap<VerticalAlign, GroupElement>>()
+//
+//        init {
+//            define {
+//                for(vertical in VerticalAlign.values()) {
+//                    for(horizontal in HorizontalAlign.values()) {
+//                        menuGroups[horizontal]!![vertical] = list(Placement.Align(horizontal, vertical), horizontal)
+//                    }
+//                }
+//            }
+//        }
+
+        lateinit var centerGroup: MutableGroupElement
+
+        init {
+            define {
+                placement = Placement.Align.Center
+                dimensions = Dimensions.FitChildren
+                centerGroup = mutableList()
+            }
+        }
+    }
+
     object Hotbar : Gui(ScreenLayer.HUD), ControlEventHandler {
 
         val slots = arrayOfNulls<ItemType>(8)

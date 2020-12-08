@@ -1,7 +1,6 @@
 package screen
 
 import data.ConcurrentlyModifiableMutableList
-import data.ConcurrentlyModifiableMutableMap
 import graphics.Renderer
 import io.*
 import main.DebugCode
@@ -16,10 +15,12 @@ import screen.mouse.Mouse
 enum class ScreenLayer {
     BACKGROUND,
     LEVEL_VIEW,
-    MENU,
-    WINDOWS,
-    INFO,
+    MENU_0,
+    MENU_1,
+    MENU_2,
+    MENU_3,
     HUD,
+    MENU_4,
     OVERLAY
     ;
 
@@ -44,7 +45,7 @@ object ScreenManager : ControlEventHandler {
 
     var elementUnderMouse: GuiElement = GuiBackground.backgroundElement
 
-    var elementsUnderMouse = listOf(GuiBackground.backgroundElement)
+    var elementsUnderMouse: List<GuiElement> = listOf(GuiBackground.backgroundElement)
 
     var guiUnderMouse: Gui = GuiBackground
 
@@ -179,7 +180,7 @@ object ScreenManager : ControlEventHandler {
     fun onScreenSizeChange() {
         ScreenLayer.BACKGROUND.guis.forEach { it.layout.set() }
         ScreenLayer.LEVEL_VIEW.guis.forEach { it.layout.set() }
-        ScreenLayer.MENU.guis.forEach { it.layout.set() }
+        ScreenLayer.MENU_1.guis.forEach { it.layout.set() }
     }
 
     override fun handleControlEvent(event: ControlEvent) {
@@ -197,7 +198,7 @@ object ScreenManager : ControlEventHandler {
                 element.onInteractOn(interaction)
             }
         } else if (event.control == Control.ESCAPE && event.type == ControlEventType.PRESS) {
-            val highest = ScreenLayer.MENU.guis.elements.filter { it.open }
+            val highest = ScreenLayer.MENU_1.guis.elements.filter { it.open }
             highest.lastOrNull()?.open = false
         }
     }

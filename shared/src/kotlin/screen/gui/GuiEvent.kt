@@ -23,7 +23,5 @@ class GuiOpenListener(val handle: GuiElement.() -> Unit) : GuiEventListener(GuiE
 class GuiCloseListener(val handle: GuiElement.() -> Unit) : GuiEventListener(GuiEvent.CLOSE)
 class GuiUpdateListener(val handle: GuiElement.() -> Unit) : GuiEventListener(GuiEvent.UPDATE)
 class GuiChangeDimensionListener(val handle: GuiElement.() -> Unit) : GuiEventListener(GuiEvent.CHANGE_DIMENSION)
-class GuiChangePlacementListener(val handle: GuiElement.() -> Unit) : GuiEventListener(GuiEvent.CHANGE_PLACEMENT)
 class GuiRenderListener(val handle: GuiElement.(x: Int, y: Int, TextureRenderParams?) -> Unit) : GuiEventListener(GuiEvent.RENDER)
-
-
+class GuiChangePlacementListener(val handle: GuiElement.() -> Unit) : GuiEventListener(GuiEvent.CHANGE_PLACEMENT)
