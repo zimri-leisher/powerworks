@@ -2,9 +2,7 @@ package screen.mouse.tool
 
 import graphics.Renderer
 import graphics.TextureRenderParams
-import io.Control
-import io.ControlEvent
-import io.ControlEventType
+import io.*
 import level.*
 import level.block.Block
 import level.entity.Entity
@@ -20,7 +18,7 @@ private enum class SelectorMode {
     ALL, ADD, SUBTRACT
 }
 
-object Selector : Tool(Control.Group.SELECTOR_TOOLS.controls) {
+object Selector : Tool(Control.Group.SELECTOR_TOOLS.controls), ControlEventHandler {
 
     private const val SELECTION_START_THRESHOLD = 2
 
@@ -38,6 +36,7 @@ object Selector : Tool(Control.Group.SELECTOR_TOOLS.controls) {
     var newlySelected = mutableSetOf<LevelObject>()
 
     init {
+        InputManager.register(this, Control.Group.SELECTOR_TOOLS)
         activationPredicate = {
             Mouse.heldItemType == null
         }
@@ -46,6 +45,15 @@ object Selector : Tool(Control.Group.SELECTOR_TOOLS.controls) {
     override fun update() {
         currentSelected.removeIf { it.level != selectingInLevel || !it.inLevel }
         newlySelected.removeIf { it.level != selectingInLevel || !it.inLevel}
+        if (startPress && LevelManager.levelUnderMouse != null) {
+            currentDragX = LevelManager.mouseLevelX
+            currentDragY = LevelManager.mouseLevelY
+            if (Math.abs(dragStartX - currentDragX) > SELECTION_START_THRESHOLD || Math.abs(dragStartY - currentDragY) > SELECTION_START_THRESHOLD) {
+                dragging = true
+                selectingInLevel = LevelManager.levelUnderMouse!!
+                updateSelected()
+            }
+        }
     }
 
     override fun onUse(event: ControlEvent, mouseLevelX: Int, mouseLevelY: Int): Boolean {
@@ -69,15 +77,6 @@ object Selector : Tool(Control.Group.SELECTOR_TOOLS.controls) {
             currentDragY = mouseLevelY
             return false
         } else if (event.type == ControlEventType.HOLD) {
-            if (startPress) {
-                currentDragX = mouseLevelX
-                currentDragY = mouseLevelY
-                if (Math.abs(dragStartX - currentDragX) > SELECTION_START_THRESHOLD || Math.abs(dragStartY - currentDragY) > SELECTION_START_THRESHOLD) {
-                    dragging = true
-                    selectingInLevel = LevelManager.levelUnderMouse!!
-                    updateSelected()
-                }
-            }
             return true
         } else if (event.type == ControlEventType.RELEASE) {
             if (dragging) {
@@ -131,6 +130,26 @@ object Selector : Tool(Control.Group.SELECTOR_TOOLS.controls) {
                     Renderer.renderEmptyRectangle(l.x + l.hitbox.xStart - 1, l.y + l.hitbox.yStart - 1, l.hitbox.width + 2, l.hitbox.height + 2, params = TextureRenderParams(color = toColor(alpha = 0.2f)))
                 }
             }
+        }
+    }
+
+    override fun handleControlEvent(event: ControlEvent) {
+        if(event.type == ControlEventType.RELEASE) {
+            if (dragging) {
+                updateSelected()
+                currentSelected = when (mode) {
+                    SelectorMode.ADD -> currentSelected + newlySelected
+                    SelectorMode.ALL -> newlySelected
+                    SelectorMode.SUBTRACT -> currentSelected - newlySelected
+                }.toMutableSet()
+                val entitiesSelected = currentSelected.filterIsInstance<Entity>()
+                if (entitiesSelected.isNotEmpty()) {
+                    PlayerManager.takeAction(ActionEntityCreateGroup(PlayerManager.localPlayer, entitiesSelected.map { it.toReference() as MovingObjectReference }))
+                }
+                newlySelected = mutableSetOf()
+                dragging = false
+            }
+            startPress = false
         }
     }
 }

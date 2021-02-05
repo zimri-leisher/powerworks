@@ -55,6 +55,9 @@ object GuiRecipeSelector : Gui(ScreenLayer.MENU_2) {
                         }
                     }
                     background(TextureRenderParams(brightness = 0.8f, rotation = 180f)) {
+                        onMouseLeave {
+                            GuiRecipeDisplay.open = false
+                        }
                         dimensions = Dimensions.FitChildren.pad(4, 4)
                         val categories = mutableMapOf<RecipeCategory, ElementRecipeList>()
                         RecipeCategory.values().forEach { category ->
@@ -75,6 +78,7 @@ object GuiRecipeSelector : Gui(ScreenLayer.MENU_2) {
     }
 
     fun show(recipes: List<Recipe>, at: Placement.Exact, onSelect: (recipe: Recipe) -> Unit) {
+        layer.bringToTop(this)
         GuiRecipeDisplay.open = false
         this.onSelect = onSelect
         parentElement.placement = at

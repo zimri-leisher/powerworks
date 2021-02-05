@@ -188,6 +188,7 @@ open class Gui(val layer: ScreenLayer, block: GuiElement.Context.() -> Unit = {}
                         getExactDimensions(it) is Dimensions.Unknown ||
                                 getExactPlacement(it) is Placement.Unknown
                     } && calculationAttempts < 10) {
+                        println("recalculating ${this.gui}")
                 recursivelySetDimensions(gui.parentElement)
                 recursivelySetPlacement(gui.parentElement)
                 calculationAttempts++
@@ -503,7 +504,7 @@ abstract class GuiElement(parent: GuiElement?) {
         fun background(params: TextureRenderParams? = null, block: Context.() -> Unit = {}) =
                 ElementDefaultRectangle(inElement, params).apply {
                     dimensions = Dimensions.FitChildren
-                    addChild(this, block, Placement.Origin)
+                    addChild(this, block, currentDefaultPlacement)
                 }
 
         fun animation(animation: Animation, placement: Placement = currentDefaultPlacement, width: Int = animation.width, height: Int = animation.height, keepAspect: Boolean = false, params: TextureRenderParams? = null, block: Context.() -> Unit = {}) =

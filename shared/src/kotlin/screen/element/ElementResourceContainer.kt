@@ -45,13 +45,13 @@ open class ElementResourceContainer(parent: GuiElement, width: Int, height: Int,
                 onSelect(type, quantity, interaction)
                 if (allowModification && interaction.shift) {
                     // try to transfer resources from this to the highest elementresourcecontainer that isn't this
-                    val other = ScreenManager.getSecondaryResourceContainer(container)
-                    if (other?.attachedLevelObject != null && container.attachedLevelObject != null) {
+                    val other = ScreenManager.getSecondaryResourceContainer(this.container)
+                    if (other?.attachedLevelObject != null && this.container.attachedLevelObject != null) {
                         // verification will check whether or not this is possible
                         PlayerManager.takeAction(ActionTransferResourcesBetweenLevelObjects(PlayerManager.localPlayer,
                                 other.attachedLevelObject!!.toReference(),
-                                other.id, container.attachedLevelObject!!.toReference(),
-                                container.id, resourceListOf(type to quantity)))
+                                other.id, this.container.attachedLevelObject!!.toReference(),
+                            this.container.id, resourceListOf(type to quantity)))
                     }
                 }
             }
@@ -60,13 +60,22 @@ open class ElementResourceContainer(parent: GuiElement, width: Int, height: Int,
         getToolTip = { index ->
             if (index < currentResources.size) {
                 val entry = currentResources[index]
-                "${entry.key.name} * ${entry.value}"
-            } else if (index - currentResources.size < container.expected.size) {
-                val expected = container.expected[index - currentResources.size]
-                "${expected.key.name} * ${expected.value}"
+                val expectedOfType = container.expected[entry.key]
+                "${entry.key} * ${entry.value}" + if(expectedOfType != 0) "(+$expectedOfType)" else ""
             } else {
-                null
+                val expected = container.expected
+                if (index - currentResources.size < expected.size) {
+                    val (type, quantity) = expected[index - currentResources.size]
+                    if (type !in currentResources.keys) {
+                        "(+${type} * ${quantity})"
+                    } else {
+                        null
+                    }
+                } else {
+                    null
+                }
             }
+
         }
         container.listeners.add(this)
     }

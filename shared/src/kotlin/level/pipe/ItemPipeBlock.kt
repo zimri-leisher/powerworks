@@ -30,5 +30,8 @@ class ItemPipeBlock(xTile: Int, yTile: Int) : PipeBlock(PipeBlockType.ITEM_PIPE,
             Renderer.renderTexture(Image.Block.TUBE_UP_CONNECT, x + 1, y + 19)
         if (Game.currentDebugCode == DebugCode.RENDER_HITBOXES)
             renderHitbox()
+        if(health != type.maxHealth) {
+            renderHealthBar()
+        }
     }
 }

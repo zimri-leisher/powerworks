@@ -3,15 +3,14 @@ package screen.attribute
 import graphics.Image
 import graphics.Renderer
 import graphics.TextureRenderParams
-import io.Control
-import io.ControlEventType
+import io.*
 import main.height
 import main.width
 import screen.ScreenManager
 import screen.gui.*
 import screen.mouse.Mouse
 
-class AttributeDraggable(element: GuiElement) : Attribute(element) {
+class AttributeDraggable(element: GuiElement) : Attribute(element), ControlEventHandler {
 
     var dragging = false
     var startingX = 0
@@ -19,6 +18,7 @@ class AttributeDraggable(element: GuiElement) : Attribute(element) {
     var actOnStartingPlacement = Placement.Exact(0, 0)
 
     init {
+        InputManager.register(this, Control.INTERACT)
         element.eventListeners.add(GuiInteractOnListener {
             if (it.event.control == Control.INTERACT) {
                 if (this == ScreenManager.elementUnderMouse) {
@@ -51,5 +51,11 @@ class AttributeDraggable(element: GuiElement) : Attribute(element) {
                         ?: TextureRenderParams.DEFAULT)
             }
         })
+    }
+
+    override fun handleControlEvent(event: ControlEvent) {
+        if(event.control == Control.INTERACT && event.type == ControlEventType.RELEASE) {
+            dragging = false
+        }
     }
 }

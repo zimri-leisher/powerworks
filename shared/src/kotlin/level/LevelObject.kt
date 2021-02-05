@@ -6,6 +6,7 @@ import graphics.TextureRenderParams
 import io.ControlEvent
 import main.DebugCode
 import main.Game
+import main.toColor
 import network.LevelObjectReference
 import player.team.Team
 import resource.ResourceContainer
@@ -130,10 +131,16 @@ abstract class LevelObject protected constructor(
     open fun render() {
         type.textures.render(this)
         if (health != type.maxHealth) {
-
+            renderHealthBar()
         }
-        if (Game.currentDebugCode == DebugCode.RENDER_HITBOXES)
+        if (Game.currentDebugCode == DebugCode.RENDER_HITBOXES) {
             renderHitbox()
+        }
+    }
+
+    fun renderHealthBar() {
+        Renderer.renderFilledRectangle(x + hitbox.xStart - (14 - hitbox.width) / 2 - 1, y + hitbox.yStart - 7, 16, 7, TextureRenderParams(color = toColor(r = 0.5f, g = 0.5f, b = 0.5f)))
+        Renderer.renderFilledRectangle(x + hitbox.xStart - (14 - hitbox.width) / 2, y + hitbox.yStart - 6, (14 * (health.toDouble() / type.maxHealth)).toInt(), 5, TextureRenderParams(color = toColor(g = 1.0f)))
     }
 
     /**

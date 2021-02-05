@@ -75,7 +75,7 @@ fun toColor(color: Int = 0xFFFFFF, alpha: Float = 1f): Color {
 
 fun <K, V> Map<K, V>.joinToString() = toList().joinToString()
 
-const val SERVER_IP = "72.79.52.121"
+const val SERVER_IP = "127.0.0.1"
 const val SERVER_PORT = 9412
 
 fun main(args: Array<String>) {

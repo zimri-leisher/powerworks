@@ -10,6 +10,7 @@ import resource.ResourceContainer
 import screen.gui.Gui
 import screen.gui.GuiBackground
 import screen.gui.GuiElement
+import screen.gui.GuiEscapeMenu
 import screen.mouse.Mouse
 
 enum class ScreenLayer {
@@ -181,6 +182,7 @@ object ScreenManager : ControlEventHandler {
         ScreenLayer.BACKGROUND.guis.forEach { it.layout.set() }
         ScreenLayer.LEVEL_VIEW.guis.forEach { it.layout.set() }
         ScreenLayer.MENU_1.guis.forEach { it.layout.set() }
+        ScreenLayer.HUD.guis.forEach { it.layout.set() }
     }
 
     override fun handleControlEvent(event: ControlEvent) {
@@ -199,7 +201,11 @@ object ScreenManager : ControlEventHandler {
             }
         } else if (event.control == Control.ESCAPE && event.type == ControlEventType.PRESS) {
             val highest = ScreenLayer.MENU_1.guis.elements.filter { it.open }
-            highest.lastOrNull()?.open = false
+            if(highest.isNotEmpty()) {
+                highest.last().open = false
+            } else {
+                GuiEscapeMenu.open = GuiEscapeMenu.open.not()
+            }
         }
     }
 }

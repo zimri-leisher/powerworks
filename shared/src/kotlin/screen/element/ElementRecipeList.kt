@@ -23,8 +23,6 @@ class ElementRecipeList(parent: GuiElement, recipes: List<Recipe>, width: Int, h
         }
         onMouseEnterIcon = { index ->
             val coord = getIconPosition(index)
-            println("coord is: $coord")
-            println("absolute screen coord: ${Placement.Exact(coord.x + absoluteX, coord.y + absoluteY - GuiRecipeDisplay.parentElement.height)}")
             GuiRecipeDisplay.show(this@ElementRecipeList.recipes[index], Placement.Exact(coord.x + absoluteX, coord.y + absoluteY - GuiRecipeDisplay.parentElement.height), {
                 onSelectRecipe(this@ElementRecipeList.recipes[index])
             })
@@ -39,7 +37,6 @@ class ElementRecipeList(parent: GuiElement, recipes: List<Recipe>, width: Int, h
                 val recipe = recipes[index]
                 recipe.iconType.name
             }
-
         }
     }
 }

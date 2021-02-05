@@ -34,8 +34,12 @@ class Lobby : PlayerEventListener, LevelEventListener {
 
     fun sendPacket(packet: Packet, players: Set<Player> = this.players) {
         for (player in players) {
-            val connection = ServerNetworkManager.getConnectionIdByUser(player.user)
-            ServerNetworkManager.sendToClient(packet, connection)
+            val connection = ServerNetworkManager.getConnectionIdByUserOrNull(player.user)
+            if(connection != null) {
+                ServerNetworkManager.sendToClient(packet, connection)
+            } else {
+                println("Tried to send a packet to user ${player.user}, but they were not connected")
+            }
         }
     }
 

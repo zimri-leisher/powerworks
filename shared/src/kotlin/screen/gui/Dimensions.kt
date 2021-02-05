@@ -37,6 +37,7 @@ sealed class Dimensions {
 
     object FitChildren : Dimensions() {
         override fun get(element: GuiElement, gui: Gui): Exact {
+            println("evaluating fitchildren for $element")
             var xRange = 0 until 0
             var yRange = 0 until 0
             var anyUnknown = false
@@ -57,6 +58,8 @@ sealed class Dimensions {
                     yRange = yRange.first..(placement.y + dimensions.height)
                 }
             }
+            println("result: ${if (anyUnknown) Unknown(max(0, xRange.last) - max(0, xRange.first), max(0, yRange.last) - max(0, yRange.first))
+            else Exact(max(0, xRange.last) - max(0, xRange.first), max(0, yRange.last) - max(0, yRange.first))}")
             return if (anyUnknown) Unknown(max(0, xRange.last) - max(0, xRange.first), max(0, yRange.last) - max(0, yRange.first))
             else Exact(max(0, xRange.last) - max(0, xRange.first), max(0, yRange.last) - max(0, yRange.first))
         }
@@ -64,10 +67,16 @@ sealed class Dimensions {
 
     class VerticalList(val padding: Int) : Dimensions() {
         override fun get(element: GuiElement, gui: Gui): Exact {
+            println("evaluating vertical list for $element")
+            println("children: ${element.children.map { it to it.dimensions }}")
             val dimensions = element.children.filter { it.placement is Placement.VerticalList && it.open }.map { gui.layout.getExactDimensions(it) }
-            return if (dimensions.any { it is Unknown }) Unknown(dimensions.maxBy { it.width }?.width
+            println("value: ${if (dimensions.any { it is Unknown }) Unknown(dimensions.maxBy { it.width }?.width
+                ?: 0, dimensions.sumBy { it.height + padding } - padding)
+            else Exact(dimensions.maxBy { it.width }?.width ?: 0, dimensions.sumBy { it.height + padding } - padding)}")
+            return if (dimensions.any { it is Unknown }) Unknown(
+                dimensions.maxByOrNull { it.width }?.width
                     ?: 0, dimensions.sumBy { it.height + padding } - padding)
-            else Exact(dimensions.maxBy { it.width }?.width ?: 0, dimensions.sumBy { it.height + padding } - padding)
+            else Exact(dimensions.maxByOrNull { it.width }?.width ?: 0, dimensions.sumBy { it.height + padding } - padding)
         }
     }
 
@@ -75,8 +84,8 @@ sealed class Dimensions {
         override fun get(element: GuiElement, gui: Gui): Exact {
             val dimensions = element.children.filter { it.placement is Placement.HorizontalList && it.open }.map { gui.layout.getExactDimensions(it) }
             return if (dimensions.any { it is Unknown }) Unknown(dimensions.sumBy { it.width + padding } - padding,
-                    dimensions.maxBy { it.height }?.height ?: 0)
-            else Exact(dimensions.sumBy { it.width + padding } - padding, dimensions.maxBy { it.height }?.height ?: 0)
+                    dimensions.maxByOrNull { it.height }?.height ?: 0)
+            else Exact(dimensions.sumBy { it.width + padding } - padding, dimensions.maxByOrNull { it.height }?.height ?: 0)
         }
     }
 

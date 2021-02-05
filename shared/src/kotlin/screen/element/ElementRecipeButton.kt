@@ -3,6 +3,7 @@ package screen.element
 import crafting.Recipe
 import graphics.Renderer
 import graphics.TextureRenderParams
+import io.ControlEventType
 import screen.Interaction
 import screen.gui.*
 import screen.mouse.Tooltips
@@ -28,9 +29,11 @@ class ElementRecipeButton(parent: GuiElement, recipe: Recipe? = null, var onReci
     }
 
     override fun onInteractOn(interaction: Interaction) {
-        currentlySelecting = true
-        GuiRecipeSelector.show(Recipe.ALL.filter(recipePredicate), Placement.Exact(absoluteX, absoluteY - GuiRecipeSelector.parentElement.height / 2),
+        if(interaction.event.type == ControlEventType.RELEASE) {
+            currentlySelecting = true
+            GuiRecipeSelector.show(Recipe.ALL.filter(recipePredicate), Placement.Exact(absoluteX, absoluteY - GuiRecipeSelector.parentElement.height),
                 { this.recipe = it; this.currentlySelecting = false })
+        }
         super.onInteractOn(interaction)
     }
 

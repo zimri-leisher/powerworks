@@ -145,11 +145,6 @@ class WeakMutableList<T> {
 
     }
 
-    fun stream(): Stream<T> {
-        check()
-        return list.map { it.get()!! }.stream()
-    }
-
     fun filter(f: (T) -> Boolean) = list.filter { if (it.get() == null) false else f(it.get()!!) }.map { it.get()!! }
 
     fun isNotEmpty(): Boolean {
