@@ -2,6 +2,7 @@ package io
 
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputProcessor
+import data.ConcurrentlyModifiableWeakMutableMap
 import data.WeakMutableMap
 import main.DebugCode
 import main.Game
@@ -38,7 +39,7 @@ object InputManager : InputProcessor {
      */
     var textHandler: TextHandler? = null
 
-    private val handlers = WeakMutableMap<ControlEventHandler, MutableSet<Control>>()
+    private val handlers = ConcurrentlyModifiableWeakMutableMap<ControlEventHandler, MutableSet<Control>>()
 
     private var actualMouseX = 0
     private var actualMouseY = 0
@@ -60,8 +61,8 @@ object InputManager : InputProcessor {
      * handler is already registered with some other controls, it will receive events for those controls and the new ones.
      */
     fun register(handler: ControlEventHandler, controls: Collection<Control> = setOf()) {
-        if (handlers.contains(handler)) {
-            handlers[handler]!!.addAll(controls)
+        if(handlers.elements.contains(handler)) {
+            handlers.elements.get(handler)!!.addAll(controls)
         } else {
             handlers.put(handler, controls.toMutableSet())
         }

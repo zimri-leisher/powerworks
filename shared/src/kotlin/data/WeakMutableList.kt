@@ -54,7 +54,7 @@ class WeakMutableList<T> {
             val o = it.get()
             try {
                 o!!
-            } catch (e: KotlinNullPointerException) {
+            } catch (e: java.lang.NullPointerException) {
                 println("GC'd 1")
             }
             if (o != null) {
@@ -69,7 +69,7 @@ class WeakMutableList<T> {
             val o = it.get()
             try {
                 o!!
-            } catch (e: KotlinNullPointerException) {
+            } catch (e: java.lang.NullPointerException) {
                 println("GC'd -1")
             }
             if (o != null) {
@@ -129,7 +129,7 @@ class WeakMutableList<T> {
             val o = next.get()
             try {
                 o!!
-            } catch (e: KotlinNullPointerException) {
+            } catch (e: java.lang.NullPointerException) {
                 println("GC'd 2")
                 if (index + 1 > list.lastIndex) {
                     index = 0

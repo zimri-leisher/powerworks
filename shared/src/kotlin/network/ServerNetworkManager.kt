@@ -164,14 +164,11 @@ object ServerNetworkManager : PacketHandler {
                 for (packet in iterator) {
                     // make sure the client has already been accepted or it is in the process of accepting (and so is sending a ClientHandshakePacket)
                     if (isAccepted(packet.connectionId) || packet is ClientHandshakePacket) {
-                        packetHandlers.beingTraversed = true
-                        // send packet to appropriate handlers
-                        for ((handler, types) in packetHandlers) {
+                        packetHandlers.forEach {handler, types ->
                             if (packet.type in types) {
                                 handler.handleClientPacket(packet)
                             }
                         }
-                        packetHandlers.beingTraversed = false
                         iterator.remove()
                     }
                 }

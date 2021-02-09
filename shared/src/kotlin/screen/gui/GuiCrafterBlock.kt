@@ -5,6 +5,7 @@ import network.BlockReference
 import player.PlayerManager
 import player.ActionSelectCrafterRecipe
 import screen.ScreenLayer
+import screen.attribute.AttributeResourceContainerLink
 import screen.element.ElementProgressBar
 import screen.element.ElementRecipeButton
 import screen.element.ElementResourceContainer
@@ -19,6 +20,7 @@ class GuiCrafterBlock(block: CrafterBlock) : Gui(ScreenLayer.MENU_1), PoolableGu
                 input.columns = value.type.internalStorageSize
                 output.container = value.outputContainer
                 progressBar.maxProgress = value.type.maxWork
+                containerLink.container = field.inputContainer
                 layout.set()
             }
         }
@@ -27,6 +29,7 @@ class GuiCrafterBlock(block: CrafterBlock) : Gui(ScreenLayer.MENU_1), PoolableGu
     lateinit var input: ElementResourceContainer
     lateinit var progressBar: ElementProgressBar
     lateinit var output: ElementResourceContainer
+    lateinit var containerLink: AttributeResourceContainerLink
 
     init {
         define {
@@ -36,7 +39,9 @@ class GuiCrafterBlock(block: CrafterBlock) : Gui(ScreenLayer.MENU_1), PoolableGu
                 }
             }
             openAtCenter(0)
+            openWithBrainInventory()
             keepInsideScreen()
+            containerLink = linkToContainer(block.inputContainer)
             background {
                 makeDraggable()
                 dimensions = Dimensions.FitChildren.pad(4, 9)
@@ -51,7 +56,7 @@ class GuiCrafterBlock(block: CrafterBlock) : Gui(ScreenLayer.MENU_1), PoolableGu
                             {
                                 PlayerManager.takeAction(ActionSelectCrafterRecipe(PlayerManager.localPlayer, this@GuiCrafterBlock.block.toReference() as BlockReference, it))
                             })
-                    input = resourceContainerView(block.inputContainer, block.type.internalStorageSize, 1)
+                    input = resourceContainerView(block.inputContainer, block.type.internalStorageSize, 1, allowSelection = true, allowModification = true)
                     progressBar = progressBar(block.type.maxWork, { this@GuiCrafterBlock.block.currentWork }, Dimensions.Exact(32, 6))
                     output = resourceContainerView(block.outputContainer, 1, 1)
                 }

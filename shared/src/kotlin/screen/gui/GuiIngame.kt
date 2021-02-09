@@ -59,7 +59,11 @@ object GuiIngame : Gui(ScreenLayer.LEVEL_VIEW), ControlEventHandler {
             return
         if (event.type == ControlEventType.PRESS) {
             if (event.control == Control.TOGGLE_INVENTORY) {
-                brainRobotGui.open = !brainRobotGui.open
+                if(brainRobotGui.open.not()) {
+                    brainRobotGui.open = true
+                } else {
+                    ScreenLayer.MENU_1.guis.forEach { it.open = false }
+                }
             } else if (event.control == Control.SWITCH_LEVEL_VIEW) {
                 secondView.open = firstView.open
                 firstView.open = !firstView.open
@@ -141,6 +145,9 @@ object GuiIngame : Gui(ScreenLayer.LEVEL_VIEW), ControlEventHandler {
 
         fun addItemType(itemType: ItemType) {
             if (slots.any { it == null } && slots.none { it == itemType }) {
+                if(GuiTutorial.currentTutorialStage == TutorialStage.PUT_ITEM_IN_HOTBAR) {
+                    GuiTutorial.showNextStage()
+                }
                 slots[slots.indexOfFirst { it == null }] = itemType
             }
         }

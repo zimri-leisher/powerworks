@@ -240,9 +240,6 @@ abstract class Level(
     open fun remove(projectile: Projectile) = data.projectiles.remove(projectile)
 
     open fun update() {
-        if (paused) {
-            return
-        }
         ResourceRoutingNetwork.ALL.forEach { if (it.level == this) it.update() }
         data.projectiles.forEach { it.update() }
         data.chunks.forEach { it.update() }

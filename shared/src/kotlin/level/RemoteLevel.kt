@@ -72,9 +72,6 @@ class RemoteLevel(id: UUID, info: LevelInfo) : Level(id, info), PacketHandler {
     }
 
     override fun update() {
-        if (paused) {
-            return
-        }
         super.update()
         val outgoingIterator = outgoingUpdates.iterator()
         for ((update, time) in outgoingIterator) {

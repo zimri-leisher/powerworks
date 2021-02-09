@@ -80,22 +80,30 @@ class ActionTransferResourcesBetweenLevelObjects(owner: Player,
 
     override fun verify(): Boolean {
         if (fromReference.value == null || toReference.value == null) {
+            println("reference null")
             return false
         }
         val from = fromReference.value!!
         if (!from.team.check(TeamPermission.MODIFY_LEVEL_OBJECTS, owner)) {
+            println("no perms")
             return false
         }
         val to = toReference.value!!
         if (!to.team.check(TeamPermission.MODIFY_LEVEL_OBJECTS, owner)) {
+            println("no perms")
             return false
         }
         val fromContainer = from.containers.firstOrNull { it.id == fromContainerId } ?: return false
         val toContainer = to.containers.firstOrNull { it.id == toContainerId } ?: return false
         if (fromContainer.resourceCategory != toContainer.resourceCategory) {
+            println("diff categories")
             return false
         }
-        return fromContainer.canRemoveAll(resources) && toContainer.canAddAll(resources)
+        if(!fromContainer.canRemoveAll(resources) || !toContainer.canAddAll(resources)) {
+            println("can't remove from $fromContainer ${fromContainer.canRemoveAll(resources)}, to $toContainer, ${toContainer.canAddAll(resources)}")
+            return false
+        }
+        return true
     }
 
     override fun act(): Boolean {

@@ -58,7 +58,7 @@ class WeakMutableMap<K, V> {
             val o = k.get()
             try {
                 o!!
-            } catch (e: KotlinNullPointerException) {
+            } catch (e: java.lang.NullPointerException) {
                 println("GC'd 3")
             }
             if (o != null) {

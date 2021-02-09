@@ -3,8 +3,9 @@ package setting
 import serialization.Id
 
 sealed class Setting<T>(
-        @Id(1)
-        val name: String, val isValid: (T) -> Boolean) {
+    @Id(1)
+    val name: String, val isValid: (T) -> Boolean
+) {
 
     abstract fun get(): T
     fun trySet(value: Any?) {
@@ -14,7 +15,8 @@ sealed class Setting<T>(
                 set(value)
                 return
             }
-        } catch (e: ClassCastException) { }
+        } catch (e: ClassCastException) {
+        }
         println("Illegal value for setting $name: $value")
     }
 
@@ -29,7 +31,7 @@ class UnknownSetting : Setting<Unit>("Unknown Setting", { false }) {
 }
 
 class IntSetting(name: String, isValid: (Int) -> Boolean) : Setting<Int>(name, isValid) {
-    private constructor() : this("", {false})
+    private constructor() : this("", { false })
 
     @Id(2)
     var value = 0
@@ -40,4 +42,20 @@ class IntSetting(name: String, isValid: (Int) -> Boolean) : Setting<Int>(name, i
         this.value = value
         return this
     }
+}
+
+class BooleanSetting(name: String, isValid: (Boolean) -> Boolean = { true }) : Setting<Boolean>(name, isValid) {
+
+    private constructor() : this("", { false })
+
+    @Id(2)
+    var value = false
+
+    override fun get() = value
+
+    override fun set(value: Boolean): Setting<Boolean> {
+        this.value = value
+        return this
+    }
+
 }

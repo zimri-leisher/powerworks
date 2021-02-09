@@ -253,6 +253,7 @@ object Game : ApplicationAdapter(), ControlEventHandler, PacketHandler {
     }
 
     override fun dispose() {
+        Settings.save("default")
         InputManager.shutdown()
         ClientNetworkManager.close()
         Renderer.batch.dispose()

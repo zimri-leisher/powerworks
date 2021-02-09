@@ -7,7 +7,7 @@ class ConcurrentlyModifiableMutableList<T>(
         val elements: MutableList<T> = mutableListOf()) {
 
     @Id(2)
-    var beingTraversed = false
+    var traversalDepth = 0
 
     @Id(3)
     val toAdd = mutableListOf<T>()
@@ -16,14 +16,14 @@ class ConcurrentlyModifiableMutableList<T>(
     val toRemove = mutableListOf<T>()
 
     fun add(l: T) {
-        if (beingTraversed)
+        if (traversalDepth > 0)
             toAdd.add(l)
         else
             elements.add(l)
     }
 
     fun remove(l: T) {
-        if (beingTraversed) {
+        if (traversalDepth > 0) {
             toRemove.add(l)
         } else {
             elements.remove(l)
@@ -34,7 +34,7 @@ class ConcurrentlyModifiableMutableList<T>(
 
     val size: Int
         get() {
-            if (!beingTraversed) return elements.size
+            if (traversalDepth == 0) return elements.size
             var currentSize = elements.size
             for (removing in toRemove) {
                 if (removing in elements || removing in toAdd) {
@@ -56,17 +56,17 @@ class ConcurrentlyModifiableMutableList<T>(
     }
 
     fun startTraversing() {
-        beingTraversed = true
+        traversalDepth++
     }
 
     fun endTraversing() {
-        beingTraversed = false
-        elements.addAll(toAdd)
-        toAdd.clear()
-        if(toRemove.isNotEmpty()) {
+        traversalDepth--
+        if(traversalDepth == 0) {
+            elements.addAll(toAdd)
+            toAdd.clear()
+            elements.removeAll(toRemove)
+            toRemove.clear()
         }
-        elements.removeAll(toRemove)
-        toRemove.clear()
     }
 
     fun filter(pred: (T) -> Boolean): ConcurrentlyModifiableMutableList<T> {
@@ -78,7 +78,7 @@ class ConcurrentlyModifiableMutableList<T>(
     fun toMutableSet(): MutableSet<T> {
         val elements = mutableSetOf<T>()
         elements.addAll(this.elements)
-        if (beingTraversed) {
+        if (traversalDepth > 0) {
             elements.addAll(toAdd)
             elements.removeAll(toRemove)
         }

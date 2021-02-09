@@ -8,6 +8,8 @@ abstract class ResourceContainer(
         @Id(1)
         val resourceCategory: ResourceCategory) {
 
+    // TODO make resource containers just resource lists with a capacity total max
+
     private constructor() : this(ResourceCategory.ITEM)
 
     @Id(2)

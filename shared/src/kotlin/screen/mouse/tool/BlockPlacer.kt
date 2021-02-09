@@ -15,6 +15,8 @@ import main.toColor
 import misc.Geometry
 import player.ActionLevelObjectPlace
 import player.PlayerManager
+import screen.gui.GuiTutorial
+import screen.gui.TutorialStage
 import screen.mouse.Mouse
 
 object BlockPlacer : Tool(Control.PLACE_BLOCK), ControlEventHandler {
@@ -39,6 +41,9 @@ object BlockPlacer : Tool(Control.PLACE_BLOCK), ControlEventHandler {
             if (event.type != ControlEventType.RELEASE) {
                 if (canPlace && LevelManager.levelUnderMouse != null) {
                     val blockType = type!!.placedBlock
+                    if(GuiTutorial.currentTutorialStage == TutorialStage.PLACE_BLOCK) {
+                        GuiTutorial.showNextStage()
+                    }
                     PlayerManager.takeAction(ActionLevelObjectPlace(PlayerManager.localPlayer, blockType, xTile shl 4, yTile shl 4, rotation, LevelManager.levelUnderMouse!!))
                     canPlace = false
                     hasPlacedThisInteraction = true

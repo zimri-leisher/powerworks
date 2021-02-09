@@ -127,9 +127,7 @@ object PlayerManager : PacketHandler, PlayerEventListener {
         val brainRobot = BrainRobot(level.width / 2, level.height / 2, 2, player.user)
         player.brainRobot = brainRobot
         brainRobot.team = player.team
-        for(item in ItemType.ALL) {
-            brainRobot.inventory.add(item, item.maxStack)
-        }
+        brainRobot.inventory.add(startingInventory)
         level.add(brainRobot)
         brainRobot.id = player.brainRobotId
         LevelManager.saveLevelDataFile(level.id, level.data)

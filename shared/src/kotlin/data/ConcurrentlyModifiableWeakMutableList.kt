@@ -5,7 +5,7 @@ class ConcurrentlyModifiableWeakMutableList<T> {
     val size
         get() = elements.size + toAdd.size - toRemove.size
 
-    var beingTraversed = false
+    var traversalDepth = 0
 
     val elements = WeakMutableList<T>()
 
@@ -14,14 +14,14 @@ class ConcurrentlyModifiableWeakMutableList<T> {
     val toRemove = mutableListOf<T>()
 
     fun add(l: T) {
-        if (beingTraversed)
+        if (traversalDepth > 0)
             toAdd.add(l)
         else
             elements.add(l)
     }
 
     fun remove(l: T) {
-        if (beingTraversed) {
+        if (traversalDepth > 0) {
             toRemove.add(l)
         } else
             elements.remove(l)
@@ -32,13 +32,15 @@ class ConcurrentlyModifiableWeakMutableList<T> {
     fun <R : Comparable<R>>sortedBy(f: (T) -> R?) = elements.sortedBy(f)
 
     fun forEach(f: (T) -> Unit) {
-        beingTraversed = true
+        traversalDepth++
         elements.forEach(f)
-        beingTraversed = false
-        elements.addAll(toAdd)
-        toAdd.clear()
-        elements.removeAll(toRemove)
-        toRemove.clear()
+        traversalDepth--
+        if(traversalDepth == 0) {
+            elements.addAll(toAdd)
+            toAdd.clear()
+            elements.removeAll(toRemove)
+            toRemove.clear()
+        }
     }
 
     override fun toString() = "[${elements.joinToString()}]"

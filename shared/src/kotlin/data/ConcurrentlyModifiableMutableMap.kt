@@ -4,18 +4,7 @@ import main.joinToString
 
 class ConcurrentlyModifiableMutableMap<K, V> {
 
-    var beingTraversed = false
-        set(value) {
-            if(field != value) {
-                field = value
-                if(field) {
-                    elements.putAll(toAdd)
-                    toAdd.clear()
-                    toRemove.forEach { t -> elements.remove(t) }
-                    toRemove.clear()
-                }
-            }
-        }
+    var traversalDepth = 0
 
     val elements = mutableMapOf<K, V>()
 
@@ -24,7 +13,7 @@ class ConcurrentlyModifiableMutableMap<K, V> {
     val toRemove = mutableListOf<K>()
 
     fun put(l: K, o: V) {
-        if (beingTraversed)
+        if (traversalDepth > 0)
             toAdd.put(l, o)
         else
             elements.put(l, o)
@@ -33,7 +22,7 @@ class ConcurrentlyModifiableMutableMap<K, V> {
     operator fun set(l: K, o: V) = put(l, o)
 
     fun remove(l: K) {
-        if (beingTraversed)
+        if (traversalDepth > 0)
             toRemove.add(l)
         else
             elements.remove(l)
@@ -49,9 +38,15 @@ class ConcurrentlyModifiableMutableMap<K, V> {
     }
 
     fun forEach(f: (K, V) -> Unit) {
-        beingTraversed = true
+        traversalDepth++
         elements.forEach(f)
-        beingTraversed = false
+        traversalDepth--
+        if(traversalDepth == 0) {
+            elements.putAll(toAdd)
+            toAdd.clear()
+            toRemove.forEach { t -> elements.remove(t) }
+            toRemove.clear()
+        }
     }
 
     operator fun iterator() = elements.iterator()

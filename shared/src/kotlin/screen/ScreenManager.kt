@@ -200,12 +200,7 @@ object ScreenManager : ControlEventHandler {
                 element.onInteractOn(interaction)
             }
         } else if (event.control == Control.ESCAPE && event.type == ControlEventType.PRESS) {
-            val highest = ScreenLayer.MENU_1.guis.elements.filter { it.open }
-            if(highest.isNotEmpty()) {
-                highest.last().open = false
-            } else {
-                GuiEscapeMenu.open = GuiEscapeMenu.open.not()
-            }
+            ScreenLayer.MENU_1.guis.forEach { it.open = false }
         }
     }
 }

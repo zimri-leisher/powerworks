@@ -3,17 +3,18 @@ package screen.gui
 import level.block.ChestBlock
 import screen.ScreenLayer
 import screen.attribute.AttributeResourceContainerLink
-import screen.element.ElementInventory
+import screen.element.ElementResourceContainer
 
 class GuiChestBlock(val block: ChestBlock) : Gui(ScreenLayer.MENU_1), PoolableGui {
 
-    lateinit var inventoryView: ElementInventory
+    lateinit var inventoryView: ElementResourceContainer
     lateinit var containerLink: AttributeResourceContainerLink
 
     init {
         define {
             containerLink = linkToContainer(block.inventory)
             openAtCenter(0)
+            openWithBrainInventory()
             keepInsideScreen()
             background {
                 makeDraggable()

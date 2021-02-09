@@ -1,7 +1,7 @@
 package data
 
 class ConcurrentlyModifiableWeakMutableMap<K, V> {
-    var beingTraversed = false
+    var traversalDepth = 0
 
     val elements = WeakMutableMap<K, V>()
 
@@ -10,14 +10,14 @@ class ConcurrentlyModifiableWeakMutableMap<K, V> {
     val toRemove = mutableListOf<K>()
 
     fun put(l: K, o: V) {
-        if (beingTraversed)
+        if (traversalDepth > 0)
             toAdd.put(l, o)
         else
             elements.put(l, o)
     }
 
     fun remove(l: K) {
-        if (beingTraversed)
+        if (traversalDepth > 0)
             toRemove.add(l)
         else
             elements.remove(l)
@@ -27,13 +27,15 @@ class ConcurrentlyModifiableWeakMutableMap<K, V> {
         get() = elements.size + toAdd.size - toRemove.size
 
     fun forEach(f: (K, V) -> Unit) {
-        beingTraversed = true
+        traversalDepth++
         elements.forEach(f)
-        beingTraversed = false
-        elements.putAll(toAdd)
-        toAdd.clear()
-        toRemove.forEach { t -> elements.remove(t) }
-        toRemove.clear()
+        traversalDepth--
+        if(traversalDepth == 0) {
+            elements.putAll(toAdd)
+            toAdd.clear()
+            toRemove.forEach { t -> elements.remove(t) }
+            toRemove.clear()
+        }
     }
 
     override fun toString() = "[${elements.joinToString()}]"

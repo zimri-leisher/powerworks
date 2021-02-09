@@ -26,6 +26,11 @@ class Lobby : PlayerEventListener, LevelEventListener {
 
     fun connectPlayer(player: Player) {
         players.add(player)
+        val homeLevel = LevelManager.getLevelByIdOrNull(player.homeLevelId)
+        if(homeLevel != null && player.playing) {
+            loadedLevels.add(homeLevel)
+            homeLevel.paused = false
+        }
     }
 
     fun disconnectPlayer(player: Player) {
@@ -52,6 +57,7 @@ class Lobby : PlayerEventListener, LevelEventListener {
 
     override fun onLevelEvent(level: Level, event: LevelEvent) {
         if(event == LevelEvent.LOAD) {
+            println("loaded level $level, current players in this lobby: $players")
             val player = players.firstOrNull { it.homeLevelId == level.id }
             if (player in players) {
                 loadedLevels.add(level)
@@ -63,7 +69,10 @@ class Lobby : PlayerEventListener, LevelEventListener {
     override fun onPlayerEvent(player: Player, event: PlayerEvent) {
         if (player in players) {
             if(event == PlayerEvent.STOP_PLAYING) {
+                println("player $player stop playing. there are now ${players.filter { it.playing }}")
                 if (players.none { it.playing }) {
+                    println("there are no players playing")
+                    println("pausing level $loadedLevels")
                     loadedLevels.forEach { it.paused = true }
                     loadedLevels.clear()
                 }

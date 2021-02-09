@@ -108,13 +108,11 @@ object ClientNetworkManager : PacketHandler {
         synchronized(handlingLock) {
             synchronized(receivedPackets) {
                 for (packet in receivedPackets) {
-                    packetHandlers.beingTraversed = true
-                    for ((handler, types) in packetHandlers) {
-                        if (packet.type in types) {
+                    packetHandlers.forEach {handler, types ->
+                        if(packet.type in types) {
                             handler.handleServerPacket(packet)
                         }
                     }
-                    packetHandlers.beingTraversed = false
                 }
                 receivedPackets.clear()
             }

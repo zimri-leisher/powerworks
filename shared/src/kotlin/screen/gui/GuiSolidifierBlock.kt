@@ -2,9 +2,10 @@ package screen.gui
 
 import level.block.SolidifierBlock
 import screen.ScreenLayer
+import screen.attribute.AttributeResourceContainerLink
 import screen.element.ElementFluidTank
-import screen.element.ElementInventory
 import screen.element.ElementProgressBar
+import screen.element.ElementResourceContainer
 
 class GuiSolidifierBlock(block: SolidifierBlock) : Gui(ScreenLayer.MENU_1), PoolableGui {
     var block = block
@@ -17,8 +18,9 @@ class GuiSolidifierBlock(block: SolidifierBlock) : Gui(ScreenLayer.MENU_1), Pool
         }
 
     lateinit var inputTank: ElementFluidTank
-    lateinit var outputInventory: ElementInventory
+    lateinit var outputInventory: ElementResourceContainer
     lateinit var progressArrow: ElementProgressBar
+    lateinit var containerLink: AttributeResourceContainerLink
 
     init {
         define {

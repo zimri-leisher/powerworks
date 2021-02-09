@@ -4,7 +4,10 @@ import graphics.Renderer
 import graphics.TextureRenderParams
 import graphics.text.TextManager
 import graphics.text.TextRenderParams
+import io.Control
+import io.ControlEventType
 import item.Inventory
+import item.ItemType
 import main.toColor
 import player.ActionTransferResourcesBetweenLevelObjects
 import player.PlayerManager
@@ -12,13 +15,18 @@ import resource.*
 import screen.Interaction
 import screen.ScreenManager
 import screen.gui.GuiElement
+import screen.gui.GuiIngame
+import screen.mouse.Mouse
 
-open class ElementResourceContainer(parent: GuiElement, width: Int, height: Int,
-                                    container: ResourceContainer,
-                                    allowSelection: Boolean = false,
-                                    var allowModification: Boolean = false,
-                                    onSelect: (type: ResourceType, quantity: Int, interaction: Interaction) -> Unit = { _, _, _ -> }) :
-        ElementIconList(parent, width, height, allowSelection = allowSelection, renderIcon = { _, _, _ -> }), ResourceContainerChangeListener {
+open class ElementResourceContainer(
+    parent: GuiElement, width: Int, height: Int,
+    container: ResourceContainer,
+    allowSelection: Boolean = false,
+    var allowModification: Boolean = false,
+    onSelect: (type: ResourceType, quantity: Int, interaction: Interaction) -> Unit = { _, _, _ -> }
+) :
+    ElementIconList(parent, width, height, allowSelection = allowSelection, renderIcon = { _, _, _ -> }),
+    ResourceContainerChangeListener {
 
     open var container = container
         set(value) {
@@ -39,19 +47,45 @@ open class ElementResourceContainer(parent: GuiElement, width: Int, height: Int,
 
     init {
         onSelectIcon = { index, interaction ->
-            val resources = this.container.toResourceList()
-            if (index < resources.size) {
-                val (type, quantity) = resources[index]
-                onSelect(type, quantity, interaction)
-                if (allowModification && interaction.shift) {
-                    // try to transfer resources from this to the highest elementresourcecontainer that isn't this
-                    val other = ScreenManager.getSecondaryResourceContainer(this.container)
-                    if (other?.attachedLevelObject != null && this.container.attachedLevelObject != null) {
-                        // verification will check whether or not this is possible
-                        PlayerManager.takeAction(ActionTransferResourcesBetweenLevelObjects(PlayerManager.localPlayer,
-                                other.attachedLevelObject!!.toReference(),
-                                other.id, this.container.attachedLevelObject!!.toReference(),
-                            this.container.id, resourceListOf(type to quantity)))
+            if(interaction.event.type == ControlEventType.PRESS) {
+                if (index < currentResources.size) {
+                    val (type, quantity) = currentResources[index]
+                    onSelect(type, quantity, interaction)
+                    if (allowModification && interaction.event.control == Control.INTERACT) {
+                        // try to transfer resources from this to the highest elementresourcecontainer that isn't this
+                        val other = ScreenManager.getSecondaryResourceContainer(this.container)
+                        println("trying to transfer to $other")
+                        if (other?.attachedLevelObject != null && this.container.attachedLevelObject != null) {
+                            // verification will check whether or not this is possible
+                            println("transferring")
+                            PlayerManager.takeAction(
+                                ActionTransferResourcesBetweenLevelObjects(
+                                    PlayerManager.localPlayer,
+                                    this.container.attachedLevelObject!!.toReference(),
+                                    this.container.id,
+                                    other.attachedLevelObject!!.toReference(),
+                                    other.id, resourceListOf(type to quantity)
+                                )
+                            )
+                        }
+                    } else if (interaction.event.control == Control.SECONDARY_INTERACT && container.resourceCategory == ResourceCategory.ITEM) {
+                        GuiIngame.Hotbar.addItemType(type as ItemType)
+                    }
+                } else {
+                    if (interaction.event.control == Control.INTERACT && Mouse.heldItemType != null && container.resourceCategory == ResourceCategory.ITEM) {
+                        val quantity = PlayerManager.localPlayer.brainRobot.inventory.getQuantity(Mouse.heldItemType!!)
+                        if (quantity > 0) {
+                            PlayerManager.takeAction(
+                                ActionTransferResourcesBetweenLevelObjects(
+                                    PlayerManager.localPlayer,
+                                    PlayerManager.localPlayer.brainRobot.toReference(),
+                                    PlayerManager.localPlayer.brainRobot.inventory.id,
+                                    container.attachedLevelObject!!.toReference(),
+                                    container.id,
+                                    resourceListOf(Mouse.heldItemType!! to quantity)
+                                )
+                            )
+                        }
                     }
                 }
             }
@@ -61,7 +95,7 @@ open class ElementResourceContainer(parent: GuiElement, width: Int, height: Int,
             if (index < currentResources.size) {
                 val entry = currentResources[index]
                 val expectedOfType = container.expected[entry.key]
-                "${entry.key} * ${entry.value}" + if(expectedOfType != 0) "(+$expectedOfType)" else ""
+                "${entry.key} * ${entry.value}" + if (expectedOfType != 0) "(+$expectedOfType)" else ""
             } else {
                 val expected = container.expected
                 if (index - currentResources.size < expected.size) {

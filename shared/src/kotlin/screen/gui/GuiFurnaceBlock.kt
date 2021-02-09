@@ -2,6 +2,7 @@ package screen.gui
 
 import level.block.FurnaceBlock
 import screen.ScreenLayer
+import screen.attribute.AttributeResourceContainerLink
 import screen.element.ElementFluidTank
 import screen.element.ElementProgressBar
 import screen.element.ElementResourceContainer
@@ -14,17 +15,21 @@ class GuiFurnaceBlock(block: FurnaceBlock) : Gui(ScreenLayer.MENU_1), PoolableGu
                 input.container = value.queue
                 progressBar.maxProgress = value.type.maxWork
                 output.tank = value.tank
+                containerLink.container = value.queue
             }
         }
 
     lateinit var input: ElementResourceContainer
     lateinit var progressBar: ElementProgressBar
     lateinit var output: ElementFluidTank
+    lateinit var containerLink: AttributeResourceContainerLink
 
     init {
         define {
             openAtCenter(0)
+            openWithBrainInventory()
             keepInsideScreen()
+            containerLink = linkToContainer(block.queue)
             background {
                 makeDraggable()
                 dimensions = Dimensions.FitChildren.pad(4, 9)

@@ -127,7 +127,8 @@ open class Gui(val layer: ScreenLayer, block: GuiElement.Context.() -> Unit = {}
          */
         fun recalculateExactDimensions(element: GuiElement): Dimensions.Exact {
             val dimension = element.dimensions.get(element, gui)
-            dimensions[element] = if (dimension is Dimensions.Unknown) Dimensions.Exact(dimension.width, dimension.height) else dimension
+            dimensions[element] =
+                if (dimension is Dimensions.Unknown) Dimensions.Exact(dimension.width, dimension.height) else dimension
             element.onChangeDimensions()
             return dimension
         }
@@ -137,7 +138,8 @@ open class Gui(val layer: ScreenLayer, block: GuiElement.Context.() -> Unit = {}
          */
         fun recalculateExactPlacement(element: GuiElement): Placement.Exact {
             val placement = element.placement.get(element, gui)
-            placements[element] = if (placement is Placement.Unknown) Placement.Exact(placement.x, placement.y) else placement
+            placements[element] =
+                if (placement is Placement.Unknown) Placement.Exact(placement.x, placement.y) else placement
             element.onChangePlacement()
             return placement
         }
@@ -167,13 +169,17 @@ open class Gui(val layer: ScreenLayer, block: GuiElement.Context.() -> Unit = {}
             fun recursivelySetDimensions(element: GuiElement) {
                 element.children.forEach { recursivelySetDimensions(it) }
                 val dimension = element.dimensions.get(element, gui)
-                dimensions[element] = if (dimension is Dimensions.Unknown) Dimensions.Exact(dimension.width, dimension.height) else dimension
+                dimensions[element] = if (dimension is Dimensions.Unknown) Dimensions.Exact(
+                    dimension.width,
+                    dimension.height
+                ) else dimension
                 element.onChangeDimensions()
             }
 
             fun recursivelySetPlacement(element: GuiElement) {
                 val placement = element.placement.get(element, gui)
-                placements[element] = if (placement is Placement.Unknown) Placement.Exact(placement.x, placement.y) else placement
+                placements[element] =
+                    if (placement is Placement.Unknown) Placement.Exact(placement.x, placement.y) else placement
                 element.onChangePlacement()
                 element.children.forEach { recursivelySetPlacement(it) }
             }
@@ -185,10 +191,9 @@ open class Gui(val layer: ScreenLayer, block: GuiElement.Context.() -> Unit = {}
             var calculationAttempts = 0
             val allElements = getAllChildren(gui.parentElement) + gui.parentElement
             while (allElements.any {
-                        getExactDimensions(it) is Dimensions.Unknown ||
-                                getExactPlacement(it) is Placement.Unknown
-                    } && calculationAttempts < 10) {
-                        println("recalculating ${this.gui}")
+                    getExactDimensions(it) is Dimensions.Unknown ||
+                            getExactPlacement(it) is Placement.Unknown
+                } && calculationAttempts < 10) {
                 recursivelySetDimensions(gui.parentElement)
                 recursivelySetPlacement(gui.parentElement)
                 calculationAttempts++
@@ -472,6 +477,8 @@ abstract class GuiElement(parent: GuiElement?) {
             inElement.attributes.add(attribute)
         }
 
+        fun openWithBrainInventory() = AttributeOpenWithBrainInventory(inElement).apply { addAttribute(this) }
+
         fun makeDraggable() = AttributeDraggable(inElement).apply { addAttribute(this) }
 
         fun makeResizable() = AttributeResizable(inElement).apply { addAttribute(this) }
@@ -481,7 +488,7 @@ abstract class GuiElement(parent: GuiElement?) {
         fun keepInsideScreen() = AttributeKeepInScreen(inElement).apply { addAttribute(this) }
 
         fun linkToContainer(container: ResourceContainer) =
-                AttributeResourceContainerLink(inElement, container).apply { addAttribute(this) }
+            AttributeResourceContainerLink(inElement, container).apply { addAttribute(this) }
 
         fun openAtCenter(order: Int = 0) = AttributeOpenAtCenter(inElement, order = order).apply { addAttribute(this) }
 
@@ -498,157 +505,326 @@ abstract class GuiElement(parent: GuiElement?) {
             currentDefaultPlacement = oldPlacement
         }
 
-        fun align(horizontalAlignment: HorizontalAlign = HorizontalAlign.CENTER, verticalAlignment: VerticalAlign = VerticalAlign.CENTER, lock: Boolean = false, block: Context.() -> Unit) =
-                at(Placement.Align(horizontalAlignment, verticalAlignment), lock, block)
+        fun align(
+            horizontalAlignment: HorizontalAlign = HorizontalAlign.CENTER,
+            verticalAlignment: VerticalAlign = VerticalAlign.CENTER,
+            lock: Boolean = false,
+            block: Context.() -> Unit
+        ) =
+            at(Placement.Align(horizontalAlignment, verticalAlignment), lock, block)
+
+        fun clip(
+            placement: Placement = currentDefaultPlacement,
+            dimensions: Dimensions = Dimensions.MatchParent,
+            block: Context.() -> Unit = {}
+        ) = ElementClip(inElement).apply {
+            this.dimensions = dimensions
+            addChild(this, block, placement)
+        }
 
         fun background(params: TextureRenderParams? = null, block: Context.() -> Unit = {}) =
-                ElementDefaultRectangle(inElement, params).apply {
-                    dimensions = Dimensions.FitChildren
-                    addChild(this, block, currentDefaultPlacement)
-                }
+            ElementDefaultRectangle(inElement, params).apply {
+                dimensions = Dimensions.FitChildren
+                addChild(this, block, currentDefaultPlacement)
+            }
 
-        fun animation(animation: Animation, placement: Placement = currentDefaultPlacement, width: Int = animation.width, height: Int = animation.height, keepAspect: Boolean = false, params: TextureRenderParams? = null, block: Context.() -> Unit = {}) =
-                renderable(animation, placement, width, height, keepAspect, params, block)
+        fun animation(
+            animation: Animation,
+            placement: Placement = currentDefaultPlacement,
+            width: Int = animation.width,
+            height: Int = animation.height,
+            keepAspect: Boolean = false,
+            params: TextureRenderParams? = null,
+            block: Context.() -> Unit = {}
+        ) =
+            renderable(animation, placement, width, height, keepAspect, params, block)
 
-        fun texture(texture: TextureRegion, placement: Placement = currentDefaultPlacement, width: Int = texture.width, height: Int = texture.height, keepAspect: Boolean = false, params: TextureRenderParams? = null, block: Context.() -> Unit = {}) =
-                renderable(Texture(texture), placement, width, height, keepAspect, params, block)
+        fun texture(
+            texture: TextureRegion,
+            placement: Placement = currentDefaultPlacement,
+            width: Int = texture.width,
+            height: Int = texture.height,
+            keepAspect: Boolean = false,
+            params: TextureRenderParams? = null,
+            block: Context.() -> Unit = {}
+        ) =
+            renderable(Texture(texture), placement, width, height, keepAspect, params, block)
 
-        fun texture(texture: Texture, placement: Placement = currentDefaultPlacement, width: Int = texture.width, height: Int = texture.height, keepAspect: Boolean = false, params: TextureRenderParams? = null, block: Context.() -> Unit = {}) =
-                renderable(texture, placement, width, height, keepAspect, params, block)
+        fun texture(
+            texture: Texture,
+            placement: Placement = currentDefaultPlacement,
+            width: Int = texture.width,
+            height: Int = texture.height,
+            keepAspect: Boolean = false,
+            params: TextureRenderParams? = null,
+            block: Context.() -> Unit = {}
+        ) =
+            renderable(texture, placement, width, height, keepAspect, params, block)
 
-        fun renderable(renderable: Renderable, placement: Placement = currentDefaultPlacement, width: Int = renderable.width, height: Int = renderable.height, keepAspect: Boolean = false, params: TextureRenderParams? = null, block: Context.() -> Unit = {}) =
-                ElementRenderable(inElement, renderable, keepAspect, params).apply {
-                    dimensions = Dimensions.Exact(width, height)
-                    addChild(this, block, placement)
-                }
+        fun renderable(
+            renderable: Renderable,
+            placement: Placement = currentDefaultPlacement,
+            width: Int = renderable.width,
+            height: Int = renderable.height,
+            keepAspect: Boolean = false,
+            params: TextureRenderParams? = null,
+            block: Context.() -> Unit = {}
+        ) =
+            ElementRenderable(inElement, renderable, keepAspect, params).apply {
+                dimensions = Dimensions.Exact(width, height)
+                addChild(this, block, placement)
+            }
 
         fun mutableGroup(placement: Placement = currentDefaultPlacement, block: Context.() -> Unit = {}) =
-                MutableGroupElement(inElement).apply {
-                    dimensions = Dimensions.FitChildren
-                    addChild(this, block, placement)
-                }
+            MutableGroupElement(inElement).apply {
+                dimensions = Dimensions.FitChildren
+                addChild(this, block, placement)
+            }
 
         fun group(placement: Placement = currentDefaultPlacement, block: Context.() -> Unit = {}) =
-                GroupElement(inElement).apply {
-                    dimensions = Dimensions.FitChildren
-                    addChild(this, block, placement)
-                }
+            GroupElement(inElement).apply {
+                dimensions = Dimensions.FitChildren
+                addChild(this, block, placement)
+            }
 
-        fun mutableList(placement: Placement = currentDefaultPlacement, horizontalAlign: HorizontalAlign = HorizontalAlign.CENTER, padding: Int = 0, block: Context.() -> Unit = {}) =
-                mutableGroup(placement) {
-                    dimensions = Dimensions.VerticalList(padding)
-                    at(Placement.VerticalList(padding, horizontalAlign), true) {
-                        block()
-                    }
-                }
-
-        fun list(placement: Placement = currentDefaultPlacement, horizontalAlign: HorizontalAlign = HorizontalAlign.CENTER, padding: Int = 0, block: Context.() -> Unit = {}) =
-                group(placement) {
-                    dimensions = Dimensions.VerticalList(padding)
-                    at(Placement.VerticalList(padding, horizontalAlign), true) {
-                        block()
-                    }
-                }
-
-        fun horizontalList(placement: Placement = currentDefaultPlacement, verticalAlign: VerticalAlign = VerticalAlign.CENTER, padding: Int = 0, block: Context.() -> Unit = {}) =
-                group(placement) {
-                    dimensions = Dimensions.HorizontalList(padding)
-                    at(Placement.HorizontalList(padding, verticalAlign), true) {
-                        block()
-                    }
-                }
-
-        fun text(text: String, placement: Placement = currentDefaultPlacement, allowTags: Boolean = false, ignoreLines: Boolean = false, params: TextRenderParams = TextRenderParams(), block: Context.() -> Unit = {}) =
-                ElementText(inElement, text, allowTags, ignoreLines, params).apply {
-                    addChild(this, block, placement)
-                }
-
-        fun button(placement: Placement = currentDefaultPlacement, onRelease: GuiElement.(Interaction) -> Unit = {}, onPress: GuiElement.(Interaction) -> Unit = {}, toggle: Boolean = false, renderDefaultButton: Boolean = false, block: Context.() -> Unit = {}) =
-                ElementButton(inElement, renderDefaultButton, toggle, onPress, onRelease).apply {
-                    dimensions = Dimensions.FitChildren
-                    addChild(this, block, placement)
-                }
-
-        fun button(text: String, onRelease: GuiElement.(Interaction) -> Unit = {}, onPress: GuiElement.(Interaction) -> Unit = {}, toggle: Boolean = false, padding: Int = 0, allowTags: Boolean = false, ignoreLines: Boolean = false, params: TextRenderParams = TextRenderParams(), placement: Placement = currentDefaultPlacement, block: Context.() -> Unit = {}) =
-                button(placement, onRelease, onPress, toggle, true, {
-                    dimensions = dimensions.pad(padding, padding)
-                    text(text, Placement.Align.Center, allowTags, ignoreLines, params)
+        fun mutableList(
+            placement: Placement = currentDefaultPlacement,
+            horizontalAlign: HorizontalAlign = HorizontalAlign.CENTER,
+            padding: Int = 0,
+            block: Context.() -> Unit = {}
+        ) =
+            mutableGroup(placement) {
+                dimensions = Dimensions.VerticalList(padding)
+                at(Placement.VerticalList(padding, horizontalAlign), true) {
                     block()
-                })
-
-        fun levelView(placement: Placement = currentDefaultPlacement, camera: LevelObject, block: Context.() -> Unit = {}) =
-                ElementLevelView(inElement, camera).apply {
-                    addChild(this, block, placement)
                 }
+            }
 
-        fun resourceContainerView(container: ResourceContainer, width: Int, height: Int, placement: Placement = currentDefaultPlacement, allowSelection: Boolean = false, allowModification: Boolean = false, onSelect: (type: ResourceType, quantity: Int, interaction: Interaction) -> Unit = { _, _, _ -> }, block: Context.() -> Unit = {}) =
-                ElementResourceContainer(inElement, width, height, container, allowSelection, allowModification, onSelect).apply {
-                    addChild(this, block, placement)
+        fun list(
+            placement: Placement = currentDefaultPlacement,
+            horizontalAlign: HorizontalAlign = HorizontalAlign.CENTER,
+            padding: Int = 0,
+            block: Context.() -> Unit = {}
+        ) =
+            group(placement) {
+                dimensions = Dimensions.VerticalList(padding)
+                at(Placement.VerticalList(padding, horizontalAlign), true) {
+                    block()
                 }
+            }
+
+        fun horizontalList(
+            placement: Placement = currentDefaultPlacement,
+            verticalAlign: VerticalAlign = VerticalAlign.CENTER,
+            padding: Int = 0,
+            block: Context.() -> Unit = {}
+        ) =
+            group(placement) {
+                dimensions = Dimensions.HorizontalList(padding)
+                at(Placement.HorizontalList(padding, verticalAlign), true) {
+                    block()
+                }
+            }
+
+        fun text(
+            text: String,
+            placement: Placement = currentDefaultPlacement,
+            allowTags: Boolean = false,
+            ignoreLines: Boolean = false,
+            params: TextRenderParams = TextRenderParams(),
+            block: Context.() -> Unit = {}
+        ) =
+            ElementText(inElement, text, allowTags, ignoreLines, params).apply {
+                addChild(this, block, placement)
+            }
+
+        fun button(
+            placement: Placement = currentDefaultPlacement,
+            onRelease: GuiElement.(Interaction) -> Unit = {},
+            onPress: GuiElement.(Interaction) -> Unit = {},
+            toggle: Boolean = false,
+            renderDefaultButton: Boolean = false,
+            block: Context.() -> Unit = {}
+        ) =
+            ElementButton(inElement, renderDefaultButton, toggle, onPress, onRelease).apply {
+                dimensions = Dimensions.FitChildren
+                addChild(this, block, placement)
+            }
+
+        fun button(
+            text: String,
+            onRelease: GuiElement.(Interaction) -> Unit = {},
+            onPress: GuiElement.(Interaction) -> Unit = {},
+            toggle: Boolean = false,
+            padding: Int = 0,
+            allowTags: Boolean = false,
+            ignoreLines: Boolean = false,
+            params: TextRenderParams = TextRenderParams(),
+            placement: Placement = currentDefaultPlacement,
+            block: Context.() -> Unit = {}
+        ) =
+            button(placement, onRelease, onPress, toggle, true, {
+                dimensions = dimensions.pad(padding, padding)
+                text(text, Placement.Align.Center, allowTags, ignoreLines, params)
+                block()
+            })
+
+        fun levelView(
+            placement: Placement = currentDefaultPlacement,
+            camera: LevelObject,
+            block: Context.() -> Unit = {}
+        ) =
+            ElementLevelView(inElement, camera).apply {
+                addChild(this, block, placement)
+            }
+
+        fun resourceContainerView(
+            container: ResourceContainer,
+            width: Int,
+            height: Int,
+            placement: Placement = currentDefaultPlacement,
+            allowSelection: Boolean = false,
+            allowModification: Boolean = false,
+            onSelect: (type: ResourceType, quantity: Int, interaction: Interaction) -> Unit = { _, _, _ -> },
+            block: Context.() -> Unit = {}
+        ) =
+            ElementResourceContainer(
+                inElement,
+                width,
+                height,
+                container,
+                allowSelection,
+                allowModification,
+                onSelect
+            ).apply {
+                addChild(this, block, placement)
+            }
 
         fun closeButton(placement: Placement = currentDefaultPlacement, block: Context.() -> Unit = {}) =
-                ElementCloseButton(inElement).apply {
-                    addChild(this, block, placement)
-                }
+            ElementCloseButton(inElement).apply {
+                addChild(this, block, placement)
+            }
 
-        fun progressBar(maxProgress: Int, getProgress: () -> Int = { 0 }, dimensions: Dimensions = Dimensions.Exact(48, 6), placement: Placement = currentDefaultPlacement, block: Context.() -> Unit = {}) =
-                ElementProgressBar(inElement, maxProgress, getProgress).apply {
-                    this.dimensions = dimensions
-                    addChild(this, block, placement)
-                }
+        fun progressBar(
+            maxProgress: Int,
+            getProgress: () -> Int = { 0 },
+            dimensions: Dimensions = Dimensions.Exact(48, 6),
+            placement: Placement = currentDefaultPlacement,
+            block: Context.() -> Unit = {}
+        ) =
+            ElementProgressBar(inElement, maxProgress, getProgress).apply {
+                this.dimensions = dimensions
+                addChild(this, block, placement)
+            }
 
-        fun inventory(inventory: Inventory, placement: Placement = currentDefaultPlacement, block: Context.() -> Unit = {}) =
-                ElementInventory(inElement, inventory).apply {
-                    addChild(this, block, placement)
-                }
+        fun inventory(
+            inventory: Inventory,
+            placement: Placement = currentDefaultPlacement,
+            block: Context.() -> Unit = {}
+        ) =
+            ElementResourceContainer(inElement, inventory.width, inventory.height, inventory, true, true).apply {
+                addChild(this, block, placement)
+            }
 
-        fun fluidTank(fluidTank: FluidTank, dimensions: Dimensions = Dimensions.Exact(60, 40), placement: Placement = currentDefaultPlacement, block: Context.() -> Unit = {}) =
-                ElementFluidTank(inElement, fluidTank).apply {
-                    this.dimensions = dimensions
-                    addChild(this, block, placement)
-                }
+        fun fluidTank(
+            fluidTank: FluidTank,
+            dimensions: Dimensions = Dimensions.Exact(60, 40),
+            placement: Placement = currentDefaultPlacement,
+            block: Context.() -> Unit = {}
+        ) =
+            ElementFluidTank(inElement, fluidTank).apply {
+                this.dimensions = dimensions
+                addChild(this, block, placement)
+            }
 
-        fun progressArrow(from: GuiElement, fromDir: Int, to: GuiElement, toDir: Int,
-                          maxProgress: Int, getProgress: () -> Int = { 0 },
-                          backgroundColor: Color = toColor(0xFFFFFF), progressColor: Color = toColor(0x00BC06), block: Context.() -> Unit = {}) =
-                ElementProgressArrow(inElement, from, to, maxProgress, getProgress, fromDir, toDir, backgroundColor, progressColor).apply {
-                    addChild(this, block, Placement.Origin)
-                }
+        fun progressArrow(
+            from: GuiElement,
+            fromDir: Int,
+            to: GuiElement,
+            toDir: Int,
+            maxProgress: Int,
+            getProgress: () -> Int = { 0 },
+            backgroundColor: Color = toColor(0xFFFFFF),
+            progressColor: Color = toColor(0x00BC06),
+            block: Context.() -> Unit = {}
+        ) =
+            ElementProgressArrow(
+                inElement,
+                from,
+                to,
+                maxProgress,
+                getProgress,
+                fromDir,
+                toDir,
+                backgroundColor,
+                progressColor
+            ).apply {
+                addChild(this, block, Placement.Origin)
+            }
 
-        fun resourceList(list: ResourceList, width: Int = list.size, height: Int = 1, displayQuantity: Boolean = true, placement: Placement = currentDefaultPlacement, block: Context.() -> Unit = {}) =
-                ElementResourceList(inElement, list, width, height, displayQuantity).apply {
-                    addChild(this, block, placement)
-                }
+        fun resourceList(
+            list: ResourceList,
+            width: Int = list.size,
+            height: Int = 1,
+            displayQuantity: Boolean = true,
+            placement: Placement = currentDefaultPlacement,
+            block: Context.() -> Unit = {}
+        ) =
+            ElementResourceList(inElement, list, width, height, displayQuantity).apply {
+                addChild(this, block, placement)
+            }
 
-        fun recipeListDisplay(recipes: List<Recipe>, width: Int = recipes.size, height: Int = 1, onSelectRecipe: (Recipe) -> Unit = {}, placement: Placement = currentDefaultPlacement, block: Context.() -> Unit = {}) =
-                ElementRecipeList(inElement, recipes, width, height, onSelectRecipe).apply {
-                    addChild(this, block, placement)
-                }
+        fun recipeListDisplay(
+            recipes: List<Recipe>,
+            width: Int = recipes.size,
+            height: Int = 1,
+            onSelectRecipe: (Recipe) -> Unit = {},
+            placement: Placement = currentDefaultPlacement,
+            block: Context.() -> Unit = {}
+        ) =
+            ElementRecipeList(inElement, recipes, width, height, onSelectRecipe).apply {
+                addChild(this, block, placement)
+            }
 
         fun tabs(padding: Int = 0, placement: Placement = currentDefaultPlacement, block: Context.Tab.() -> Unit = {}) =
-                ElementTabs(inElement, padding).apply {
-                    this.placement = placement
-                    inElement.mutableChildren.add(this)
-                    block(Context.Tab(this))
-                }
+            ElementTabs(inElement, padding).apply {
+                this.placement = placement
+                inElement.mutableChildren.add(this)
+                block(Context.Tab(this))
+            }
 
-        fun recipeSelectButton(recipe: Recipe? = null, allowedRecipes: (Recipe) -> Boolean = { true }, onRecipeChange: (Recipe?) -> Unit = {}, placement: Placement = currentDefaultPlacement, block: Context.() -> Unit = {}) =
-                ElementRecipeButton(inElement, recipe, onRecipeChange, allowedRecipes).apply {
-                    dimensions = Dimensions.Exact(16, 16)
-                    addChild(this, block, placement)
-                }
+        fun recipeSelectButton(
+            recipe: Recipe? = null,
+            allowedRecipes: (Recipe) -> Boolean = { true },
+            onRecipeChange: (Recipe?) -> Unit = {},
+            placement: Placement = currentDefaultPlacement,
+            block: Context.() -> Unit = {}
+        ) =
+            ElementRecipeButton(inElement, recipe, onRecipeChange, allowedRecipes).apply {
+                dimensions = Dimensions.Exact(16, 16)
+                addChild(this, block, placement)
+            }
 
-        fun levelSelector(levels: Map<UUID, LevelInfo>, onSelectLevel: (UUID, LevelInfo) -> Unit = { _, _ -> }, placement: Placement = currentDefaultPlacement, dimensions: Dimensions = Dimensions.Exact(100, 100), block: Context.() -> Unit = {}) =
-                ElementLevelSelector(inElement, levels, onSelectLevel).apply {
-                    this.dimensions = dimensions
-                    addChild(this, block, placement)
-                }
+        fun levelSelector(
+            levels: Map<UUID, LevelInfo>,
+            onSelectLevel: (UUID, LevelInfo) -> Unit = { _, _ -> },
+            placement: Placement = currentDefaultPlacement,
+            dimensions: Dimensions = Dimensions.Exact(100, 100),
+            block: Context.() -> Unit = {}
+        ) =
+            ElementLevelSelector(inElement, levels, onSelectLevel).apply {
+                this.dimensions = dimensions
+                addChild(this, block, placement)
+            }
 
-        fun controlBind(bind: ControlBind, placement: Placement = currentDefaultPlacement, dimensions: Dimensions = Dimensions.Exact(48, 16), block: Context.() -> Unit = {}) =
-                ElementControlBind(inElement, bind).apply {
-                    this.dimensions = dimensions
-                    addChild(this, block, placement)
-                }
+        fun controlBind(
+            bind: ControlBind,
+            placement: Placement = currentDefaultPlacement,
+            block: Context.() -> Unit = {}
+        ) =
+            ElementControlBind(inElement, bind).apply {
+                addChild(this, block, placement)
+            }
 
         class Tab(inElement: ElementTabs) : Context(inElement) {
             fun tab(text: String, onClick: (index: Int) -> Unit): ElementTabs.Tab {
@@ -663,7 +839,12 @@ abstract class GuiElement(parent: GuiElement?) {
     }
 }
 
-class ElementRenderable(parent: GuiElement, var renderable: Renderable, var keepAspect: Boolean = false, var params: TextureRenderParams? = null) : GuiElement(parent) {
+class ElementRenderable(
+    parent: GuiElement,
+    var renderable: Renderable,
+    var keepAspect: Boolean = false,
+    var params: TextureRenderParams? = null
+) : GuiElement(parent) {
     override fun render(params: TextureRenderParams?) {
         if (params == null && this.params == null) {
             renderable.render(absoluteX, absoluteY, width, height, keepAspect)
@@ -693,7 +874,13 @@ class ElementDefaultRectangle(parent: GuiElement, var params: TextureRenderParam
     }
 }
 
-class ElementText(parent: GuiElement, text: String, val allowTags: Boolean = false, var ignoreLines: Boolean, var params: TextRenderParams = TextRenderParams()) : GuiElement(parent) {
+class ElementText(
+    parent: GuiElement,
+    text: String,
+    val allowTags: Boolean = false,
+    var ignoreLines: Boolean,
+    var params: TextRenderParams = TextRenderParams()
+) : GuiElement(parent) {
 
     private var taggedText: TaggedText by PowerworksDelegates.lateinitVal()
 

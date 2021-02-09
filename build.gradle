@@ -17,6 +17,7 @@ buildscript {
 plugins {
     id "org.jetbrains.kotlin.jvm" version "1.4.21"
     id 'idea'
+    id 'application'
 }
 
 version '0.5.0'
@@ -100,6 +101,14 @@ project(":server") {
         mainClassName = "network.ServerKt"
     }
 
+    jar {
+        manifest {
+            attributes 'Main-Class': 'network.ServerKt'
+        }
+
+        from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    }
+
     sourceSets {
         main {
             kotlin.srcDirs += project(":shared").sourceSets.main.kotlin.srcDirs
@@ -107,3 +116,35 @@ project(":server") {
         }
     }
 }
+
+//task jpackage(type: Exec) { //exec tasks=command line tasks
+//    project(":client") { // go inside of the client project
+//        doFirst() {
+//            project.delete("${buildDir}/distribution/powerworks") // delete results of last bundling
+//        }
+//        workingDir project.projectDir // set cmd line working directory to the project dir
+//        def commands = [ //new list of cmd arguments, will be separated by spaces
+//                         "${project.projectDir}/jdk-15.0.1/bin/jpackage", // first, the command itself. jpackage.exe is located in jdk/bin
+//                         '--type', 'app-image', // select app-image here to just create the runnable file, otherwise it defaults to runnable installer
+//                         '--dest', "${buildDir}/distribution", // destination for files
+//                         '--input', "${buildDir}/libs", // this should be the folder containing just the game's jar file
+//                         '--name', 'powerworks', // name of app
+//                         '--main-class', project.mainClassName, // references the project's main class, if you don't set this above somewhere just add it manually
+//                         '--main-jar', jar.archiveFile.get().asFile.getName(), //references the jar task, this can also be set manually
+//        ]
+//        if (osName.contains('windows')) { //just platform specific icon stuff and the mac xstartonfirstthread
+//            commands << '--icon'
+//            commands << "${project.projectDir}/logo.ico"
+//        } else if (osName.contains('linux')) {
+//            commands << '--icon'
+//            commands << "${project.projectDir}/logo.png"
+//        } else if (osName.contains('mac')) {
+//            commands << '--icon'
+//            commands << "${project.projectDir}/logo.icns"
+//            commands << '--java-options'
+//            commands << "-XstartOnFirstThread"
+//        }
+//
+//        commandLine = commands // this is what actually executes the command
+//    }
+//}

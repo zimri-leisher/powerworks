@@ -18,6 +18,7 @@ class GuiArmoryBlock(block: ArmoryBlock) : Gui(ScreenLayer.MENU_1), PoolableGui 
     init {
         define {
             openAtCenter(0)
+            openWithBrainInventory()
             keepInsideScreen()
             background {
                 makeDraggable()

@@ -19,8 +19,6 @@ import java.time.LocalDateTime
 import java.util.*
 
 // TODO use mouse movement listener
-// TODO Design choice: all listeners are held in their managers
-// TODO events are pushed to the manager which pushes out the event
 
 object LevelManager : DirectoryChangeWatcher, MouseMovementListener, CameraMovementListener, LevelEventListener {
 
@@ -174,7 +172,7 @@ object LevelManager : DirectoryChangeWatcher, MouseMovementListener, CameraMovem
         if (!Game.IS_SERVER) {
             updateLevelAndViewInformation()
         }
-        loadedLevels.forEach { it.update() }
+        loadedLevels.forEach { if(!it.paused) it.update() }
     }
 
     override fun onDirectoryChange(dir: Path) {

@@ -27,8 +27,9 @@ class FluidPipeBlock(xTile: Int, yTile: Int) : PipeBlock(PipeBlockType.FLUID_PIP
             Renderer.renderTexture(Image.Block.PIPE_LEFT_CLOSE, x - Image.Block.PIPE_LEFT_CLOSE.width, y + (18 - Image.Block.PIPE_LEFT_CLOSE.height) / 2)
         if (nodeConnections[0].isNotEmpty())
             Renderer.renderTexture(Image.Block.PIPE_UP_CONNECT, x + 4, y + 17)
-        if (Game.currentDebugCode == DebugCode.RENDER_HITBOXES)
+        if (Game.currentDebugCode == DebugCode.RENDER_HITBOXES) {
             renderHitbox()
+        }
         if(health != type.maxHealth) {
             renderHealthBar()
         }

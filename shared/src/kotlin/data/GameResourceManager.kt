@@ -110,7 +110,7 @@ object GameResourceManager {
     fun getTexture(identifier: String): Texture {
         try {
             return images[identifier]!!
-        } catch (e: KotlinNullPointerException) {
+        } catch (e: java.lang.NullPointerException) {
             throw GameResourceNotFoundException("Resource with identifier $identifier not found")
         }
     }
@@ -122,7 +122,7 @@ object GameResourceManager {
     fun getRawResource(path: String): URL {
         return try {
             GameResourceManager.javaClass.getResource(path)!!
-        } catch (e: KotlinNullPointerException) {
+        } catch (e: java.lang.NullPointerException) {
             throw GameResourceNotFoundException("Resource at $path not found")
         }
     }
@@ -134,7 +134,7 @@ object GameResourceManager {
     fun getRawResourceAsStream(path: String): InputStream {
         return try {
             GameResourceManager.javaClass.getResourceAsStream(path)!!
-        } catch (e: KotlinNullPointerException) {
+        } catch (e: java.lang.NullPointerException) {
             throw GameResourceNotFoundException("Resource at $path not found")
         }
     }

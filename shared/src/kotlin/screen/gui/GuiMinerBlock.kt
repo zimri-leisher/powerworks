@@ -2,6 +2,7 @@ package screen.gui
 
 import level.block.MinerBlock
 import screen.ScreenLayer
+import screen.attribute.AttributeResourceContainerLink
 import screen.element.ElementProgressBar
 import screen.element.ElementResourceContainer
 
@@ -20,6 +21,7 @@ class GuiMinerBlock(block: MinerBlock) : Gui(ScreenLayer.MENU_1), PoolableGui {
 
     init {
         define {
+            openWithBrainInventory()
             openAtCenter(0)
             background {
                 makeDraggable()
@@ -27,7 +29,7 @@ class GuiMinerBlock(block: MinerBlock) : Gui(ScreenLayer.MENU_1), PoolableGui {
                 closeButton(Placement.Align(HorizontalAlign.RIGHT, VerticalAlign.TOP).offset(-1, -1))
                 text("Miner", Placement.Align(HorizontalAlign.LEFT, VerticalAlign.TOP).offset(1, -1)) { makeDraggable() }
                 list(Placement.Align(HorizontalAlign.CENTER, VerticalAlign.BOTTOM).offset(0, 2)) {
-                    resourceContainer = resourceContainerView(block.output, 1, 1)
+                    resourceContainer = resourceContainerView(block.output, 1, 1, allowSelection = true, allowModification = true)
                     progressBar = progressBar(block.type.maxWork, { this@GuiMinerBlock.block.currentWork })
                 }
                 closeButton(Placement.Align(HorizontalAlign.RIGHT, VerticalAlign.TOP).offset(-1, -1))

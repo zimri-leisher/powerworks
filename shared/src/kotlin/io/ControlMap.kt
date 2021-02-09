@@ -40,6 +40,11 @@ class ControlMap(val name: String) {
         load()
     }
 
+    fun getControlString(control: Control): String {
+        val bind = binds.firstOrNull { it.result == control } ?: return "(No control bound)"
+        return (if(bind.modifiers.isNotEmpty()) bind.modifiers.joinToString(separator = " + ") + " + " else "") + bind.button + if(bind.toggle) "[Toggle]" else if(bind.double) "[Double press]" else ""
+    }
+
     /**
      * Loads the control binds from the file located in the `GameDirectoryIdentifier.CONTROLS` directory named $[name].txt. This
      * is called on init of this class so there should be no need to call it further.
