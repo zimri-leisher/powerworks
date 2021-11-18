@@ -1,9 +1,56 @@
 # powerworks
 2D top down factory-building RTS game in Kotlin. Main source is in shared/src/kotlin.
 
-# General story:
+![demo picture 1](./pic_1.png)
+
+In Powerworks, you compete against another player to build a factory, trying to mass produce war robots to destroy their base.
+Over 4 years, the repository has grown to 18,000 lines of Kotlin code.
+The code has several interesting features, all completely written by me:
+* A file system DSL. Lets the coder to specify a file system structure around the game, allowing easy abstracted access to save or settings directorys.
+* An implementation of Behavior Trees. This is a powerful system for rules-based AI in games, allowing interesting, realistic and adaptive behavior.
+* A* pathfinding for robot and item movement.
+* A scripting language interpreter, which the player can use to intelligently route items around the map.
+* An animation DSL to let the coder easily write complex animations without having to modify the image files themselves.
+* A binary serializer. This is used for networking and saving to disk, and is based off of Kryo serialization, but completely written by me.
+* Multiplayer networking code. Server-based, with authentication and powerful abstraction to remove as much boilerplate as possible.
+
+There are also hundreds of textures and animations made by me.
+
+Here is what a factory might look like:
+
+![demo picture 2](./pic_2.png)
+
+You can see here raw ore being sent by item tubes to smelters, which turn ore into usable metal bars, and then those metal bars get crafted into a robot. Look at https://youtu.be/KoI3AaX0lO0 for a video of this.
+
+# How to play?
+## Building
+To run Powerworks, you will need to Gradle `run` the `server` and `client` projects. This will start a headless server and a playable client.
+## Controls
+* WASD to move around
+* E to toggle inventory
+* Right click to put item from inventory into hotbar
+* 1-4, shift+1-4 to access hotbar slots
+* Left click while holding a block in hotbar slot to place
+* Left click on block to open menu
+* R to rotate current block
+* Q to deselect held item
+* Left click+drag to select robots
+* Right click+drag and release upwards to select the move command for robots, then right click to move the robots
+* Right click+drag and release leftwards to select the attack command for robots, then right click on target to make the robots attack it
+* Cycle between cameras with Tab
+## Blocks/items
+* The miner block will extract ore from ore patches (copper is lighter colored, iron is darker colored)
+* Ore can be piped in to a furnace and then an ore solidifier, creating 1 ingot per ore
+* Ore can also be piped in to a smelter, creating 1 ingot per 2 ore
+* Ingots can be piped in to crafters (both regular and robot crafters), and a crafter can have its recipe changed to create the desired item
+* Normal crafters make intermediate ingredients, robot crafters make robots
+* The armory will automatically give robots in a certain range a weapon
+* The farseeker can be placed to connect to other worlds. When placed, it looks for other clients online, and allows you to choose them when you open its menu. When an entity touches the farseeker, it will be teleported to the world you have selected.
+# Storyboard:
+Note, this story is out of date and was mostly just to give me some direction in my code when I was lacking it.
+## General story:
 Biological intelligence is a thing of the past. A species of AI is spreading throughout the cosmos, very successfully, and until now, totally alone. One day, a vast fleet of alien AI simply blinked into existence outside the orbits of every major AI center and annihilated all of civilization. You are an AI which has taken refuge from the fleet on an untouched planet on the frontiers of the galaxy.
-# Start:
+## Start:
 You spawn in to a level. You only control the camera with WASD, but you have spawned with a robot called the Brain (your AI, according to the lore). It is controllable with the mouse and various keyboard shortcuts. Being a factory AI from the company Powerworks Industries, you remember very limited things, all of which are centered on mass production and heavy industry. You also have a radar block, which quickly alerts you to an incoming enemy orbital drop force.
 
 Directions appear on the screen, telling you how to defend yourself. Move the Brain to a nearby patch of iron ore, and command it to mine the ore, producing Iron Ore items. You place down the last block you spawned with, a Furnace, and put the items into there.
@@ -12,11 +59,11 @@ The Furnace takes in 2 ore and produces 1 ingot. Do this 4 times, the directions
 
 The wave consists of 4 scouting robots and 2 standard general-purpose robots equipped with short-range weaponry. They immediately target your radar, knowing that if it is disabled you will be unable to see if they are receiving backup. Your turret puts up a good effort and kills them all, but the radar is guaranteed to die (it is set to die extremely quickly, and will explode automatically if it hasn’t been destroyed by the end of the attack).
 	Now you have an objective: get that radar back online so that they can’t hit you by surprise.
-# Mid game:
+## Mid game:
 After some more tutorials on crafting a radar machine, you get it back, and see a vast fleet headed towards you, destined to come in waves.
 
 These will come in predetermined times (probably, some could be based on certain goals being reached) and are essentially the single player campaign of the game. During these waves, you will be trying to construct a transport ship to attack the alien planet with. After the destruction of the last alien ship, you use its power source and data to fly your ship to the alien homeworld, and you mount an attack on it. If the attack is successful, you will steal the Farcaster, which allows communication with, and transport in, the multiverse (free-play is now unlocked). If it is unsuccessful, several more alien waves will be generated, along with another power source and data core, allowing you to keep on trying to attack until you win.
-# End game:
+## End game:
 Free-play can be against other players, or against AI. AI bases are generated (possibly scaling based on some algorithm taking into account how much stuff you have) and contain valuable technology in their Brain robots, which you can extract and put to use. This is the motivation to play multiplayer--to gain access to new technology.
 
 Player bases are, of course, made by real people. They do not contain technology and instead are seen as points you must conquer in order to get to the next alien base (you are not allowed to choose entirely freely to which planet you can transport, due to interference from their Farcaster, according to lore). You must raid their base and destroy their Farcaster, disabling it and allowing you to move onward with your fleet.
@@ -24,7 +71,7 @@ Player bases are, of course, made by real people. They do not contain technology
 However, Farcaster connections are two-way. When you open a portal into their universe, they get one into yours. This sets the scene for essentially a 1v1 RTS on two different levels: your planet and the opponent’s. Transport between them is slow and thus some time is spent preparing and establishing oneself on the enemy planet. The limitations of Transmitters (see below) will A) make attackers hard to find at first as planet wide Transmitter networks are hard to make and B) prevent quick scrambling to stop burgeoning attack bases.The first person to destroy the enemy Farcaster or Brain wins and their opponent’s robots will cease functioning and all power to their machines will be removed.
 
 After the raid, all blocks that were destroyed by the enemy and not rebuilt will reappear (resource containers will remain unchanged to prevent duping). Units you leave on the enemy planet will be gone forever. The Farcaster will be unable to be used for a medium amount of time if it has been destroyed. If the Brain has been destroyed, severe penalties will be incurred, but there is no reward for the killer.
-# More specific stuff:
+## More specific stuff:
 *Robots*:
 Robots come in several varieties. There are smaller ones, which have light, if any, weaponry. There are larger ones, which could have up to several turrets mounted on them, targeting multiple enemies simultaneously. Some are specifically for combat, some are for quick movement, which is necessary to get footholds because you can only construct blocks with a certain range of robots.
 
@@ -51,7 +98,7 @@ Crafting blocks will automate the creation of items, blocks and robots. Each typ
 Tubes and pipes will transport items and fluids, respectively, between factory blocks. They will take into account the IO behavior specified by the scripting language, are unrestricted by distance, and take no power. Tubes have a restricted speed, but pipes are instantaneous, providing an advantage to transporting ores as molten ores.
 
 Other factory blocks include furnaces, which take ore and create ingots, forges, which take ore and create molten ore, and solidifiers, which take molten ore and create ingots. It feels like there are more but I don’t know them yet.
-# General ideas:
+## General ideas:
 As you can see, it is a combination of a factory-builder with an RTS, and I think of the two, the RTS will be the more important and more visible component. The factory-building is more simplistic than games like Factorio, partially because everything is made out of raw or first-level ingredients, and partially because of the intelligence of the tube/pipe routing system. The RTS part will usually involve commanding troops in one or two areas max, while building occasional defensive structures and slowly pushing the line forwards into a base. Combat will favor the defending side, due to the difficulty of transporting objects across the Farcaster. It is possible staging planets will be added where attackers can collect units and prepare them for a larger scale attack. Multiple camera views at once allow easier control of specific battlefield sections.
 
 
