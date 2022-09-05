@@ -9,6 +9,7 @@ import misc.Numbers
 import java.awt.FontFormatException
 import java.awt.Rectangle
 import java.io.IOException
+import java.util.*
 import java.util.regex.Pattern
 import kotlin.math.ceil
 
@@ -72,14 +73,17 @@ object TextManager {
                     i++
                     continue
                 }
-                val tagName = stringInside.substringBefore(TaggedText.TAG_ARG_CHAR).toLowerCase()
-                val tagType = TextTagType.values().firstOrNull { it.identifier == tagName || it.aliases.any { it == tagName } }
+                val tagName = stringInside.substringBefore(TaggedText.TAG_ARG_CHAR).lowercase(Locale.getDefault())
+                val tagType =
+                    TextTagType.values().firstOrNull { it.identifier == tagName || it.aliases.any { it == tagName } }
                 if (tagType == null) {
                     untaggedString.append(char)
                     i++
                     continue
                 }
-                val tagArgument = if (stringInside.contains(TaggedText.TAG_ARG_CHAR)) stringInside.substringAfter(TaggedText.TAG_ARG_CHAR).trim('"') else ""
+                val tagArgument =
+                    if (stringInside.contains(TaggedText.TAG_ARG_CHAR)) stringInside.substringAfter(TaggedText.TAG_ARG_CHAR)
+                        .trim('"') else ""
                 if ((i - offset) in tags) {
                     tags[i - offset]!!.add(TextTag(tagArgument, tagType))
                 } else {

@@ -273,7 +273,7 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, x: Int, y:
         }
     }
 
-    override fun onAddToLevel() {
+    override fun afterAddToLevel(oldLevel: Level) {
         val newChunk = level.getChunkAtChunk(xChunk, yChunk)
         onChangeChunks(newChunk, newChunk)
     }

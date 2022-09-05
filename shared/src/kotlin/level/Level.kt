@@ -21,8 +21,10 @@ import main.PowerworksDelegates
 import main.toColor
 import network.ClientNetworkManager
 import network.ServerNetworkManager
+import resource.PipeNetwork
+import resource.ResourceNetwork
 import resource.ResourceNode
-import routing.PipeNetwork
+import resource.ResourceNode2
 import routing.ResourceRoutingNetwork
 import screen.element.ElementLevelView
 import screen.mouse.tool.Tool
@@ -56,12 +58,13 @@ val CHUNK_SIZE = CHUNK_SIZE_TILES shl 4
  * @param info the information describing the [Level]
  */
 abstract class Level(
-        val id: UUID,
-        /**
-         * The information describing this level. It defines the username of the owner of this level, the name of the level,
-         * the generation settings and other related things (see [LevelInfo] for more detail). Two levels with the same [info] should be identically generated
-         */
-        val info: LevelInfo) {
+    val id: UUID,
+    /**
+     * The information describing this level. It defines the username of the owner of this level, the name of the level,
+     * the generation settings and other related things (see [LevelInfo] for more detail). Two levels with the same [info] should be identically generated
+     */
+    val info: LevelInfo
+) {
 
     val generator = info.levelType.getGenerator(this)
 
@@ -168,61 +171,28 @@ abstract class Level(
         data.particles.remove(p)
     }
 
-    /**
-     * Tries to add a resource node to the level. If [node] was already in another level before addition, it will remove it from
-     * that level first.
-     * If there was already a node at the same position with the same direction, attached container and resource
-     * category, it will remove the previous one before finishing addition.
-     *
-     * @return true if the node was added successfully (is now in this level)
-     */
-    open fun add(node: ResourceNode): Boolean {
-        if (node.inLevel && node.level != this) {
-            node.level.remove(node)
-        }
-        val c = getChunkAtTile(node.xTile, node.yTile)
-        val previousNode: ResourceNode?
-        previousNode = c.data.resourceNodes[node.resourceCategory.ordinal].firstOrNull {
-            it.xTile == node.xTile && it.yTile == node.yTile && it.dir == node.dir && it.attachedContainer.id == node.attachedContainer.id
-        }
-        if (previousNode != null) {
-            remove(previousNode)
-        }
-        c.addResourceNode(node)
-        node.level = this
-        node.inLevel = true
-        updateResourceNodeAttachments(node)
-        for (x in -1..1) {
-            for (y in -1..1) {
-                if (Math.abs(x) != Math.abs(y))
-                    getResourceNodesAt(node.xTile + x, node.yTile + y).forEach { updateResourceNodeAttachments(it) }
-            }
-        }
-        return true
-    }
-
-    /**
-     * Tries to remove a resource node [node] from the level. Does nothing if [node] was in a different level or not in one at all.
-     *
-     * @return true if, at the start, [node] was in this level and now it is not
-     */
-    open fun remove(node: ResourceNode): Boolean {
-        if (node.level != this || !node.inLevel) {
-            return false
-        }
-        val c = getChunkAtTile(node.xTile, node.yTile)
-        if (!c.removeResourceNode(node)) {
-            return false
-        }
-        node.inLevel = false
-        for (x in -1..1) {
-            for (y in -1..1) {
-                if (Math.abs(x) != Math.abs(y))
-                    getResourceNodesAt(node.xTile + x, node.yTile + y).forEach { updateResourceNodeAttachments(it) }
-            }
-        }
-        return true
-    }
+//    /**
+//     * Tries to add a resource node to the level. If [node] was already in another level before addition, it will remove it from
+//     * that level first.
+//     * If there was already a node at the same position with the same direction, attached container and resource
+//     * category, it will remove the previous one before finishing addition.
+//     *
+//     * @return true if the node was added successfully (is now in this level)
+//     */
+//    open fun add(node: ResourceNode2): Boolean {
+//        if (node.inLevel && node.level != this) {
+//            node.level.remove(node)
+//        }
+//        val c = getChunkAtTile(node.xTile, node.yTile)
+//        val previousNode = c.getResourceNode(node.xTile, node.yTile)
+//        if (previousNode != null) {
+//            remove(previousNode)
+//        }
+//        c.addResourceNode(node)
+//        node.level = this
+//        node.inLevel = true
+//        return true
+//    }
 
     /**
      * Adds a [Projectile] to this [Level]
@@ -241,6 +211,7 @@ abstract class Level(
 
     open fun update() {
         ResourceRoutingNetwork.ALL.forEach { if (it.level == this) it.update() }
+        ResourceNetwork.ALL.forEach { if(it.level == this) it.update() }
         data.projectiles.forEach { it.update() }
         data.chunks.forEach { it.update() }
         data.particles.forEach { it.update() }
@@ -272,17 +243,14 @@ abstract class Level(
         data.particles.forEach {
             it.render()
         }
-        val noGhostObjects = data.ghostObjects.isEmpty()
-        val ghostBlocks = if (noGhostObjects) emptyList() else data.ghostObjects.filter { it.type is BlockType<*> }
-        val ghostMovings = if (noGhostObjects) emptyList() else data.ghostObjects.filter { it.type is MovingObjectType<*> }
+        val ghostBlocks = data.ghostObjects.filter { it.type is BlockType<*> }
+        val ghostMovings = data.ghostObjects.filter { it.type is MovingObjectType<*> }
         for (y in (maxY - 1) downTo minY) {
             val yChunk = y shr CHUNK_TILE_EXP
             // Render the line of blocks
             for (x in minX until maxX) {
                 val c = getChunkAtChunk(x shr CHUNK_TILE_EXP, yChunk)
-                if (!noGhostObjects) {
-                    ghostBlocks.filter { it.xTile == x && it.yTile == y }.forEach { it.render() }
-                }
+                ghostBlocks.filter { it.xTile == x && it.yTile == y }.forEach { it.render() }
                 c.getBlock(x, y)?.render()
             }
             // Render the moving objects in sorted order
@@ -295,11 +263,9 @@ abstract class Level(
                         }
                     }
                 }
-                if (!noGhostObjects) {
-                    ghostMovings.forEach {
-                        if (it.yTile >= y && it.yTile < y + 1) {
-                            it.render()
-                        }
+                ghostMovings.forEach {
+                    if (it.yTile >= y && it.yTile < y + 1) {
+                        it.render()
                     }
                 }
             }
@@ -310,39 +276,23 @@ abstract class Level(
         Tool.renderAbove(this)
 
         val chunksInTileRectangle = getChunksFromTileRectangle(minX, minY, maxX - minX - 1, maxY - minY - 1)
-        for (c in chunksInTileRectangle) {
-            for (nList in c.data.resourceNodes) {
-                for (n in nList) {
-                    n.render()
-                }
+        for (chunk in chunksInTileRectangle) {
+            for (node in chunk.data.resourceNodes) {
+                node?.render()
             }
         }
         if (Game.currentDebugCode == DebugCode.CHUNK_INFO) {
             for (c in chunksInTileRectangle) {
                 Renderer.renderEmptyRectangle(c.xTile shl 4, c.yTile shl 4, CHUNK_SIZE, CHUNK_SIZE)
                 Renderer.renderText(
-                        "x: ${c.xChunk}, y: ${c.yChunk}\n" +
-                                "updates required: ${c.data.updatesRequired.size}\n" +
-                                "moving objects: ${c.data.moving.size} (${c.data.movingOnBoundary.size} on boundary)",
-                        c.xTile shl 4, c.yTile shl 4)
+                    "x: ${c.xChunk}, y: ${c.yChunk}\n" +
+                            "updates required: ${c.data.updatesRequired.size}\n" +
+                            "moving objects: ${c.data.moving.size} (${c.data.movingOnBoundary.size} on boundary)",
+                    c.xTile shl 4, c.yTile shl 4
+                )
             }
-        } else if (Game.currentDebugCode == DebugCode.TUBE_INFO) {
-            val pipeUnderMouse = LevelManager.levelObjectUnderMouse as? PipeBlock
-            if (pipeUnderMouse != null) {
-                val group = pipeUnderMouse.network
-                for (pipe in group.pipes) {
-                    Renderer.renderFilledRectangle(pipe.x + 4, pipe.y + 4, 8, 8, TextureRenderParams(color = toColor(r = 1f, g = 0f, b = 0f)))
-                }
-            }
-            val nodeUnderMouse = getResourceNodesAt(LevelManager.mouseLevelXTile, LevelManager.mouseLevelYTile).firstOrNull()
-            if (nodeUnderMouse != null) {
-                val network = nodeUnderMouse.network
-                if (network is PipeNetwork) {
-                    for (pipe in network.pipes) {
-                        Renderer.renderFilledRectangle(pipe.x + 4, pipe.y + 4, 8, 8, TextureRenderParams(color = toColor(r = 1f, g = 0f, b = 0f)))
-                    }
-                }
-            }
+        } else if (Game.currentDebugCode == DebugCode.PIPE_INFO) {
+            ResourceNetwork.render()
         }
 
         FindPath.render()
@@ -391,7 +341,7 @@ class LevelSerializer<R : Level> : Serializer<R>() {
     override fun instantiate(input: Input): R {
         val id = input.read(UUID::class.java)
         val existingLevel = LevelManager.getLevelByIdOrNull(id)
-                ?: if (id == LevelManager.EMPTY_LEVEL.id) LevelManager.EMPTY_LEVEL else null
+            ?: if (id == LevelManager.EMPTY_LEVEL.id) LevelManager.EMPTY_LEVEL else null
         if (existingLevel == null) {
             println("Unknown level $id")
             return UnknownLevel(id) as R

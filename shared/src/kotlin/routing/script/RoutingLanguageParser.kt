@@ -1,10 +1,12 @@
 package routing.script
 
 import resource.ResourceNode
+import resource.ResourceNode2
 import resource.ResourceType
 import serialization.Input
 import serialization.Output
 import serialization.Serializer
+import java.util.*
 
 class CompileException(message: String) : Throwable(message)
 
@@ -55,7 +57,7 @@ class RoutingLanguageStatement(val text: String, tokens: Array<Token>? = null, b
 
         val tokenList = mutableListOf<Token>()
         // parenthesis
-        var editedText = text.toLowerCase().replace("(", "( ").replace(")", " )")
+        var editedText = text.lowercase(Locale.getDefault()).replace("(", "( ").replace(")", " )")
         // some syntax sugar
         editedText = editedText.replace("!", " ! ")
         // operators
@@ -64,8 +66,8 @@ class RoutingLanguageStatement(val text: String, tokens: Array<Token>? = null, b
         editedText = editedText.replace("network contains", "network_contains").replace("network quantity", "network_quantity")
         // add underscores to type names
         for (type in ResourceType.ALL) {
-            if (editedText.contains(type.name.toLowerCase())) {
-                editedText = editedText.replace(type.name.toLowerCase(), type.technicalName)
+            if (editedText.contains(type.name.lowercase(Locale.getDefault()))) {
+                editedText = editedText.replace(type.name.lowercase(Locale.getDefault()), type.technicalName)
             }
         }
         editedText = editedText.replace("total quantity", "total_quantity").replace("network total quantity", "network_total_quantity")
@@ -82,7 +84,7 @@ class RoutingLanguageStatement(val text: String, tokens: Array<Token>? = null, b
         return tokenList.toTypedArray()
     }
 
-    fun evaluate(context: ResourceNode) = baseNode.visit(context)
+    fun evaluate(context: ResourceNode2) = baseNode.visit(context)
 
     private fun compile(): Node<Boolean> {
         val base = nextExpression(OperatorPrecedence.LOWEST)
@@ -203,9 +205,9 @@ object RoutingLanguage {
 
     // TODO add specifying for destination nodes in routing language
     fun parse(text: String): RoutingLanguageStatement {
-        if (text.toLowerCase() == "true")
+        if (text.lowercase(Locale.getDefault()) == "true")
             return TRUE
-        if (text.toLowerCase() == "false" || text == "")
+        if (text.lowercase(Locale.getDefault()) == "false" || text == "")
             return FALSE
         return RoutingLanguageStatement(text)
     }

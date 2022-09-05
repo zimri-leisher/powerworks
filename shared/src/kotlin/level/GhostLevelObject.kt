@@ -17,8 +17,8 @@ class GhostLevelObject(type: LevelObjectType<*>, x: Int, y: Int, rotation: Int) 
     val pipeClosedEnds: Array<Boolean>
         get() = pipeState.closedEnds
 
-    override fun onAddToLevel() {
-        super.onAddToLevel()
+    override fun afterAddToLevel(oldLevel: Level) {
+        super.afterAddToLevel(oldLevel)
         if (type is PipeBlockType) {
             val dirs = arrayOf(false, false, false, false)
             for (i in 0..3) {
@@ -29,7 +29,7 @@ class GhostLevelObject(type: LevelObjectType<*>, x: Int, y: Int, rotation: Int) 
                     dirs[i] = true
                 }
             }
-            pipeState = PipeState.getState(dirs)
+            pipeState = PipeState.getState(dirs[0], dirs[1], dirs[2], dirs[3])
         }
     }
 

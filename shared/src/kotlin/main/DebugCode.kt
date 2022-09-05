@@ -17,13 +17,9 @@ enum class DebugCode {
     /**
      * Information about tube blocks and groups
      */
-    TUBE_INFO,
-    /**
-     * Information about pipe blocks and groups
-     */
     PIPE_INFO,
     /**
-     * Information about the screen elements at the mouse
+     * Information about pipe blocks and groups
      */
     SCREEN_INFO,
     /**

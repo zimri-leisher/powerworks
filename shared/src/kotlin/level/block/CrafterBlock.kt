@@ -5,6 +5,7 @@ import crafting.Crafter
 import crafting.Recipe
 import io.ControlEvent
 import io.ControlEventType
+import level.Level
 import resource.*
 import routing.script.RoutingLanguage
 import serialization.Id
@@ -20,22 +21,22 @@ open class CrafterBlock(override val type: CrafterBlockType<*>, xTile: Int, yTil
             if (field != value) {
                 field = value
                 // clear behavior of input nodes
-                inputNodes.forEach { it.behavior.allowIn.clearStatements(); it.behavior.forceIn.clearStatements() }
-                if (field != null) {
-                    val canCraft = enoughToCraft()
-                    if (on && !canCraft) {
-                        currentWork = 0
-                    }
-                    on = canCraft
-                    inputNodes.forEach {
-                        it.behavior.allowIn.addStatement(RoutingLanguage.TRUE, field!!.consume.keys.toList())
-                        for ((type, quantity) in field!!.consume) {
-                            it.behavior.forceIn.addStatement(RoutingLanguage.parse("quantity of $type < $quantity"), listOf(type))
-                        }
-                    }
-                } else {
-                    inputNodes.forEach { it.behavior.allowIn.addStatement(RoutingLanguage.FALSE); it.behavior.forceIn.addStatement(RoutingLanguage.FALSE) }
-                }
+//                inputNodes.forEach { it.behavior.allowIn.clearStatements(); it.behavior.forceIn.clearStatements() }
+//                if (field != null) {
+//                    val canCraft = enoughToCraft()
+//                    if (on && !canCraft) {
+//                        currentWork = 0
+//                    }
+//                    on = canCraft
+//                    inputNodes.forEach {
+//                        it.behavior.allowIn.addStatement(RoutingLanguage.TRUE, field!!.consume.keys.toList())
+//                        for ((type, quantity) in field!!.consume) {
+//                            it.behavior.forceIn.addStatement(RoutingLanguage.parse("quantity of $type < $quantity"), listOf(type))
+//                        }
+//                    }
+//                } else {
+//                    inputNodes.forEach { it.behavior.allowIn.addStatement(RoutingLanguage.FALSE); it.behavior.forceIn.addStatement(RoutingLanguage.FALSE) }
+//                }
             }
         }
 
@@ -43,23 +44,23 @@ open class CrafterBlock(override val type: CrafterBlockType<*>, xTile: Int, yTil
     private var currentResources = mutableResourceListOf()
 
     @Id(25)
-    private val inputNodes = nodes.filter { it.behavior.allowIn.possible()?.isEmpty() == true } // nodes that start out allowing all types out
+    private val inputNodes = nodes //nodes.filter { it.behavior.allowIn.possible()?.isEmpty() == true } // nodes that start out allowing all types out
 
     @Id(26)
-    val inputContainer = inputNodes.getAttachedContainers().first()
+    val inputContainer = inputNodes.first().container //inputNodes.getAttachedContainers().first()
 
     @Id(27)
-    val outputContainer = nodes.filter { it.behavior.allowOut.possible()?.isEmpty() == true }.getAttachedContainers().first()
+    val outputContainer = nodes.first().container //nodes.filter { it.behavior.allowOut.possible()?.isEmpty() == true }.getAttachedContainers().first()
 
     init {
         inputContainer.listeners.add(this)
     }
 
-    override fun onAddToLevel() {
-        super.onAddToLevel()
+    override fun afterAddToLevel(oldLevel: Level) {
+        super.afterAddToLevel(oldLevel)
         // we want to edit their behavior so that they only accept what a recipe needs. We'll set it to false for now because there is no recipe, and update
         // the behavior when we change the recipe
-        inputNodes.forEach { it.behavior.allowIn.setStatement(RoutingLanguage.FALSE) }
+//        inputNodes.forEach { it.behavior.allowIn.setStatement(RoutingLanguage.FALSE) }
     }
 
     override fun onContainerClear(container: ResourceContainer) {

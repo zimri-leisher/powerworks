@@ -154,9 +154,10 @@ class RoutingLanguageIORule(
         if (statements.isEmpty()) {
             return false
         }
-        if (statements.filterValues { it.isEmpty() || type in it }.any { it.key.evaluate(parent.node) }) {
-            return true
-        }
+        // FIXME
+//        if (statements.filterValues { it.isEmpty() || type in it }.any { it.key.evaluate(parent.node) }) {
+//            return true
+//        }
         return false
     }
 
@@ -165,7 +166,7 @@ class RoutingLanguageIORule(
      * allows for any ResourceType is currently true, or null if none are allowed to be true
      */
     fun possible(): List<ResourceType>? {
-        val trueStatements = statements.filterKeys { it.evaluate(parent.node) }
+        val trueStatements = statements // FIXME statements.filterKeys { it.evaluate(parent.node) }
         val types = mutableListOf<ResourceType>()
         for (typeList in trueStatements.values) {
             if (typeList.isEmpty()) {

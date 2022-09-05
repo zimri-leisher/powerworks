@@ -1,5 +1,7 @@
 package misc
 
+import java.util.*
+
 private typealias AwtColor = java.awt.Color
 
 enum class Color(val awtColor: AwtColor) {
@@ -10,8 +12,9 @@ enum class Color(val awtColor: AwtColor) {
 
         fun toColor(name: String): java.awt.Color? {
             val ret = values().firstOrNull {
-                it.name.toLowerCase() == name.toLowerCase()
-                        || it.name.toLowerCase() == name.toLowerCase().replace(" ", "_")
+                it.name.lowercase(Locale.getDefault()) == name.lowercase(Locale.getDefault())
+                        || it.name.lowercase(Locale.getDefault()) == name.lowercase(Locale.getDefault())
+                    .replace(" ", "_")
             }
             return ret?.awtColor
         }

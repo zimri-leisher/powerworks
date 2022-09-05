@@ -1,12 +1,18 @@
 package resource
 
 import level.LevelObject
+import player.team.Team
 import serialization.Id
 import java.util.*
 
 abstract class ResourceContainer(
         @Id(1)
-        val resourceCategory: ResourceCategory) {
+        val resourceCategory: ResourceCategory,
+        @Id(1001)
+        /**
+         * A [LevelObject] associated with this container.
+         */
+        val attachedLevelObject: LevelObject? = null) {
 
     // TODO make resource containers just resource lists with a capacity total max
 
@@ -21,11 +27,8 @@ abstract class ResourceContainer(
     @Id(3)
     val listeners = mutableListOf<ResourceContainerChangeListener>()
 
-    /**
-     * A [LevelObject] associated with this container.
-     */
-    @Id(1001)
-    var attachedLevelObject: LevelObject? = null
+    @Id(10012)
+    val team = attachedLevelObject?.team
 
     abstract val expected: ResourceList
 

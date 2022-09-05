@@ -18,7 +18,6 @@ import player.PlayerManager
 import resource.ResourceContainer
 import resource.ResourceContainerChangeListener
 import resource.ResourceList
-import routing.dist
 import screen.ScreenManager
 
 object Mouse : ResourceContainerChangeListener {
@@ -67,23 +66,14 @@ object Mouse : ResourceContainerChangeListener {
             Renderer.renderText(quantity, x + 4, y - 4)
         }
         when (Game.currentDebugCode) {
-            DebugCode.TUBE_INFO -> {
+            DebugCode.PIPE_INFO -> {
                 val t = LevelManager.levelObjectUnderMouse
                 if (t is PipeBlock) {
                     val tubeString = "Tube:\n" +
                             "  Tile: ${t.xTile}, ${t.yTile}\n" +
-                            "  Group: ${t.network.id}\n"
-                    val intersection = t.network.intersections.firstOrNull { it.pipeBlock == t }
-                    val intersectionString =
-                            if (t.shouldBeIntersection() && intersection != null)
-                                "Intersection connections:\n" +
-                                        "  Up: ${intersection.connections[0]?.dist}\n" +
-                                        "  Right: ${intersection.connections[1]?.dist}\n" +
-                                        "  Down: ${intersection.connections[2]?.dist}\n" +
-                                        "  Left: ${intersection.connections[3]?.dist}\n"
-                            else if (t.shouldBeIntersection() && intersection == null)
-                                "Should be intersection but hasn't been added"
-                            else "Not intersection\n"
+                            "  Group: ${t.network?.id}\n"
+                    val intersectionString = "Far:\n   Up: ${t.farEdges[0]}\n   Right: ${t.farEdges[1]}\n   Down: ${t.farEdges[2]}\n   Left: ${t.farEdges[3]}\n" +
+                            "Near:\n   Up: ${t.nearEdges[0]}\n   Right: ${t.nearEdges[1]}\n   Down: ${t.nearEdges[2]}\n   Left: ${t.nearEdges[3]}\n"
                     Renderer.renderText(tubeString + intersectionString, x, y, TextRenderParams(color = toColor(r = 255, g = 0, b = 0)))
                 }
             }
@@ -122,6 +112,8 @@ object Mouse : ResourceContainerChangeListener {
                         "    Team: ${LevelManager.levelObjectUnderMouse?.team}\n" +
                         "    In level: ${LevelManager.levelObjectUnderMouse?.level?.id}", x, y, TextRenderParams(color = toColor(r = 255, g = 0, b = 0)))
             }
+
+            else -> {}
         }
     }
 

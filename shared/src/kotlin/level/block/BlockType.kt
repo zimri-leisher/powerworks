@@ -101,6 +101,13 @@ open class BlockType<T : Block>(initializer: BlockType<T>.() -> Unit = {}) : Lev
         }
     }
 
+
+    // need a new vision for how this will work
+    // first thing:
+    // instantiate nodes and containers in the actual classes
+    // yes, this means that you can have the same class for different types (allowing diff nodes or containers)
+    // however, who cares, it complicates things
+
     /**
      * A way of storing the positions of nodes for a block type. Define new [ResourceNode]s inside this template by using
      * the [node] function with the appropriate arguments. When a [Block] with this template is placed in a [Level],
@@ -110,7 +117,7 @@ open class BlockType<T : Block>(initializer: BlockType<T>.() -> Unit = {}) : Lev
      */
     inner class BlockNodesTemplate {
         val containers = mutableListOf<ResourceContainer>()
-        val nodes = mutableListOf<ResourceNode>()
+        val nodes = mutableListOf<ResourceNode2>()
 
         /**
          * Creates a template [ResourceNode]
@@ -128,17 +135,18 @@ open class BlockType<T : Block>(initializer: BlockType<T>.() -> Unit = {}) : Lev
                  attachedContainer: ResourceContainer,
                  allowIn: String = "false", allowInTypes: List<ResourceType> = listOf(), allowOut: String = "false", allowOutTypes: List<ResourceType> = listOf(),
                  forceIn: String = "false", forceInTypes: List<ResourceType> = listOf(), forceOut: String = "false", forceOutTypes: List<ResourceType> = listOf(),
-                 allowBehaviorModification: Boolean = false): ResourceNode {
-            val newNode = ResourceNode(xOffset, yOffset, dir, attachedContainer.resourceCategory, attachedContainer, LevelManager.EMPTY_LEVEL)
-            with(newNode.behavior) {
-                this.allowIn.setStatement(RoutingLanguage.parse(allowIn), allowInTypes)
-                this.allowOut.setStatement(RoutingLanguage.parse(allowOut), allowOutTypes)
-                this.forceIn.setStatement(RoutingLanguage.parse(forceIn), forceInTypes)
-                this.forceOut.setStatement(RoutingLanguage.parse(forceOut), forceOutTypes)
-                this.allowModification = allowBehaviorModification
-            }
-            if (containers.none { it === newNode.attachedContainer }) {
-                containers.add(newNode.attachedContainer)
+                 allowBehaviorModification: Boolean = false): ResourceNode2 {
+//            val newNode = ResourceNode(xOffset, yOffset, dir, attachedContainer.resourceCategory, attachedContainer, LevelManager.EMPTY_LEVEL)
+//            with(newNode.behavior) {
+//                this.allowIn.setStatement(RoutingLanguage.parse(allowIn), allowInTypes)
+//                this.allowOut.setStatement(RoutingLanguage.parse(allowOut), allowOutTypes)
+//                this.forceIn.setStatement(RoutingLanguage.parse(forceIn), forceInTypes)
+//                this.forceOut.setStatement(RoutingLanguage.parse(forceOut), forceOutTypes)
+//                this.allowModification = allowBehaviorModification
+//            }
+            val newNode = ResourceNode2(attachedContainer, xOffset, yOffset)
+            if (containers.none { it === newNode.container }) {
+                containers.add(newNode.container)
             }
             nodes.add(newNode)
             return newNode
@@ -164,8 +172,8 @@ open class BlockType<T : Block>(initializer: BlockType<T>.() -> Unit = {}) : Lev
             }
         }
 
-        fun instantiate(xTile: Int, yTile: Int, rotation: Int, id: UUID): List<ResourceNode> {
-            val ret = mutableListOf<ResourceNode>()
+        fun instantiate(xTile: Int, yTile: Int, rotation: Int, id: UUID): List<ResourceNode2> {
+            val ret = mutableListOf<ResourceNode2>()
             val containers = instantiateContainers(id)
             // we want these to be sorted in an order that doesn't depend on the order of creation
             // sort it by all the factors that determine a node uniquely.
@@ -173,19 +181,18 @@ open class BlockType<T : Block>(initializer: BlockType<T>.() -> Unit = {}) : Lev
             // TODO not sure if this is always correct.
             nodes.sortBy { it.xTile }
             nodes.sortBy { it.yTile }
-            nodes.sortBy { it.dir }
-            nodes.sortBy { it.resourceCategory }
+            nodes.sortBy { it.rotation }
             val random = Random(id.mostSignificantBits)
             val byteArray = ByteArray(36)
             for (node in nodes) {
                 val coord = rotate(node.xTile, node.yTile, widthTiles, heightTiles, rotation)
-                val newContainer = containers.filter { it.key === node.attachedContainer }.entries.first().value
+                val newContainer = containers.filter { it.key === node.container }.entries.first().value
                 random.nextBytes(byteArray)
                 val nodeId = UUID.nameUUIDFromBytes(byteArray)
-                val newNode = node.copy(coord.xTile + xTile, coord.yTile + yTile, Geometry.addAngles(node.dir, rotation), attachedContainer = newContainer)
-                if (node.behavior.forceOut != newNode.behavior.forceOut) {
-                    println("oops behaviors diff")
-                }
+                val newNode = node.copy(coord.xTile + xTile, coord.yTile + yTile, Geometry.addAngles(node.rotation, rotation), attachedContainer = newContainer)
+//                if (node.behavior.forceOut != newNode.behavior.forceOut) {
+//                    println("oops behaviors diff")
+//                }
                 newNode.id = nodeId
                 ret.add(newNode)
             }

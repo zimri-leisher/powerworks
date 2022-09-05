@@ -235,13 +235,14 @@ class ResourceNode constructor(
                 output(type, quantity)
             }
         }
-        for ((statement, types) in behavior.forceIn.statements) {
-            if (statement.evaluate(this)) {
-                for (type in if (types.isEmpty()) ResourceType.ALL else types) {
-                    attachedNode?.requestOutput(resourceListOf(type to Int.MAX_VALUE))
-                }
-            }
-        }
+        // FIXME
+//        for ((statement, types) in behavior.forceIn.statements) {
+//            if (statement.evaluate(this)) {
+//                for (type in if (types.isEmpty()) ResourceType.ALL else types) {
+//                    attachedNode?.requestOutput(resourceListOf(type to Int.MAX_VALUE))
+//                }
+//            }
+//        }
     }
 
     fun render(xTile: Int = this.xTile, yTile: Int = this.yTile, rotation: Int = dir) {

@@ -65,8 +65,8 @@ class FarseekerBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(Machi
         }
     }
 
-    override fun onAddToLevel() {
-        super.onAddToLevel()
+    override fun afterAddToLevel(oldLevel: Level) {
+        super.afterAddToLevel(oldLevel)
         level.modify(FarseekerBlockSetAvailableLevels(toReference() as BlockReference, ProgressionManager.getAvailableEnemyLevels(team.players.first())))
     }
 

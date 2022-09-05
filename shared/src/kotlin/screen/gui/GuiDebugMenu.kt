@@ -19,6 +19,7 @@ object GuiDebugMenu : Gui(ScreenLayer.OVERLAY), ControlEventHandler {
                 button("chunk info", { Game.currentDebugCode = DebugCode.CHUNK_INFO })
                 button("level info", { Game.currentDebugCode = DebugCode.LEVEL_INFO })
                 button("resource nodes info", { Game.currentDebugCode = DebugCode.RESOURCE_NODES_INFO })
+                button("pipe info", { Game.currentDebugCode = DebugCode.PIPE_INFO })
                 button("toggle test gui", { GuiTest.open = !GuiTest.open })
             }
         }

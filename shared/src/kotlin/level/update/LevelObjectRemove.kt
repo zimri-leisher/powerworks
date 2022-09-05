@@ -7,6 +7,7 @@ import level.moving.MovingObject
 import network.BlockReference
 import network.LevelObjectReference
 import player.Player
+import resource.ResourceNode2
 import serialization.Id
 import java.util.*
 
@@ -52,6 +53,9 @@ class LevelObjectRemove(
             level.data.ghostObjects.remove(obj)
             obj.inLevel = false
             obj.level = LevelManager.EMPTY_LEVEL
+        } else if(obj is ResourceNode2) {
+            level.getChunkAtTile(obj.xTile, obj.yTile).removeResourceNode(obj)
+            obj.inLevel = false
         }
     }
 

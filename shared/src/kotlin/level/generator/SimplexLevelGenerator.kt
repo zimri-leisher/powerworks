@@ -26,7 +26,11 @@ class SimplexLevelGenerator(level: Level) : LevelGenerator(level) {
     }
 
     override fun generateChunk(xChunk: Int, yChunk: Int): Chunk {
-        return Chunk(xChunk, yChunk).apply { data.tiles = generateTiles(xChunk, yChunk); data.blocks = arrayOfNulls(CHUNK_SIZE_TILES * CHUNK_SIZE_TILES) }
+        return Chunk(xChunk, yChunk).apply {
+            data.tiles = generateTiles(xChunk, yChunk)
+            data.blocks = arrayOfNulls(CHUNK_SIZE_TILES * CHUNK_SIZE_TILES)
+            data.resourceNodes = arrayOfNulls(CHUNK_SIZE_TILES * CHUNK_SIZE_TILES)
+        }
     }
 
     override fun generateTiles(xChunk: Int, yChunk: Int): Array<Tile> {

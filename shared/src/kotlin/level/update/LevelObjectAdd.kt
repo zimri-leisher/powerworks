@@ -7,6 +7,7 @@ import level.block.DefaultBlock
 import level.entity.robot.BrainRobot
 import level.moving.MovingObject
 import player.Player
+import resource.ResourceNode2
 import serialization.Id
 
 /**
@@ -57,7 +58,11 @@ class LevelObjectAdd(
             }
         } else if (obj is GhostLevelObject) {
             level.data.ghostObjects.add(obj)
-            level.data.ghostObjects.sortWith(Comparator { o1, o2 -> o1.y.compareTo(o2.y) })
+            level.data.ghostObjects.sortWith { o1, o2 -> o1.y.compareTo(o2.y) }
+            obj.level = level
+            obj.inLevel = true
+        } else if(obj is ResourceNode2) {
+            level.getChunkAtTile(obj.xTile, obj.yTile).addResourceNode(obj)
             obj.level = level
             obj.inLevel = true
         }

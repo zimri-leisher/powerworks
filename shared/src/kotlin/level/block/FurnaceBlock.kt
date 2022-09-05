@@ -49,7 +49,7 @@ class FurnaceBlock(type: MachineBlockType<FurnaceBlock>, xTile: Int, yTile: Int,
 
     override fun update() {
         if(tank.totalQuantity > 0) {
-            nodes.output(tank.currentFluidType!!, 1)
+            // FIXME nodes.output(tank.currentFluidType!!, 1)
         }
         on = queue.totalQuantity > 0 && tank.totalQuantity < tank.maxAmount
         super.update()

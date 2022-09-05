@@ -285,7 +285,7 @@ open class ResourceRoutingNetwork(category: ResourceCategory,
         newNode.network = this
         newNode.isInternalNetworkNode = true
         newNode.id = nodeId
-        level.add(newNode)
+//        level.add(newNode) FIXME
         internalNodes.add(newNode)
     }
 
@@ -296,7 +296,8 @@ open class ResourceRoutingNetwork(category: ResourceCategory,
                     it.dir == Geometry.getOppositeAngle(node.dir) &&
                     it.resourceCategory == node.resourceCategory
         }
-        toRemove.forEach { it.network = ResourceRoutingNetwork(it.resourceCategory, level); level.remove(it); internalNodes.remove(it) }
+        // FIXME
+//        toRemove.forEach { it.network = ResourceRoutingNetwork(it.resourceCategory, level); level.remove(it); internalNodes.remove(it) }
     }
 
     /**

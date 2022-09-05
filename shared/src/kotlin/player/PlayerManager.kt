@@ -29,7 +29,7 @@ object PlayerManager : PacketHandler, PlayerEventListener {
 
     val playerEventListeners = mutableListOf<PlayerEventListener>()
 
-    private val startingInventory = resourceListOf(BlockItemType.ITEM_PIPE to 10, BlockItemType.MINER to 2, BlockItemType.SMELTER to 2, BlockItemType.CHEST_SMALL to 1,
+    private val startingInventory = resourceListOf(BlockItemType.ITEM_PIPE to 1000, BlockItemType.MINER to 2, BlockItemType.SMELTER to 2, BlockItemType.CHEST_SMALL to 1,
             BlockItemType.CRAFTER to 1)
 
     fun isLocalPlayerLoaded() = localPlayerDelegate.initialized

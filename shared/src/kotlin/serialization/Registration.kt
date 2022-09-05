@@ -51,6 +51,7 @@ import network.packet.*
 import player.*
 import player.team.Team
 import resource.*
+import resource.PipeNetwork
 import routing.*
 import routing.script.*
 import screen.Camera
@@ -66,7 +67,6 @@ import kotlin.collections.ArrayList
 import kotlin.collections.LinkedHashMap
 import kotlin.collections.LinkedHashSet
 import kotlin.reflect.KClass
-import kotlin.reflect.full.companionObjectInstance
 import kotlin.system.measureTimeMillis
 
 object Registration {
@@ -78,7 +78,7 @@ object Registration {
 
     fun registerAll() {
 
-        // max 277
+        // max 279
         /* COLLECTIONS */
         val singletonList = listOf(1)
         register(singletonList::class, CollectionSerializer { it.toList() }, 209)
@@ -311,17 +311,12 @@ object Registration {
         register(ResourceNodeBehavior::class, 91)
         register(RoutingLanguageIORule::class, 92)
         register(ResourceType::class, IDSerializer({ ResourceType.ALL }, { it.id }), 93)
+        register(ResourceNode2::class, 278)
+        register(PipeNetworkVertex::class, 279)
 
         /* ROUTING */
-        register(Intersection::class, 94)
-        register(Connections::class, 95)
-        register(PackageRoute::class, 96)
-        register(RouteStep::class, 97)
         register(ResourceRoutingNetwork::class, 98)
         register(RoutingLanguageStatement::class, RoutingLanguageStatementSerializer(), 99)
-        register(ItemPipeNetwork::class, 100)
-        register(PipeNetwork.PipeRoutingPackage::class, 101)
-        register(FluidPipeNetwork::class, 187)
 
         register(TokenType::class.java, EnumSerializer<TokenType>(), 184)
         register(Token::class.java, 185)
@@ -415,7 +410,6 @@ object Registration {
             if (type.isKotlinClass()) {
                 with(type.kotlin) {
                     objectInstance
-                    companionObjectInstance
                 }
             }
         } catch (e: IllegalAccessException) {

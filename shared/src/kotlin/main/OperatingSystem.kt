@@ -37,7 +37,7 @@ enum class OperatingSystem {
 
     companion object {
         fun get(): OperatingSystem {
-            val osName = System.getProperty("os.name").toLowerCase()
+            val osName = System.getProperty("os.name").lowercase(Locale.getDefault())
             return when {
                 osName.indexOf("win") >= 0 -> WIN
                 osName.indexOf("mac") >= 0 -> MAC

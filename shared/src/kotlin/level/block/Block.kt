@@ -8,6 +8,7 @@ import level.particle.ParticleEffect
 import network.BlockReference
 import network.LevelObjectReference
 import resource.ResourceNode
+import resource.ResourceNode2
 import resource.getAttachedContainers
 import serialization.Id
 import kotlin.math.abs
@@ -30,17 +31,17 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotatio
      * into account, so, for example, if that same block were placed with a rotation of 1 (rotated 90 degrees clockwise), the node would be at (1, 0) relative, pointing right.
      */
     @Id(18)
-    val nodes: MutableList<ResourceNode> = type.nodesTemplate.instantiate(xTile, yTile, rotation, id).toMutableList()
+    val nodes: MutableList<ResourceNode2> = type.nodesTemplate.instantiate(xTile, yTile, rotation, id).toMutableList()
 
     init {
-        containers = nodes.getAttachedContainers()
-        containers.forEach { it.attachedLevelObject = this }
+        containers = nodes.map { it.container }
+//        containers.forEach { it.attachedLevelObject = this }
     }
 
     /**
      * Don't forget to call super.onAddToLevel() in subclasses overriding this so that the [onAdjacentBlockAdd] methods of adjacent blocks are called
      */
-    override fun onAddToLevel() {
+    override fun afterAddToLevel(oldLevel: Level) {
         ParticleEffect.BLOCK_PLACE.instantiate(this)
         nodes.forEach { level.add(it) }
         // loop through each block touching this one, accounting for width and height
@@ -66,8 +67,8 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotatio
     /**
      * Don't forget to call super.onRemoveFromLevel() in subclasses overriding this so that the onAdjacentBlockRemove methods of adjacent blocks are called
      */
-    override fun onRemoveFromLevel() {
-        nodes.forEach { level.remove(it) }
+    override fun afterRemoveFromLevel(oldLevel: Level) {
+        nodes.forEach { oldLevel.remove(it) }
         // loop through each block touching this one, accounting for width and height
         val adjacent = mutableSetOf<Block>()
         for (w in 0 until type.widthTiles) {
@@ -75,7 +76,7 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotatio
                 for (y in -1..1) {
                     for (x in -1..1) {
                         if (abs(x) != abs(y)) {
-                            val b = level.getBlockAtTile(xTile + x + w, yTile + y + h)
+                            val b = oldLevel.getBlockAtTile(xTile + x + w, yTile + y + h)
                             if (b != null && b != this)
                                 adjacent.add(b)
                         }

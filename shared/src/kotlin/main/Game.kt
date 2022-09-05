@@ -271,10 +271,10 @@ object Game : ApplicationAdapter(), ControlEventHandler, PacketHandler {
                 Control.RENDER_HITBOXES -> currentDebugCode = DebugCode.RENDER_HITBOXES
                 Control.CHUNK_INFO -> currentDebugCode = DebugCode.CHUNK_INFO
                 Control.RESOURCE_NODES_INFO -> currentDebugCode = DebugCode.RESOURCE_NODES_INFO
-                Control.PIPE_INFO -> currentDebugCode = DebugCode.PIPE_INFO
-                Control.TUBE_INFO -> currentDebugCode = DebugCode.TUBE_INFO
+                Control.TUBE_INFO -> currentDebugCode = DebugCode.PIPE_INFO
                 Control.SCREEN_INFO -> currentDebugCode = DebugCode.SCREEN_INFO
                 Control.POSITION_INFO -> currentDebugCode = DebugCode.POSITION_INFO
+                else -> {}
             }
     }
 

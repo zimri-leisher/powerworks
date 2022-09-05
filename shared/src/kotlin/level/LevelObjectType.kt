@@ -2,6 +2,7 @@ package level
 
 import graphics.Image
 import item.ItemType
+import resource.ResourceNode2
 import serialization.Input
 import serialization.Output
 import serialization.Serializer
@@ -27,5 +28,10 @@ open class LevelObjectType<T : LevelObject>(initializer: LevelObjectType<T>.() -
         val ALL = mutableListOf<LevelObjectType<*>>()
 
         val ERROR = LevelObjectType<LevelObject>()
+
+        val RESOURCE_NODE = LevelObjectType<ResourceNode2> {
+            damageable = false
+            instantiate = { x, y, rotation -> throw Exception("Cannot use the instantiate function for ResourceNodes") }
+        }
     }
 }

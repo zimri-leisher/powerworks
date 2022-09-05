@@ -13,10 +13,10 @@ import serialization.Id
 
 class SmelterBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(MachineBlockType.SMELTER, xTile, yTile, rotation), ResourceContainerChangeListener {
     @Id(23)
-    val input: Inventory = nodes.first { it.behavior.allowIn.statements.keys.first().text == "true" }.attachedContainer as Inventory
+    val input: Inventory = nodes.first().container as Inventory // FIXME { it.behavior.allowIn.statements.keys.first().text == "true" }.attachedContainer as Inventory
 
     @Id(24)
-    val output: Inventory = nodes.first { it.behavior.allowOut.statements.keys.first().text == "true" }.attachedContainer as Inventory
+    val output: Inventory = nodes.first().container as Inventory // FIXME { it.behavior.allowOut.statements.keys.first().text == "true" }.attachedContainer as Inventory
 
     @Id(25)
     var currentlySmelting: OreItemType? = null

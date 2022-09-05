@@ -18,20 +18,12 @@ class UnknownLevel(id: UUID) : Level(id, LevelInfo(User(UUID.randomUUID(), ""), 
         throw NotImplementedError("Cannot call modify($update, $transient) on an unknown level (id $id)")
     }
 
-    override fun add(node: ResourceNode): Boolean {
-        throw NotImplementedError("Cannot call add($node) on an unknown level (id $id)")
-    }
-
     override fun add(p: Particle) {
         throw NotImplementedError("Cannot call add($p) on an unknown level (id $id)")
     }
 
     override fun add(projectile: Projectile) {
         throw NotImplementedError("Cannot call add($projectile) on an unknown level (id $id)")
-    }
-
-    override fun remove(node: ResourceNode): Boolean {
-        throw NotImplementedError("Cannot call remove($node) on an unknown level (id $id)")
     }
 
     override fun remove(p: Particle) {

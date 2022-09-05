@@ -1,6 +1,7 @@
 package resource
 
 import serialization.Id
+import java.lang.Integer.min
 
 fun emptyResourceList() = EmptyResourceList
 
@@ -12,7 +13,7 @@ fun Map<ResourceType, Int>.toResourceList() = ResourceList(this)
  * A list of [ResourceType] - quantity pairs with some convenience methods
  */
 open class ResourceList(
-        @Id(1) protected val resources: Map<ResourceType, Int> = mapOf()
+    @Id(1) protected val resources: Map<ResourceType, Int> = mapOf()
 ) : Map<ResourceType, Int> {
 
     constructor(vararg pairs: Pair<ResourceType, Int>) : this(pairs.toMap())
@@ -61,12 +62,17 @@ open class ResourceList(
     /**
      * @return true if every (type, quantity) entry in [other] passes [containsAtLeast]
      */
-    fun containsAtLeastAll(other: Map<out ResourceType, Int>) = other.all { (type, quantity) -> containsAtLeast(type, quantity) }
+    fun containsAtLeastAll(other: Map<out ResourceType, Int>) =
+        other.all { (type, quantity) -> containsAtLeast(type, quantity) }
 
     /**
      * @return true if every (type, quantity) entry in [other] passes [containsAtMost]
      */
-    fun containsAtMostAll(other: Map<out ResourceType, Int>) = other.all { (type, quantity) -> containsAtMost(type, quantity) }
+    fun containsAtMostAll(other: Map<out ResourceType, Int>) =
+        other.all { (type, quantity) -> containsAtMost(type, quantity) }
+
+    fun intersection(other: Map<out ResourceType, Int>) =
+        ResourceList(other.entries.associate { (k, v) -> k to (min(v, get(k))) })
 
     override fun get(key: ResourceType) = resources[key] ?: 0
 

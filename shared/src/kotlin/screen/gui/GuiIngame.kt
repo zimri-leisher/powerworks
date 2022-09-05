@@ -168,6 +168,7 @@ object GuiIngame : Gui(ScreenLayer.LEVEL_VIEW), ControlEventHandler {
                     Control.DESELECT_HOTBAR -> {
                         selectedSlotIndex = -1
                     }
+                    else -> {}
                 }
             }
         }

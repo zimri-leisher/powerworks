@@ -90,7 +90,8 @@ object BlockPlacer : Tool(Control.PLACE_BLOCK), ControlEventHandler {
                 blockType.textures.render(x, y, rotation, TextureRenderParams(color = Color(1f, 1f, 1f, 0.4f)))
                 for (node in blockType.nodesTemplate.nodes) {
                     val (rotatedXTile, rotatedYTile) = Geometry.rotate(node.xTile, node.yTile, blockType.widthTiles, blockType.heightTiles, rotation)
-                    node.render(xTile + rotatedXTile, yTile + rotatedYTile, Geometry.addAngles(rotation, node.dir))
+//                    node.render(xTile + rotatedXTile, yTile + rotatedYTile, Geometry.addAngles(rotation, node.dir))
+                    node.render() // FIXME
                 }
                 Renderer.renderEmptyRectangle(x, y, blockType.widthTiles shl 4, blockType.heightTiles shl 4, params = TextureRenderParams(color = toColor(if (canPlace) 0x04C900 else 0xC90004, 0.3f)))
                 Renderer.renderTextureKeepAspect(Image.Misc.ARROW, x, y, blockType.widthTiles shl 4, blockType.heightTiles shl 4, TextureRenderParams(rotation = -90f * rotation + 180f))

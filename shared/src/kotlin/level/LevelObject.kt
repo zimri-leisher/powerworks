@@ -9,7 +9,6 @@ import main.Game
 import main.toColor
 import network.LevelObjectReference
 import player.team.Team
-import resource.ResourceContainer
 import resource.ResourceContainerGroup
 import serialization.Id
 import serialization.Input
@@ -41,14 +40,17 @@ abstract class LevelObject protected constructor(
             if (field != value) {
                 if (inLevel) {
                     // on remove from old level
-                    onRemoveFromLevel()
+                    beforeRemoveFromLevel(field)
+                    beforeAddToLevel(value)
                 }
+                val oldLevel = field
                 field = value
                 if (field == LevelManager.EMPTY_LEVEL) {
                     inLevel = false
                 } else if (inLevel) {
                     // on add to new level
-                    onAddToLevel()
+                    afterAddToLevel(value)
+                    afterRemoveFromLevel(oldLevel)
                 }
             }
         }
@@ -104,14 +106,16 @@ abstract class LevelObject protected constructor(
     open var inLevel = false
         set(value) {
             if (field && !value) {
-                field = value
-                onRemoveFromLevel()
+                beforeRemoveFromLevel(level)
+                field = false
+                afterRemoveFromLevel(level)
             } else if (!field && value) {
                 if (level == LevelManager.EMPTY_LEVEL) {
                     throw IllegalStateException("Cannot add a LevelObject to the empty level")
                 }
-                field = value
-                onAddToLevel()
+                beforeAddToLevel(level)
+                field = true
+                afterAddToLevel(level)
             }
         }
 
@@ -143,18 +147,24 @@ abstract class LevelObject protected constructor(
         Renderer.renderFilledRectangle(x + hitbox.xStart - (14 - hitbox.width) / 2, y + hitbox.yStart - 6, (14 * (health.toDouble() / type.maxHealth)).toInt(), 5, TextureRenderParams(color = toColor(g = 1.0f)))
     }
 
+    open fun beforeAddToLevel(newLevel: Level) {
+    }
+
     /**
      * When this gets put in the level
      * Called when [inLevel] is changed to true, should usually be from Level.add
      */
-    open fun onAddToLevel() {
+    open fun afterAddToLevel(oldLevel: Level) {
+    }
+
+    open fun beforeRemoveFromLevel(newLevel: Level) {
     }
 
     /**
      * When this gets taken out of the level
      * Called when [inLevel] is changed to false, should usually be from Level.remove
      */
-    open fun onRemoveFromLevel() {
+    open fun afterRemoveFromLevel(oldLevel: Level) {
     }
 
     protected fun renderHitbox() {

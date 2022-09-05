@@ -16,7 +16,7 @@ class BrainRobot(x: Int, y: Int, rotation: Int,
     val inventory = Inventory(8, 3)
 
     init {
-        inventory.attachedLevelObject = this
+//        inventory.attachedLevelObject = this
         containers = listOf(inventory)
     }
 
