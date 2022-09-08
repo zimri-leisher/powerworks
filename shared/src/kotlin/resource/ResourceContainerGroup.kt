@@ -73,7 +73,7 @@ fun ResourceContainerGroup.toMutableResourceList(): MutableResourceList {
     return list
 }
 
-fun ResourceContainerGroup.contains(resource: ResourceType, quantity: Int) = getQuantityOf(resource) >= quantity
+fun ResourceContainerGroup.canRemove(resource: ResourceType, quantity: Int) = getQuantityOf(resource) >= quantity
 
 fun ResourceContainerGroup.getQuantityOf(resource: ResourceType): Int {
     var q = 0

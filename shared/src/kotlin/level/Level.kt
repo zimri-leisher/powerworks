@@ -2,7 +2,6 @@ package level
 
 import behavior.leaves.FindPath
 import graphics.Renderer
-import graphics.TextureRenderParams
 import item.weapon.Projectile
 import level.block.Block
 import level.block.BlockType
@@ -10,7 +9,6 @@ import level.generator.EmptyLevelGenerator
 import level.moving.MovingObject
 import level.moving.MovingObjectType
 import level.particle.Particle
-import level.pipe.PipeBlock
 import level.tile.Tile
 import level.update.LevelObjectAdd
 import level.update.LevelObjectRemove
@@ -18,13 +16,9 @@ import level.update.LevelUpdate
 import main.DebugCode
 import main.Game
 import main.PowerworksDelegates
-import main.toColor
 import network.ClientNetworkManager
 import network.ServerNetworkManager
-import resource.PipeNetwork
 import resource.ResourceNetwork
-import resource.ResourceNode
-import resource.ResourceNode2
 import routing.ResourceRoutingNetwork
 import screen.element.ElementLevelView
 import screen.mouse.tool.Tool

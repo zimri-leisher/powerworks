@@ -19,6 +19,7 @@ class PipeNetwork(level: Level, vertices: Set<PipeNetworkVertex> = setOf()) : Re
     val vertices = vertices.toMutableSet()
 
     val pipes = mutableListOf<PipeBlock>()
+    val connections = mutableListOf<PipeNetworkConnection>()
     override val nodes = mutableListOf<ResourceNode2>()
 
     init {
@@ -31,12 +32,16 @@ class PipeNetwork(level: Level, vertices: Set<PipeNetworkVertex> = setOf()) : Re
         }
     }
 
-    override fun getConnection(from: ResourceNode2, to: ResourceNode2): ResourceNodeConnection? {
+    override fun getConnection(from: ResourceContainer, to: ResourceContainer): ResourceNodeConnection? {
+        val fromNodes = from
+
         if (from !in nodes || to !in nodes) {
             return null
         }
         val steps = route(from, to) ?: return null
-        return PipeNetworkConnection(this, steps, from, to)
+        val connection = PipeNetworkConnection(this, steps)
+        connections.add(connection)
+        return connection
     }
 
     fun updateNearConnections(vert: PipeNetworkVertex) {

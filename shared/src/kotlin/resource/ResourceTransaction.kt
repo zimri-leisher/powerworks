@@ -13,18 +13,14 @@ enum class TransactionState {
 }
 
 // TODO maybe this should be between two resource containers?
-data class ResourceTransaction(val src: ResourceNode2?, val dest: ResourceNode2?, val resources: ResourceList) {
+data class ResourceTransaction(val src: ResourceContainer, val dest: ResourceContainer, val resources: ResourceList) {
     var state = TransactionState.NEW
 
     fun isValid(): Boolean {
-        // if both ends are null then it is not valid
-        if (src == null && dest == null) {
+        if (state != TransactionState.PENDING && !src.canRemove(resources)) {
             return false
         }
-        if (state != TransactionState.PENDING && src != null && !src.canOutput(resources)) {
-            return false
-        }
-        if (state != TransactionState.FINISHED && dest != null && !dest.canInput(resources)) {
+        if (state != TransactionState.FINISHED && !dest.canAdd(resources)) {
             return false
         }
         return true
@@ -35,7 +31,7 @@ data class ResourceTransaction(val src: ResourceNode2?, val dest: ResourceNode2?
             throw Exception("Tried to start a transaction that was in state $state")
         }
         state = TransactionState.PENDING
-        src?.output(resources)
+        src.remove(resources)
     }
 
     fun finish() {
@@ -43,6 +39,6 @@ data class ResourceTransaction(val src: ResourceNode2?, val dest: ResourceNode2?
             throw Exception("Tried to finish a transaction that was in state $state")
         }
         state = TransactionState.FINISHED
-        dest?.input(resources)
+        dest.add(resources)
     }
 }

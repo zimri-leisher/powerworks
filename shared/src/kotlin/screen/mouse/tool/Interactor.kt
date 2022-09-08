@@ -12,6 +12,7 @@ import level.LevelManager
 import level.block.ArmoryBlock
 import level.block.Block
 import level.moving.MovingObject
+import screen.gui.GuiIngame
 import screen.mouse.Mouse
 
 object Interactor : Tool(Control.Group.INTERACTION.controls) {
@@ -22,6 +23,7 @@ object Interactor : Tool(Control.Group.INTERACTION.controls) {
     }
 
     override fun onUse(event: ControlEvent, mouseLevelX: Int, mouseLevelY: Int): Boolean {
+        // todo don't let the player interact with stuff too far away or too fast
         if (event.control in Control.Group.SCROLL) {
             LevelManager.levelObjectUnderMouse!!.onScroll(if (event.control == Control.SCROLL_DOWN) -1 else 1)
         } else {

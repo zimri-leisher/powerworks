@@ -12,6 +12,7 @@ import network.ServerNetworkManager
 import network.User
 import player.lobby.Lobby
 import player.team.Team
+import resource.ResourceTransactionExecutor
 import serialization.Input
 import serialization.Output
 import serialization.Serializer
@@ -21,8 +22,6 @@ class Player(
         val user: User,
         var homeLevelId: UUID,
         var brainRobotId: UUID) : LevelEventListener {
-
-    private constructor() : this(User(UUID.randomUUID(), ""), UUID.randomUUID(), UUID.randomUUID())
 
     var online = false
         set(value) {
@@ -55,6 +54,8 @@ class Player(
 
     private val brainRobotDelegate = PowerworksDelegates.lateinitVal<BrainRobot>()
     var brainRobot: BrainRobot by brainRobotDelegate
+
+    val resourceTransactionExecutor = ResourceTransactionExecutor.Player(this)
 
     var lobby = Lobby()
     var team = Team(this)

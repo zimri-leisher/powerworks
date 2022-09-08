@@ -35,7 +35,7 @@ class FluidTank(
 
     override fun add(resources: ResourceList, from: ResourceNode?, checkIfAble: Boolean): Boolean {
         if (checkIfAble)
-            if (!canAddAll(resources))
+            if (!canAdd(resources))
                 return false
         list@ for ((resource, quantity) in resources) {
             if (currentFluidType == null)
@@ -63,7 +63,7 @@ class FluidTank(
 
     override fun remove(resources: ResourceList, to: ResourceNode?, checkIfAble: Boolean): Boolean {
         if (checkIfAble)
-            if (!canRemoveAll(resources))
+            if (!canRemove(resources))
                 return false
         val (_, quantity) = resources[0]
         currentAmount -= quantity
@@ -83,7 +83,7 @@ class FluidTank(
 
     override fun expect(resources: ResourceList): Boolean {
         val currentExpected = if (expectedFluidType == null) resources else resources + resourceListOf(expectedFluidType!! to expectedAmount)
-        if (!canAddAll(currentExpected)) {
+        if (!canAdd(currentExpected)) {
             return false
         }
         expectedFluidType = resources[0].key as FluidType

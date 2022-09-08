@@ -129,7 +129,7 @@ object GuiIngame : Gui(ScreenLayer.LEVEL_VIEW), ControlEventHandler {
                                     if (slots[index] != null) {
                                         slots[index]!!.icon.render(x, y, Image.Gui.ITEM_SLOT.width, Image.Gui.ITEM_SLOT.height, true, params
                                                 ?: TextureRenderParams.DEFAULT)
-                                        Renderer.renderText(PlayerManager.localPlayer.brainRobot.inventory.getQuantity(slots[index]!!), x, y)
+                                        Renderer.renderText(brainRobot.inventory.getQuantity(slots[index]!!), x, y)
                                     }
                                 }
                             }

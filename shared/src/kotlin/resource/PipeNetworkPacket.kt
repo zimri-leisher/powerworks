@@ -33,6 +33,10 @@ class PipeNetworkPacket(
             // do something
         }
         // check for invalid state
+        if(!connection.canExecute(transaction)) {
+            state = PipeNetworkPacketState.INVALID
+            return
+        }
 
         val nextVert = connection.steps[currentVertexIdx + 1]
         if (nextVert.xTile * 16 == pos.x && nextVert.yTile * 16 == pos.y) {

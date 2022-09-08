@@ -3,16 +3,28 @@ package resource
 import java.lang.Integer.min
 import kotlin.math.ceil
 
+// resource container is connected to network
+// transactions between nodes
+//              between inventories
+//              between resource generators (ore tiles) and inventories
+// node to node is just inventory to inventory?
+// onFinishWork() -> ResourceTransaction(null, internalInv, <miner resources>)
+// do we want to just call start/finish raw?
+// probably not, there should be some middleman
+// obviously, a transactionexecutor
+// what function does it provide?
+
+
 typealias ResourceBalance = MutableMap<ResourceType, Int>
 
 enum class ResourceOrderPriority {
     DEMAND, REQUEST
 }
 
-data class ResourceOrder(val origin: ResourceNode2, val resources: ResourceBalance, val priority: ResourceOrderPriority)
+data class ResourceOrder(val origin: ResourceContainer, val resources: ResourceBalance, val priority: ResourceOrderPriority)
 
 sealed class ResourceDistributor(val network: ResourceNetwork) {
-    abstract fun distribute(from: ResourceNode2, type: ResourceType, quantity: Int, destinations: Map<ResourceNode2, Int>): Map<ResourceNode2, Int>
+    abstract fun distribute(from: ResourceContainer, type: ResourceType, quantity: Int, destinations: Map<ResourceContainer, Int>): Map<ResourceNode2, Int>
 
     class EqualizeContainers(network: ResourceNetwork) : ResourceDistributor(network) {
 
@@ -26,27 +38,28 @@ sealed class ResourceDistributor(val network: ResourceNetwork) {
             from: ResourceNode2,
             type: ResourceType,
             quantity: Int,
-            destinations: Map<ResourceNode2, Int>
+            destinations: Map<ResourceContainer, Int>
         ): Map<ResourceNode2, Int> {
-            val filteredDests = destinations.filterValues { it < 0 }
+            val filteredDests = destinations.filterValues { it < 0 }.toMutableMap()
             // end distributions
             val distribution = destinations.keys.associateWith { 0 }.toMutableMap()
 
             // amount left undistributed
             var remainingSupply = quantity
-            var remainingDemand = filteredDests.mapValues { -it.value } // the input should be negative to indicate demand
+            // the input should be negative to indicate demand, this makes it positive
+            val remainingDemand = filteredDests.mapValues { -it.value }.toMutableMap()
 
             val destinationContainers = filteredDests.keys.map { it.container }.toSet()
             val containersSentTo = (containersSentTo[type] ?: listOf()).filter { it in destinationContainers }.toMutableList()
             val containersNotSentTo = destinationContainers.filter { it !in containersSentTo }
 
             for(container in containersNotSentTo) {
-                if(remainingSupply == 0 || remainingDemand.values.sum() == 0) {
+                if(remainingSupply == 0 || remainingDemand.isEmpty()) {
                     return distribution
                 }
-
+                // give 1 to this container
                 remainingSupply--
-                remainingDemand[]
+                remainingDemand[container] = remainingDemand[container] - 1
             }
         }
     }
@@ -62,7 +75,7 @@ class ResourceMarket(val network: ResourceNetwork) {
         }
     }
 
-    fun order(origin: ResourceNode2, resources: ResourceBalance, priority: ResourceOrderPriority) {
+    fun order(origin: ResourceContainer, resources: ResourceBalance, priority: ResourceOrderPriority) {
         val existing = getOrder(origin, priority)
         if (existing != null) {
             add(existing.resources, resources)
@@ -71,15 +84,15 @@ class ResourceMarket(val network: ResourceNetwork) {
         }
     }
 
-    fun orderIn(to: ResourceNode2, resources: ResourceList, priority: ResourceOrderPriority) {
+    fun orderIn(to: ResourceContainer, resources: ResourceList, priority: ResourceOrderPriority) {
         order(to, resources.mapValues { (_, quantity) -> -quantity }.toMutableMap(), priority)
     }
 
-    fun orderOut(from: ResourceNode2, resources: ResourceList, priority: ResourceOrderPriority) {
+    fun orderOut(from: ResourceContainer, resources: ResourceList, priority: ResourceOrderPriority) {
         order(from, resources.toMutableMap(), priority)
     }
 
-    private fun getOrder(origin: ResourceNode2, priority: ResourceOrderPriority): ResourceOrder? {
+    private fun getOrder(origin: ResourceContainer, priority: ResourceOrderPriority): ResourceOrder? {
         return orders.filter { it.origin == origin && it.priority == priority }
             .apply {
                 if (size > 1) throw Exception("$size resource orders for $origin, should be <2")
@@ -90,10 +103,10 @@ class ResourceMarket(val network: ResourceNetwork) {
         return orders.filter { it.priority == priority }
     }
 
-    private val demands = mutableMapOf<ResourceNode2, MutableMap<ResourceType, Int>>()
-    private val requests = mutableMapOf<ResourceNode2, MutableMap<ResourceType, Int>>()
+    private val demands = mutableMapOf<ResourceContainer, MutableMap<ResourceType, Int>>()
+    private val requests = mutableMapOf<ResourceContainer, MutableMap<ResourceType, Int>>()
 
-    val typesAndDestinations = mutableMapOf<ResourceType, MutableList<ResourceNode2>>()
+    val typesAndDestinations = mutableMapOf<ResourceType, MutableList<ResourceContainer>>()
 
     private fun combine(
         map: MutableMap<ResourceNode2, MutableMap<ResourceType, Int>>,
@@ -133,7 +146,7 @@ class ResourceMarket(val network: ResourceNetwork) {
     }
 
     fun simplifyTransactions(transactions: List<ResourceTransaction>): List<ResourceTransaction> {
-        val newTransactions = mutableMapOf<Pair<ResourceNode2, ResourceNode2>, MutableResourceList>()
+        val newTransactions = mutableMapOf<Pair<ResourceContainer, ResourceContainer>, MutableResourceList>()
         outer@ for (transaction in transactions) {
             for (newTransaction in newTransactions) {
                 if (newTransaction.key.first == transaction.src && newTransaction.key.second == transaction.dest) {
@@ -141,7 +154,7 @@ class ResourceMarket(val network: ResourceNetwork) {
                     continue@outer
                 }
             }
-            newTransactions[transaction.src!! to transaction.dest!!] = transaction.resources.toMutableResourceList()
+            newTransactions[transaction.src to transaction.dest] = transaction.resources.toMutableResourceList()
         }
         return newTransactions.map { ResourceTransaction(it.key.first, it.key.second, it.value) }
     }
@@ -149,12 +162,12 @@ class ResourceMarket(val network: ResourceNetwork) {
     fun distributeEvenly(
         type: ResourceType,
         quantity: Int,
-        requests: Map<ResourceNode2, Int>
-    ): Map<ResourceNode2, Int> {
+        requests: Map<ResourceContainer, Int>
+    ): Map<ResourceContainer, Int> {
 
         // TODO need to decide whether we should distribute evenly by resource node or resource container
         // final map of allotments
-        val allotments = mutableMapOf<ResourceNode2, Int>()
+        val allotments = mutableMapOf<ResourceContainer, Int>()
         for (dest in requests.keys) {
             // start them all out at 0
             allotments[dest] = 0
@@ -210,8 +223,8 @@ class ResourceMarket(val network: ResourceNetwork) {
     }
 
     fun createTransactions(
-        from: Map<ResourceNode2, MutableMap<ResourceType, Int>>,
-        to: Map<ResourceNode2, MutableMap<ResourceType, Int>>
+        from: Map<ResourceContainer, MutableMap<ResourceType, Int>>,
+        to: Map<ResourceContainer, MutableMap<ResourceType, Int>>
     ): List<ResourceTransaction> {
         // first find out which resources are actually going to be sent
         // remove them from `from`
@@ -242,15 +255,15 @@ class ResourceMarket(val network: ResourceNetwork) {
     }
 
     fun confirmTransactions(
-        from: MutableMap<ResourceNode2, MutableMap<ResourceType, Int>>,
-        to: MutableMap<ResourceNode2, MutableMap<ResourceType, Int>>,
+        from: MutableMap<ResourceContainer, MutableMap<ResourceType, Int>>,
+        to: MutableMap<ResourceContainer, MutableMap<ResourceType, Int>>,
         transactions: List<ResourceTransaction>
     ) {
         for (transaction in transactions) {
-            from[transaction.src!!] =
+            from[transaction.src] =
                 to[transaction.src]!!.mapValues { (type, quantity) -> quantity - transaction.resources[type] }
                     .toMutableMap()
-            from[transaction.dest!!] =
+            from[transaction.dest] =
                 to[transaction.dest]!!.mapValues { (type, quantity) -> quantity + transaction.resources[type] }
                     .toMutableMap()
         }

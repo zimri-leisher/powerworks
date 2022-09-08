@@ -4,9 +4,7 @@ import misc.Coord
 
 class PipeNetworkConnection(
     val network: PipeNetwork,
-    val steps: List<PipeNetworkVertex>,
-    from: ResourceNode2,
-    to: ResourceNode2
+    val steps: List<PipeNetworkVertex>
 ) : ResourceNodeConnection(steps.first() as ResourceNode2, steps.last() as ResourceNode2) {
     val currentPackets = mutableListOf<PipeNetworkPacket>()
 
@@ -24,6 +22,7 @@ class PipeNetworkConnection(
                 packet.transaction.finish()
             } else if(packet.state == PipeNetworkPacketState.INVALID) {
                 // try solve invalid state
+
             } else {
                 packet.update()
             }

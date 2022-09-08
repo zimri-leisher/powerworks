@@ -10,6 +10,7 @@ import serialization.Id
 
 // handles transactions for a resource container
 // should be the way that they have physicality
+// should be the way that they filter what resources can be allowed in
 // expectations and shit are handled by the network
 class ResourceNode2(
     val container: ResourceContainer,
@@ -36,22 +37,6 @@ class ResourceNode2(
         network?.remove(this)
         network = null
         super.afterRemoveFromLevel(oldLevel)
-    }
-
-    fun canInput(resources: ResourceList): Boolean {
-        return container.canAddAll(resources)
-    }
-
-    fun canOutput(resources: ResourceList): Boolean {
-        return container.canRemoveAll(resources)
-    }
-
-    fun input(resources: ResourceList) {
-        container.add(resources)
-    }
-
-    fun output(resources: ResourceList) {
-        container.remove(resources)
     }
 
     fun copy(xTile: Int, yTile: Int, rotation: Int, attachedContainer: ResourceContainer): ResourceNode2 {

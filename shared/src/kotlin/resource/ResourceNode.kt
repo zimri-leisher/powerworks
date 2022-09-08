@@ -93,7 +93,7 @@ class ResourceNode constructor(
             return false
         }
         if (mustContainEnough) {
-            if (!attachedContainer.canRemoveAll(resources)) {
+            if (!attachedContainer.canRemove(resources)) {
                 return false
             }
         }
@@ -140,10 +140,10 @@ class ResourceNode constructor(
             return false
         if (mustHaveSpace) {
             if (accountForExpected) {
-                if (!attachedContainer.canAddAll(resources + attachedContainer.expected))
+                if (!attachedContainer.canAdd(resources + attachedContainer.expected))
                     return false
             } else {
-                if (!attachedContainer.canAddAll(resources))
+                if (!attachedContainer.canAdd(resources))
                     return false
             }
         }

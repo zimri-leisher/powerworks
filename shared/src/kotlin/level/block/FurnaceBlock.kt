@@ -60,7 +60,7 @@ class FurnaceBlock(type: MachineBlockType<FurnaceBlock>, xTile: Int, yTile: Int,
             // some desync
             return
         }
-        if (tank.canAddAll(resourceListOf(currentlySmelting!!.moltenForm to 1))) {
+        if (tank.canAdd(resourceListOf(currentlySmelting!!.moltenForm to 1))) {
             if (queue.remove(currentlySmelting!!, 1)) {
                 tank.add(currentlySmelting!!.moltenForm, 1, checkIfAble = false)
             }

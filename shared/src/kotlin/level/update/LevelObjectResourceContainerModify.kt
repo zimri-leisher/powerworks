@@ -32,7 +32,7 @@ class LevelObjectResourceContainerModify(
             return false
         }
         val container = levelObjectReference.value!!.containers.firstOrNull { it.id == containerId } ?: return false
-        return if (add) container.canAddAll(resources) else container.canRemoveAll(resources)
+        return if (add) container.canAdd(resources) else container.canRemove(resources)
     }
 
     override fun act(level: Level) {

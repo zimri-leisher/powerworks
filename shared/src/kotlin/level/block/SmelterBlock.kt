@@ -60,7 +60,7 @@ class SmelterBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(Machine
             // some desync
             return
         }
-        if (output.canAddAll(resourceListOf(currentlySmelting!!.moltenForm.ingot to 1))) {
+        if (output.canAdd(resourceListOf(currentlySmelting!!.moltenForm.ingot to 1))) {
             if (input.remove(currentlySmelting!!, 2)) {
                 output.add(currentlySmelting!!.moltenForm.ingot, 1, checkIfAble = false)
             }

@@ -31,7 +31,7 @@ class Inventory(
 
     override fun add(resources: ResourceList, from: ResourceNode?, checkIfAble: Boolean): Boolean {
         if (checkIfAble)
-            if (!canAddAll(resources))
+            if (!canAdd(resources))
                 return false
 
         cancelExpectation(resources)
@@ -67,21 +67,6 @@ class Inventory(
         }
         listeners.forEach { it.onAddToContainer(this, resources) }
         return true
-    }
-
-    override fun expect(resources: ResourceList): Boolean {
-        if (resources.keys.any { !isRightType(it) })
-            return false
-        if (spaceFor(expected + resources)) {
-            expected.putAll(resources)
-            return true
-        }
-        return false
-    }
-
-    override fun cancelExpectation(resources: ResourceList): Boolean {
-        val ret = expected.takeAll(resources)
-        return ret
     }
 
     override fun getQuantity(resource: ResourceType) = items.filter { it?.type == resource }.sumBy { it?.quantity ?: 0 }
@@ -122,7 +107,7 @@ class Inventory(
 
     override fun remove(resources: ResourceList, to: ResourceNode?, checkIfAble: Boolean): Boolean {
         if (checkIfAble)
-            if (!canRemoveAll(resources))
+            if (!canRemove(resources))
                 return false
         list@ for ((resource, quantity) in resources) {
             var amountLeftToRemove = quantity

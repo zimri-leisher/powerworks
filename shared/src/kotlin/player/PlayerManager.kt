@@ -4,8 +4,6 @@ import data.ConcurrentlyModifiableWeakMutableList
 import data.FileManager
 import data.GameDirectoryIdentifier
 import item.BlockItemType
-import item.IngotItemType
-import item.ItemType
 import level.ActualLevel
 import level.LevelManager
 import level.entity.robot.BrainRobot
@@ -15,7 +13,6 @@ import network.ClientNetworkManager
 import network.ServerNetworkManager
 import network.User
 import network.packet.*
-import resource.ResourceList
 import resource.resourceListOf
 import java.util.*
 
@@ -29,8 +26,13 @@ object PlayerManager : PacketHandler, PlayerEventListener {
 
     val playerEventListeners = mutableListOf<PlayerEventListener>()
 
-    private val startingInventory = resourceListOf(BlockItemType.ITEM_PIPE to 1000, BlockItemType.MINER to 2, BlockItemType.SMELTER to 2, BlockItemType.CHEST_SMALL to 1,
-            BlockItemType.CRAFTER to 1)
+    private val startingInventory = resourceListOf(
+        BlockItemType.ITEM_PIPE to 1000,
+        BlockItemType.MINER to 2,
+        BlockItemType.SMELTER to 2,
+        BlockItemType.CHEST_SMALL to 1,
+        BlockItemType.CRAFTER to 1
+    )
 
     fun isLocalPlayerLoaded() = localPlayerDelegate.initialized
 
@@ -51,7 +53,8 @@ object PlayerManager : PacketHandler, PlayerEventListener {
             if (homeLevel != null) {
                 player.homeLevel = homeLevel
             }
-            val brainRobot = LevelManager.loadedLevels.mapNotNull { it.data.brainRobots.firstOrNull { it.id == player.brainRobotId } }
+            val brainRobot =
+                LevelManager.loadedLevels.mapNotNull { it.data.brainRobots.firstOrNull { it.id == player.brainRobotId } }
             if (brainRobot.size > 1) {
                 println("$player has ${brainRobot.size} brainrobots ERROR ERROR")
             } else if (brainRobot.size == 1) {
@@ -98,17 +101,16 @@ object PlayerManager : PacketHandler, PlayerEventListener {
      */
     fun getPlayer(user: User): Player {
         return getInitializedPlayerOrNull(user)
-                ?: tryLoadPlayerOrNull(user)
-                        ?.also { player ->
-                            println("trying to load player")
-                            if (!LevelManager.isLevelInitialized(player.homeLevelId)) {
-                                ActualLevel(player.homeLevelId, LevelManager.tryLoadLevelInfoFile(player.homeLevelId)!!).apply {
-                                    initialize()
-                                    load()
-                                }
-                            }
+            ?: tryLoadPlayerOrNull(user)
+                ?.also { player ->
+                    if (!LevelManager.isLevelInitialized(player.homeLevelId)) {
+                        ActualLevel(player.homeLevelId, LevelManager.tryLoadLevelInfoFile(player.homeLevelId)!!).apply {
+                            initialize()
+                            load()
                         }
-                ?: newFirstTimePlayer(user)
+                    }
+                }
+            ?: newFirstTimePlayer(user)
     }
 
     fun onUserDisconnect(user: User) {
@@ -116,7 +118,8 @@ object PlayerManager : PacketHandler, PlayerEventListener {
         getOnlinePlayerOrNull(user)?.online = false
     }
 
-    private fun tryLoadPlayerOrNull(user: User) = FileManager.tryLoadObject(GameDirectoryIdentifier.PLAYERS, "${user.id}.player", Player::class.java)
+    private fun tryLoadPlayerOrNull(user: User) =
+        FileManager.tryLoadObject(GameDirectoryIdentifier.PLAYERS, "${user.id}.player", Player::class.java)
 
     private fun newFirstTimePlayer(user: User): Player {
         val player = Player(user, LevelManager.newLevelId(), UUID.randomUUID())
@@ -136,7 +139,8 @@ object PlayerManager : PacketHandler, PlayerEventListener {
         return player
     }
 
-    private fun savePlayer(player: Player) = FileManager.saveObject(GameDirectoryIdentifier.PLAYERS, "${player.user.id}.player", player)
+    private fun savePlayer(player: Player) =
+        FileManager.saveObject(GameDirectoryIdentifier.PLAYERS, "${player.user.id}.player", player)
 
     fun savePlayers() {
         allPlayers.forEach { savePlayer(it) }
@@ -153,6 +157,7 @@ object PlayerManager : PacketHandler, PlayerEventListener {
      * to the server, add the packet to the [actionsAwaitingAck], and call [PlayerAction.actGhost]
      */
     fun takeAction(action: PlayerAction) {
+        // todo rate limit
         if (!action.verify()) {
             return
         }
@@ -172,11 +177,11 @@ object PlayerManager : PacketHandler, PlayerEventListener {
         packet as PlayerActionPacket
         val ownerShouldBe = getInitializedPlayerOrNull(packet.fromUser)
         if (ownerShouldBe == null) {
-            println("Received an action from a user whose player has not been loaded yet")
+            println("Received an action from a user whose player has not been loaded yet. ${packet.fromUser}")
             return
         }
         if (ownerShouldBe != packet.action.owner) {
-            println("Received an action but the owner was incorrect--suspicious client")
+            println("Received an action but the owner was incorrect--suspicious client. Should be $ownerShouldBe, is: ${packet.action.owner}")
             return
         }
         if (!packet.action.verify()) {
@@ -194,7 +199,7 @@ object PlayerManager : PacketHandler, PlayerEventListener {
             packet as AcknowledgePlayerActionPacket
             val ackdPacket = actionsAwaitingAck.firstOrNull { it.id == packet.ackPacketId }
             if (ackdPacket == null) {
-                println("Received acknowledgement for a packet that wasn't being waited on")
+                println("Received acknowledgement for a packet that wasn't being waited on. Received id: ${packet.ackPacketId}")
             } else {
                 ackdPacket.action.cancelActGhost()
                 actionsAwaitingAck.remove(ackdPacket)

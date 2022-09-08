@@ -60,7 +60,7 @@ open class ResourceRoutingNetwork(category: ResourceCategory,
 
     override fun add(resources: ResourceList, from: ResourceNode?, checkIfAble: Boolean): Boolean {
         if (checkIfAble) {
-            if (!canAddAll(resources)) {
+            if (!canAdd(resources)) {
                 return false
             }
         }
@@ -71,7 +71,7 @@ open class ResourceRoutingNetwork(category: ResourceCategory,
     override fun remove(resources: ResourceList, to: ResourceNode?, checkIfAble: Boolean): Boolean {
         println("checking if can remove $resources")
         if (checkIfAble) {
-            if (!canRemoveAll(resources)) {
+            if (!canRemove(resources)) {
                 return false
             }
         }
