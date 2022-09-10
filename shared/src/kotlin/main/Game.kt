@@ -275,6 +275,7 @@ object Game : ApplicationAdapter(), ControlEventHandler, PacketHandler {
                 Control.TUBE_INFO -> currentDebugCode = DebugCode.TUBE_INFO
                 Control.SCREEN_INFO -> currentDebugCode = DebugCode.SCREEN_INFO
                 Control.POSITION_INFO -> currentDebugCode = DebugCode.POSITION_INFO
+                else -> {}
             }
     }
 

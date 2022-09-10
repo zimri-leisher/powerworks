@@ -57,11 +57,13 @@ sealed class Placement {
                 HorizontalAlign.LEFT -> 0
                 HorizontalAlign.CENTER -> parentDimensions.width / 2 - elementDimensions.width / 2
                 HorizontalAlign.RIGHT -> parentDimensions.width - elementDimensions.width
+
             }
             val y = when (verticalAlign) {
                 VerticalAlign.BOTTOM -> 0
                 VerticalAlign.CENTER -> parentDimensions.height / 2 - elementDimensions.height / 2
                 VerticalAlign.TOP -> parentDimensions.height - elementDimensions.height
+
             }
             return if (parentDimensions is Dimensions.Unknown || elementDimensions is Dimensions.Unknown) Unknown(x, y) else Exact(x, y)
         }

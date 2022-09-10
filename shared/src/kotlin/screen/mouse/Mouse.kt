@@ -122,6 +122,8 @@ object Mouse : ResourceContainerChangeListener {
                         "    Team: ${LevelManager.levelObjectUnderMouse?.team}\n" +
                         "    In level: ${LevelManager.levelObjectUnderMouse?.level?.id}", x, y, TextRenderParams(color = toColor(r = 255, g = 0, b = 0)))
             }
+            else -> {}
+
         }
     }
 

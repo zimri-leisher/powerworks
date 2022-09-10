@@ -299,6 +299,8 @@ class NodeSerializer : Serializer<Node<*>>() {
                 obj as UnaryOperator<*, *>
                 output.write(obj.arg)
             }
+            else -> {}
+
         }
     }
 
@@ -313,6 +315,8 @@ class NodeSerializer : Serializer<Node<*>>() {
             TokenCategory.OP_UNARY_RIGHT, TokenCategory.OP_UNARY_LEFT -> {
                 args.add(input.read(Node::class.java))
             }
+            else -> {}
+
         }
         return token.toNode(*args.toTypedArray())
     }

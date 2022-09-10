@@ -64,6 +64,7 @@ object Selector : Tool(Control.Group.SELECTOR_TOOLS.controls), ControlEventHandl
             Control.START_SELECTION -> mode = SelectorMode.ALL
             Control.START_SELECTION_ADD -> mode = SelectorMode.ADD
             Control.START_SELECTION_SUBTRACT -> mode = SelectorMode.SUBTRACT
+            else -> {}
         }
         if (event.type == ControlEventType.PRESS) {
             startPress = true
