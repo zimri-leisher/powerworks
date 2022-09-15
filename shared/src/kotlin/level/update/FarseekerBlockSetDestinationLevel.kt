@@ -21,14 +21,14 @@ class FarseekerBlockSetDestinationLevel(
          * The level to set the destination to.
          */
         @Id(4)
-        val level: Level) : LevelUpdate(LevelUpdateType.FARSEEKER_SET_DESTINATION_LEVEL) {
+        val level: Level) : GameUpdate(LevelUpdateType.FARSEEKER_SET_DESTINATION_LEVEL) {
 
     private constructor() : this(BlockReference(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0), LevelManager.EMPTY_LEVEL)
 
     override val playersToSendTo: Set<Player>?
         get() = null
 
-    override fun canAct(level: Level): Boolean {
+    override fun canAct(): Boolean {
         if (blockReference.value == null) {
             println("reference null")
             return false
@@ -45,18 +45,18 @@ class FarseekerBlockSetDestinationLevel(
         return true
     }
 
-    override fun act(level: Level) {
+    override fun act() {
         val block = blockReference.value as FarseekerBlock
         block.destinationLevel = this.level
     }
 
-    override fun actGhost(level: Level) {
+    override fun actGhost() {
     }
 
-    override fun cancelActGhost(level: Level) {
+    override fun cancelActGhost() {
     }
 
-    override fun equivalent(other: LevelUpdate): Boolean {
+    override fun equivalent(other: GameUpdate): Boolean {
         if (other !is FarseekerBlockSetDestinationLevel) {
             return false
         }

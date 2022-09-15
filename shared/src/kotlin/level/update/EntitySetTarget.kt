@@ -1,6 +1,5 @@
 package level.update
 
-import level.Level
 import level.LevelManager
 import level.entity.Entity
 import network.BlockReference
@@ -24,14 +23,14 @@ class EntitySetTarget(
          */
         @Id(3)
         val target: LevelObjectReference?
-) : LevelUpdate(LevelUpdateType.ENTITY_SET_TARGET) {
+) : GameUpdate(LevelUpdateType.ENTITY_SET_TARGET) {
 
     private constructor() : this(MovingObjectReference(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0), BlockReference(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0))
 
     override val playersToSendTo: Set<Player>?
         get() = null
 
-    override fun canAct(level: Level): Boolean {
+    override fun canAct(): Boolean {
         if (entityReference.value == null) {
             return false
         }
@@ -41,17 +40,17 @@ class EntitySetTarget(
         return true
     }
 
-    override fun act(level: Level) {
+    override fun act() {
         (entityReference.value!! as Entity).behavior.attackTarget = target?.value
     }
 
-    override fun actGhost(level: Level) {
+    override fun actGhost() {
     }
 
-    override fun cancelActGhost(level: Level) {
+    override fun cancelActGhost() {
     }
 
-    override fun equivalent(other: LevelUpdate): Boolean {
+    override fun equivalent(other: GameUpdate): Boolean {
         if (other !is EntitySetTarget) {
             return false
         }

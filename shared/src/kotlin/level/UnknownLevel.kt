@@ -3,18 +3,18 @@ package level
 import item.weapon.Projectile
 import level.generator.LevelType
 import level.particle.Particle
-import level.update.LevelUpdate
+import level.update.GameUpdate
 import network.User
 import resource.ResourceNode
 import java.util.*
 
 class UnknownLevel(id: UUID) : Level(id, LevelInfo(User(UUID.randomUUID(), ""), "", "", LevelType.EMPTY, 0L)) {
 
-    override fun canModify(update: LevelUpdate): Boolean {
+    override fun canModify(update: GameUpdate): Boolean {
         return false
     }
 
-    override fun modify(update: LevelUpdate, transient: Boolean): Boolean {
+    override fun modify(update: GameUpdate, transient: Boolean): Boolean {
         throw NotImplementedError("Cannot call modify($update, $transient) on an unknown level (id $id)")
     }
 

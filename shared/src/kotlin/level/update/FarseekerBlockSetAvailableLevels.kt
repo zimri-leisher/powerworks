@@ -23,29 +23,29 @@ class FarseekerBlockSetAvailableLevels(
          */
         @Id(4)
         val levels: Map<UUID, LevelInfo>
-) : LevelUpdate(LevelUpdateType.FARSEEKER_SET_AVAILABLE_LEVELS) {
+) : GameUpdate(LevelUpdateType.FARSEEKER_SET_AVAILABLE_LEVELS) {
 
     private constructor() : this(BlockReference(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0), mapOf())
 
     override val playersToSendTo: Set<Player>?
         get() = null
 
-    override fun canAct(level: Level): Boolean {
+    override fun canAct(): Boolean {
         return farseekerReference.value != null && farseekerReference.value is FarseekerBlock
     }
 
-    override fun act(level: Level) {
+    override fun act() {
         val farseeker = farseekerReference.value!! as FarseekerBlock
         farseeker.availableDestinations = levels
     }
 
-    override fun actGhost(level: Level) {
+    override fun actGhost() {
     }
 
-    override fun cancelActGhost(level: Level) {
+    override fun cancelActGhost() {
     }
 
-    override fun equivalent(other: LevelUpdate): Boolean {
+    override fun equivalent(other: GameUpdate): Boolean {
         if (other !is FarseekerBlockSetAvailableLevels) {
             return false
         }

@@ -1,7 +1,6 @@
 package level.update
 
 import item.weapon.ProjectileType
-import level.Level
 import level.LevelManager
 import level.entity.Entity
 import misc.Coord
@@ -35,14 +34,14 @@ class EntityFireWeapon(
          */
         @Id(5)
         val entityReference: MovingObjectReference
-) : LevelUpdate(LevelUpdateType.ENTITY_FIRE_WEAPON) {
+) : GameUpdate(LevelUpdateType.ENTITY_FIRE_WEAPON) {
 
     private constructor() : this(Coord(0, 0), 0f, ProjectileType.ERROR, MovingObjectReference(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0))
 
     override val playersToSendTo: Set<Player>?
         get() = null
 
-    override fun canAct(level: Level): Boolean {
+    override fun canAct(): Boolean {
         if (entityReference.value == null) {
             return false
         }
@@ -56,7 +55,7 @@ class EntityFireWeapon(
         return true
     }
 
-    override fun act(level: Level) {
+    override fun act() {
         val entity = entityReference.value!! as Entity
         entity.setPosition(positionWhenFired.x, positionWhenFired.y)
         if (entity.weapon != null) {
@@ -74,13 +73,13 @@ class EntityFireWeapon(
         println("desync, synchronize weapon?")
     }
 
-    override fun actGhost(level: Level) {
+    override fun actGhost() {
     }
 
-    override fun cancelActGhost(level: Level) {
+    override fun cancelActGhost() {
     }
 
-    override fun equivalent(other: LevelUpdate): Boolean {
+    override fun equivalent(other: GameUpdate): Boolean {
         if (other !is EntityFireWeapon) {
             return false
         }

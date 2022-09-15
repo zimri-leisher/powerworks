@@ -1,7 +1,6 @@
 package level.update
 
 import crafting.Recipe
-import level.Level
 import level.LevelManager
 import level.block.CrafterBlock
 import network.BlockReference
@@ -21,29 +20,29 @@ class CrafterBlockSelectRecipe(
          * The recipe to set the [CrafterBlock]'s recipe to.
          */
         @Id(3) val recipe: Recipe?
-) : LevelUpdate(LevelUpdateType.CRAFTER_SELECT_RECIPE) {
+) : GameUpdate(LevelUpdateType.CRAFTER_SELECT_RECIPE) {
 
     private constructor() : this(BlockReference(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0), null)
 
     override val playersToSendTo: Set<Player>?
         get() = null
 
-    override fun canAct(level: Level) = crafterReference.value != null && crafterReference.value!!.level == level
+    override fun canAct() = crafterReference.value != null && crafterReference.value!!.level == level
 
-    override fun act(level: Level) {
+    override fun act() {
         val crafter = crafterReference.value!! as CrafterBlock
         crafter.recipe = recipe
     }
 
-    override fun actGhost(level: Level) {
+    override fun actGhost() {
         // TODO graphically change it but don't actually?
     }
 
-    override fun cancelActGhost(level: Level) {
+    override fun cancelActGhost() {
         // TODO undo graphical change
     }
 
-    override fun equivalent(other: LevelUpdate): Boolean {
+    override fun equivalent(other: GameUpdate): Boolean {
         if (other !is CrafterBlockSelectRecipe) {
             return false
         }

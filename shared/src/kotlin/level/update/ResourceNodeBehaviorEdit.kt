@@ -1,6 +1,5 @@
 package level.update
 
-import level.Level
 import level.LevelManager
 import network.ResourceNodeReference
 import player.Player
@@ -22,31 +21,31 @@ class ResourceNodeBehaviorEdit(
          */
         @Id(4)
         val behavior: ResourceNodeBehavior
-) : LevelUpdate(LevelUpdateType.RESOURCE_NODE_BEHAVIOR_EDIT) {
+) : GameUpdate(LevelUpdateType.RESOURCE_NODE_BEHAVIOR_EDIT) {
 
     private constructor() : this(ResourceNodeReference(0, 0, LevelManager.EMPTY_LEVEL, UUID.randomUUID()), ResourceNodeBehavior.EMPTY_BEHAVIOR)
 
     override val playersToSendTo: Set<Player>?
         get() = null
 
-    override fun canAct(level: Level): Boolean {
+    override fun canAct(): Boolean {
         if (nodeReference.value == null) {
             return false
         }
         return true
     }
 
-    override fun act(level: Level) {
+    override fun act() {
         nodeReference.value!!.behavior = behavior
     }
 
-    override fun actGhost(level: Level) {
+    override fun actGhost() {
     }
 
-    override fun cancelActGhost(level: Level) {
+    override fun cancelActGhost() {
     }
 
-    override fun equivalent(other: LevelUpdate): Boolean {
+    override fun equivalent(other: GameUpdate): Boolean {
         if (other !is ResourceNodeBehaviorEdit) {
             return false
         }

@@ -1,7 +1,6 @@
 package level.update
 
 import behavior.leaves.EntityPath
-import level.Level
 import level.LevelManager
 import level.LevelPosition
 import level.entity.Entity
@@ -26,31 +25,31 @@ class EntitySetPath(
         /**
          * The path to give the [Entity].
          */
-        @Id(3) val path: EntityPath) : LevelUpdate(LevelUpdateType.ENTITY_SET_PATH) {
+        @Id(3) val path: EntityPath) : GameUpdate(LevelUpdateType.ENTITY_SET_PATH) {
 
     private constructor() : this(MovingObjectReference(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0), Coord(0, 0), EntityPath(LevelPosition(0, 0, LevelManager.EMPTY_LEVEL), listOf()))
 
     override val playersToSendTo: Set<Player>?
         get() = null
 
-    override fun canAct(level: Level): Boolean {
+    override fun canAct(): Boolean {
         return entityReference.value != null
     }
 
-    override fun act(level: Level) {
+    override fun act() {
         (entityReference.value!! as Entity).apply {
             setPosition(startPosition.x, startPosition.y)
             behavior.follow(path)
         }
     }
 
-    override fun actGhost(level: Level) {
+    override fun actGhost() {
     }
 
-    override fun cancelActGhost(level: Level) {
+    override fun cancelActGhost() {
     }
 
-    override fun equivalent(other: LevelUpdate): Boolean {
+    override fun equivalent(other: GameUpdate): Boolean {
         if (other !is EntitySetPath) {
             return false
         }

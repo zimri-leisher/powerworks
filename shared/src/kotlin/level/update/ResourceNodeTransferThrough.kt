@@ -1,6 +1,5 @@
 package level.update
 
-import level.Level
 import level.LevelManager
 import network.ResourceNodeReference
 import player.Player
@@ -33,14 +32,14 @@ class ResourceNodeTransferThrough(
          * Whether or not to actually make sure that the resources can A) fit and B) exist in an attached container.
          */
         @Id(6) val mustContainOrHaveSpace: Boolean
-) : LevelUpdate(LevelUpdateType.RESOURCE_NODE_TRANSFER_THROUGH) {
+) : GameUpdate(LevelUpdateType.RESOURCE_NODE_TRANSFER_THROUGH) {
 
     private constructor() : this(ResourceNodeReference(0, 0, LevelManager.EMPTY_LEVEL, UUID.randomUUID()), emptyResourceList(), false, false, false)
 
     override val playersToSendTo: Set<Player>?
         get() = null
 
-    override fun canAct(level: Level): Boolean {
+    override fun canAct(): Boolean {
         if (nodeReference.value == null) {
             return false
         }
@@ -57,7 +56,7 @@ class ResourceNodeTransferThrough(
         return true
     }
 
-    override fun act(level: Level) {
+    override fun act() {
         val node = nodeReference.value!!
         if (output) {
             node.output(resources, checkIfAble, mustContainOrHaveSpace)
@@ -66,13 +65,13 @@ class ResourceNodeTransferThrough(
         }
     }
 
-    override fun actGhost(level: Level) {
+    override fun actGhost() {
     }
 
-    override fun cancelActGhost(level: Level) {
+    override fun cancelActGhost() {
     }
 
-    override fun equivalent(other: LevelUpdate): Boolean {
+    override fun equivalent(other: GameUpdate): Boolean {
         if (other !is ResourceNodeTransferThrough) {
             return false
         }

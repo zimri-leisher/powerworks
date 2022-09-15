@@ -12,7 +12,7 @@ import level.particle.Particle
 import level.tile.Tile
 import level.update.LevelObjectAdd
 import level.update.LevelObjectRemove
-import level.update.LevelUpdate
+import level.update.GameUpdate
 import main.DebugCode
 import main.Game
 import main.PowerworksDelegates
@@ -125,13 +125,13 @@ abstract class Level(
         loaded = true
     }
 
-    open fun canModify(update: LevelUpdate) = loaded && update.canAct(this)
+    open fun canModify(update: GameUpdate) = loaded && update.canAct()
 
-    open fun modify(update: LevelUpdate, transient: Boolean = false): Boolean {
+    open fun modify(update: GameUpdate, transient: Boolean = false): Boolean {
         if (!canModify(update)) {
             return false
         }
-        update.act(this)
+        update.act()
         return true
     }
 

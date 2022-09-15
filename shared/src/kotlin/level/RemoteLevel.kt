@@ -2,7 +2,7 @@ package level
 
 import level.update.LevelObjectAdd
 import level.update.LevelObjectRemove
-import level.update.LevelUpdate
+import level.update.GameUpdate
 import main.removeIfKey
 import network.ClientNetworkManager
 import network.ServerNetworkManager
@@ -18,10 +18,10 @@ import java.util.*
  */
 class RemoteLevel(id: UUID, info: LevelInfo) : Level(id, info), PacketHandler {
 
-    val outgoingUpdates = mutableMapOf<LevelUpdate, Int>()
+    val outgoingUpdates = mutableMapOf<GameUpdate, Int>()
 
     // level update - the update, boolean - whether or not it was acted on, int - time received
-    val incomingUpdates = mutableMapOf<Pair<LevelUpdate, Boolean>, Int>()
+    val incomingUpdates = mutableMapOf<Pair<GameUpdate, Boolean>, Int>()
 
     override fun initialize() {
         println("initialize remote level with id $id")
@@ -47,7 +47,7 @@ class RemoteLevel(id: UUID, info: LevelInfo) : Level(id, info), PacketHandler {
         return modify(LevelObjectRemove(l), l is GhostLevelObject) // transient if l is ghost object
     }
 
-    override fun modify(update: LevelUpdate, transient: Boolean): Boolean {
+    override fun modify(update: GameUpdate, transient: Boolean): Boolean {
         if (!transient && incomingUpdates.any { (updateAndHasActed, _) -> updateAndHasActed.first.equivalent(update) && updateAndHasActed.second }) {
             // if there are any incoming updates that are equivalent to this action and have already been taken
             // return true because this action has already happened
@@ -57,11 +57,11 @@ class RemoteLevel(id: UUID, info: LevelInfo) : Level(id, info), PacketHandler {
             return false
         }
         if (transient) {
-            update.act(this)
+            update.act()
         } else {
             val equivalent = incomingUpdates.keys.filter { it.first.equivalent(update) }
             if (equivalent.isEmpty()) {
-                update.actGhost(this)
+                update.actGhost()
                 outgoingUpdates.put(update, updatesCount)
             } else {
                 // there are equivalent modifications waiting to be taken that are from the server
@@ -76,19 +76,19 @@ class RemoteLevel(id: UUID, info: LevelInfo) : Level(id, info), PacketHandler {
         val outgoingIterator = outgoingUpdates.iterator()
         for ((update, time) in outgoingIterator) {
             if (updatesCount - time > 300) {
-                update.cancelActGhost(this)
+                update.cancelActGhost()
                 outgoingIterator.remove()
             }
         }
         val incomingIterator = incomingUpdates.iterator()
-        val updatesActedOn = mutableMapOf<Pair<LevelUpdate, Boolean>, Int>()
+        val updatesActedOn = mutableMapOf<Pair<GameUpdate, Boolean>, Int>()
         for ((updateAndHasActed, time) in incomingIterator) {
             val (update, hasActed) = updateAndHasActed
             val equivalentOutgoings = outgoingUpdates.filterKeys { it.equivalent(update) }
-            equivalentOutgoings.forEach { t, u -> t.cancelActGhost(this) }
+            equivalentOutgoings.forEach { t, u -> t.cancelActGhost() }
             outgoingUpdates.removeIfKey { it in equivalentOutgoings }
-            if (!hasActed && update.canAct(this)) {
-                update.act(this)
+            if (!hasActed && update.canAct()) {
+                update.act()
                 incomingIterator.remove()
                 updatesActedOn.put(update to true, time)
             } else {

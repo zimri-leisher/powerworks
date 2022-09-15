@@ -53,11 +53,15 @@ abstract class ResourceTransactionExecutor {
 
     object Source : ResourceTransactionExecutor() {
         override fun canExecute(transaction: ResourceTransaction): Boolean {
-
+            if(transaction.src !is SourceContainer && transaction.dest !is SourceContainer) {
+                return false
+            }
+            return transaction.isValid()
         }
 
         override fun execute(transaction: ResourceTransaction) {
+            transaction.start()
+            transaction.finish()
         }
-
     }
 }

@@ -1,6 +1,5 @@
 package level.update
 
-import level.Level
 import level.entity.Entity
 import level.entity.EntityGroup
 import network.MovingObjectReference
@@ -14,30 +13,30 @@ class EntityAddToGroup(
         /**
          * A list of references to entities to add to the group.
          */
-        @Id(2) val entitiesInGroup: List<MovingObjectReference>) : LevelUpdate(LevelUpdateType.ENTITY_ADD_TO_GROUP) {
+        @Id(2) val entitiesInGroup: List<MovingObjectReference>) : GameUpdate(LevelUpdateType.ENTITY_ADD_TO_GROUP) {
 
     private constructor() : this(listOf())
 
     override val playersToSendTo: Set<Player>?
         get() = null
 
-    override fun canAct(level: Level): Boolean {
+    override fun canAct(): Boolean {
         return entitiesInGroup.all { it.value != null }
     }
 
-    override fun act(level: Level) {
+    override fun act() {
         val dereferencedEntities = entitiesInGroup.map { it.value!! as Entity }
         val group = EntityGroup(dereferencedEntities)
         dereferencedEntities.forEach { it.group = group }
     }
 
-    override fun actGhost(level: Level) {
+    override fun actGhost() {
     }
 
-    override fun cancelActGhost(level: Level) {
+    override fun cancelActGhost() {
     }
 
-    override fun equivalent(other: LevelUpdate): Boolean {
+    override fun equivalent(other: GameUpdate): Boolean {
         if (other !is EntityAddToGroup) {
             return false
         }

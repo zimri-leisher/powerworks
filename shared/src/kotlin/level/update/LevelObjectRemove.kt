@@ -20,7 +20,7 @@ class LevelObjectRemove(
          */
         @Id(2)
         val objReference: LevelObjectReference
-) : LevelUpdate(LevelUpdateType.LEVEL_OBJECT_REMOVE) {
+) : GameUpdate(LevelUpdateType.LEVEL_OBJECT_REMOVE) {
 
     private constructor() : this(BlockReference(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0))
 
@@ -29,9 +29,9 @@ class LevelObjectRemove(
     override val playersToSendTo: Set<Player>?
         get() = null
 
-    override fun canAct(level: Level) = objReference.value != null && objReference.level == level
+    override fun canAct() = objReference.value != null && objReference.level == level
 
-    override fun act(level: Level) {
+    override fun act() {
         val obj = objReference.value!!
         if (obj is Block) {
             for (x in 0 until obj.type.widthTiles) {
@@ -59,7 +59,7 @@ class LevelObjectRemove(
         }
     }
 
-    override fun actGhost(level: Level) {
+    override fun actGhost() {
         val obj = objReference.value!!
         if (obj is GhostLevelObject) {
             // ghost act on a ghost object is real
@@ -71,11 +71,11 @@ class LevelObjectRemove(
         }
     }
 
-    override fun cancelActGhost(level: Level) {
+    override fun cancelActGhost() {
         // TODO unhide it
     }
 
-    override fun equivalent(other: LevelUpdate): Boolean {
+    override fun equivalent(other: GameUpdate): Boolean {
         if (other !is LevelObjectRemove) {
             return false
         }

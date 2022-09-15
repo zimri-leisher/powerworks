@@ -1,11 +1,9 @@
 package level.update
 
-import level.Level
 import level.LevelManager
 import level.LevelPosition
 import level.entity.Entity
 import level.entity.Formation
-import misc.Coord
 import network.MovingObjectReference
 import player.Player
 import serialization.Id
@@ -24,14 +22,14 @@ class EntitySetFormation(
          */
         @Id(3)
         val center: LevelPosition
-) : LevelUpdate(LevelUpdateType.ENTITY_SET_FORMATION) {
+) : GameUpdate(LevelUpdateType.ENTITY_SET_FORMATION) {
 
     private constructor() : this(mapOf(), LevelPosition(0, 0, LevelManager.EMPTY_LEVEL))
 
     override val playersToSendTo: Set<Player>?
         get() = null
 
-    override fun canAct(level: Level): Boolean {
+    override fun canAct(): Boolean {
         if (positions.isEmpty()) {
             return true
         }
@@ -46,7 +44,7 @@ class EntitySetFormation(
         return true
     }
 
-    override fun act(level: Level) {
+    override fun act() {
         if(positions.isEmpty()) {
             return
         }
@@ -55,13 +53,13 @@ class EntitySetFormation(
         group.formation = formation
     }
 
-    override fun actGhost(level: Level) {
+    override fun actGhost() {
     }
 
-    override fun cancelActGhost(level: Level) {
+    override fun cancelActGhost() {
     }
 
-    override fun equivalent(other: LevelUpdate): Boolean {
+    override fun equivalent(other: GameUpdate): Boolean {
         if (other !is EntitySetFormation) {
             return false
         }

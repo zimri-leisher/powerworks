@@ -1,7 +1,7 @@
 package level
 
 import level.update.LevelObjectAdd
-import level.update.LevelUpdate
+import level.update.GameUpdate
 import main.Game
 import network.ServerNetworkManager
 import network.packet.*
@@ -12,12 +12,12 @@ import java.util.*
 
 /**
  * As opposed to the [RemoteLevel], an [ActualLevel] is an authoritative instance of the state of the level with the
- * given [id] and [info]. [LevelUpdate]s in this level will be sent over the network to clients in the [currentLobby].
+ * given [id] and [info]. [GameUpdate]s in this level will be sent over the network to clients in the [currentLobby].
  */
 class ActualLevel(id: UUID, info: LevelInfo) : Level(id, info), PacketHandler {
 
     /**
-     * The current [Lobby] this level is loaded in. Used for determining who to send [LevelUpdate]s to.
+     * The current [Lobby] this level is loaded in. Used for determining who to send [GameUpdate]s to.
      */
     var currentLobby: Lobby? = null
 
@@ -42,7 +42,7 @@ class ActualLevel(id: UUID, info: LevelInfo) : Level(id, info), PacketHandler {
         super.load()
     }
 
-    override fun modify(update: LevelUpdate, transient: Boolean): Boolean {
+    override fun modify(update: GameUpdate, transient: Boolean): Boolean {
         val success = super.modify(update, transient)
         if (success && !transient) {
             val playersToSendTo = update.playersToSendTo

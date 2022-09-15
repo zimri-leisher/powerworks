@@ -47,7 +47,7 @@ open class ElementResourceContainer(
 
     init {
         onSelectIcon = { index, interaction ->
-            if(interaction.event.type == ControlEventType.PRESS) {
+            if (interaction.event.type == ControlEventType.PRESS) {
                 if (index < currentResources.size) {
                     val (type, quantity) = currentResources[index]
                     onSelect(type, quantity, interaction)

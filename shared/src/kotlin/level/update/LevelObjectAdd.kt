@@ -19,7 +19,7 @@ class LevelObjectAdd(
          */
         @Id(2)
         val obj: LevelObject
-) : LevelUpdate(LevelUpdateType.LEVEL_OBJECT_ADD) {
+) : GameUpdate(LevelUpdateType.LEVEL_OBJECT_ADD) {
 
     private constructor() : this(DefaultBlock(BlockType.ERROR, 0, 0, 0))
 
@@ -28,9 +28,9 @@ class LevelObjectAdd(
 
     private var ghostLevelObject: GhostLevelObject? = null
 
-    override fun canAct(level: Level) = obj.hitbox == Hitbox.NONE || obj is GhostLevelObject || level.getCollisionsWith(obj.hitbox, obj.x, obj.y).filter { it !is GhostLevelObject }.none()
+    override fun canAct() = obj.hitbox == Hitbox.NONE || obj is GhostLevelObject || level.getCollisionsWith(obj.hitbox, obj.x, obj.y).filter { it !is GhostLevelObject }.none()
 
-    override fun act(level: Level) {
+    override fun act() {
         if (obj.level != level && obj.inLevel) { // if already in another level
             println("object $obj already in another level")
         }
@@ -68,22 +68,22 @@ class LevelObjectAdd(
         }
     }
 
-    override fun actGhost(level: Level) {
+    override fun actGhost() {
         if (obj is GhostLevelObject) {
-            act(level)
+            act()
             return
         }
         ghostLevelObject = GhostLevelObject(obj.type, obj.x, obj.y, obj.rotation)
         level.add(ghostLevelObject!!)
     }
 
-    override fun cancelActGhost(level: Level) {
+    override fun cancelActGhost() {
         if (ghostLevelObject != null) {
             level.remove(ghostLevelObject!!)
         }
     }
 
-    override fun equivalent(other: LevelUpdate): Boolean {
+    override fun equivalent(other: GameUpdate): Boolean {
         if (other !is LevelObjectAdd) {
             return false
         }

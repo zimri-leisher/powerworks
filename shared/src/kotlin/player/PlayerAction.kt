@@ -25,16 +25,18 @@ sealed class PlayerAction(
 
     /**
      * Takes the action this [PlayerAction] represents. Implementations of this method have no responsibility to
-     * communicate actions over the network, all of that should be handled in [LevelUpdate] instances
+     * communicate actions over the network, all of that should be handled in [GameUpdate] instances
      * @return `true` if the action was successful, `false` otherwise
      */
-    abstract fun act()
+    abstract fun getUpdates(): List<GameUpdate>
 
     /**
      * Visually fakes the action that would be taken if [act] were called. Implementations of this method should make no
      * change to the game state. This is only so that there is instantaneous client visual feedback
      */
-    abstract fun actGhost()
+    fun actGhost() {
+        getUpdates().forEach { it.actGhost() }
+    }
 
     /**
      * Cancel the fake action taken by [actGhost]

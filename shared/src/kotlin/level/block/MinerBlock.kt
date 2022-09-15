@@ -9,6 +9,7 @@ import level.getTileAtTile
 import level.tile.OreTile
 import resource.ResourceNode2
 import resource.ResourceTransaction
+import resource.ResourceTransactionExecutor
 import resource.resourceListOf
 import serialization.Id
 
@@ -33,7 +34,6 @@ class MinerBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(MachineBl
                 val tile = level.getTileAtTile(xTile + x, yTile + y)
                 if (tile is OreTile) {
                     val transaction = ResourceTransaction(null, inv, resourceListOf(tile.type.minedItem to 1))
-
                     // fill up the internal inventory
                     if (output.add(tile.type.minedItem, 1)) {
                         tile.amount -= 1
