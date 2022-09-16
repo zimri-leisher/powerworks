@@ -24,7 +24,7 @@ enum class ResourceOrderPriority {
 data class ResourceOrder(val origin: ResourceContainer, val resources: ResourceBalance, val priority: ResourceOrderPriority)
 
 sealed class ResourceDistributor(val network: ResourceNetwork) {
-    abstract fun distribute(from: ResourceContainer, type: ResourceType, quantity: Int, destinations: Map<ResourceContainer, Int>): Map<ResourceNode2, Int>
+    abstract fun distribute(from: ResourceContainer, type: ResourceType, quantity: Int, destinations: Map<ResourceContainer, Int>): List<ResourceTransaction>
 
     class EqualizeContainers(network: ResourceNetwork) : ResourceDistributor(network) {
 
@@ -34,12 +34,34 @@ sealed class ResourceDistributor(val network: ResourceNetwork) {
             return destinations.filterKeys { it.container == container }.keys
         }
 
+        private fun getBestConnection(from: ResourceContainer, type: ResourceType, quantity: Int, to: ResourceContainer): ResourceNodeConnection? {
+            val potentialTrans = ResourceTransaction(from, to, resourceListOf(type to quantity))
+            val toNodes = to.nodes
+            val fromNodes = from.nodes
+            // find the best (by travel time) pairing
+            var minCost = Int.MAX_VALUE
+            var bestConnection: ResourceNodeConnection? = null
+            for(toNode in toNodes) {
+                for(fromNode in fromNodes) {
+                    val connection = network.getConnection(fromNode, toNode)
+                    if(connection != null) {
+                        val cost = connection.getExecutionCost(potentialTrans)
+                        if(cost < minCost) {
+                            minCost = cost
+                            bestConnection = connection
+                        }
+                    }
+                }
+            }
+            return bestConnection
+        }
+
         override fun distribute(
-            from: ResourceNode2,
+            from: ResourceContainer,
             type: ResourceType,
             quantity: Int,
             destinations: Map<ResourceContainer, Int>
-        ): Map<ResourceNode2, Int> {
+        ): List<ResourceTransaction> {
             val filteredDests = destinations.filterValues { it < 0 }.toMutableMap()
             // end distributions
             val distribution = destinations.keys.associateWith { 0 }.toMutableMap()
@@ -49,7 +71,7 @@ sealed class ResourceDistributor(val network: ResourceNetwork) {
             // the input should be negative to indicate demand, this makes it positive
             val remainingDemand = filteredDests.mapValues { -it.value }.toMutableMap()
 
-            val destinationContainers = filteredDests.keys.map { it.container }.toSet()
+            val destinationContainers = filteredDests.keys
             val containersSentTo = (containersSentTo[type] ?: listOf()).filter { it in destinationContainers }.toMutableList()
             val containersNotSentTo = destinationContainers.filter { it !in containersSentTo }
 

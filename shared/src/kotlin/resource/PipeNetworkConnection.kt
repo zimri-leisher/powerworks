@@ -1,6 +1,7 @@
 package resource
 
 import misc.Coord
+import misc.Geometry
 
 class PipeNetworkConnection(
     val network: PipeNetwork,
@@ -12,6 +13,19 @@ class PipeNetworkConnection(
         val packet = PipeNetworkPacket(this, transaction, Coord(from.xTile * 16, from.yTile * 16))
         currentPackets.add(packet)
         transaction.start()
+    }
+
+    override fun getExecutionCost(transaction: ResourceTransaction): Int {
+        var dist = 0.0
+        var idx = 0
+        while(idx < steps.size - 1) {
+            val thisStep = steps[idx]
+            val nextStep = steps[idx + 1]
+            dist += Geometry.distance(thisStep.xTile, thisStep.yTile, nextStep.xTile, nextStep.yTile)
+            idx++
+        }
+        // do something to dist based on network speed
+        return dist.toInt() * 16
     }
 
     fun update() {

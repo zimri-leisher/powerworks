@@ -24,7 +24,7 @@ abstract class ResourceNetwork(val level: Level) {
         ALL.add(this)
     }
 
-    abstract fun getConnection(from: ResourceContainer, to: ResourceContainer): ResourceNodeConnection?
+    abstract fun getConnection(from: ResourceNode2, to: ResourceNode2): ResourceNodeConnection?
 
     open fun render() {}
 

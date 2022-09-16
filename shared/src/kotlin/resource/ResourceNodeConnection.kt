@@ -11,9 +11,4 @@ abstract class ResourceNodeConnection(val from: ResourceNode2, val to: ResourceN
         }
         return true
     }
-
-    override fun execute(transaction: ResourceTransaction) {
-        transaction.start()
-        transaction.finish()
-    }
 }

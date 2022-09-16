@@ -19,6 +19,7 @@ import misc.Geometry
 abstract class ResourceTransactionExecutor {
     abstract fun canExecute(transaction: ResourceTransaction): Boolean
     abstract fun execute(transaction: ResourceTransaction)
+    abstract fun getExecutionCost(transaction: ResourceTransaction): Int
 
     class Player(val player: player.Player) : ResourceTransactionExecutor() {
 
@@ -46,6 +47,10 @@ abstract class ResourceTransactionExecutor {
             transaction.finish()
         }
 
+        override fun getExecutionCost(transaction: ResourceTransaction): Int {
+            return 0
+        }
+
         companion object {
             const val MAX_RESOURCE_TRANSFER_DIST = 16 * 16 // 16 tiles
         }
@@ -62,6 +67,10 @@ abstract class ResourceTransactionExecutor {
         override fun execute(transaction: ResourceTransaction) {
             transaction.start()
             transaction.finish()
+        }
+
+        override fun getExecutionCost(transaction: ResourceTransaction): Int {
+            return 0
         }
     }
 }
