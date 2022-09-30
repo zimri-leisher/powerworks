@@ -8,6 +8,7 @@ import item.weapon.WeaponItemType
 import resource.ResourceList
 import resource.ResourceType
 import resource.resourceListOf
+import serialization.ObjectList
 
 private var nextId = 0
 
@@ -38,6 +39,7 @@ class Recipe(
     }
 
     companion object {
+        @ObjectList
         val ALL = mutableListOf<Recipe>()
 
         val ERROR = Recipe(

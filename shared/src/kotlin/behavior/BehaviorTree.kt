@@ -3,6 +3,8 @@ package behavior
 import behavior.composites.Sequence
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import level.entity.Entity
+import serialization.ObjectIdentifier
+import serialization.ObjectList
 
 object Behavior {
 
@@ -55,6 +57,7 @@ class BehaviorTree(initializer: CompositeContext.() -> Unit = {}) {
      * The identifier number of this [BehaviorTree]. Because behavior trees are generic to all entities, they only need
      * to be instantiated at the start of the program when defining the actual behavior
      */
+    @ObjectIdentifier
     val id = nextId++
 
     private val base = Sequence(this, mutableListOf())
@@ -122,6 +125,7 @@ class BehaviorTree(initializer: CompositeContext.() -> Unit = {}) {
     }
 
     companion object {
+        @ObjectList
         val ALL = mutableListOf<BehaviorTree>()
     }
 }

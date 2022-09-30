@@ -8,6 +8,7 @@ import level.entity.EntityType
 import level.entity.robot.RobotType
 import resource.ResourceCategory
 import resource.ResourceType
+import serialization.ObjectList
 
 open class ItemType(initializer: ItemType.() -> Unit = {}) : ResourceType() {
 
@@ -26,6 +27,7 @@ open class ItemType(initializer: ItemType.() -> Unit = {}) : ResourceType() {
     override fun toString() = name
 
     companion object {
+        @ObjectList
         val ALL = mutableListOf<ItemType>()
 
         val ERROR = ItemType {
@@ -65,6 +67,7 @@ open class EntityItemType(initializer: EntityItemType.() -> Unit = {}) : ItemTyp
     }
 
     companion object {
+        @ObjectList
         val ALL = mutableListOf<EntityItemType>()
     }
 }
@@ -80,6 +83,7 @@ class RobotItemType(initializer: RobotItemType.() -> Unit) : EntityItemType() {
 
     companion object {
 
+        @ObjectList
         val ALL = mutableListOf<RobotItemType>()
 
         val STANDARD = RobotItemType {
@@ -100,7 +104,7 @@ class BlockItemType(initializer: BlockItemType.() -> Unit) : ItemType() {
     }
 
     companion object {
-
+        @ObjectList
         val ALL = mutableListOf<BlockItemType>()
 
         val FARSEEKER = BlockItemType {
@@ -198,7 +202,7 @@ class OreItemType(initializer: OreItemType.() -> Unit) : ItemType() {
     }
 
     companion object {
-
+        @ObjectList
         val ALL = mutableListOf<OreItemType>()
 
         val COPPER_ORE = OreItemType {
@@ -226,7 +230,7 @@ class IngotItemType(initializer: IngotItemType.() -> Unit) : ItemType() {
     }
 
     companion object {
-
+        @ObjectList
         val ALL = mutableListOf<IngotItemType>()
 
         val IRON_INGOT = IngotItemType {

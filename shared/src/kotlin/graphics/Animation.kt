@@ -4,9 +4,7 @@ import main.height
 import main.toColor
 import main.width
 import misc.Coord
-import serialization.Input
-import serialization.Output
-import serialization.Serializer
+import serialization.*
 
 sealed class AnimationStep(val stepID: String?) {
 
@@ -37,7 +35,8 @@ sealed class AnimationStep(val stepID: String?) {
     abstract fun copy(): AnimationStep
 }
 
-class Frame(val fromFrameIndex: Int, val toFrameIndex: Int, ticks: Int = 0, stepID: String? = "frame $toFrameIndex") : AnimationStep(stepID) {
+class Frame(val fromFrameIndex: Int, val toFrameIndex: Int, ticks: Int = 0, stepID: String? = "frame $toFrameIndex") :
+    AnimationStep(stepID) {
 
     val pause = Pause(ticks, null)
 
@@ -64,7 +63,8 @@ class Frame(val fromFrameIndex: Int, val toFrameIndex: Int, ticks: Int = 0, step
         return Frame(fromFrameIndex, toFrameIndex, pause.ticks, stepID)
     }
 
-    override fun toString() = "Frame step, index: $fromFrameIndex -> $toFrameIndex, progress: ${pause.currentTicks}/${pause.ticks}"
+    override fun toString() =
+        "Frame step, index: $fromFrameIndex -> $toFrameIndex, progress: ${pause.currentTicks}/${pause.ticks}"
 }
 
 class Pause(val ticks: Int, stepID: String?) : AnimationStep(stepID) {
@@ -353,12 +353,14 @@ class StepChain(stepID: String? = null, closure: StepChain.() -> Unit) : Animati
 
 private var nextId = 0
 
-class Animation(path: String,
-                numberOfFrames: Int,
-                val startPlaying: Boolean = false,
-                val smoothing: Boolean = false,
-                val offsets: List<Coord> = listOf(),
-                closure: StepChain.() -> Unit = {}) : Renderable() {
+class Animation(
+    path: String,
+    numberOfFrames: Int,
+    val startPlaying: Boolean = false,
+    val smoothing: Boolean = false,
+    val offsets: List<Coord> = listOf(),
+    closure: StepChain.() -> Unit = {}
+) : Renderable() {
 
     private constructor() : this("misc/error", 1)
 
@@ -507,10 +509,24 @@ class Animation(path: String,
         if (smoothing) {
             if (keepAspect) {
                 Renderer.renderTextureKeepAspect(lastFrame, x + xOffset, y + yOffset, width, height)
-                Renderer.renderTextureKeepAspect(currentFrame, x + xOffset, y + yOffset, width, height, TextureRenderParams(color = toColor(alpha = currentStepProgress)).combine(params))
+                Renderer.renderTextureKeepAspect(
+                    currentFrame,
+                    x + xOffset,
+                    y + yOffset,
+                    width,
+                    height,
+                    TextureRenderParams(color = toColor(alpha = currentStepProgress)).combine(params)
+                )
             } else {
                 Renderer.renderTexture(lastFrame, x + xOffset, y + yOffset, width, height)
-                Renderer.renderTexture(currentFrame, x + xOffset, y + yOffset, width, height, TextureRenderParams(color = toColor(alpha = currentStepProgress)).combine(params))
+                Renderer.renderTexture(
+                    currentFrame,
+                    x + xOffset,
+                    y + yOffset,
+                    width,
+                    height,
+                    TextureRenderParams(color = toColor(alpha = currentStepProgress)).combine(params)
+                )
             }
         } else {
             if (keepAspect) {
@@ -580,16 +596,22 @@ class Animation(path: String,
     }
 }
 
-class AnimationSerializer : Serializer<Animation>() {
-    override fun write(obj: Any, output: Output) {
-        obj as Animation
-        output.writeInt(obj.id)
-        output.writeBoolean(obj.isLocal)
+class AnimationSerializer(type: Class<Animation>, settings: List<SerializerSetting<*>>) :
+    Serializer<Animation>(type, settings) {
+
+
+    override val writeStrategy = object : WriteStrategy<Animation>(type) {
+        override fun write(obj: Animation, output: Output) {
+            output.writeInt(obj.id)
+            output.writeBoolean(obj.isLocal)
+        }
     }
 
-    override fun instantiate(input: Input): Animation {
-        val id = input.readInt()
-        val isCopy = input.readBoolean()
-        return Animation.ALL.first { it.id == id }.let { if (isCopy) it.createLocalInstance() else it }
+    override val createStrategy = object : CreateStrategy<Animation>(type) {
+        override fun create(input: Input): Animation {
+            val id = input.readInt()
+            val isCopy = input.readBoolean()
+            return Animation.ALL.first { it.id == id }.let { if (isCopy) it.createLocalInstance() else it }
+        }
     }
 }

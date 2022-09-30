@@ -2,6 +2,7 @@ package item.tool
 
 import item.ItemType
 import level.LevelObjectType
+import serialization.ObjectList
 
 class ToolItemType(initializer: ToolItemType.() -> Unit = {}) : ItemType() {
     var range = -1
@@ -13,6 +14,7 @@ class ToolItemType(initializer: ToolItemType.() -> Unit = {}) : ItemType() {
     }
 
     companion object {
+        @ObjectList
         val ALL = mutableListOf<ToolItemType>()
     }
 }

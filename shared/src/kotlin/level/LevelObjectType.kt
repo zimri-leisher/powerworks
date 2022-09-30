@@ -3,13 +3,12 @@ package level
 import graphics.Image
 import item.ItemType
 import resource.ResourceNode2
-import serialization.Input
-import serialization.Output
-import serialization.Serializer
+import serialization.*
 
 private var nextId = 0
 
 open class LevelObjectType<T : LevelObject>(initializer: LevelObjectType<T>.() -> Unit = {}) {
+    @ObjectIdentifier
     val id = nextId++
     var instantiate: (x: Int, y: Int, rotation: Int) -> T = { _, _, _ -> throw Exception("Level object type $id failed to specify an adequate instantiator function") }
     var hitbox = Hitbox.NONE
@@ -25,6 +24,7 @@ open class LevelObjectType<T : LevelObject>(initializer: LevelObjectType<T>.() -
     }
 
     companion object {
+        @ObjectList
         val ALL = mutableListOf<LevelObjectType<*>>()
 
         val ERROR = LevelObjectType<LevelObject>()

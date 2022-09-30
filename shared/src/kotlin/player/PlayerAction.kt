@@ -29,19 +29,6 @@ sealed class PlayerAction(
      * @return `true` if the action was successful, `false` otherwise
      */
     abstract fun getUpdates(): List<GameUpdate>
-
-    /**
-     * Visually fakes the action that would be taken if [act] were called. Implementations of this method should make no
-     * change to the game state. This is only so that there is instantaneous client visual feedback
-     */
-    fun actGhost() {
-        getUpdates().forEach { it.actGhost() }
-    }
-
-    /**
-     * Cancel the fake action taken by [actGhost]
-     */
-    abstract fun cancelActGhost()
 }
 
 class ActionError : PlayerAction(Player(User(UUID.randomUUID(), ""), UUID.randomUUID(), UUID.randomUUID())) {
@@ -50,14 +37,8 @@ class ActionError : PlayerAction(Player(User(UUID.randomUUID(), ""), UUID.random
         return false
     }
 
-    override fun act() {
-    }
+    override fun getUpdates() = emptyList<GameUpdate>()
 
-    override fun actGhost() {
-    }
-
-    override fun cancelActGhost() {
-    }
 }
 
 class ActionDoResourceTransaction(
