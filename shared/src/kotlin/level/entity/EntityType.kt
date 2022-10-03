@@ -2,6 +2,7 @@ package level.entity
 
 import item.EntityItemType
 import level.moving.MovingObjectType
+import serialization.ObjectList
 
 open class EntityType<T : Entity>(initializer: () -> Unit = {}) : MovingObjectType<T>() {
     var moveSpeed = 1.0 // tiles per second
@@ -14,7 +15,7 @@ open class EntityType<T : Entity>(initializer: () -> Unit = {}) : MovingObjectTy
     }
 
     companion object {
-
+        @ObjectList
         val ALL = mutableListOf<EntityType<*>>()
 
         val ERROR = EntityType<DefaultEntity>()

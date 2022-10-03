@@ -7,6 +7,7 @@ import level.LevelObjectTextures
 import level.entity.EntityType
 import network.User
 import player.Player
+import serialization.ObjectList
 import java.util.*
 
 class RobotType<T : Robot>(initializer: RobotType<T>.() -> Unit) : EntityType<T>() {
@@ -18,7 +19,7 @@ class RobotType<T : Robot>(initializer: RobotType<T>.() -> Unit) : EntityType<T>
     }
 
     companion object {
-
+        @ObjectList
         val ALL = mutableListOf<RobotType<*>>()
 
         val STANDARD = RobotType<Robot> {

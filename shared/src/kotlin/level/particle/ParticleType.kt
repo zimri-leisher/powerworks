@@ -2,11 +2,14 @@ package level.particle
 
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import graphics.Image
+import serialization.ObjectIdentifier
+import serialization.ObjectList
 
 private var nextId = 0
 
 class ParticleType(initializer: ParticleType.() -> Unit) {
 
+    @ObjectIdentifier
     val id = nextId++
 
     var texture: TextureRegion = Image.Misc.ERROR
@@ -34,6 +37,7 @@ class ParticleType(initializer: ParticleType.() -> Unit) {
     }
 
     companion object {
+        @ObjectList
         val ALL = mutableListOf<ParticleType>()
 
         val BLOCK_PLACE = ParticleType {

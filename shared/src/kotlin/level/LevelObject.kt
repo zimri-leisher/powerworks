@@ -10,22 +10,20 @@ import main.toColor
 import network.LevelObjectReference
 import player.team.Team
 import resource.ResourceContainerGroup
-import serialization.Id
-import serialization.Input
-import serialization.Output
-import serialization.Serializer
+import serialization.*
 import java.util.*
 
 abstract class LevelObject protected constructor(
-        type: LevelObjectType<out LevelObject>,
-        open val x: Int,
-        open val y: Int,
-        rotation: Int = 0,
-        /**
-         * Whether or not the [Interactor] tool should allow clicking on this
-         */
-        @Id(4)
-        var isInteractable: Boolean = true) {
+    type: LevelObjectType<out LevelObject>,
+    open val x: Int,
+    open val y: Int,
+    rotation: Int = 0,
+    /**
+     * Whether or not the [Interactor] tool should allow clicking on this
+     */
+    @Id(4)
+    var isInteractable: Boolean = true
+) {
 
     private constructor() : this(LevelObjectType.ERROR, 0, 0)
 
@@ -143,8 +141,20 @@ abstract class LevelObject protected constructor(
     }
 
     fun renderHealthBar() {
-        Renderer.renderFilledRectangle(x + hitbox.xStart - (14 - hitbox.width) / 2 - 1, y + hitbox.yStart - 7, 16, 7, TextureRenderParams(color = toColor(r = 0.5f, g = 0.5f, b = 0.5f)))
-        Renderer.renderFilledRectangle(x + hitbox.xStart - (14 - hitbox.width) / 2, y + hitbox.yStart - 6, (14 * (health.toDouble() / type.maxHealth)).toInt(), 5, TextureRenderParams(color = toColor(g = 1.0f)))
+        Renderer.renderFilledRectangle(
+            x + hitbox.xStart - (14 - hitbox.width) / 2 - 1,
+            y + hitbox.yStart - 7,
+            16,
+            7,
+            TextureRenderParams(color = toColor(r = 0.5f, g = 0.5f, b = 0.5f))
+        )
+        Renderer.renderFilledRectangle(
+            x + hitbox.xStart - (14 - hitbox.width) / 2,
+            y + hitbox.yStart - 6,
+            (14 * (health.toDouble() / type.maxHealth)).toInt(),
+            5,
+            TextureRenderParams(color = toColor(g = 1.0f))
+        )
     }
 
     open fun beforeAddToLevel(newLevel: Level) {
@@ -168,7 +178,13 @@ abstract class LevelObject protected constructor(
     }
 
     protected fun renderHitbox() {
-        Renderer.renderFilledRectangle(x + hitbox.xStart, y + hitbox.yStart, hitbox.width, hitbox.height, TextureRenderParams(color = Color(0xFF0010)))
+        Renderer.renderFilledRectangle(
+            x + hitbox.xStart,
+            y + hitbox.yStart,
+            hitbox.width,
+            hitbox.height,
+            TextureRenderParams(color = Color(0xFF0010))
+        )
     }
 
     open fun onHitboxChange() {
@@ -199,7 +215,15 @@ abstract class LevelObject protected constructor(
     /**
      * When the mouse is clicked on this
      */
-    open fun onInteractOn(event: ControlEvent, x: Int, y: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+    open fun onInteractOn(
+        event: ControlEvent,
+        x: Int,
+        y: Int,
+        button: Int,
+        shift: Boolean,
+        ctrl: Boolean,
+        alt: Boolean
+    ) {
     }
 
     /**
@@ -235,19 +259,27 @@ abstract class LevelObject protected constructor(
     }
 }
 
-class LevelObjectSerializer<R : LevelObject> : Serializer.Tagged<R>(false) {
+class LevelObjectSerializer<R : LevelObject>(type: Class<R>, settings: List<SerializerSetting<*>>) :
+    TaggedSerializer<R>(type, settings) {
 
-    override fun write(obj: Any, output: Output) {
-        obj as LevelObject
-        output.write(obj.type)
-        output.writeInt(obj.x)
-        output.writeInt(obj.y)
-        output.writeInt(obj.rotation)
-        super.write(obj, output)
+    inner class LevelObjectWriteStrategy(val taggedWrite: WriteStrategy<R> = super.writeStrategy) :
+        WriteStrategy<R>(type) {
+        override fun write(obj: R, output: Output) {
+            output.write(obj.type)
+            output.writeInt(obj.x)
+            output.writeInt(obj.y)
+            output.writeInt(obj.rotation)
+            taggedWrite.write(obj, output)
+        }
     }
 
-    override fun instantiate(input: Input): R {
-        val levelObjectType = input.read(LevelObjectType::class.java)
-        return levelObjectType.instantiate(input.readInt(), input.readInt(), input.readInt()) as R
+    override val writeStrategy = LevelObjectWriteStrategy()
+
+    override val createStrategy = object : CreateStrategy<R>(type) {
+        override fun create(input: Input): R {
+            val levelObjectType = input.read(LevelObjectType::class.java)
+            return levelObjectType.instantiate(input.readInt(), input.readInt(), input.readInt()) as R
+
+        }
     }
 }

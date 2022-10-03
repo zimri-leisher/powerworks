@@ -23,6 +23,7 @@ import misc.Geometry.rotate
 import resource.*
 import routing.script.RoutingLanguage
 import screen.gui.*
+import serialization.ObjectList
 import java.util.*
 
 /**
@@ -89,6 +90,7 @@ open class BlockType<T : Block>(initializer: BlockType<T>.() -> Unit = {}) : Lev
     override fun toString() = name
 
     companion object {
+        @ObjectList
         val ALL = mutableListOf<BlockType<*>>()
 
         val ERROR = BlockType<DefaultBlock>()
@@ -211,7 +213,7 @@ class PipeBlockType<T : PipeBlock>(initializer: PipeBlockType<T>.() -> Unit = {}
     }
 
     companion object {
-
+        @ObjectList
         val ALL = mutableListOf<PipeBlockType<*>>()
 
         val FLUID_PIPE = PipeBlockType<FluidPipeBlock> {
@@ -517,7 +519,7 @@ class ChestBlockType(initializer: ChestBlockType.() -> Unit) : BlockType<ChestBl
     }
 
     companion object {
-
+        @ObjectList
         val ALL = mutableListOf<ChestBlockType>()
 
         val SMALL = ChestBlockType {

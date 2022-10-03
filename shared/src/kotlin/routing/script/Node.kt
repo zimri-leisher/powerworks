@@ -3,9 +3,7 @@ package routing.script
 import resource.ResourceNode
 import resource.ResourceNode2
 import resource.ResourceType
-import serialization.Input
-import serialization.Output
-import serialization.Serializer
+import serialization.*
 
 sealed class Node<R>(
         val token: Token) {
@@ -285,43 +283,42 @@ class Equal(token: Token, left: Node<Any>, right: Node<Any>) : BinaryOperator<An
     }
 }
 
-class NodeSerializer : Serializer<Node<*>>() {
+class NodeSerializer(type: Class<Node<*>>, settings: List<SerializerSetting<*>>) : Serializer<Node<*>>(type, settings) {
 
-    override fun write(obj: Any, output: Output) {
-        obj as Node<*>
-        output.write(obj.token)
-        when (obj.token.type.category) {
-            TokenCategory.OP_BINARY_INFIX, TokenCategory.OP_BINARY_PREFIX -> {
-                obj as BinaryOperator<*, *, *>
-                output.write(obj.left)
-                output.write(obj.right)
+    override val writeStrategy = object : WriteStrategy<Node<*>>(type) {
+        override fun write(obj: Node<*>, output: Output) {
+            output.write(obj.token)
+            when (obj.token.type.category) {
+                TokenCategory.OP_BINARY_INFIX, TokenCategory.OP_BINARY_PREFIX -> {
+                    obj as BinaryOperator<*, *, *>
+                    output.write(obj.left)
+                    output.write(obj.right)
+                }
+                TokenCategory.OP_UNARY_RIGHT, TokenCategory.OP_UNARY_LEFT -> {
+                    obj as UnaryOperator<*, *>
+                    output.write(obj.arg)
+                }
+                else -> {}
             }
-            TokenCategory.OP_UNARY_RIGHT, TokenCategory.OP_UNARY_LEFT -> {
-                obj as UnaryOperator<*, *>
-                output.write(obj.arg)
-            }
-
-            else -> {}
         }
     }
 
-    override fun instantiate(input: Input): Node<*> {
-        val token = input.read(Token::class.java)
-        val args = mutableListOf<Node<*>>()
-        when (token.type.category) {
-            TokenCategory.OP_BINARY_INFIX, TokenCategory.OP_BINARY_PREFIX -> {
-                args.add(input.read(Node::class.java))
-                args.add(input.read(Node::class.java))
-            }
-            TokenCategory.OP_UNARY_RIGHT, TokenCategory.OP_UNARY_LEFT -> {
-                args.add(input.read(Node::class.java))
-            }
+    override val createStrategy = object : CreateStrategy<Node<*>>(type) {
+        override fun create(input: Input): Node<*> {
+            val token = input.read(Token::class.java)
+            val args = mutableListOf<Node<*>>()
+            when (token.type.category) {
+                TokenCategory.OP_BINARY_INFIX, TokenCategory.OP_BINARY_PREFIX -> {
+                    args.add(input.read(Node::class.java))
+                    args.add(input.read(Node::class.java))
+                }
+                TokenCategory.OP_UNARY_RIGHT, TokenCategory.OP_UNARY_LEFT -> {
+                    args.add(input.read(Node::class.java))
+                }
 
-            else -> {}
+                else -> {}
+            }
+            return token.toNode(*args.toTypedArray())
         }
-        return token.toNode(*args.toTypedArray())
-    }
-
-    override fun read(newInstance: Any, input: Input) {
     }
 }

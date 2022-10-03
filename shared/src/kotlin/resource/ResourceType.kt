@@ -2,6 +2,7 @@ package resource
 
 import graphics.Renderable
 import serialization.ObjectIdentifier
+import serialization.ObjectList
 import java.util.*
 
 private var nextId = 0
@@ -37,6 +38,7 @@ abstract class ResourceType {
     }
 
     companion object {
+        @ObjectList
         val ALL = mutableListOf<ResourceType>()
 
         fun getPossibleTypes(name: String) = ALL.filter {

@@ -8,16 +8,9 @@ import resource.ResourceNode
 import resource.ResourceNode2
 import serialization.Id
 import serialization.Input
+import serialization.Reference
 import serialization.Serializer
 import java.util.*
-
-sealed class NetworkReference<T> {
-    var value: T? = null
-
-    abstract fun resolve(): T?
-
-    override fun toString() = value.toString()
-}
 
 class ResourceNodeReference(
     @Id(1)
@@ -28,7 +21,7 @@ class ResourceNodeReference(
     val level: Level,
     @Id(4)
     val id: UUID
-) : NetworkReference<ResourceNode>() {
+) : Reference<ResourceNode>() {
     constructor(node: ResourceNode) : this(node.xTile, node.yTile, node.level, node.id) {
         value = node
     }
@@ -47,7 +40,7 @@ abstract class LevelObjectReference(
     val level: Level,
     @Id(2)
     val objectId: UUID
-) : NetworkReference<LevelObject>()
+) : Reference<LevelObject>()
 
 class ResourceNode2Reference(
     level: Level, objectId: UUID,
@@ -183,14 +176,5 @@ class BlockReference(
 
     override fun toString(): String {
         return "Reference to block at $xTile, $yTile: $value"
-    }
-}
-
-class NetworkReferenceSerializer : Serializer.Tagged<NetworkReference<*>>(true) {
-
-    override fun read(newInstance: Any, input: Input) {
-        super.read(newInstance, input)
-        newInstance as NetworkReference<Any?>
-        newInstance.value = newInstance.resolve()
     }
 }

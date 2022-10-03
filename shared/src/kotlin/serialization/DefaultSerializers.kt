@@ -3,6 +3,7 @@ package serialization
 import item.ItemType
 import main.isKotlinClass
 import java.lang.reflect.Field
+import java.util.*
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.companionObject
 import kotlin.reflect.full.companionObjectInstance
@@ -279,10 +280,10 @@ open class AutoIDSerializer<R : Any>(
             if (!List::class.java.isAssignableFrom(objectList.returnType.javaClass)) {
                 throw Exception("@ObjectList field does not extend List")
             }
-            val objects = objectList.get(type.kotlin.companionObjectInstance) as List<R>
+            val objects = objectList.get(type.kotlin.companionObjectInstance) as List<*>
             for (obj in objects) {
-                if (!type.isAssignableFrom(obj::class.java)) {
-                    throw Exception("@ObjectList does not only contain $type")
+                if (obj == null || !type.isAssignableFrom(obj::class.java)) {
+                    throw Exception("@ObjectList does not only contain $type, it contained $obj")
                 }
             }
             return objects
@@ -317,6 +318,21 @@ class PairSerializer(type: Class<Pair<Any?, Any?>>, settings: List<SerializerSet
         override fun write(obj: Pair<Any?, Any?>, output: Output) {
             output.write(obj.first)
             output.write(obj.second)
+        }
+    }
+}
+
+class UUIDSerializer(type: Class<UUID>, settings: List<SerializerSetting<*>>) : Serializer<UUID>(type, settings) {
+
+    override val createStrategy = object : CreateStrategy<UUID>(type) {
+        override fun create(input: Input): UUID {
+            return UUID.fromString(input.readUTF())
+        }
+    }
+
+    override val writeStrategy = object : WriteStrategy<UUID>(type) {
+        override fun write(obj: UUID, output: Output) {
+            output.writeUTF(obj.toString())
         }
     }
 }

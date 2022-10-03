@@ -13,15 +13,14 @@ import network.User
 import player.lobby.Lobby
 import player.team.Team
 import resource.ResourceTransactionExecutor
-import serialization.Input
-import serialization.Output
-import serialization.Serializer
+import serialization.*
 import java.util.*
 
 class Player(
-        val user: User,
-        var homeLevelId: UUID,
-        var brainRobotId: UUID) : LevelEventListener {
+    val user: User,
+    var homeLevelId: UUID,
+    var brainRobotId: UUID
+) : LevelEventListener {
 
     var online = false
         set(value) {
@@ -63,7 +62,8 @@ class Player(
     fun initialize() {
         LevelManager.levelEventListeners.add(this)
         PlayerManager.pushPlayerEvent(this, PlayerEvent.INITIALIZE)
-        online = if (Game.IS_SERVER) ServerNetworkManager.isOnline(user) else ClientNetworkManager.isVisibleAndOnline(user)
+        online =
+            if (Game.IS_SERVER) ServerNetworkManager.isOnline(user) else ClientNetworkManager.isVisibleAndOnline(user)
         playing = LevelManager.isLevelLoaded(homeLevelId)
     }
 
@@ -115,24 +115,28 @@ class Player(
     }
 }
 
-class PlayerSerializer : Serializer<Player>() {
-    override fun write(obj: Any, output: Output) {
-        obj as Player
-        output.write(obj.user)
-        output.write(obj.brainRobotId)
-        output.write(obj.homeLevelId)
+class PlayerSerializer(type: Class<Player>, settings: List<SerializerSetting<*>>) : Serializer<Player>(type, settings) {
+
+    override val writeStrategy = object : WriteStrategy<Player>(type) {
+        override fun write(obj: Player, output: Output) {
+            output.write(obj.user)
+            output.write(obj.brainRobotId)
+            output.write(obj.homeLevelId)
+        }
     }
 
-    override fun instantiate(input: Input): Player {
-        val user = input.read(User::class.java)
-        val brainRobotId = input.read(UUID::class.java)
-        val homeLevelId = input.read(UUID::class.java)
-        val alreadyExistingPlayer = PlayerManager.getInitializedPlayerOrNull(user)
-        if (alreadyExistingPlayer != null) {
-            return alreadyExistingPlayer
+    override val createStrategy = object : CreateStrategy<Player>(type) {
+        override fun create(input: Input): Player {
+            val user = input.read(User::class.java)
+            val brainRobotId = input.read(UUID::class.java)
+            val homeLevelId = input.read(UUID::class.java)
+            val alreadyExistingPlayer = PlayerManager.getInitializedPlayerOrNull(user)
+            if (alreadyExistingPlayer != null) {
+                return alreadyExistingPlayer
+            }
+            val newPlayer = Player(user, homeLevelId, brainRobotId)
+            newPlayer.initialize()
+            return newPlayer
         }
-        val newPlayer = Player(user, homeLevelId, brainRobotId)
-        newPlayer.initialize()
-        return newPlayer
     }
 }
