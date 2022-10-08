@@ -1,9 +1,7 @@
 package graphics
 
 import misc.Coord
-import serialization.Input
-import serialization.Output
-import serialization.Serializer
+import serialization.*
 
 private var nextId = 0
 
@@ -12,19 +10,31 @@ class AnimationCollection(val animations: List<Animation>) {
     var id = nextId++
     var isLocal = false
 
-    constructor(path: String,
-                numberOfAnimations: Int,
-                numberOfFrames: Int,
-                startPlaying: Boolean = false,
-                smoothing: Boolean = false,
-                offsets: List<Coord> = listOf(),
-                closure: StepChain.() -> Unit = {}) : this(List(numberOfAnimations) { index -> Animation(path + "_$index", numberOfFrames, startPlaying, smoothing, offsets, closure) })
+    constructor(
+        path: String,
+        numberOfAnimations: Int,
+        numberOfFrames: Int,
+        startPlaying: Boolean = false,
+        smoothing: Boolean = false,
+        offsets: List<Coord> = listOf(),
+        closure: StepChain.() -> Unit = {}
+    ) : this(List(numberOfAnimations) { index ->
+        Animation(
+            path + "_$index",
+            numberOfFrames,
+            startPlaying,
+            smoothing,
+            offsets,
+            closure
+        )
+    })
 
     init {
         ALL.add(this)
     }
 
-    fun createLocalInstance() = AnimationCollection(animations.map { it.createLocalInstance() }).also { it.id = id; it.isLocal = true }
+    fun createLocalInstance() =
+        AnimationCollection(animations.map { it.createLocalInstance() }).also { it.id = id; it.isLocal = true }
 
     operator fun get(i: Int) = animations[i]
 
@@ -38,16 +48,21 @@ class AnimationCollection(val animations: List<Animation>) {
     }
 }
 
-class AnimationCollectionSerializer : Serializer<AnimationCollection>() {
-    override fun write(obj: Any, output: Output) {
-        obj as AnimationCollection
-        output.writeInt(obj.id)
-        output.writeBoolean(obj.isLocal)
+class AnimationCollectionSerializer(type: Class<AnimationCollection>, settings: List<SerializerSetting<*>>) :
+    Serializer<AnimationCollection>(type, settings) {
+
+    override val writeStrategy = object : WriteStrategy<AnimationCollection>(type) {
+        override fun write(obj: AnimationCollection, output: Output) {
+            output.writeInt(obj.id)
+            output.writeBoolean(obj.isLocal)
+        }
     }
 
-    override fun instantiate(input: Input): AnimationCollection {
-        val id = input.readInt()
-        val isCopy = input.readBoolean()
-        return AnimationCollection.ALL.first { it.id == id }.let { if (isCopy) it.createLocalInstance() else it }
+    override val createStrategy = object : CreateStrategy<AnimationCollection>(type) {
+        override fun create(input: Input): AnimationCollection {
+            val id = input.readInt()
+            val isCopy = input.readBoolean()
+            return AnimationCollection.ALL.first { it.id == id }.let { if (isCopy) it.createLocalInstance() else it }
+        }
     }
 }

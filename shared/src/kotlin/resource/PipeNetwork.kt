@@ -51,11 +51,13 @@ class PipeNetwork(level: Level) : ResourceNetwork<PipeNetworkVertex>(level, Reso
         return PipeNetworkVertex(obj as PotentialPipeNetworkVertex, mutableListOf(), arrayOfNulls(4))
     }
 
-    override fun getConnection(from: ResourceContainer, to: ResourceContainer): ResourceNodeConnection? {
-        val fromNodes = from
-
+    override fun getConnection(from: ResourceNode2, to: ResourceNode2): ResourceNodeConnection? {
         if (from !in nodes || to !in nodes) {
             return null
+        }
+        val existingConnection = connections.firstOrNull { it.from == from && it.to == to }
+        if(existingConnection != null) {
+            return existingConnection
         }
         val steps = route(from, to) ?: return null
         val connection = PipeNetworkConnection(this, steps)

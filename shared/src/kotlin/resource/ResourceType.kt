@@ -1,6 +1,8 @@
 package resource
 
 import graphics.Renderable
+import serialization.ObjectIdentifier
+import serialization.ObjectList
 import java.util.*
 
 private var nextId = 0
@@ -13,13 +15,14 @@ abstract class ResourceType {
     abstract val category: ResourceCategory
     abstract val name: String
 
-    val technicalName get() = name.lowercase(Locale.getDefault()).replace(" ", "_")
+    val technicalName get() = name.toLowerCase(Locale.getDefault()).replace(" ", "_")
 
     /**
      * Whether to show this when searching all resource types
      */
     var hidden = false
 
+    @ObjectIdentifier
     val id = ResourceNetwork_nextId++
 
     init {
@@ -35,11 +38,14 @@ abstract class ResourceType {
     }
 
     companion object {
+        @ObjectList
         val ALL = mutableListOf<ResourceType>()
 
         fun getPossibleTypes(name: String) = ALL.filter {
-            it.name.lowercase(Locale.getDefault()).contains(name) or it.technicalName.contains(name) }
+            it.name.toLowerCase(Locale.getDefault()).contains(name) or it.technicalName.contains(name)
+        }
 
-        fun getType(name: String) = ALL.firstOrNull { it.name.lowercase(Locale.getDefault()) == name || it.technicalName == name }
+        fun getType(name: String) =
+            ALL.firstOrNull { it.name.toLowerCase(Locale.getDefault()) == name || it.technicalName == name }
     }
 }

@@ -22,9 +22,7 @@ import resource.ResourceNetwork
 import routing.ResourceRoutingNetwork
 import screen.element.ElementLevelView
 import screen.mouse.tool.Tool
-import serialization.Input
-import serialization.Output
-import serialization.Serializer
+import serialization.*
 import java.util.*
 
 const val CHUNK_SIZE_TILES = 8
@@ -298,22 +296,24 @@ abstract class Level(
 
 class LevelSerializer<R : Level> : Serializer<R>() {
 
-    override fun write(obj: Any, output: Output) {
-        obj as Level
-        output.write(obj.id)
-    }
+    // TODO change this to fully serialize the level, and just make everything else send it as @Reference
 
-    override fun instantiate(input: Input): R {
-        val id = input.read(UUID::class.java)
-        val existingLevel = LevelManager.getLevelByIdOrNull(id)
-            ?: if (id == LevelManager.EMPTY_LEVEL.id) LevelManager.EMPTY_LEVEL else null
-        if (existingLevel == null) {
-            println("Unknown level $id")
-            return UnknownLevel(id) as R
+    override val writeStrategy = object : WriteStrategy<R>(type) {
+        override fun write(obj: R, output: Output) {
+            output.write(obj.id)
         }
-        return existingLevel as R
     }
 
-    override fun read(newInstance: Any, input: Input) {
+    override val createStrategy = object : CreateStrategy<R>(type) {
+        override fun create(input: Input): R {
+            val id = input.read(UUID::class.java)
+            val existingLevel = LevelManager.getLevelByIdOrNull(id)
+                ?: if (id == LevelManager.EMPTY_LEVEL.id) LevelManager.EMPTY_LEVEL else null
+            if (existingLevel == null) {
+                println("Unknown level $id")
+                return UnknownLevel(id) as R
+            }
+            return existingLevel as R
+        }
     }
 }

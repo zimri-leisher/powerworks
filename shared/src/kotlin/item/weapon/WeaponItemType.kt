@@ -4,6 +4,7 @@ import graphics.Animation
 import graphics.AnimationCollection
 import graphics.Texture
 import item.ItemType
+import serialization.ObjectList
 
 class WeaponItemType(initializer: WeaponItemType.() -> Unit = {}) : ItemType() {
 
@@ -18,6 +19,7 @@ class WeaponItemType(initializer: WeaponItemType.() -> Unit = {}) : ItemType() {
 
     companion object {
 
+        @ObjectList
         val ALL = mutableListOf<WeaponItemType>()
 
         val ERROR = WeaponItemType { hidden = true }

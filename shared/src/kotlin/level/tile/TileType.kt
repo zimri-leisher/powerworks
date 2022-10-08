@@ -8,6 +8,8 @@ import com.esotericsoftware.kryo.io.Output
 import graphics.ImageCollection
 import item.ItemType
 import item.OreItemType
+import serialization.ObjectIdentifier
+import serialization.ObjectList
 
 private var nextID = 0
 
@@ -24,6 +26,7 @@ open class OreTileType(textures: ImageCollection = ImageCollection.GRASS_COPPER_
     }
 
     companion object {
+        @ObjectList
         val ALL = mutableListOf<OreTileType>()
 
         val ROCK_IRON_ORE = OreTileType(ImageCollection.ROCK_IRON_ORE_TILE, "Rock and iron ore",
@@ -49,6 +52,7 @@ open class TileType(val name: String, val textures: Array<TextureRegion>) {
     constructor(name: String, textures: ImageCollection) : this(name, textures.textures)
     constructor(name: String, texture: TextureRegion) : this(name, arrayOf(texture))
 
+    @ObjectIdentifier
     val id = nextID++
 
     init {
@@ -70,6 +74,7 @@ open class TileType(val name: String, val textures: Array<TextureRegion>) {
     }
 
     companion object {
+        @ObjectList
         val ALL = mutableListOf<TileType>()
 
         val GRASS = TileType("Grass", ImageCollection.ROCK_TILE)

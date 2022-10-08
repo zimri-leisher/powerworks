@@ -1,11 +1,14 @@
 package item.weapon
 
 import level.Hitbox
+import serialization.ObjectIdentifier
+import serialization.ObjectList
 
 private var nextId = 0
 
 class ProjectileType(initializer: ProjectileType.() -> Unit = {}) {
 
+    @ObjectIdentifier
     val id = nextId++
     var damage = 50
     var speed = 5
@@ -18,7 +21,7 @@ class ProjectileType(initializer: ProjectileType.() -> Unit = {}) {
     }
 
     companion object {
-
+        @ObjectList
         val ALL = mutableListOf<ProjectileType>()
 
         val ERROR = ProjectileType {}

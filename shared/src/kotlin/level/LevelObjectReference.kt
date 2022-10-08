@@ -10,6 +10,7 @@ import resource.ResourceNodeOld
 import resource.ResourceNode
 import serialization.Id
 import serialization.Input
+import serialization.Reference
 import serialization.Serializer
 import java.util.*
 
@@ -223,14 +224,5 @@ class BlockReference(
 
     override fun toString(): String {
         return "Reference to block at $xTile, $yTile: $value"
-    }
-}
-
-class NetworkReferenceSerializer : Serializer.Tagged<NetworkReference<*>>(true) {
-
-    override fun read(newInstance: Any, input: Input) {
-        super.read(newInstance, input)
-        newInstance as NetworkReference<Any?>
-        newInstance.value = newInstance.resolve()
     }
 }

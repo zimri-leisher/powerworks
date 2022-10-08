@@ -4,17 +4,15 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion
 import data.GameResourceManager
 import main.height
 import main.width
-import serialization.Id
-import serialization.Input
-import serialization.Output
-import serialization.Serializer
+import serialization.*
 
 class Texture(
-        val region: TextureRegion,
-        @Id(2)
-        override val xOffset: Int = 0,
-        @Id(3)
-        override val yOffset: Int = 0) : Renderable() {
+    val region: TextureRegion,
+    @Id(2)
+    override val xOffset: Int = 0,
+    @Id(3)
+    override val yOffset: Int = 0
+) : Renderable() {
 
     private constructor() : this(Image.Misc.ERROR, 0, 0)
 
@@ -33,15 +31,24 @@ class Texture(
     }
 }
 
-class TextureSerializer : Serializer.Tagged<Texture>() {
+class TextureSerializer(type: Class<Texture>, settings: List<SerializerSetting<*>>) :
+    TaggedSerializer<Texture>(type, settings) {
 
-    override fun write(obj: Any, output: Output) {
-        obj as Texture
-        output.writeUTF(GameResourceManager.getIdentifier(obj.region)!!)
-        super.write(obj, output)
+    inner class TextureWriteStrategy(val taggedWrite: WriteStrategy<Texture> = super.writeStrategy) :
+        WriteStrategy<Texture>(type) {
+        override fun write(obj: Texture, output: Output) {
+            output.writeUTF(GameResourceManager.getIdentifier(obj.region)!!)
+            taggedWrite.write(obj, output)
+        }
     }
 
-    override fun instantiate(input: Input): Texture {
-        return Texture(GameResourceManager.getAtlasTexture(input.readUTF()))
+    override val writeStrategy = TextureWriteStrategy()
+
+    inner class TextureCreateStrategy : CreateStrategy<Texture>(type) {
+        override fun create(input: Input): Texture {
+            return Texture(GameResourceManager.getAtlasTexture(input.readUTF()))
+        }
     }
+
+    override val createStrategy = TextureCreateStrategy()
 }

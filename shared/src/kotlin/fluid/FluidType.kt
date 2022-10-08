@@ -8,6 +8,7 @@ import item.IngotItemType
 import main.toColor
 import resource.ResourceCategory
 import resource.ResourceType
+import serialization.ObjectList
 
 open class FluidType(initializer: FluidType.() -> Unit = {}) : ResourceType() {
 
@@ -24,6 +25,7 @@ open class FluidType(initializer: FluidType.() -> Unit = {}) : ResourceType() {
     }
 
     companion object {
+        @ObjectList
         val ALL = mutableListOf<FluidType>()
     }
 
@@ -40,7 +42,7 @@ class MoltenOreFluidType(initializer: MoltenOreFluidType.() -> Unit) : FluidType
     }
 
     companion object {
-
+        @ObjectList
         val ALL = mutableListOf<MoltenOreFluidType>()
 
         val MOLTEN_IRON = MoltenOreFluidType {

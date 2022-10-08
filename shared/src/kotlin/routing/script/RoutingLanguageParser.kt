@@ -2,9 +2,7 @@ package routing.script
 
 import resource.ResourceNode
 import resource.ResourceType
-import serialization.Input
-import serialization.Output
-import serialization.Serializer
+import serialization.*
 import java.util.*
 
 class CompileException(message: String) : Throwable(message)
@@ -204,27 +202,30 @@ object RoutingLanguage {
 
     // TODO add specifying for destination nodes in routing language
     fun parse(text: String): RoutingLanguageStatement {
-        if (text.lowercase(Locale.getDefault()) == "true")
+        if (text.toLowerCase(Locale.getDefault()) == "true")
             return TRUE
-        if (text.lowercase(Locale.getDefault()) == "false" || text == "")
+        if (text.toLowerCase(Locale.getDefault()) == "false" || text == "")
             return FALSE
         return RoutingLanguageStatement(text)
     }
 }
 
-class RoutingLanguageStatementSerializer : Serializer<RoutingLanguageStatement>() {
+class RoutingLanguageStatementSerializer(type: Class<RoutingLanguageStatement>, settings: List<SerializerSetting<*>>) : Serializer<RoutingLanguageStatement>(type, settings) {
 
-    override fun write(obj: Any, output: Output) {
-        obj as RoutingLanguageStatement
-        output.writeUTF(obj.text)
-        output.write(obj.tokens)
-        output.write(obj.baseNode)
+    override val writeStrategy = object : WriteStrategy<RoutingLanguageStatement>(type) {
+        override fun write(obj: RoutingLanguageStatement, output: Output) {
+            output.writeUTF(obj.text)
+            output.write(obj.tokens)
+            output.write(obj.baseNode)
+        }
     }
 
-    override fun instantiate(input: Input): RoutingLanguageStatement {
-        val text = input.readUTF()
-        val tokens = input.read(Array<Token>::class.java)
-        val baseNode = input.read(Node::class.java) as Node<Boolean>
-        return RoutingLanguageStatement(text, tokens, baseNode)
+    override val createStrategy = object : CreateStrategy<RoutingLanguageStatement>(type) {
+        override fun create(input: Input): RoutingLanguageStatement {
+            val text = input.readUTF()
+            val tokens = input.read(Array<Token>::class.java)
+            val baseNode = input.read(Node::class.java) as Node<Boolean>
+            return RoutingLanguageStatement(text, tokens, baseNode)
+        }
     }
 }

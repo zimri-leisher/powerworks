@@ -5,6 +5,7 @@ import level.Hitbox
 import level.PhysicalLevelObjectTextures
 import level.PhysicalLevelObjectType
 import screen.Camera
+import serialization.ObjectList
 
 open class MovingObjectType<T : MovingObject>(initializer: MovingObjectType<T>.() -> Unit = {}) : PhysicalLevelObjectType<T>() {
     var maxSpeed = 10.0
@@ -20,7 +21,7 @@ open class MovingObjectType<T : MovingObject>(initializer: MovingObjectType<T>.(
     }
 
     companion object {
-
+        @ObjectList
         val ALL = mutableListOf<MovingObjectType<*>>()
 
         val ERROR = MovingObjectType<DefaultMovingObject> {

@@ -61,315 +61,75 @@ import java.awt.Polygon
 import java.awt.Rectangle
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
+import java.lang.reflect.Constructor
+import java.lang.reflect.Field
 import java.util.*
-import kotlin.collections.ArrayList
-import kotlin.collections.LinkedHashMap
-import kotlin.collections.LinkedHashSet
 import kotlin.reflect.KClass
+import kotlin.reflect.full.primaryConstructor
 import kotlin.system.measureTimeMillis
 
 object Registration {
 
-    fun <R : Any> register(type: KClass<R>, serializer: Serializer<*>, id: Int) = type.register(id, serializer)
-    fun <R : Any> register(type: KClass<R>, id: Int) = type.register(id)
-    fun <R : Any> register(type: Class<R>, serializer: Serializer<*>, id: Int) = type.register(id, serializer)
-    fun <R : Any> register(type: Class<R>, id: Int) = type.register(id)
-
-    fun registerAll() {
-
-        // max 279
-        /* COLLECTIONS */
-        val singletonList = listOf(1)
-        register(singletonList::class, CollectionSerializer { it.toList() }, 209)
-        register(emptyList<Nothing>()::class, EmptyListSerializer(), 160)
-        val immutableListClass = Class.forName("java.util.Arrays${'$'}ArrayList") as Class<Collection<Any?>>
-        register<Collection<Any?>>(immutableListClass, CollectionSerializer { it.toList() }, 141)
-        register(ArrayList::class, MutableCollectionSerializer<ArrayList<Any?>>(), 142)
-        register(LinkedHashSet::class, MutableCollectionSerializer<LinkedHashSet<Any?>>(), 143)
-        register(Array<out Any?>::class, ArraySerializer(), 144)
-        register(kotlin.Pair::class, PairSerializer(), 154)
-        register(LinkedHashMap::class, MutableMapSerializer<LinkedHashMap<Any?, Any?>>(), 140)
-        register(Set::class.java, MutableCollectionSerializer<LinkedHashSet<Any?>>(), 153)
-        register(Polygon::class, Serializer.AllFields<Polygon>(), 251)
-        register(Rectangle::class, Serializer.AllFields<Rectangle>(), 254)
-        register(emptyMap<Nothing, Nothing>()::class, EmptyMapSerializer(), 261)
-        register(mapOf(1 to 1)::class, MapSerializer { it.toMap() }, 262)
-        register(setOf(1)::class, CollectionSerializer { it.toSet() }, 274)
-        register(emptySet<Int>()::class, CollectionSerializer { it.toSet() }, 275)
-
-
-        FrameworkMessage.RegisterTCP::class.register(147, Serializer.AllFields<FrameworkMessage.RegisterTCP>())
-        FrameworkMessage.RegisterUDP::class.register(148, Serializer.AllFields<FrameworkMessage.RegisterUDP>())
-        FrameworkMessage.KeepAlive::class.register(149, Serializer.AllFields<FrameworkMessage.KeepAlive>())
-        FrameworkMessage.DiscoverHost::class.register(150, Serializer.AllFields<FrameworkMessage.DiscoverHost>())
-        FrameworkMessage.Ping::class.register(151, Serializer.AllFields<FrameworkMessage.Ping>())
-        register(Serialization.WarmupObject::class, Serializer.Tagged<Serialization.WarmupObject>(), 152)
-
-        setSerializerFactory { Serializer.Tagged<Any>() }
-
-        /* AUDIO */
-        register(AudioManager.SoundSource::class, 110)
-        register(Sound::class, EnumSerializer<Sound>(), 111)
-
-        /* BEHAVIOR */
-        Behavior
-        register(BehaviorTree::class, IDSerializer({ BehaviorTree.ALL }, { it.id }), 112)
-        register(VariableData::class, 113)
-        register(EntityPath::class, 236)
-
-        /* CRAFTING */
-        register(Recipe::class, IDSerializer({ Recipe.ALL }, { it.id }), 106)
-        register(RecipeCategory::class, EnumSerializer<RecipeCategory>(), 107)
-
-        /* DATA */
-        register(ConcurrentlyModifiableMutableList::class, 114)
-        register(ConcurrentlyModifiableMutableMap::class, 115)
-        register(ConcurrentlyModifiableWeakMutableList::class, 116)
-        register(ConcurrentlyModifiableWeakMutableMap::class, 117)
-        register(WeakMutableList::class, 145)
-        register(WeakMutableMap::class, 10)
-
-        /* FLUID */
-        register(FluidTank::class, 11)
-        register(FluidType::class, IDSerializer({ FluidType.ALL }, { it.id }), 129)
-        register(MoltenOreFluidType::class, IDSerializer({ MoltenOreFluidType.ALL }, { it.id }), 130)
-
-        /* GRAPHICS */
-        register(ImageCollection::class, 12)
-        register(Renderable::class, 13)
-        register(Texture::class, TextureSerializer(), 14)
-        register(Animation::class, AnimationSerializer(), 102)
-        register(AnimationCollection::class, AnimationCollectionSerializer(), 252)
-
-        /* IO */
-
-        /* ITEM */
-        register(ToolItemType::class, IDSerializer({ ToolItemType.ALL }, { it.id }), 15)
-        register(Projectile::class, 16)
-        register(ProjectileType::class, IDSerializer({ ProjectileType.ALL }, { it.id }), 248)
-        register(WeaponItem::class, 17)
-        register(Weapon::class, 249)
-        register(WeaponItemType::class, IDSerializer({ WeaponItemType.ALL }, { it.id }), 18)
-        register(Inventory::class, 19)
-        register(Item::class, 20)
-        register(RobotItemType::class, IDSerializer({ RobotItemType.ALL }, { it.id }), 124)
-        register(EntityItemType::class, IDSerializer({ EntityItemType.ALL }, { it.id }), 125)
-        register(IngotItemType::class, IDSerializer({ IngotItemType.ALL }, { it.id }), 127)
-        register(OreItemType::class, IDSerializer({ OreItemType.ALL }, { it.id }), 128)
-        register(BlockItemType::class, IDSerializer({ BlockItemType.ALL }, { it.id }), 126)
-        register(ItemType::class, IDSerializer({ ItemType.ALL }, { it.id }), 21)
-
-        /* LEVEL */
-        register(ActualLevel::class, LevelSerializer<ActualLevel>(), 52)
-        register(UnknownLevel::class, LevelSerializer<UnknownLevel>(), 264)
-        register(Chunk::class, 53)
-        register(Hitbox::class, 55)
-        register(LevelData::class, 57)
-        register(LevelInfo::class, 58)
-        register(PhysicalLevelObjectTextures::class, 60)
-        register(PhysicalLevelObjectType::class, IDSerializer({ PhysicalLevelObjectType.ALL }, { it.id }), 257)
-        register(RemoteLevel::class, LevelSerializer<RemoteLevel>(), 64)
-        register(ChunkData::class, 146)
-        register(GhostLevelObject::class, 201)
-        register(LevelObjectAdd::class, 222)
-        register(LevelObjectRemove::class, 223)
-        register(DefaultLevelUpdate::class, 226)
-        register(LevelUpdateType::class, EnumSerializer<LevelUpdateType>(), 227)
-        register(CrafterBlockSelectRecipe::class, 229)
-        register(ResourceNodeTransferThrough::class, 232)
-        register(MachineBlockFinishWork::class, 233)
-        register(EntitySetPath::class, 237)
-        register(EntityPathUpdate::class, 238)
-        register(EntityAddToGroup::class, 242)
-        register(EntitySetFormation::class, 243)
-        register(EntitySetTarget::class, 246)
-        register(EntityFireWeapon::class, 253)
-        register(FarseekerBlockSetAvailableLevels::class, 263)
-        register(FarseekerBlockSetDestinationLevel::class, 269)
-        register(ResourceNodeBehaviorEdit::class, 265)
-        register(LevelObjectSwitchLevelsTo::class, 270)
-        register(LevelPosition::class, 271)
-        register(LevelObjectResourceContainerModify::class, 273)
-
-        /* /BLOCK */
-        register(BlockType::class, IDSerializer({ BlockType.ALL }, { it.id }), 22)
-        register(MachineBlockType::class, IDSerializer({ MachineBlockType.ALL }, { it.id }), 119)
-        register(CrafterBlockType::class, IDSerializer({ CrafterBlockType.ALL }, { it.id }), 120)
-        register(FluidTankBlockType::class, IDSerializer({ FluidTankBlockType.ALL }, { it.id }), 121)
-        register(ChestBlockType::class, IDSerializer({ ChestBlockType.ALL }, { it.id }), 122)
-        register(PipeBlockType::class, IDSerializer({ PipeBlockType.ALL }, { it.id }), 188)
-
-        setSerializerFactory { LevelObjectSerializer<PhysicalLevelObject>() }
-
-        register(Block::class, 23)
-        register(ChestBlock::class, 24)
-        register(CrafterBlock::class, 25)
-        register(DefaultBlock::class, 26)
-        register(FluidTankBlock::class, 27)
-        register(FurnaceBlock::class, 28)
-        register(MachineBlock::class, 29)
-        register(MinerBlock::class, 30)
-        register(SolidifierBlock::class, 31)
-        register(PipeBlock::class, 189)
-        register(RobotFactoryBlock::class, 217)
-        register(ArmoryBlock::class, 247)
-        register(FarseekerBlock::class, 260)
-        register(SmelterBlock::class, 272)
-
-        /* /ENTITY */
-        register(Entity::class, 32)
-        register(EntityType::class, IDSerializer({ EntityType.ALL }, { it.id }), 36)
-        register(EntityBehavior::class, Serializer.Tagged<EntityBehavior>(), 234)
-        register(EntityGroup::class, Serializer.Tagged<EntityGroup>(), 240)
-        register(Formation::class, Serializer.Tagged<Formation>(), 244)
-        register(DefaultEntity::class, 235)
-
-        /* //ROBOT */
-        register(BrainRobot::class, 33)
-        register(Robot::class, 34)
-        register(RobotType::class, IDSerializer({ RobotType.ALL }, { it.id }), 35)
-
-        /* /GENERATOR */
-        setSerializerFactory { Serializer.Tagged<Any>() }
-        register(EmptyLevelGenerator::class, 118)
-        register(LevelGenerator::class, 37)
-        register(LevelType::class, IDSerializer({ LevelType.ALL }, { it.id }), 38)
-        register(OpenSimplexNoise::class, 40)
-
-        /* /MOVING */
-        register(MovingObject::class, LevelObjectSerializer<MovingObject>(), 41)
-        register(MovingObjectType::class, IDSerializer({ MovingObjectType.ALL }, { it.id }), 42)
-
-        /* /PARTICLE */
-        register(ParticleType::class, IDSerializer({ ParticleType.ALL }, { it.id }), 43)
-
-        /* /PIPE */
-        register(FluidPipeBlock::class, LevelObjectSerializer<FluidPipeBlock>(), 44)
-        register(ItemPipeBlock::class, LevelObjectSerializer<ItemPipeBlock>(), 186)
-        register(PipeState::class, EnumSerializer<PipeState>(), 46)
-
-        /* /TILE */
-        register(OreTile::class, 47)
-        register(OreTileType::class, IDSerializer({ OreTileType.ALL }, { it.id }), 108)
-        register(Tile::class, 48)
-        register(TileType::class, IDSerializer({ TileType.ALL }, { it.id }), 49)
-
-        /* MAIN */
-        register(DebugCode::class, EnumSerializer<DebugCode>(), 65)
-        register(Version::class, VersionSerializer(), 66)
-
-        /* MISC */
-        register(Coord::class, 67)
-        register(TileCoord::class, 68)
-
-        /* NETWORK */
-        register(User::class, 69)
-
-        /* /PACKET */
-        register(ChunkDataPacket::class, 70)
-        register(ClientHandshakePacket::class, 71)
-        register(GenericPacket::class, 72)
-        register(LevelDataPacket::class, 73)
-        register(LevelInfoPacket::class, 74)
-        register(Packet::class, 75)
-        register(PacketType::class, EnumSerializer<PacketType>(), 77)
-        register(PlayerDataPacket::class, 79)
-        register(RequestLevelDataPacket::class, 81)
-        register(RequestLevelInfoPacket::class, 82)
-        register(RequestPlayerDataPacket::class, 83)
-        register(ServerHandshakePacket::class, 84)
-        register(LoadGamePacket::class, 134)
-        register(RequestLoadGamePacket::class, 135)
-        register(PlayerActionPacket::class, 192)
-        register(AcknowledgePlayerActionPacket::class, 196)
-        register(BlockReference::class, NetworkReferenceSerializer(), 197)
-        register(MovingObjectReference::class, NetworkReferenceSerializer(), 198)
-        register(ResourceNodeReference::class, NetworkReferenceSerializer(), 199)
-        register(BrainRobotReference::class, NetworkReferenceSerializer(), 256)
-        register(LevelUpdatePacket::class, 228)
-        register(LevelLoadedSuccessPacket::class, 239)
-
-        /* PLAYER */
-        register(Player::class, PlayerSerializer(), 85)
-        register(ActionLevelObjectPlace::class, 202)
-        register(ActionLevelObjectRemove::class, 203)
-        register(ActionSelectCrafterRecipe::class, 206)
-        register(ActionControlEntity::class, 207)
-        register(ActionEditResourceNodeBehavior::class, 208)
-        register(ActionEntityCreateGroup::class, 241)
-        register(ActionTransferResourcesBetweenLevelObjects::class, 245)
-        register(ActionFarseekerBlockSetLevel::class, 268)
-        register(Team::class, 255)
-
-        /* RESOURCE */
-        register(ResourceCategory::class, EnumSerializer<ResourceCategory>(), 86)
-        register(ResourceContainer::class, 87)
-        register(ResourceList::class, 89)
-        register(MutableResourceList::class, 276)
-        register(ResourceNodeOld::class, 90)
-        register(ResourceNodeBehavior::class, 91)
-        register(RoutingLanguageIORule::class, 92)
-        register(ResourceType::class, IDSerializer({ ResourceType.ALL }, { it.id }), 93)
-        register(ResourceNode::class, 278)
-        register(PipeNetworkVertex::class, 279)
-
-        /* ROUTING */
-        register(ResourceRoutingNetwork::class, 98)
-        register(RoutingLanguageStatement::class, RoutingLanguageStatementSerializer(), 99)
-
-        register(TokenType::class.java, EnumSerializer<TokenType>(), 184)
-        register(Token::class.java, 185)
-
-        setSerializerFactory { NodeSerializer() }
-
-        register(BooleanLiteral::class, 161)
-        register(IntLiteral::class, 162)
-        register(DoubleLiteral::class, 163)
-        register(ResourceTypeLiteral::class, 164)
-        register(TotalQuantity::class, 165)
-        register(TotalNetworkQuantity::class, 166)
-        register(Not::class, 167)
-        register(QuantityOf::class, 168)
-        register(NetworkQuantityOf::class, 169)
-        register(Implies::class, 170)
-        register(IfAndOnlyIf::class, 171)
-        register(ExclusiveOr::class, 172)
-        register(Or::class, 173)
-        register(And::class, 174)
-        register(Plus::class, 175)
-        register(Minus::class, 176)
-        register(Multiply::class, 177)
-        register(Divide::class, 178)
-        register(GreaterThan::class, 179)
-        register(GreaterThanOrEqual::class, 180)
-        register(LessThan::class, 181)
-        register(LessThanOrEqual::class, 182)
-        register(Equal::class, 183)
-
-        setSerializerFactory { Serializer.Tagged<Any>() }
-
-        /* SCREEN */
-        register(Camera::class, LevelObjectSerializer<Camera>(), 131)
-
-        /* SETTING */
-        register(UnknownSetting::class, 266)
-        register(IntSetting::class, 267)
-        register(BooleanSetting::class, 277)
-        val clazz = java.util.Collections::class.java.declaredClasses.first { it.simpleName == "SynchronizedRandomAccessList" }
-        //register(clazz, 103).setInstantiator { Collections.synchronizedList<Any?>(mutableListOf()) }
-        register(TextureRegion::class, 104)
-        register(UUID::class, Serializer<UUID>(), 109).setSerializer({ UUID.fromString(it.readUTF()) }, { newInstance, _ -> newInstance }, { obj, output -> output.writeUTF(obj.toString()) })
-        //register(Comparator::class, FieldSerializer<Comparator<*>>(this, Comparator::class), 132)
+    private fun getSerializerCtor(
+        type: Class<out Serializer<out Any>>,
+        args: Array<out Any>
+    ): Constructor<out Serializer<out Any>> {
+        return type.constructors.firstOrNull { ctor ->
+            ctor.parameters.contentEquals(
+                arrayOf(
+                    Class::class.java,
+                    List::class.java,
+                    *args.map { arg -> arg::class.java }.toTypedArray()
+                )
+            )
+        } as Constructor<out Serializer<out Any>>?
+            ?: throw Exception("Could not instantiate serializer ${type.simpleName} with (type, settings, *args) ctor")
     }
 
-    private var nextId = Primitive.values().maxBy { it.id }!!.id + 1
+    private fun setDefaultSerializer(
+        type: KClass<out Serializer<out Any>>,
+        settings: List<SerializerSetting<*>> = listOf(),
+        vararg args: Any
+    ) = setDefaultSerializer(type.java, settings, *args)
+
+    private fun setDefaultSerializer(
+        type: Class<out Serializer<out Any>>,
+        settings: List<SerializerSetting<*>> = listOf(),
+        vararg args: Any
+    ) {
+        val ctor = getSerializerCtor(type, args)
+        defaultSerializerFactory = {
+            ctor.newInstance(it, settings, *args)
+        }
+    }
+
+    inline class RegistryEntry(val id: Int) {
+
+        fun setSerializer(
+            serializerClass: KClass<out Serializer<*>>,
+            settings: List<SerializerSetting<*>> = listOf(),
+            vararg args: Any
+        ) = setSerializer(serializerClass.java, settings, *args)
+
+        fun setSerializer(
+            serializerClass: Class<out Serializer<*>>,
+            settings: List<SerializerSetting<*>> = listOf(),
+            vararg args: Any
+        ) {
+            val type = ids[id]!!
+            val ctor = getSerializerCtor(serializerClass, args)
+            defaultSerializers[type] = ctor.newInstance(type, settings, *args) as Serializer<Any>
+        }
+    }
+
+    private var nextId = Primitive.values().maxByOrNull { it.id }!!.id + 1
 
     val REFERENCE_ID = nextId++
 
     private val ids = mutableMapOf<Int, Class<*>>()
-    private val registries = mutableMapOf<Class<*>, ClassRegistry<*>>()
 
-    private var serializerFactory: (type: Class<*>) -> Serializer<*> = { Serializer<Any>() }
+    private val defaultSerializers = mutableMapOf<Class<*>, Serializer<out Any>>()
+    private var defaultSerializerFactory: (type: Class<*>) -> Serializer<out Any> = { Serializer(it, listOf()) }
 
     init {
         ids.put(Primitive.NULL.id, Nothing::class.java)
@@ -384,24 +144,383 @@ object Registration {
         ids.put(Primitive.STRING.id, java.lang.String::class.java)
     }
 
+    private fun register(type: KClass<*>, id: Int) = register(type.java, id)
 
-    fun setSerializerFactory(fac: (type: Class<*>) -> Serializer<*>) {
-        serializerFactory = fac
+    private fun register(type: Class<*>, id: Int): RegistryEntry {
+        registerClass(type, id, defaultSerializerFactory(type))
+        return RegistryEntry(id)
     }
 
-    fun resetSerializerFactory() {
-        serializerFactory = { Serializer<Any>() }
+    fun registerAll() {
+
+        // max 279
+        /* COLLECTIONS */
+        val singletonList: List<Any> = listOf(1)
+        register(singletonList::class, 1)
+            .setSerializer(CollectionSerializer::class, listOf(), { it: MutableList<Any> -> it.toList() })
+        register(emptyList<Nothing>()::class, 2)
+            .setSerializer(EmptyListSerializer::class)
+        val immutableListClass = Class.forName("java.util.Arrays${'$'}ArrayList") as Class<Collection<Any?>>
+        register(immutableListClass, 3).setSerializer(
+            CollectionSerializer::class,
+            listOf(),
+            { it: MutableCollection<Any> -> it.toList() })
+        register(ArrayList::class, 4)
+            .setSerializer(MutableCollectionSerializer::class)
+        register(LinkedHashSet::class, 5)
+            .setSerializer(MutableCollectionSerializer::class)
+        register(Array<out Any?>::class, 6)
+            .setSerializer(ArraySerializer::class)
+        register(kotlin.Pair::class, 7)
+            .setSerializer(PairSerializer::class)
+        register(LinkedHashMap::class, 8)
+            .setSerializer(MutableMapSerializer::class)
+        register(Set::class, 9)
+            .setSerializer(MutableCollectionSerializer::class)
+        register(Polygon::class, 10)
+            .setSerializer(AllFieldsSerializer::class)
+        register(Rectangle::class, 11)
+            .setSerializer(AllFieldsSerializer::class)
+        register(emptyMap<Nothing, Nothing>()::class, 12)
+            .setSerializer(EmptyMapSerializer::class)
+        register(mapOf(1 to 1)::class, 13)
+            .setSerializer(MapSerializer::class, listOf(), { it: MutableMap<Any, Any> -> it.toMap() })
+        register(setOf(1)::class, 14)
+            .setSerializer(CollectionSerializer::class, listOf(), { it: MutableCollection<Any> -> it.toSet() })
+        register(emptySet<Int>()::class, 15)
+            .setSerializer(CollectionSerializer::class, listOf(), { it: MutableCollection<Any> -> it.toSet() })
+
+
+        setDefaultSerializer(AllFieldsSerializer::class.java)
+        register(FrameworkMessage.RegisterTCP::class, 16)
+        register(FrameworkMessage.RegisterUDP::class, 17)
+        register(FrameworkMessage.KeepAlive::class, 18)
+        register(FrameworkMessage.DiscoverHost::class, 19)
+        register(FrameworkMessage.Ping::class, 20)
+
+        setDefaultSerializer(TaggedSerializer::class)
+
+        register(Serialization.WarmupObject::class, 21)
+
+        /* AUDIO */
+        register(AudioManager.SoundSource::class, 22)
+        register(Sound::class, 23)
+            .setSerializer(EnumSerializer::class)
+
+        /* BEHAVIOR */
+        Behavior
+        register(BehaviorTree::class, 24)
+            .setSerializer(AutoIDSerializer::class)
+        register(VariableData::class, 25)
+        register(EntityPath::class, 26)
+
+        /* CRAFTING */
+        register(Recipe::class, 27)
+            .setSerializer(AutoIDSerializer::class)
+        register(RecipeCategory::class, 28)
+            .setSerializer(EnumSerializer::class)
+
+        /* DATA */
+        register(ConcurrentlyModifiableMutableList::class, 29)
+        register(ConcurrentlyModifiableMutableMap::class, 30)
+        register(ConcurrentlyModifiableWeakMutableList::class, 31)
+        register(ConcurrentlyModifiableWeakMutableMap::class, 32)
+        register(WeakMutableList::class, 33)
+        register(WeakMutableMap::class, 34)
+
+        /* FLUID */
+        register(FluidTank::class, 35)
+        register(FluidType::class, 36)
+            .setSerializer(AutoIDSerializer::class)
+        register(MoltenOreFluidType::class, 37)
+            .setSerializer(AutoIDSerializer::class)
+        /* GRAPHICS */
+        register(ImageCollection::class, 38)
+        register(Renderable::class, 39)
+        register(Texture::class, 40)
+            .setSerializer(TextureSerializer::class)
+        register(Animation::class, 41)
+            .setSerializer(AnimationSerializer::class)
+        register(AnimationCollection::class, 42)
+            .setSerializer(AnimationCollectionSerializer::class)
+
+        /* IO */
+
+        /* ITEM */
+        register(ToolItemType::class, 43)
+            .setSerializer(AutoIDSerializer::class)
+        register(Projectile::class, 44)
+        register(ProjectileType::class, 45)
+            .setSerializer(AutoIDSerializer::class)
+        register(WeaponItem::class, 46)
+        register(Weapon::class, 47)
+        register(WeaponItemType::class, 48)
+            .setSerializer(AutoIDSerializer::class)
+        register(Inventory::class, 49)
+        register(Item::class, 50)
+        register(RobotItemType::class, 51)
+            .setSerializer(AutoIDSerializer::class)
+        register(EntityItemType::class, 52)
+            .setSerializer(AutoIDSerializer::class)
+        register(IngotItemType::class, 53)
+            .setSerializer(AutoIDSerializer::class)
+        register(OreItemType::class, 54)
+            .setSerializer(AutoIDSerializer::class)
+        register(BlockItemType::class, 55)
+            .setSerializer(AutoIDSerializer::class)
+        register(ItemType::class, 56)
+            .setSerializer(AutoIDSerializer::class)
+
+        /* LEVEL */
+        register(ActualLevel::class, 57)
+            .setSerializer(LevelSerializer::class)
+        register(UnknownLevel::class, 58)
+            .setSerializer(LevelSerializer::class)
+        register(Chunk::class, 59)
+        register(Hitbox::class, 60)
+        register(LevelData::class, 61)
+        register(LevelInfo::class, 62)
+        register(LevelObjectTextures::class, 63)
+        register(LevelObjectType::class, 64)
+            .setSerializer(AutoIDSerializer::class)
+        register(RemoteLevel::class, 65)
+            .setSerializer(LevelSerializer::class)
+        register(ChunkData::class, 66)
+        register(GhostLevelObject::class, 67)
+        register(LevelObjectAdd::class, 68)
+        register(LevelObjectRemove::class, 69)
+        register(DefaultLevelUpdate::class, 70)
+        register(LevelUpdateType::class, 71)
+            .setSerializer(EnumSerializer::class)
+        register(CrafterBlockSelectRecipe::class, 72)
+        register(ResourceNodeTransferThrough::class, 73)
+        register(MachineBlockFinishWork::class, 74)
+        register(EntitySetPath::class, 75)
+        register(EntityPathUpdate::class, 76)
+        register(EntityAddToGroup::class, 77)
+        register(EntitySetFormation::class, 78)
+        register(EntitySetTarget::class, 79)
+        register(EntityFireWeapon::class, 80)
+        register(FarseekerBlockSetAvailableLevels::class, 81)
+        register(FarseekerBlockSetDestinationLevel::class, 82)
+        register(ResourceNodeBehaviorEdit::class, 83)
+        register(LevelObjectSwitchLevelsTo::class, 84)
+        register(LevelPosition::class, 85)
+        register(LevelObjectResourceContainerModify::class, 86)
+
+        /* /BLOCK */
+        register(BlockType::class, 87)
+            .setSerializer(AutoIDSerializer::class)
+        register(MachineBlockType::class, 88)
+            .setSerializer(AutoIDSerializer::class)
+        register(CrafterBlockType::class, 89)
+            .setSerializer(AutoIDSerializer::class)
+        register(FluidTankBlockType::class, 90)
+            .setSerializer(AutoIDSerializer::class)
+        register(ChestBlockType::class, 91)
+            .setSerializer(AutoIDSerializer::class)
+        register(PipeBlockType::class, 92)
+            .setSerializer(AutoIDSerializer::class)
+
+        setDefaultSerializer(LevelObjectSerializer::class)
+
+        register(Block::class, 93)
+        register(ChestBlock::class, 94)
+        register(CrafterBlock::class, 95)
+        register(DefaultBlock::class, 96)
+        register(FluidTankBlock::class, 97)
+        register(FurnaceBlock::class, 98)
+        register(MachineBlock::class, 99)
+        register(MinerBlock::class, 100)
+        register(SolidifierBlock::class, 101)
+        register(PipeBlock::class, 102)
+        register(RobotFactoryBlock::class, 103)
+        register(ArmoryBlock::class, 104)
+        register(FarseekerBlock::class, 105)
+        register(SmelterBlock::class, 106)
+
+        /* /ENTITY */
+        register(Entity::class, 107)
+        register(EntityType::class, 108)
+            .setSerializer(AutoIDSerializer::class)
+        register(EntityBehavior::class, 109)
+            .setSerializer(TaggedSerializer::class)
+        register(EntityGroup::class, 110)
+            .setSerializer(TaggedSerializer::class)
+        register(Formation::class, 111)
+            .setSerializer(TaggedSerializer::class)
+        register(DefaultEntity::class, 112)
+
+        /* //ROBOT */
+        register(BrainRobot::class, 113)
+        register(Robot::class, 114)
+        register(RobotType::class, 115)
+            .setSerializer(AutoIDSerializer::class)
+
+        setDefaultSerializer(TaggedSerializer::class)
+
+        /* /GENERATOR */
+        register(EmptyLevelGenerator::class, 116)
+        register(LevelGenerator::class, 117)
+        register(LevelType::class, 118)
+            .setSerializer(AutoIDSerializer::class)
+        register(OpenSimplexNoise::class, 119)
+
+        /* /MOVING */
+        register(MovingObject::class, 120)
+            .setSerializer(LevelObjectSerializer::class)
+        register(MovingObjectType::class, 121)
+            .setSerializer(AutoIDSerializer::class)
+
+        /* /PARTICLE */
+        register(ParticleType::class, 122)
+            .setSerializer(AutoIDSerializer::class)
+
+        /* /PIPE */
+        register(FluidPipeBlock::class, 123)
+            .setSerializer(LevelObjectSerializer::class)
+        register(ItemPipeBlock::class, 124)
+            .setSerializer(LevelObjectSerializer::class)
+        register(PipeState::class, 125)
+            .setSerializer(EnumSerializer::class)
+
+        /* /TILE */
+        register(OreTile::class, 126)
+        register(OreTileType::class, 127)
+            .setSerializer(AutoIDSerializer::class)
+        register(Tile::class, 128)
+        register(TileType::class, 129)
+            .setSerializer(AutoIDSerializer::class)
+
+        /* MAIN */
+        register(DebugCode::class, 130)
+            .setSerializer(EnumSerializer::class)
+        register(Version::class, 131)
+            .setSerializer(VersionSerializer::class)
+
+        /* MISC */
+        register(Coord::class, 132)
+        register(TileCoord::class, 133)
+
+        /* NETWORK */
+        register(User::class, 134)
+
+        /* /PACKET */
+        register(ChunkDataPacket::class,  135)
+        register(ClientHandshakePacket::class, 136)
+        register(GenericPacket::class, 137)
+        register(LevelDataPacket::class, 138)
+        register(LevelInfoPacket::class, 139)
+        register(Packet::class, 140)
+        register(PacketType::class, 141)
+            .setSerializer(EnumSerializer::class)
+        register(PlayerDataPacket::class, 142)
+        register(RequestLevelDataPacket::class, 143)
+        register(RequestLevelInfoPacket::class, 144)
+        register(RequestPlayerDataPacket::class, 145)
+        register(ServerHandshakePacket::class, 146)
+        register(LoadGamePacket::class, 147)
+        register(RequestLoadGamePacket::class, 148)
+        register(PlayerActionPacket::class, 149)
+        register(AcknowledgePlayerActionPacket::class, 150)
+        register(BlockReference::class, 151)
+        register(MovingObjectReference::class, 152)
+        register(ResourceNodeReference::class, 153)
+        register(BrainRobotReference::class, 154)
+        register(LevelUpdatePacket::class, 155)
+        register(LevelLoadedSuccessPacket::class, 156)
+
+        /* PLAYER */
+        register(Player::class, 157)
+            .setSerializer(PlayerSerializer::class)
+        register(ActionLevelObjectPlace::class, 158)
+        register(ActionLevelObjectRemove::class, 159)
+        register(ActionSelectCrafterRecipe::class, 160)
+        register(ActionControlEntity::class, 161)
+        register(ActionEditResourceNodeBehavior::class, 162)
+        register(ActionEntityCreateGroup::class, 163)
+        register(ActionTransferResourcesBetweenLevelObjects::class, 164)
+        register(ActionFarseekerBlockSetLevel::class, 165)
+        register(Team::class, 166)
+
+        /* RESOURCE */
+        register(ResourceCategory::class, 167)
+            .setSerializer(EnumSerializer::class)
+        register(ResourceContainer::class,  168)
+        register(ResourceList::class, 169)
+        register(MutableResourceList::class, 170)
+        register(ResourceNode::class, 171)
+        register(ResourceNodeBehavior::class, 172)
+        register(RoutingLanguageIORule::class, 173)
+        register(ResourceType::class, 174)
+            .setSerializer(AutoIDSerializer::class)
+        register(ResourceNode2::class, 175)
+        register(PipeNetworkVertex::class, 176)
+
+        /* ROUTING */
+        register(ResourceRoutingNetwork::class, 177)
+        register(RoutingLanguageStatement::class, 178)
+            .setSerializer(RoutingLanguageStatementSerializer::class)
+
+        register(TokenType::class.java, 179)
+            .setSerializer(EnumSerializer::class)
+        register(Token::class.java, 180)
+
+        setDefaultSerializer(NodeSerializer::class)
+
+        register(BooleanLiteral::class, 181)
+        register(IntLiteral::class, 182)
+        register(DoubleLiteral::class, 183)
+        register(ResourceTypeLiteral::class, 184)
+        register(TotalQuantity::class, 185)
+        register(TotalNetworkQuantity::class, 186)
+        register(Not::class, 187)
+        register(QuantityOf::class, 188)
+        register(NetworkQuantityOf::class, 189)
+        register(Implies::class, 190)
+        register(IfAndOnlyIf::class, 191)
+        register(ExclusiveOr::class, 192)
+        register(Or::class, 193)
+        register(And::class, 194)
+        register(Plus::class, 195)
+        register(Minus::class, 196)
+        register(Multiply::class, 197)
+        register(Divide::class, 198)
+        register(GreaterThan::class, 199)
+        register(GreaterThanOrEqual::class, 200)
+        register(LessThan::class, 201)
+        register(LessThanOrEqual::class, 202)
+        register(Equal::class, 203)
+
+        setDefaultSerializer(TaggedSerializer::class)
+
+        /* SCREEN */
+        register(Camera::class, 204)
+            .setSerializer(LevelObjectSerializer::class)
+
+        /* SETTING */
+        register(UnknownSetting::class, 205)
+        register(IntSetting::class, 206)
+        register(BooleanSetting::class, 207)
+        val clazz =
+            java.util.Collections::class.java.declaredClasses.first { it.simpleName == "SynchronizedRandomAccessList" }
+        //register(clazz, 103).setInstantiator { Collections.synchronizedList<Any?>(mutableListOf()) }
+        register(TextureRegion::class, 208)
+        register(UUID::class, 209)
+            .setSerializer(UUIDSerializer::class)
+
+        //register(Comparator::class, FieldSerializer<Comparator<*>>(this, Comparator::class), 132)
     }
 
-    fun registerClass(type: Class<*>, id: Int = nextId++, registry: ClassRegistry<*>) {
+    fun registerClass(type: Class<*>, id: Int = nextId++, serializer: Serializer<out Any>) {
         if (Serialization.isPrimitive(id)) throw RegistrationException("Cannot reregister a primitive id ($id)")
         if (id < 0) throw RegistrationException("Cannot register an id less than 0 (tried to register $id)")
         if (Function::class.java.isAssignableFrom(type)) throw RegistrationException("Cannot register lambdas")
-        if (registries.putIfAbsent(type, registry) != null) {
-            throw RegistrationException("Cannot reregister $type)")
+        if (defaultSerializers.putIfAbsent(type, serializer) != null) {
+            throw RegistrationException("$type already has default settings")
         } else {
             if (ids.putIfAbsent(id, type) != null) {
-                throw RegistrationException("Cannot reregister id $id")
+                throw RegistrationException("$id is already registered under ${ids[id]}, tried to reregister with $type")
             }
         }
         // this line here will initialize the object if it is an object
@@ -417,20 +536,57 @@ object Registration {
             }
         }
 
-        debugln("Registered class $type with id $id")
+        SerializerDebugger.writeln("Registered class $type with id $id")
     }
 
-    fun <R : Any> Class<R>.register(id: Int = nextId++, serializer: Serializer<*> = serializerFactory(this)): ClassRegistry<R> {
-        val registry = ClassRegistry(this, serializer)
-        registerClass(this, id, registry)
-        return registry
+    fun getSerializer(field: Field): Serializer<*> {
+        val defaultSerializer = getSerializer(field.type)
+        val options = SerializerSetting.getSettings(field)
+        var newCreateStrategy: CreateStrategy<Any> = defaultSerializer.createStrategy
+        var newReadStrategy: ReadStrategy<Any> = defaultSerializer.readStrategy as ReadStrategy<Any>
+        var newWriteStrategy: WriteStrategy<Any> = defaultSerializer.writeStrategy as WriteStrategy<Any>
+        for (option in options) {
+            when (option) {
+                ReferenceSetting -> {
+                    if (!Referencable::class.java.isAssignableFrom(field.type)) {
+                        throw Exception("Field ${field.name} in class ${field.declaringClass} was specified to be saved as a SerializationReference but ${field.type} does not implement SerializationReferencable")
+                    }
+                    newReadStrategy = ReadStrategy.None
+                    newWriteStrategy =
+                        ReferencableWriteStrategy(field.type as Class<Referencable<Any>>) as WriteStrategy<Any>
+                    newCreateStrategy =
+                        ReferencableCreateStrategy(field.type as Class<Referencable<Any>>)
+                }
+                WriteStrategySetting -> {
+                    val writeStrategyClass = WriteStrategySetting.getFrom(field).writeStrategyClass
+                    val ctor = writeStrategyClass.primaryConstructor
+                    newWriteStrategy = ctor!!.call(field.type) as WriteStrategy<Any>
+                }
+                ReadStrategySetting -> {
+                    val readStrategyClass = ReadStrategySetting.getFrom(field).readStrategyClass
+                    val ctor = readStrategyClass.primaryConstructor
+                    newReadStrategy = ctor!!.call(field.type) as ReadStrategy<Any>
+                }
+                CreateStrategySetting -> {
+                    val createStrategyClass = CreateStrategySetting.getFrom(field).createStrategyClass
+                    val ctor = createStrategyClass.primaryConstructor
+                    newCreateStrategy = ctor!!.call(field.type)
+                }
+            }
+        }
+        if (newReadStrategy != defaultSerializer.readStrategy
+            || newWriteStrategy != defaultSerializer.writeStrategy
+            || newCreateStrategy != defaultSerializer.createStrategy
+        ) {
+            return Serializer(field.type, options, newCreateStrategy, newWriteStrategy, newReadStrategy)
+        }
+        return defaultSerializer
     }
 
-    fun <T : Any> KClass<T>.register(id: Int = nextId++, serializer: Serializer<*> = serializerFactory(this.java)) = this.java.register(id, serializer)
-
-    fun getRegistry(type: Class<*>): ClassRegistry<*> {
+    fun getSerializer(type: Class<*>): Serializer<out Any> {
         val actualType = Serialization.makeTypeNice(type)
-        return registries.get(actualType) ?: throw Exception("Unregistered class $actualType")
+        return defaultSerializers[actualType]
+            ?: throw Exception("Class $actualType has not been assigned a default serializer")
     }
 
     fun getId(type: Class<*>): Int {
@@ -469,17 +625,25 @@ fun test() {
     //val level = ActualLevel(UUID.randomUUID(), LevelInfo(User(UUID.randomUUID(), ""), "", "", LevelType.DEFAULT_SIMPLEX, 10L))
     //val levelObj = newPlayer(User(UUID.randomUUID(), "")).brainRobot
     //val array = Inventory(3, 3)
-    println("Now write new thing: ${measureTimeMillis {
-        val statement = RoutingLanguage.parse("quantity IRON_ORE > 4")
-        output.write(statement)
-    }}")
+    println(
+        "Now write new thing: ${
+            measureTimeMillis {
+                val statement = RoutingLanguage.parse("quantity IRON_ORE > 4")
+                output.write(statement)
+            }
+        }"
+    )
 
     output.close()
     val input = Input(ByteArrayInputStream(byteOutput.toByteArray()))
-    println("now read new thing: ${measureTimeMillis {
-        val statement = input.readUnknown()
-        println(statement)
+    println(
+        "now read new thing: ${
+            measureTimeMillis {
+                val statement = input.readUnknown()
+                println(statement)
 
-    }}")
+            }
+        }"
+    )
     input.close()
 }

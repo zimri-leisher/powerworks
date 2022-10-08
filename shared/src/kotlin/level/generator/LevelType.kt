@@ -5,11 +5,14 @@ import com.esotericsoftware.kryo.Serializer
 import com.esotericsoftware.kryo.io.Input
 import com.esotericsoftware.kryo.io.Output
 import level.Level
+import serialization.ObjectIdentifier
+import serialization.ObjectList
 
 private var nextId = 0
 
 class LevelType(initializer: LevelType.() -> Unit = {}) {
 
+    @ObjectIdentifier
     var id = nextId++
     var widthChunks = 32
     var heightChunks = 32
@@ -21,7 +24,7 @@ class LevelType(initializer: LevelType.() -> Unit = {}) {
     }
 
     companion object {
-
+        @ObjectList
         val ALL = mutableListOf<LevelType>()
 
         val EMPTY = LevelType {

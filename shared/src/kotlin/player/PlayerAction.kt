@@ -50,14 +50,8 @@ class ActionError : PlayerAction(Player(User(UUID.randomUUID(), ""), UUID.random
         return false
     }
 
-    override fun act() {
-    }
+    override fun getUpdates() = emptyList<LevelUpdate>()
 
-    override fun actGhost() {
-    }
-
-    override fun cancelActGhost() {
-    }
 }
 
 class ActionDoResourceTransaction(
