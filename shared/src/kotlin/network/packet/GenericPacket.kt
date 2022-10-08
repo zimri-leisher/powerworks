@@ -1,9 +1,8 @@
 package network.packet
 
-import item.Inventory
 import level.LevelManager
 import resource.ResourceCategory
-import resource.ResourceNode
+import resource.ResourceNodeOld
 import resource.ResourceNodeBehavior
 import resource.SourceContainer
 import serialization.Id
@@ -13,5 +12,5 @@ class GenericPacket(
         val message: ResourceNodeBehavior
 ) : Packet(PacketType.GENERIC) {
 
-    private constructor() : this(ResourceNodeBehavior(ResourceNode(0, 0, 0, ResourceCategory.ITEM, SourceContainer(), LevelManager.EMPTY_LEVEL)))
+    private constructor() : this(ResourceNodeBehavior(ResourceNodeOld(0, 0, 0, ResourceCategory.ITEM, SourceContainer(), LevelManager.EMPTY_LEVEL)))
 }

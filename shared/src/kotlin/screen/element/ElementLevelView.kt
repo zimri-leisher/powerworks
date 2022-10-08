@@ -5,7 +5,7 @@ import graphics.Renderer
 import graphics.TextureRenderParams
 import io.*
 import level.LevelManager
-import level.LevelObject
+import level.PhysicalLevelObject
 import level.MovementListener
 import level.moving.MovingObject
 import main.DebugCode
@@ -16,7 +16,7 @@ import screen.Interaction
 import screen.gui.GuiDebugInfo
 import java.awt.Rectangle
 
-class ElementLevelView(parent: GuiElement, camera: LevelObject) : GuiElement(parent), MovementListener, ControlEventHandler {
+class ElementLevelView(parent: GuiElement, camera: PhysicalLevelObject) : GuiElement(parent), MovementListener, ControlEventHandler {
     val level get() = camera.level
 
     /**

@@ -1,11 +1,11 @@
 package item.tool
 
 import item.ItemType
-import level.LevelObjectType
+import level.PhysicalLevelObjectType
 
 class ToolItemType(initializer: ToolItemType.() -> Unit = {}) : ItemType() {
     var range = -1
-    var targetType: LevelObjectType<*>? = null
+    var targetType: PhysicalLevelObjectType<*>? = null
 
     init {
         initializer()

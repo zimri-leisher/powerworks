@@ -4,8 +4,8 @@ import level.block.Block
 import level.moving.MovingObject
 import level.tile.Tile
 import misc.Geometry
+import resource.ResourceNodeOld
 import resource.ResourceNode
-import resource.ResourceNode2
 import kotlin.math.max
 import kotlin.math.min
 
@@ -66,7 +66,7 @@ fun Level.getBlockAt(x: Int, y: Int) =
  *
  * @return a sequence of [Block]s intersecting the [Hitbox] of [levelObj]
  */
-fun Level.getBlockCollisions(levelObj: LevelObject) =
+fun Level.getBlockCollisions(levelObj: PhysicalLevelObject) =
     getBlockCollisions(levelObj.hitbox, levelObj.x, levelObj.y)
 
 /**
@@ -158,10 +158,10 @@ fun Level.getBlockCollisionsAt(x: Int, y: Int): Sequence<Block> {
  *
  * @return a set of [MovingObject]s intersecting the [Hitbox] of [levelObj]
  */
-fun Level.getMovingObjectCollisions(levelObj: LevelObject) =
+fun Level.getMovingObjectCollisions(levelObj: PhysicalLevelObject) =
     getMovingObjectCollisions(levelObj.type, levelObj.x, levelObj.y)
 
-fun Level.getMovingObjectCollisions(levelObjType: LevelObjectType<*>, x: Int, y: Int) =
+fun Level.getMovingObjectCollisions(levelObjType: PhysicalLevelObjectType<*>, x: Int, y: Int) =
     getMovingObjectCollisions(levelObjType.hitbox, x, y)
 
 fun Level.getMovingObjectCollisions(hitbox: Hitbox, x: Int, y: Int) =
@@ -201,26 +201,26 @@ fun Level.getMovingObjectCollisionsAt(x: Int, y: Int): Sequence<MovingObject> {
 }
 
 /**
- * Gets collisions between the [levelObj] and [LevelObject]s in this [Level]
+ * Gets collisions between the [levelObj] and [PhysicalLevelObject]s in this [Level]
  *
- * @param predicate the selector for [LevelObject]s to consider collisions with
- * @return a sequence of [LevelObject]s intersecting the [Hitbox] of [levelObj]
+ * @param predicate the selector for [PhysicalLevelObject]s to consider collisions with
+ * @return a sequence of [PhysicalLevelObject]s intersecting the [Hitbox] of [levelObj]
  */
-fun Level.getCollisionsWith(levelObj: LevelObject) =
+fun Level.getCollisionsWith(levelObj: PhysicalLevelObject) =
     getCollisionsWith(levelObj.hitbox, levelObj.x, levelObj.y)
 
 /**
- * Gets collisions between the [hitbox] at [x], [y] and [LevelObject]s in this [Level]
+ * Gets collisions between the [hitbox] at [x], [y] and [PhysicalLevelObject]s in this [Level]
  *
  * @param hitbox the hitbox to check collisions with
  * @param x the level x  of the [hitbox]. [Hitbox.xStart] is added to this to get the true x coordinate of the rectangle
  * @param y the level y  of the [hitbox]. [Hitbox.yStart] is added to this to get the true y coordinate of the rectangle
- * @return a sequence of [LevelObject]s intersecting the [hitbox]
+ * @return a sequence of [PhysicalLevelObject]s intersecting the [hitbox]
  */
 fun Level.getCollisionsWith(hitbox: Hitbox, x: Int, y: Int) =
     getCollisionsWith(x + hitbox.xStart, y + hitbox.yStart, hitbox.width, hitbox.height)
 
-fun Level.getCollisionsWith(x: Int, y: Int, width: Int, height: Int): Sequence<LevelObject> =
+fun Level.getCollisionsWith(x: Int, y: Int, width: Int, height: Int): Sequence<PhysicalLevelObject> =
     getBlockCollisions(x, y, width, height) + getMovingObjectCollisions(x, y, width, height)
 
 /**
@@ -230,7 +230,7 @@ fun Level.getCollisionsWith(x: Int, y: Int, width: Int, height: Int): Sequence<L
  * @param predicate the selector for [L]s to consider collisions with
  * @return a sequence of [L]s intersecting the [Hitbox] of [levelObj]
  */
-fun <L : LevelObject> Iterable<L>.getCollisionsWith(levelObj: LevelObject) =
+fun <L : PhysicalLevelObject> Iterable<L>.getCollisionsWith(levelObj: PhysicalLevelObject) =
     getCollisionsWith(levelObj.hitbox, levelObj.x, levelObj.y).filter { it != levelObj }
 
 /**
@@ -241,10 +241,10 @@ fun <L : LevelObject> Iterable<L>.getCollisionsWith(levelObj: LevelObject) =
  * @param y the level y  of the [hitbox]. [Hitbox.yStart] is added to this to get the true y coordinate of the rectangle
  * @return a sequence of [L]s intersecting the [hitbox]
  */
-fun <L : LevelObject> Iterable<L>.getCollisionsWith(hitbox: Hitbox, x: Int, y: Int) =
+fun <L : PhysicalLevelObject> Iterable<L>.getCollisionsWith(hitbox: Hitbox, x: Int, y: Int) =
     getCollisionsWith(x + hitbox.xStart, y + hitbox.yStart, hitbox.width, hitbox.height)
 
-fun <L : LevelObject> Iterable<L>.getCollisionsWith(x: Int, y: Int, width: Int, height: Int): Sequence<L> {
+fun <L : PhysicalLevelObject> Iterable<L>.getCollisionsWith(x: Int, y: Int, width: Int, height: Int): Sequence<L> {
     if (none()) {
         return emptySequence()
     }
@@ -256,14 +256,14 @@ fun <L : LevelObject> Iterable<L>.getCollisionsWith(x: Int, y: Int, width: Int, 
     }
 }
 
-fun Level.getCollisionsAt(x: Int, y: Int): Sequence<LevelObject> {
+fun Level.getCollisionsAt(x: Int, y: Int): Sequence<PhysicalLevelObject> {
     return getBlockCollisionsAt(x, y) + getMovingObjectCollisionsAt(x, y)
 }
 
 /**
  * @return true if the [hitbox] at [x], [y] collides with the hitbox of the [levelObj]
  */
-fun Level.doHitboxesCollide(hitbox: Hitbox, x: Int, y: Int, levelObj: LevelObject) =
+fun Level.doHitboxesCollide(hitbox: Hitbox, x: Int, y: Int, levelObj: PhysicalLevelObject) =
     doHitboxesCollide(hitbox, x, y, levelObj.hitbox, levelObj.x, levelObj.y)
 
 /**
@@ -280,9 +280,9 @@ fun Level.doHitboxesCollide(
 }
 
 /**
- * Updates the [ResourceNode.attachedNode] of the given [node]
+ * Updates the [ResourceNodeOld.attachedNode] of the given [node]
  */
-fun Level.updateResourceNodeAttachments(node: ResourceNode) {
+fun Level.updateResourceNodeAttachments(node: ResourceNodeOld) {
     val attached = getResourceNodesAt(
         node.xTile + Geometry.getXSign(node.dir),
         node.yTile + Geometry.getYSign(node.dir),
@@ -301,14 +301,14 @@ fun Level.updateResourceNodeAttachments(node: ResourceNode) {
 }
 
 /**
- * @return a set of [ResourceNode]s in this [Level] at [xTile], [yTile] which match the given [predicate] (defaults to { true })
+ * @return a set of [ResourceNodeOld]s in this [Level] at [xTile], [yTile] which match the given [predicate] (defaults to { true })
  */
 fun Level.getResourceNodesAt(
     xTile: Int,
     yTile: Int,
-    predicate: (ResourceNode) -> Boolean = { true }
-): Set<ResourceNode> {
-    val set = mutableSetOf<ResourceNode>()
+    predicate: (ResourceNodeOld) -> Boolean = { true }
+): Set<ResourceNodeOld> {
+    val set = mutableSetOf<ResourceNodeOld>()
     if (!isTileWithinBounds(xTile, yTile))
         return emptySet()
     val chunk = getChunkAtTile(xTile, yTile)
@@ -318,7 +318,7 @@ fun Level.getResourceNodesAt(
     return set
 }
 
-fun Level.getResourceNodeAt(xTile: Int, yTile: Int): ResourceNode2? {
+fun Level.getResourceNodeAt(xTile: Int, yTile: Int): ResourceNode? {
     if (!isTileWithinBounds(xTile, yTile))
         return null
     val chunk = getChunkAtTile(xTile, yTile)
@@ -335,14 +335,14 @@ fun Level.getTileAtTile(xTile: Int, yTile: Int): Tile {
 }
 
 /**
- * Gets the [LevelObject]s at [x], [y] matching the given [predicate] (defaults to { true })
+ * Gets the [PhysicalLevelObject]s at [x], [y] matching the given [predicate] (defaults to { true })
  *
- * @return a sequence of [LevelObject]s in this [Level] at [x], [y]. Note, for [Block]s,
+ * @return a sequence of [PhysicalLevelObject]s in this [Level] at [x], [y]. Note, for [Block]s,
  * this checks the base of the [Block] (i.e. the tiles around the block in which no other block may be), and for [MovingObject]s,
  * it checks the [Hitbox]. The [MovingObject]s will be first in the order of the set, then the [Block]s
  */
-fun Level.getLevelObjectsAt(x: Int, y: Int): Sequence<LevelObject> =
-    (getBlockAt(x, y)?.let { sequenceOf(it) } ?: emptySequence<LevelObject>()) +
+fun Level.getLevelObjectsAt(x: Int, y: Int): Sequence<PhysicalLevelObject> =
+    (getBlockAt(x, y)?.let { sequenceOf(it) } ?: emptySequence<PhysicalLevelObject>()) +
             getMovingObjectCollisionsAt(x, y)
 
 fun Level.getChunkAtChunk(xChunk: Int, yChunk: Int): Chunk {
@@ -385,13 +385,13 @@ fun Level.getChunksFromChunkRectangle(xChunk: Int, yChunk: Int, xChunk2: Int, yC
 fun Level.canAdd(l: LevelObject): Boolean {
     if (l.inLevel && l.level == this)
         return false
-    return canAdd(l.hitbox, l.x, l.y)
+    return l !is PhysicalLevelObject || canAdd(l.hitbox, l.x, l.y)
 }
 
 /**
- * @return true if a [LevelObject] with type [type] at [x], [y] would be able to be added by [add]
+ * @return true if a [PhysicalLevelObject] with type [type] at [x], [y] would be able to be added by [add]
  */
-fun Level.canAdd(type: LevelObjectType<*>, x: Int, y: Int) = canAdd(type.hitbox, x, y)
+fun Level.canAdd(type: PhysicalLevelObjectType<*>, x: Int, y: Int) = canAdd(type.hitbox, x, y)
 
 /**
  * @return true if a [LevelObject] with hitbox [hitbox] at [x], [y] would be able to be added by [add]

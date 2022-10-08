@@ -12,7 +12,7 @@ import level.particle.Particle
 import level.tile.Tile
 import level.update.LevelObjectAdd
 import level.update.LevelObjectRemove
-import level.update.GameUpdate
+import level.update.LevelUpdate
 import main.DebugCode
 import main.Game
 import main.PowerworksDelegates
@@ -38,7 +38,7 @@ val CHUNK_SIZE = CHUNK_SIZE_TILES shl 4
  * Loading, saving and other general tasks relating to [Level]s are done by the [LevelManager].
  *
  * [Level]s have various utility methods defined in the `LevelUtlity.kt` file as extension methods. These should be used
- * over direct access to chunks and their [LevelObject]s.
+ * over direct access to chunks and their [PhysicalLevelObject]s.
  *
  * [ActualLevel]s, which are usually on a central [ServerNetworkManager], represent the real, true data, whereas [RemoteLevel]s are only
  * copies for the [ClientNetworkManager] to have.
@@ -125,9 +125,9 @@ abstract class Level(
         loaded = true
     }
 
-    open fun canModify(update: GameUpdate) = loaded && update.canAct()
+    open fun canModify(update: LevelUpdate) = loaded && update.level == this && update.canAct()
 
-    open fun modify(update: GameUpdate, transient: Boolean = false): Boolean {
+    open fun modify(update: LevelUpdate, transient: Boolean = false): Boolean {
         if (!canModify(update)) {
             return false
         }
@@ -135,6 +135,7 @@ abstract class Level(
         return true
     }
 
+    // TODO these should definitely not need to be separate functions probably??
     /**
      * Does everything necessary to put the object to the level, if possible. If this is already in another
      * [Level], it will remove it from that level first.
@@ -165,29 +166,6 @@ abstract class Level(
         data.particles.remove(p)
     }
 
-//    /**
-//     * Tries to add a resource node to the level. If [node] was already in another level before addition, it will remove it from
-//     * that level first.
-//     * If there was already a node at the same position with the same direction, attached container and resource
-//     * category, it will remove the previous one before finishing addition.
-//     *
-//     * @return true if the node was added successfully (is now in this level)
-//     */
-//    open fun add(node: ResourceNode2): Boolean {
-//        if (node.inLevel && node.level != this) {
-//            node.level.remove(node)
-//        }
-//        val c = getChunkAtTile(node.xTile, node.yTile)
-//        val previousNode = c.getResourceNode(node.xTile, node.yTile)
-//        if (previousNode != null) {
-//            remove(previousNode)
-//        }
-//        c.addResourceNode(node)
-//        node.level = this
-//        node.inLevel = true
-//        return true
-//    }
-
     /**
      * Adds a [Projectile] to this [Level]
      * (no return needed, as you should always be able to add a projectile)
@@ -204,8 +182,8 @@ abstract class Level(
     open fun remove(projectile: Projectile) = data.projectiles.remove(projectile)
 
     open fun update() {
-        ResourceRoutingNetwork.ALL.forEach { if (it.level == this) it.update() }
-        ResourceNetwork.ALL.forEach { if(it.level == this) it.update() }
+        data.resourceContainers.forEach { if(it.type.requiresUpdate) it.update() }
+        data.resourceNetworks.forEach { if(it.type.requiresUpdate) it.update() }
         data.projectiles.forEach { it.update() }
         data.chunks.forEach { it.update() }
         data.particles.forEach { it.update() }
@@ -246,6 +224,7 @@ abstract class Level(
                 val c = getChunkAtChunk(x shr CHUNK_TILE_EXP, yChunk)
                 ghostBlocks.filter { it.xTile == x && it.yTile == y }.forEach { it.render() }
                 c.getBlock(x, y)?.render()
+                c.getResourceNode(x, y)?.render()
             }
             // Render the moving objects in sorted order
             for (xChunk in (minX shr CHUNK_TILE_EXP)..(maxX shr CHUNK_TILE_EXP)) {
@@ -264,18 +243,12 @@ abstract class Level(
                 }
             }
         }
-
-        ResourceRoutingNetwork.ALL.forEach { if (it.level == this) it.render() }
+        data.resourceNetworks.forEach { it.render() }
         data.projectiles.forEach { it.render() }
         Tool.renderAbove(this)
 
-        val chunksInTileRectangle = getChunksFromTileRectangle(minX, minY, maxX - minX - 1, maxY - minY - 1)
-        for (chunk in chunksInTileRectangle) {
-            for (node in chunk.data.resourceNodes) {
-                node?.render()
-            }
-        }
         if (Game.currentDebugCode == DebugCode.CHUNK_INFO) {
+            val chunksInTileRectangle = getChunksFromTileRectangle(minX, minY, maxX - minX - 1, maxY - minY - 1)
             for (c in chunksInTileRectangle) {
                 Renderer.renderEmptyRectangle(c.xTile shl 4, c.yTile shl 4, CHUNK_SIZE, CHUNK_SIZE)
                 Renderer.renderText(
@@ -285,8 +258,6 @@ abstract class Level(
                     c.xTile shl 4, c.yTile shl 4
                 )
             }
-        } else if (Game.currentDebugCode == DebugCode.PIPE_INFO) {
-            ResourceNetwork.render()
         }
 
         FindPath.render()
@@ -301,6 +272,8 @@ abstract class Level(
     // even older Zim (18 yrs old now) says it turns out a lot of it got moved away anyways, so it worked perfectly as a temporary solution!
 
     // 19 now, and bam, its all gone to [LevelManager] or [LevelUtility]. 2:22 am mohican outdoor center
+
+    // well here I am at 22 listening to лд проснулся in sevy. a lot of this is getting simplified
 
     override fun toString() = "${javaClass.simpleName}-id: $id, info: $info"
     override fun equals(other: Any?): Boolean {
@@ -322,8 +295,6 @@ abstract class Level(
     }
 
 }
-
-class NonexistentLevelException(message: String) : Exception(message)
 
 class LevelSerializer<R : Level> : Serializer<R>() {
 

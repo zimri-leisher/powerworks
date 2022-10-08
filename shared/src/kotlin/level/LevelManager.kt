@@ -9,7 +9,7 @@ import level.generator.LevelType
 import main.Game
 import main.GameState
 import network.User
-import resource.ResourceNode
+import resource.ResourceNodeOld
 import screen.CameraMovementListener
 import screen.element.ElementLevelView
 import screen.ScreenManager
@@ -27,7 +27,7 @@ object LevelManager : DirectoryChangeWatcher, MouseMovementListener, CameraMovem
     val loadedLevels = mutableSetOf<Level>()
 
     /**
-     * The default [Level] for [LevelObject]s and [ResourceNode]s. They are never added to it and only store it after their
+     * The default [Level] for [PhysicalLevelObject]s and [ResourceNodeOld]s. They are never added to it and only store it after their
      * instantiation and before they get [added][Level.add] to a [Level]
      */
     val EMPTY_LEVEL = UnknownLevel(UUID.nameUUIDFromBytes(ByteArray(1) { 0 }))
@@ -38,17 +38,17 @@ object LevelManager : DirectoryChangeWatcher, MouseMovementListener, CameraMovem
     var levelUnderMouse: Level? = null
 
     /**
-     * The [GUILevelView] that the mouse is currently over, or null if the mouse is not over any [GUILevelView]
+     * The [GUILevelView] that the mouse is currently over, or null if the mouse is not over any [ElementLevelView]
      */
     var levelViewUnderMouse: ElementLevelView? = null
         private set
 
     /**
-     * The [LevelObject] that the mouse is currently over, or null if the mouse is not over any [LevelObject]. If there are
-     * multiple [LevelObject]s under the [Mouse], it will return [MovingObject]s first (in an arbitrary order) and [Block]s
+     * The [PhysicalLevelObject] that the mouse is currently over, or null if the mouse is not over any [PhysicalLevelObject]. If there are
+     * multiple [PhysicalLevelObject]s under the [Mouse], it will return [MovingObject]s first (in an arbitrary order) and [Block]s
      * last
      */
-    var levelObjectUnderMouse: LevelObject? = null
+    var levelObjectUnderMouse: PhysicalLevelObject? = null
         private set
 
     var mouseLevelX = 0

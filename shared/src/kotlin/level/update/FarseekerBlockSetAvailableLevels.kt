@@ -13,19 +13,23 @@ import java.util.*
  * A level update for setting the available destination [Level]s of a [FarseekerBlock].
  */
 class FarseekerBlockSetAvailableLevels(
-        /**
-         * A reference to the [FarseekerBlock] to set the destination levels of.
-         */
-        @Id(3)
-        val farseekerReference: BlockReference,
-        /**
-         * A map of the UUID of the level and its [LevelInfo] to set as the available destination levels.
-         */
-        @Id(4)
-        val levels: Map<UUID, LevelInfo>
-) : GameUpdate(LevelUpdateType.FARSEEKER_SET_AVAILABLE_LEVELS) {
+    /**
+     * A reference to the [FarseekerBlock] to set the destination levels of.
+     */
+    @Id(3)
+    val farseekerReference: BlockReference,
+    /**
+     * A map of the UUID of the level and its [LevelInfo] to set as the available destination levels.
+     */
+    @Id(4)
+    val levels: Map<UUID, LevelInfo>, level: Level
+) : LevelUpdate(LevelUpdateType.FARSEEKER_SET_AVAILABLE_LEVELS, level) {
 
-    private constructor() : this(BlockReference(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0), mapOf())
+    private constructor() : this(
+        BlockReference(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0),
+        mapOf(),
+        LevelManager.EMPTY_LEVEL
+    )
 
     override val playersToSendTo: Set<Player>?
         get() = null
@@ -45,7 +49,7 @@ class FarseekerBlockSetAvailableLevels(
     override fun cancelActGhost() {
     }
 
-    override fun equivalent(other: GameUpdate): Boolean {
+    override fun equivalent(other: LevelUpdate): Boolean {
         if (other !is FarseekerBlockSetAvailableLevels) {
             return false
         }

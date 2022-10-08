@@ -3,12 +3,12 @@ package network.packet
 import level.update.DefaultLevelUpdate
 import level.Level
 import level.LevelManager
-import level.update.GameUpdate
+import level.update.LevelUpdate
 import serialization.Id
 
 sealed class ServerUpdatePacket(packetType: PacketType) : Packet(packetType)
 
-class LevelUpdatePacket(@Id(4) val update: GameUpdate,
+class LevelUpdatePacket(@Id(4) val update: LevelUpdate,
                         @Id(2)
                         val level: Level) : ServerUpdatePacket(PacketType.LEVEL_UPDATE) {
     private constructor() : this(DefaultLevelUpdate(), LevelManager.EMPTY_LEVEL)

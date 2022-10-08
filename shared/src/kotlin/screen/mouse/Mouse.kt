@@ -73,7 +73,7 @@ object Mouse : ResourceContainerChangeListener {
                             "  Tile: ${t.xTile}, ${t.yTile}\n" +
                             "  Group: ${t.network?.id}\n"
                     val intersectionString = "Far:\n   Up: ${t.farEdges[0]}\n   Right: ${t.farEdges[1]}\n   Down: ${t.farEdges[2]}\n   Left: ${t.farEdges[3]}\n" +
-                            "Near:\n   Up: ${t.nearEdges[0]}\n   Right: ${t.nearEdges[1]}\n   Down: ${t.nearEdges[2]}\n   Left: ${t.nearEdges[3]}\n"
+                            "Near:\n   Up: ${t.edges[0]}\n   Right: ${t.edges[1]}\n   Down: ${t.edges[2]}\n   Left: ${t.edges[3]}\n"
                     Renderer.renderText(tubeString + intersectionString, x, y, TextRenderParams(color = toColor(r = 255, g = 0, b = 0)))
                 }
             }

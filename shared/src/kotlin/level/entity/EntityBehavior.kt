@@ -3,7 +3,7 @@ package level.entity
 import behavior.BehaviorTree
 import behavior.DefaultVariable
 import behavior.leaves.EntityPath
-import level.LevelObject
+import level.PhysicalLevelObject
 import level.LevelPosition
 import level.update.EntityFireWeapon
 import level.update.EntityPathUpdate
@@ -45,7 +45,7 @@ class EntityBehavior(
     private var timesReachedStep = arrayOfNulls<Int>(0)
 
     @Id(9)
-    var attackTarget: LevelObject? = null
+    var attackTarget: PhysicalLevelObject? = null
 
     @Id(10)
     var goalPosition: LevelPosition? = null
@@ -77,7 +77,7 @@ class EntityBehavior(
                 val xDiff = target.x + target.hitbox.xStart + target.hitbox.width / 2 - parent.x
                 val yDiff = target.y + target.hitbox.yStart + target.hitbox.height / 2 - parent.y
                 val angle = atan2(yDiff.toFloat(), xDiff.toFloat())
-                parent.level.modify(EntityFireWeapon(Coord(parent.x, parent.y), angle, parent.weapon!!.type.projectileType, parent.toReference() as MovingObjectReference))
+                parent.level.modify(EntityFireWeapon(Coord(parent.x, parent.y), angle, parent.weapon!!.type.projectileType, parent.toReference() as MovingObjectReference, parent.level))
             }
         }
     }
@@ -95,7 +95,7 @@ class EntityBehavior(
             if (dist < 1 && timesReachedStep[currentPathStepIndex] == null) { // if we just reached this for the first time
                 // reached step
                 timesReachedStep[currentPathStepIndex] = timeSincePathingStart
-                parent.level.modify(EntityPathUpdate(parent.toReference() as MovingObjectReference, currentPathStepIndex, timeSincePathingStart, path.hashCode()))
+                parent.level.modify(EntityPathUpdate(parent.toReference() as MovingObjectReference, currentPathStepIndex, timeSincePathingStart, path.hashCode(), parent.level))
                 currentPathStepIndex++
             }
             timeSincePathingStart++

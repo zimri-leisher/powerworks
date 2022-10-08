@@ -5,11 +5,13 @@ import crafting.Crafter
 import crafting.Recipe
 import io.ControlEvent
 import io.ControlEventType
+import item.Inventory
 import level.Level
 import resource.*
 import serialization.Id
 
-open class CrafterBlock(override val type: CrafterBlockType<*>, xTile: Int, yTile: Int, rotation: Int) : MachineBlock(type, xTile, yTile, rotation), ResourceContainerChangeListener, Crafter {
+open class CrafterBlock(override val type: CrafterBlockType<*>, xTile: Int, yTile: Int) :
+    MachineBlock(type, xTile, yTile), ResourceContainerChangeListener, Crafter {
 
     override val crafterType: Crafter.Type
         get() = type.crafterType
@@ -43,16 +45,24 @@ open class CrafterBlock(override val type: CrafterBlockType<*>, xTile: Int, yTil
     private var currentResources = mutableResourceListOf()
 
     @Id(25)
-    private val inputNodes = nodes //nodes.filter { it.behavior.allowIn.possible()?.isEmpty() == true } // nodes that start out allowing all types out
+    private val inputNodes =
+        nodes //nodes.filter { it.behavior.allowIn.possible()?.isEmpty() == true } // nodes that start out allowing all types out
 
     @Id(26)
-    val inputContainer = inputNodes.first().container //inputNodes.getAttachedContainers().first()
+    val inputContainer = Inventory(type.internalStorageSize, 1)
 
     @Id(27)
-    val outputContainer = nodes.first().container //nodes.filter { it.behavior.allowOut.possible()?.isEmpty() == true }.getAttachedContainers().first()
+    val outputContainer = Inventory(
+        1,
+        1
+    )
 
     init {
         inputContainer.listeners.add(this)
+    }
+
+    override fun createNodes(): List<ResourceNode> {
+        return listOf(ResourceNode(inputContainer, xTile, yTile + 1), ResourceNode(outputContainer, xTile, yTile))
     }
 
     override fun afterAddToLevel(oldLevel: Level) {
@@ -65,7 +75,7 @@ open class CrafterBlock(override val type: CrafterBlockType<*>, xTile: Int, yTil
     override fun onContainerClear(container: ResourceContainer) {
         // basically, refresh the current resource list
         currentResources.clear()
-        currentResources = containers.toMutableResourceList()
+        currentResources = inputContainer.toMutableResourceList()
     }
 
     override fun onAddToContainer(container: ResourceContainer, resources: ResourceList) {
@@ -104,7 +114,15 @@ open class CrafterBlock(override val type: CrafterBlockType<*>, xTile: Int, yTil
         }
     }
 
-    override fun onInteractOn(event: ControlEvent, x: Int, y: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+    override fun onInteractOn(
+        event: ControlEvent,
+        x: Int,
+        y: Int,
+        button: Int,
+        shift: Boolean,
+        ctrl: Boolean,
+        alt: Boolean
+    ) {
         if (event.type == ControlEventType.PRESS && !shift && !ctrl && !alt) {
             if (button == Input.Buttons.LEFT) {
                 this.type.guiPool!!.toggle(this)

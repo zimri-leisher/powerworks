@@ -3,6 +3,7 @@ package level.block
 import com.badlogic.gdx.Input
 import io.ControlEvent
 import io.ControlEventType
+import item.Inventory
 import item.weapon.Weapon
 import item.weapon.WeaponItemType
 import level.entity.Entity
@@ -10,18 +11,28 @@ import level.getMovingObjectCollisionsInSquareCenteredOn
 import resource.ResourceContainer
 import resource.ResourceContainerChangeListener
 import resource.ResourceList
+import resource.ResourceNode
 
-class ArmoryBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(MachineBlockType.ARMORY, xTile, yTile, rotation), ResourceContainerChangeListener {
+class ArmoryBlock(xTile: Int, yTile: Int) : MachineBlock(MachineBlockType.ARMORY, xTile, yTile),
+    ResourceContainerChangeListener {
 
-    private constructor() : this(0, 0, 0)
+    val inventory = Inventory(1, 1)
 
-    val container = containers.first()
+    private constructor() : this(0, 0)
 
-    init {
-        container.listeners.add(this)
+    override fun createNodes(): List<ResourceNode> {
+        return listOf(ResourceNode(inventory, xTile, yTile))
     }
 
-    override fun onInteractOn(event: ControlEvent, x: Int, y: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+    override fun onInteractOn(
+        event: ControlEvent,
+        x: Int,
+        y: Int,
+        button: Int,
+        shift: Boolean,
+        ctrl: Boolean,
+        alt: Boolean
+    ) {
         if (event.type == ControlEventType.PRESS && !shift && !ctrl && !alt) {
             if (button == Input.Buttons.LEFT) {
                 this.type.guiPool!!.toggle(this)
@@ -31,9 +42,10 @@ class ArmoryBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(MachineB
 
     override fun onFinishWork() {
         val entitiesToBeArmored = level.getMovingObjectCollisionsInSquareCenteredOn(
-                x + hitbox.width / 2,
-                y + hitbox.height / 2,
-                256).filterIsInstance<Entity>()
+            x + hitbox.width / 2,
+            y + hitbox.height / 2,
+            256
+        ).filterIsInstance<Entity>()
         entitiesToBeArmored.forEach {
             if (it.weapon == null)
                 it.weapon = Weapon(WeaponItemType.MACHINE_GUN)

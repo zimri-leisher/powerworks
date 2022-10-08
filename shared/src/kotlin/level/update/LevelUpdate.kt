@@ -1,6 +1,7 @@
 package level.update
 
 import level.Level
+import level.LevelManager
 import player.Player
 import serialization.Id
 
@@ -28,11 +29,11 @@ enum class LevelUpdateType {
 
 /**
  * This class generically represents something that can happen in a [Level]. These are the primary means for networked
- * communication of gameplay. To integrate a [GameUpdate] into the state of a [Level], use [Level.modify]. If the [Level] is an [ActualLevel]
+ * communication of gameplay. To integrate a [LevelUpdate] into the state of a [Level], use [Level.modify]. If the [Level] is an [ActualLevel]
  * and the update is able to be carried out, it will put that update into a [LevelUpdatePacket] and send it to the clients
  * defined in the [Level]'s [Lobby]. When it reaches the corresponding [RemoteLevel]s, it will be naively integrated.
  */
-abstract class GameUpdate(
+abstract class LevelUpdate(
     @Id(1)
     val type: LevelUpdateType,
     @Id(-1)
@@ -46,7 +47,7 @@ abstract class GameUpdate(
     abstract val playersToSendTo: Set<Player>?
 
     /**
-     * @return whether or not this [GameUpdate] can act on the given [level].
+     * @return whether or not this [LevelUpdate] can act on the given [level].
      */
     abstract fun canAct(): Boolean
 
@@ -70,17 +71,17 @@ abstract class GameUpdate(
      * @return whether or not the other modification is doing the same thing as this one. Useful for detecting if the server
      * and client are in sync.
      */
-    abstract fun equivalent(other: GameUpdate): Boolean
+    abstract fun equivalent(other: LevelUpdate): Boolean
 
     /**
-     * Should re-resolve any [NetworkReference]s this [GameUpdate] stores. Necessary for when actions are initially unable to be taken due to
+     * Should re-resolve any [NetworkReference]s this [LevelUpdate] stores. Necessary for when actions are initially unable to be taken due to
      * unresolved references but eventually become possible.
      */
     abstract fun resolveReferences()
 }
 
 
-class DefaultLevelUpdate : GameUpdate(LevelUpdateType.DEFAULT) {
+class DefaultLevelUpdate : LevelUpdate(LevelUpdateType.DEFAULT, LevelManager.EMPTY_LEVEL) {
     override val playersToSendTo: Set<Player>?
         get() = null
 
@@ -94,7 +95,7 @@ class DefaultLevelUpdate : GameUpdate(LevelUpdateType.DEFAULT) {
     override fun cancelActGhost() {
     }
 
-    override fun equivalent(other: GameUpdate) = other is DefaultLevelUpdate
+    override fun equivalent(other: LevelUpdate) = other is DefaultLevelUpdate
 
     override fun resolveReferences() {
     }

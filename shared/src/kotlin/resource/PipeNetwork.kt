@@ -2,34 +2,53 @@ package resource
 
 import graphics.Renderer
 import graphics.TextureRenderParams
-import level.Level
-import level.getBlockAtTile
-import level.getResourceNodeAt
+import level.*
 import level.pipe.PipeBlock
+import level.pipe.PipeState
 import main.toColor
 import misc.Geometry
 import misc.TileCoord
+import network.LevelObjectReference
+import network.ResourceNetworkReference
 import java.lang.Integer.max
 import java.lang.Integer.min
 import java.util.*
 
+interface PotentialPipeNetworkVertex : PotentialResourceNetworkVertex {
+    val validFarVertex: Boolean
+    var vertex: PipeNetworkVertex?
+}
 
-class PipeNetwork(level: Level, vertices: Set<PipeNetworkVertex> = setOf()) : ResourceNetwork(level) {
+class PipeNetworkVertex(
+    obj: PotentialPipeNetworkVertex,
+    edges: MutableList<PipeNetworkVertex>,
+    val farEdges: Array<PipeNetworkVertex?>
+) :
+    ResourceNetworkVertex<PipeNetworkVertex>(obj, edges, ResourceNetworkType.PIPE) {
 
-    val vertices = vertices.toMutableSet()
+    private val pipeObj get() = obj as PotentialPipeNetworkVertex
 
-    val pipes = mutableListOf<PipeBlock>()
+    val xTile get() = obj.x / 16
+    val yTile get() = obj.y / 16
+
+    val level get() = obj.level
+
+    val inLevel get() = obj.inLevel
+
+    val validFarVertex get() = pipeObj.validFarVertex
+}
+
+class PipeNetwork(level: Level) : ResourceNetwork<PipeNetworkVertex>(level, ResourceNetworkType.PIPE) {
+
     val connections = mutableListOf<PipeNetworkConnection>()
-    override val nodes = mutableListOf<ResourceNode2>()
+    override val nodes = mutableListOf<ResourceNode>()
 
-    init {
-        for (vert in vertices) {
-            if (vert is PipeBlock) {
-                pipes.add(vert)
-            } else {
-                nodes.add(vert as ResourceNode2)
-            }
-        }
+    override fun canBeVertex(obj: PhysicalLevelObject): Boolean {
+        return obj is PotentialPipeNetworkVertex
+    }
+
+    override fun makeVertex(obj: PhysicalLevelObject): PipeNetworkVertex {
+        return PipeNetworkVertex(obj as PotentialPipeNetworkVertex, mutableListOf(), arrayOfNulls(4))
     }
 
     override fun getConnection(from: ResourceContainer, to: ResourceContainer): ResourceNodeConnection? {
@@ -48,15 +67,15 @@ class PipeNetwork(level: Level, vertices: Set<PipeNetworkVertex> = setOf()) : Re
         for (dir in 0..3) {
             val nearVert = findNearVertex(vert, dir)
             if (vert.inLevel) {
-                vert.nearEdges[dir] = nearVert
-                nearVert?.nearEdges?.set(Geometry.getOppositeAngle(dir), vert)
+                vert.edges[dir] = nearVert
+                nearVert?.edges?.set(Geometry.getOppositeAngle(dir), vert)
             } else {
-                vert.nearEdges[dir] = null
-                nearVert?.nearEdges?.set(Geometry.getOppositeAngle(dir), null)
+                vert.edges[dir] = null
+                nearVert?.edges?.set(Geometry.getOppositeAngle(dir), null)
             }
-            (nearVert as? PipeBlock)?.updateState()
+            (nearVert?.obj as? PipeBlock)?.updateState()
         }
-        (vert as? PipeBlock)?.updateState()
+        (vert.obj as? PipeBlock)?.updateState()
     }
 
     fun updateFarConnections(vert: PipeNetworkVertex) {
@@ -100,114 +119,19 @@ class PipeNetwork(level: Level, vertices: Set<PipeNetworkVertex> = setOf()) : Re
         }
     }
 
-    private fun updateConnections(vert: PipeNetworkVertex) {
+    override fun updateEdges(vert: PipeNetworkVertex) {
         updateNearConnections(vert)
         updateFarConnectionsRecurse(vert)
     }
 
-    fun add(vert: PipeNetworkVertex) {
-        // add to internal lists
-        vertices.add(vert)
-        if (vert is PipeBlock) {
-            pipes.add(vert)
-        } else {
-            nodes.add(vert as ResourceNode2)
-        }
-        updateConnections(vert)
-        tryMerge(vert)
-    }
-
-    fun remove(vert: PipeNetworkVertex) {
-        updateConnections(vert)
-        trySplit(vert)
-        vertices.remove(vert)
-        if (vert is PipeBlock) {
-            pipes.remove(vert)
-        } else {
-            nodes.remove(vert as ResourceNode2)
-        }
-    }
-
-    private data class PipeNetworkRoutingNode(
-        val vert: PipeNetworkVertex,
-        val parent: PipeNetworkRoutingNode?,
-        val f: Double
-    ) : Comparable<PipeNetworkRoutingNode> {
-        override fun compareTo(other: PipeNetworkRoutingNode): Int {
-            return f.compareTo(other.f)
-        }
-    }
-
-    private fun route(from: ResourceNode2, to: ResourceNode2): List<PipeNetworkVertex>? {
-
-        fun h(src: PipeNetworkVertex): Double {
-            return Geometry.distance(src.xTile * 16, src.yTile * 16, to.x, to.y)
-        }
-
-        val start = PipeNetworkRoutingNode(from, null, h(from))
-        val open = PriorityQueue<PipeNetworkRoutingNode>()
-        open.add(start)
-        val g = mutableMapOf<TileCoord, Double>()
-        g[TileCoord(from.xTile, from.yTile)] = 0.0
-        while (open.isNotEmpty()) {
-            val next: PipeNetworkRoutingNode = open.poll()
-            if (next.vert == to) {
-                val path = mutableListOf<PipeNetworkVertex>()
-                var current: PipeNetworkRoutingNode? = next
-                while(current != null) {
-                    path.add(current.vert)
-                    current = current.parent
-                }
-                return path.reversed()
-            }
-            for(neighbor in next.vert.farEdges) {
-                if(neighbor == null) {
-                    continue
-                }
-                val oldG = g[TileCoord(next.vert.xTile, next.vert.yTile)] ?: Double.POSITIVE_INFINITY
-                val newG = oldG + Geometry.distance(neighbor.xTile * 16, neighbor.yTile * 16, next.vert.xTile * 16, next.vert.yTile * 16)
-                if(newG < (g[TileCoord(neighbor.xTile, neighbor.yTile)] ?: Double.POSITIVE_INFINITY)) {
-                    val newNode = PipeNetworkRoutingNode(neighbor, next, newG + h(neighbor))
-                    g[TileCoord(neighbor.xTile, neighbor.yTile)] = newG
-                    if(newNode !in open) {
-                        open.add(newNode)
-                    }
-                }
-            }
-        }
-        return null
-    }
-
-    fun mergeFrom(network: PipeNetwork) {
-        for (vertex in network.vertices) {
-            vertex.network = this
-        }
-        vertices.addAll(network.vertices)
-        pipes.addAll(network.pipes)
-        nodes.addAll(network.nodes)
-        network.vertices.clear()
-        network.pipes.clear()
-        network.nodes.clear()
-    }
-
-    private fun tryMerge(around: PipeNetworkVertex) {
-        val toCombine = mutableSetOf(this)
-        for (dir in 0..3) {
-            if (around.nearEdges[dir]?.network != null && around.nearEdges[dir]?.network != this) {
-                toCombine.add(around.nearEdges[dir]!!.network!!)
-            }
-        }
-        merge(toCombine)
-    }
-
-    private fun trySplit(around: PipeNetworkVertex) {
+    override fun trySplit(around: PipeNetworkVertex) {
         val found = Array<MutableSet<PipeNetworkVertex>?>(4) { null }
         for (dir in 0..3) {
             val start = findNearVertex(around, dir)
             if (start != null) {
                 found[dir] = mutableSetOf()
                 bfs(start,
-                    getChildren = { it.nearEdges },
+                    getChildren = { it.edges },
                     processVertex = {
                         found[dir]!!.add(it)
                     })
@@ -242,6 +166,75 @@ class PipeNetwork(level: Level, vertices: Set<PipeNetworkVertex> = setOf()) : Re
         split(this, groups)
     }
 
+    override fun splitOff(vertices: Collection<PipeNetworkVertex>): ResourceNetwork<PipeNetworkVertex> {
+        val newNetwork = PipeNetwork(level)
+        newNetwork.vertices.addAll(vertices)
+        for (vert in vertices) {
+            vert.obj.onRemoveFromNetwork(this)
+            vert.obj.onAddToNetwork(newNetwork)
+            this.vertices.remove(vert)
+            if (vert.obj is ResourceNode) {
+                this.nodes.remove(vert.obj)
+            }
+        }
+        return newNetwork
+    }
+
+    private data class PipeNetworkRoutingNode(
+        val vert: PipeNetworkVertex,
+        val parent: PipeNetworkRoutingNode?,
+        val f: Double
+    ) : Comparable<PipeNetworkRoutingNode> {
+        override fun compareTo(other: PipeNetworkRoutingNode): Int {
+            return f.compareTo(other.f)
+        }
+    }
+
+    private fun route(from: ResourceNode, to: ResourceNode): List<PipeNetworkVertex>? {
+
+        fun h(src: PipeNetworkVertex): Double {
+            return Geometry.distance(src.xTile * 16, src.yTile * 16, to.x, to.y)
+        }
+
+        val start = PipeNetworkRoutingNode(from, null, h(from))
+        val open = PriorityQueue<PipeNetworkRoutingNode>()
+        open.add(start)
+        val g = mutableMapOf<TileCoord, Double>()
+        g[TileCoord(from.xTile, from.yTile)] = 0.0
+        while (open.isNotEmpty()) {
+            val next: PipeNetworkRoutingNode = open.poll()
+            if (next.vert == to) {
+                val path = mutableListOf<PipeNetworkVertex>()
+                var current: PipeNetworkRoutingNode? = next
+                while (current != null) {
+                    path.add(current.vert)
+                    current = current.parent
+                }
+                return path.reversed()
+            }
+            for (neighbor in next.vert.farEdges) {
+                if (neighbor == null) {
+                    continue
+                }
+                val oldG = g[TileCoord(next.vert.xTile, next.vert.yTile)] ?: Double.POSITIVE_INFINITY
+                val newG = oldG + Geometry.distance(
+                    neighbor.xTile * 16,
+                    neighbor.yTile * 16,
+                    next.vert.xTile * 16,
+                    next.vert.yTile * 16
+                )
+                if (newG < (g[TileCoord(neighbor.xTile, neighbor.yTile)] ?: Double.POSITIVE_INFINITY)) {
+                    val newNode = PipeNetworkRoutingNode(neighbor, next, newG + h(neighbor))
+                    g[TileCoord(neighbor.xTile, neighbor.yTile)] = newG
+                    if (newNode !in open) {
+                        open.add(newNode)
+                    }
+                }
+            }
+        }
+        return null
+    }
+
     private fun findNearVertex(vert: PipeNetworkVertex, dir: Int): PipeNetworkVertex? {
         val x = vert.xTile + Geometry.getXSign(dir)
         val y = vert.yTile + Geometry.getYSign(dir)
@@ -271,7 +264,7 @@ class PipeNetwork(level: Level, vertices: Set<PipeNetworkVertex> = setOf()) : Re
 
     private fun bfs(
         start: PipeNetworkVertex,
-        getChildren: (parent: PipeNetworkVertex) -> Array<PipeNetworkVertex?> = { it.farEdges },
+        getChildren: (parent: PipeNetworkVertex) -> MutableList<PipeNetworkVertex?> = { it.farEdges },
         processEdge: (parent: PipeNetworkVertex, child: PipeNetworkVertex) -> Unit = { _, _ -> },
         processVertex: (vert: PipeNetworkVertex) -> Unit = { }
     ) {
@@ -292,8 +285,8 @@ class PipeNetwork(level: Level, vertices: Set<PipeNetworkVertex> = setOf()) : Re
     }
 
     override fun render() {
-        val start = vertices.firstOrNull { it.validFarVertex } ?: return
-        val rand = Random(id.toLong())
+        val start = pipeVertices.firstOrNull { it.validFarVertex } ?: return
+        val rand = Random(id.leastSignificantBits)
         val color = toColor(rand.nextInt(255), rand.nextInt(255), rand.nextInt(255))
         bfs(start, processEdge = { parent, child ->
             val x1 = parent.xTile * 16 + 8
@@ -308,6 +301,10 @@ class PipeNetwork(level: Level, vertices: Set<PipeNetworkVertex> = setOf()) : Re
         })
     }
 
+    override fun toReference(): LevelObjectReference {
+        return ResourceNetworkReference(this)
+    }
+
     override fun equals(other: Any?): Boolean {
         return other is PipeNetwork && other.id == this.id
     }
@@ -317,37 +314,8 @@ class PipeNetwork(level: Level, vertices: Set<PipeNetworkVertex> = setOf()) : Re
     }
 
     override fun hashCode(): Int {
-        return id
+        return id.hashCode()
     }
 
-    companion object {
 
-        fun merge(networks: Set<PipeNetwork>) {
-            if (networks.isEmpty()) {
-                return
-            }
-            val dest = networks.maxBy { it.vertices.size }
-            for (other in networks - dest) {
-                dest.mergeFrom(other)
-            }
-        }
-
-        fun split(network: PipeNetwork, groups: Set<Set<PipeNetworkVertex>>) {
-            val largestGroup = groups.withIndex().maxBy { (_, value) -> value.size }.index
-            for ((i, newVertices) in groups.withIndex()) {
-                if (i != largestGroup) {
-                    val newNetwork = PipeNetwork(network.level, newVertices)
-                    for (vert in newVertices) {
-                        vert.network = newNetwork
-                        network.vertices.remove(vert)
-                        if (vert is PipeBlock) {
-                            network.pipes.remove(vert)
-                        } else {
-                            network.nodes.remove(vert as ResourceNode2)
-                        }
-                    }
-                }
-            }
-        }
-    }
 }

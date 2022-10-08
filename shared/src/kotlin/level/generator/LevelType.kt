@@ -32,14 +32,6 @@ class LevelType(initializer: LevelType.() -> Unit = {}) {
 
         val DEFAULT_SIMPLEX = LevelType {
         }
-
-        val AI_ENEMY = LevelType {
-        }
-
-        val TEST = LevelType {
-            widthChunks = 3
-            heightChunks = 3
-        }
     }
 
     override fun equals(other: Any?): Boolean {

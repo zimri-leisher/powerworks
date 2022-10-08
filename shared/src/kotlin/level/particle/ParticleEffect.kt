@@ -1,6 +1,6 @@
 package level.particle
 
-import level.LevelObject
+import level.PhysicalLevelObject
 import level.block.Block
 
 /**
@@ -10,7 +10,7 @@ import level.block.Block
  *
  * @param L the type of the level object this acts on/around
  */
-class ParticleEffect<L : LevelObject>(var instantiate: (L) -> Unit = {}) {
+class ParticleEffect<L : PhysicalLevelObject>(var instantiate: (L) -> Unit = {}) {
 
     companion object {
         val BLOCK_PLACE = ParticleEffect<Block> {

@@ -1,6 +1,6 @@
 package resource
 
-abstract class ResourceNodeConnection(val from: ResourceNode2, val to: ResourceNode2) : ResourceTransactionExecutor() {
+abstract class ResourceNodeConnection(val from: ResourceNode, val to: ResourceNode) : ResourceTransactionExecutor() {
     // only executes transactions between from and to, nothing else
     override fun canExecute(transaction: ResourceTransaction): Boolean {
         if(!transaction.isValid()) {

@@ -4,7 +4,7 @@ import item.weapon.Weapon
 import level.moving.MovingObject
 import serialization.Id
 
-abstract class Entity(type: EntityType<out Entity>, x: Int, y: Int, rotation: Int = 0) : MovingObject(type, x, y, rotation) {
+abstract class Entity(type: EntityType<out Entity>, x: Int, y: Int) : MovingObject(type, x, y) {
     override val type = type
 
     @Id(23)

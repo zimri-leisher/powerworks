@@ -5,7 +5,6 @@ import level.block.Block
 import level.moving.MovingObject
 import level.tile.Tile
 import resource.ResourceNode
-import resource.ResourceNode2
 import serialization.Id
 
 /**
@@ -31,7 +30,9 @@ data class Chunk(
     var data = ChunkData()
 
     fun getBlock(xTile: Int, yTile: Int) = data.blocks[(xTile - this.xTile) + (yTile - this.yTile) * CHUNK_SIZE_TILES]
-    fun getResourceNode(xTile: Int, yTile: Int) = data.resourceNodes[(xTile - this.xTile) + (yTile - this.yTile) * CHUNK_SIZE_TILES]
+    fun getResourceNode(xTile: Int, yTile: Int) =
+        data.resourceNodes[(xTile - this.xTile) + (yTile - this.yTile) * CHUNK_SIZE_TILES]
+
     fun getTile(xTile: Int, yTile: Int) = data.tiles[(xTile - this.xTile) + (yTile - this.yTile) * CHUNK_SIZE_TILES]
     fun setTile(tile: Tile) {
         data.tiles[(tile.xTile - xTile) + (tile.yTile - yTile) * CHUNK_SIZE_TILES] = tile
@@ -40,49 +41,49 @@ data class Chunk(
 
     fun setBlock(block: Block, xTile: Int = block.xTile, yTile: Int = block.yTile, mainBlock: Boolean) {
         data.blocks[(xTile - this.xTile) + (yTile - this.yTile) * CHUNK_SIZE_TILES] = block
-        if (mainBlock && block.requiresUpdate)
+        if (mainBlock && block.type.requiresUpdate)
             addUpdateRequired(block)
     }
 
     fun removeBlock(block: Block, xTile: Int = block.xTile, yTile: Int = block.yTile, mainBlock: Boolean) {
         data.blocks[(xTile - this.xTile) + (yTile - this.yTile) * CHUNK_SIZE_TILES] = null
-        if (mainBlock && block.requiresUpdate)
+        if (mainBlock && block.type.requiresUpdate)
             removeUpdateRequired(block)
     }
 
     fun addMoving(m: MovingObject) {
         data.moving.add(m)
         data.moving.sortWith { o1, o2 -> o1.y.compareTo(o2.y) }
-        if (m.requiresUpdate) {
+        if (m.type.requiresUpdate) {
             addUpdateRequired(m)
         }
     }
 
     fun removeMoving(m: MovingObject) {
         data.moving.remove(m)
-        if (m.requiresUpdate)
+        if (m.type.requiresUpdate)
             removeUpdateRequired(m)
     }
 
-    fun addResourceNode(r: ResourceNode2) {
+    fun addResourceNode(r: ResourceNode) {
         data.resourceNodes[(r.xTile - this.xTile) + (r.yTile - this.yTile) * CHUNK_SIZE_TILES] = r
     }
 
-    fun removeResourceNode(r: ResourceNode2) {
+    fun removeResourceNode(r: ResourceNode) {
         data.resourceNodes[(r.xTile - this.xTile) + (r.yTile - this.yTile) * CHUNK_SIZE_TILES] = null
     }
 
-    fun addUpdateRequired(levelObject: LevelObject) {
+    fun addUpdateRequired(levelObject: PhysicalLevelObject) {
         data.updatesRequired.add(levelObject)
     }
 
-    fun removeUpdateRequired(levelObject: LevelObject) {
+    fun removeUpdateRequired(levelObject: PhysicalLevelObject) {
         data.updatesRequired.remove(levelObject)
     }
 
     fun update() {
         for (node in data.resourceNodes) {
-            if(node != null) {
+            if (node != null) {
 //                node.update()
             }
         }
@@ -130,9 +131,9 @@ data class ChunkData(
     @Id(5)
     var movingOnBoundary: MutableList<MovingObject> = mutableListOf(),
     @Id(6)
-    var updatesRequired: ConcurrentlyModifiableMutableList<LevelObject> = ConcurrentlyModifiableMutableList(),
+    var updatesRequired: ConcurrentlyModifiableMutableList<PhysicalLevelObject> = ConcurrentlyModifiableMutableList(),
     @Id(8)
-    var resourceNodes: Array<ResourceNode2?> = arrayOf()
+    var resourceNodes: Array<ResourceNode?> = arrayOf()
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

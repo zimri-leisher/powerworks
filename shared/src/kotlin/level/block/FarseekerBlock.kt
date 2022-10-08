@@ -15,9 +15,9 @@ import screen.gui.GuiIngame
 import serialization.Id
 import java.util.*
 
-class FarseekerBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(MachineBlockType.FARSEEKER, xTile, yTile, rotation), LevelEventListener {
+class FarseekerBlock(xTile: Int, yTile: Int) : MachineBlock(MachineBlockType.FARSEEKER, xTile, yTile), LevelEventListener {
 
-    private constructor() : this(0, 0, 0)
+    private constructor() : this(0, 0)
 
     @Id(23)
     var availableDestinations = mapOf<UUID, LevelInfo>()
@@ -60,14 +60,14 @@ class FarseekerBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(Machi
             // move the second view camera to the new level TODO find a more permanent solution for this?
             val cameraToMove = GuiIngame.secondView.camera
             if(cameraToMove is Camera) {
-                destinationLevel!!.modify(LevelObjectSwitchLevelsTo(cameraToMove.toReference(), TileCoord(cameraToMove.xTile, cameraToMove.yTile)), true)
+                destinationLevel!!.modify(LevelObjectSwitchLevelsTo(cameraToMove.toReference(), TileCoord(cameraToMove.xTile, cameraToMove.yTile), destinationLevel!!), true)
             }
         }
     }
 
     override fun afterAddToLevel(oldLevel: Level) {
         super.afterAddToLevel(oldLevel)
-        level.modify(FarseekerBlockSetAvailableLevels(toReference() as BlockReference, ProgressionManager.getAvailableEnemyLevels(team.players.first())))
+        level.modify(FarseekerBlockSetAvailableLevels(toReference() as BlockReference, ProgressionManager.getAvailableEnemyLevels(team.players.first()), level))
     }
 
     override fun onInteractOn(event: ControlEvent, x: Int, y: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
@@ -79,7 +79,7 @@ class FarseekerBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(Machi
         super.onInteractOn(event, x, y, button, shift, ctrl, alt)
     }
 
-    override fun onCollide(obj: LevelObject) {
+    override fun onCollide(obj: PhysicalLevelObject) {
         if (obj !is MovingObject) {
             return
         }
@@ -96,7 +96,7 @@ class FarseekerBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(Machi
         }
         for(obj in iter) {
             if(destinationLevel != null && destinationPosition != null) {
-                if(destinationLevel!!.modify(LevelObjectSwitchLevelsTo(obj.toReference(), destinationPosition!!))) {
+                if(destinationLevel!!.modify(LevelObjectSwitchLevelsTo(obj.toReference(), destinationPosition!!, destinationLevel!!))) {
                     iter.remove()
                     println("switched levels succesfully")
                 }

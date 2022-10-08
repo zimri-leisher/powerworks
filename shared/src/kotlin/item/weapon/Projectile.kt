@@ -3,7 +3,7 @@ package item.weapon
 import graphics.Image
 import graphics.Renderer
 import graphics.TextureRenderParams
-import level.LevelObject
+import level.PhysicalLevelObject
 import level.block.BlockType
 import level.block.DefaultBlock
 import level.entity.Entity
@@ -13,6 +13,7 @@ import serialization.Id
 import java.lang.Math.pow
 import kotlin.math.*
 
+// TODO why shouldn't these be physical level objects?
 class Projectile(
         @Id(1)
         val type: ProjectileType,
@@ -23,7 +24,7 @@ class Projectile(
         @Id(4)
         val angle: Float,
         @Id(5)
-        val parent: LevelObject) {
+        val parent: PhysicalLevelObject) {
 
     private constructor() : this(ProjectileType.SMALL_BULLET, 0, 0, 0f, DefaultBlock(BlockType.ERROR, 0, 0, 0))
 
@@ -67,7 +68,7 @@ class Projectile(
         Renderer.renderTexture(Image.Weapon.PROJECTILE, x, y, type.hitbox.width, type.hitbox.height, TextureRenderParams(rotation = Math.toDegrees(angle.toDouble()).toFloat()))
     }
 
-    fun onCollide(o: LevelObject) {
+    fun onCollide(o: PhysicalLevelObject) {
         if (o is Entity && o.team == parent.team) {
             // ignore entity collisions if we're on the same team
             return
@@ -104,12 +105,12 @@ class Projectile(
     }
 }
 
-private fun getCollisionsWithRectangle(possibleColliders: Sequence<LevelObject>, points: List<Pair<Float, Float>>): Sequence<LevelObject> {
+private fun getCollisionsWithRectangle(possibleColliders: Sequence<PhysicalLevelObject>, points: List<Pair<Float, Float>>): Sequence<PhysicalLevelObject> {
     if (points.size != 4) {
         throw IllegalArgumentException("Rectangle must be defined by 4 points (had ${points.size})")
     }
 
-    fun intersectsRectangle(levelObj: LevelObject): Boolean {
+    fun intersectsRectangle(levelObj: PhysicalLevelObject): Boolean {
         for (point in points) {
             if (Geometry.contains(levelObj.x + levelObj.hitbox.xStart, levelObj.y + levelObj.hitbox.yStart, levelObj.hitbox.width, levelObj.hitbox.height, point.first.toInt(), point.second.toInt(), 0, 0)) {
                 return true

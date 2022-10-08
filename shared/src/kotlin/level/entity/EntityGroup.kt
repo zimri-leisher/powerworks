@@ -99,7 +99,7 @@ class EntityGroup(
             return
         }
 
-        val biggestHitbox = entities.map { it.hitbox }.maxBy { it.width * it.height }!!
+        val biggestHitbox = entities.map { it.hitbox }.maxBy { it.width * it.height }
 
         val formationPositions = mutableListOf<Coord>()
 
@@ -154,7 +154,7 @@ class EntityGroup(
 
         val level = entities.first().level
         println("creating formation")
-        level.modify(EntitySetFormation(newFormation.mapKeys { it.key.toReference() as MovingObjectReference }.mapValues { LevelPosition(it.value.x, it.value.y, level) }, LevelPosition(x, y, level)))
+        level.modify(EntitySetFormation(newFormation.mapKeys { it.key.toReference() as MovingObjectReference }.mapValues { LevelPosition(it.value.x, it.value.y, level) }, LevelPosition(x, y, level), level))
     }
 
     fun render() {

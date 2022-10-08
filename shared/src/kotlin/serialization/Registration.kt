@@ -51,7 +51,6 @@ import network.packet.*
 import player.*
 import player.team.Team
 import resource.*
-import resource.PipeNetwork
 import routing.*
 import routing.script.*
 import screen.Camera
@@ -167,8 +166,8 @@ object Registration {
         register(Hitbox::class, 55)
         register(LevelData::class, 57)
         register(LevelInfo::class, 58)
-        register(LevelObjectTextures::class, 60)
-        register(LevelObjectType::class, IDSerializer({ LevelObjectType.ALL }, { it.id }), 257)
+        register(PhysicalLevelObjectTextures::class, 60)
+        register(PhysicalLevelObjectType::class, IDSerializer({ PhysicalLevelObjectType.ALL }, { it.id }), 257)
         register(RemoteLevel::class, LevelSerializer<RemoteLevel>(), 64)
         register(ChunkData::class, 146)
         register(GhostLevelObject::class, 201)
@@ -200,7 +199,7 @@ object Registration {
         register(ChestBlockType::class, IDSerializer({ ChestBlockType.ALL }, { it.id }), 122)
         register(PipeBlockType::class, IDSerializer({ PipeBlockType.ALL }, { it.id }), 188)
 
-        setSerializerFactory { LevelObjectSerializer<LevelObject>() }
+        setSerializerFactory { LevelObjectSerializer<PhysicalLevelObject>() }
 
         register(Block::class, 23)
         register(ChestBlock::class, 24)
@@ -307,11 +306,11 @@ object Registration {
         register(ResourceContainer::class, 87)
         register(ResourceList::class, 89)
         register(MutableResourceList::class, 276)
-        register(ResourceNode::class, 90)
+        register(ResourceNodeOld::class, 90)
         register(ResourceNodeBehavior::class, 91)
         register(RoutingLanguageIORule::class, 92)
         register(ResourceType::class, IDSerializer({ ResourceType.ALL }, { it.id }), 93)
-        register(ResourceNode2::class, 278)
+        register(ResourceNode::class, 278)
         register(PipeNetworkVertex::class, 279)
 
         /* ROUTING */

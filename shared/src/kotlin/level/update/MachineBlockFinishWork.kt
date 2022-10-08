@@ -1,5 +1,6 @@
 package level.update
 
+import level.Level
 import level.LevelManager
 import level.block.MachineBlock
 import network.BlockReference
@@ -11,22 +12,25 @@ import java.util.*
  * A level update for finishing a [MachineBlock]'s work cycle. Used to ensure factories are synchronized.
  */
 class MachineBlockFinishWork(
-        /**
-         * A reference to the [MachineBlock] whose work is finished.
-         */
-        @Id(2) val blockReference: BlockReference
-) : GameUpdate(LevelUpdateType.MACHINE_BLOCK_FINISH_WORK) {
+    /**
+     * A reference to the [MachineBlock] whose work is finished.
+     */
+    @Id(2) val blockReference: BlockReference, level: Level
+) : LevelUpdate(LevelUpdateType.MACHINE_BLOCK_FINISH_WORK, level) {
 
-    private constructor() : this(BlockReference(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0))
+    private constructor() : this(
+        BlockReference(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0),
+        LevelManager.EMPTY_LEVEL
+    )
 
     override val playersToSendTo: Set<Player>?
         get() = null
 
     override fun canAct(): Boolean {
-        if(blockReference.value == null) {
+        if (blockReference.value == null) {
             return false
         }
-        if(blockReference.value !is MachineBlock) {
+        if (blockReference.value !is MachineBlock) {
             return false
         }
         return true
@@ -44,7 +48,7 @@ class MachineBlockFinishWork(
     override fun cancelActGhost() {
     }
 
-    override fun equivalent(other: GameUpdate): Boolean {
+    override fun equivalent(other: LevelUpdate): Boolean {
         if (other !is MachineBlockFinishWork) {
             return false
         }

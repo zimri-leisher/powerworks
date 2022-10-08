@@ -3,16 +3,14 @@ package level.block
 import audio.Sound
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import crafting.Crafter
-import fluid.FluidTank
 import graphics.Animation
 import graphics.Image
 import graphics.ImageCollection
 import graphics.Texture
 import item.Inventory
 import level.Hitbox
-import level.LevelManager
-import level.LevelObjectTextures
-import level.LevelObjectType
+import level.PhysicalLevelObjectTextures
+import level.PhysicalLevelObjectType
 import level.block.BlockType.BlockNodesTemplate
 import level.pipe.FluidPipeBlock
 import level.pipe.ItemPipeBlock
@@ -42,12 +40,12 @@ import java.util.*
  *         name = "Tester"
  *     }
  *
- * You are able to define [ResourceNode] placement and [ResourceContainer]s--see [BlockNodesTemplate]. Because of the
+ * You are able to define [ResourceNodeOld] placement and [ResourceContainer]s--see [BlockNodesTemplate]. Because of the
  * [RoutingLanguage], you can often set most of the resource-based functionality of a [Block] through its type. This is the recommended
  * way to add new features, as opposed to putting code directly inside classes.
  * You are also able to define a [GuiPool] which will allow easy creation and deletion of [Gui]s from a pool
  */
-open class BlockType<T : Block>(initializer: BlockType<T>.() -> Unit = {}) : LevelObjectType<T>() {
+open class BlockType<T : Block>(initializer: BlockType<T>.() -> Unit = {}) : PhysicalLevelObjectType<T>() {
 
     /**
      * The user-friendly name of this [BlockType]. This will be displayed in in inventories and other GUIs
@@ -65,7 +63,7 @@ open class BlockType<T : Block>(initializer: BlockType<T>.() -> Unit = {}) : Lev
     var heightTiles = 1
 
     /**
-     * The template that defines [ResourceNode] placement and [ResourceContainer]s. See [BlockNodesTemplate]
+     * The template that defines [ResourceNodeOld] placement and [ResourceContainer]s. See [BlockNodesTemplate]
      */
     var nodesTemplate = BlockNodesTemplate()
 
@@ -75,11 +73,19 @@ open class BlockType<T : Block>(initializer: BlockType<T>.() -> Unit = {}) : Lev
      */
     var guiPool: GuiPool<*>? = null
 
+    var placedClass: Class<T>? = null
+
     init {
-        instantiate = { x, y, rotation -> DefaultBlock(this as BlockType<DefaultBlock>, x shr 4, y shr 4, rotation) as T }
         hitbox = Hitbox.TILE
         initializer()
         ALL.add(this)
+    }
+
+    fun place(xTile: Int, yTile: Int): T {
+        val ctor =
+            placedClass!!.constructors.firstOrNull { it.parameterTypes[0] == Integer.TYPE && it.parameterTypes[1] == Integer.TYPE }
+                ?: throw Exception("Block $name with placed class $placedClass does not implement (xTile, yTile) constructor")
+        return ctor.newInstance(xTile, yTile) as T
     }
 
     protected fun nodeTemplate(closure: BlockNodesTemplate.() -> Unit) {
@@ -109,18 +115,18 @@ open class BlockType<T : Block>(initializer: BlockType<T>.() -> Unit = {}) : Lev
     // however, who cares, it complicates things
 
     /**
-     * A way of storing the positions of nodes for a block type. Define new [ResourceNode]s inside this template by using
+     * A way of storing the positions of nodes for a block type. Define new [ResourceNodeOld]s inside this template by using
      * the [node] function with the appropriate arguments. When a [Block] with this template is placed in a [Level],
-     * [instantiate] will be called, which takes [ResourceNode]s from this template and creates them at the
+     * [instantiate] will be called, which takes [ResourceNodeOld]s from this template and creates them at the
      * [Block], with the correct rotation and position. It additionally [copies][ResourceContainer.copy] new containers
      * as necessary
      */
     inner class BlockNodesTemplate {
         val containers = mutableListOf<ResourceContainer>()
-        val nodes = mutableListOf<ResourceNode2>()
+        val nodes = mutableListOf<ResourceNode>()
 
         /**
-         * Creates a template [ResourceNode]
+         * Creates a template [ResourceNodeOld]
          * @param xOffset the amount of x tiles offset from the bottom left
          * @param yOffset the amount of y tiles offset from the bottom left
          * @param attachedContainer the [ResourceContainer] this node is attached to
@@ -130,12 +136,21 @@ open class BlockType<T : Block>(initializer: BlockType<T>.() -> Unit = {}) : Lev
          * @param forceOut the [RoutingLanguage] script determining whether this node will forcibly push out resources. Defaults to "false"
          * @param allowBehaviorModification whether or not the behavior of this node should be able to be changed by the player
          */
-        fun node(xOffset: Int = 0, yOffset: Int = 0,
-                 dir: Int = 0,
-                 attachedContainer: ResourceContainer,
-                 allowIn: String = "false", allowInTypes: List<ResourceType> = listOf(), allowOut: String = "false", allowOutTypes: List<ResourceType> = listOf(),
-                 forceIn: String = "false", forceInTypes: List<ResourceType> = listOf(), forceOut: String = "false", forceOutTypes: List<ResourceType> = listOf(),
-                 allowBehaviorModification: Boolean = false): ResourceNode2 {
+        fun node(
+            xOffset: Int = 0,
+            yOffset: Int = 0,
+            dir: Int = 0,
+            attachedContainer: ResourceContainer,
+            allowIn: String = "false",
+            allowInTypes: List<ResourceType> = listOf(),
+            allowOut: String = "false",
+            allowOutTypes: List<ResourceType> = listOf(),
+            forceIn: String = "false",
+            forceInTypes: List<ResourceType> = listOf(),
+            forceOut: String = "false",
+            forceOutTypes: List<ResourceType> = listOf(),
+            allowBehaviorModification: Boolean = false
+        ): ResourceNode {
 //            val newNode = ResourceNode(xOffset, yOffset, dir, attachedContainer.resourceCategory, attachedContainer, LevelManager.EMPTY_LEVEL)
 //            with(newNode.behavior) {
 //                this.allowIn.setStatement(RoutingLanguage.parse(allowIn), allowInTypes)
@@ -144,7 +159,7 @@ open class BlockType<T : Block>(initializer: BlockType<T>.() -> Unit = {}) : Lev
 //                this.forceOut.setStatement(RoutingLanguage.parse(forceOut), forceOutTypes)
 //                this.allowModification = allowBehaviorModification
 //            }
-            val newNode = ResourceNode2(attachedContainer, xOffset, yOffset)
+            val newNode = ResourceNode(attachedContainer, xOffset, yOffset)
             if (containers.none { it === newNode.container }) {
                 containers.add(newNode.container)
             }
@@ -164,7 +179,6 @@ open class BlockType<T : Block>(initializer: BlockType<T>.() -> Unit = {}) : Lev
             val byteArray = ByteArray(36)
             // generate id based off of block id
             // sort by category to lower chance that reordering messes something up
-            containers.sortBy { it.resourceCategory }
             return containers.associateWith {
                 rand.nextBytes(byteArray)
                 val containerId = UUID.nameUUIDFromBytes(byteArray)
@@ -172,8 +186,8 @@ open class BlockType<T : Block>(initializer: BlockType<T>.() -> Unit = {}) : Lev
             }
         }
 
-        fun instantiate(xTile: Int, yTile: Int, rotation: Int, id: UUID): List<ResourceNode2> {
-            val ret = mutableListOf<ResourceNode2>()
+        fun instantiate(xTile: Int, yTile: Int, rotation: Int, id: UUID): List<ResourceNode> {
+            val ret = mutableListOf<ResourceNode>()
             val containers = instantiateContainers(id)
             // we want these to be sorted in an order that doesn't depend on the order of creation
             // sort it by all the factors that determine a node uniquely.
@@ -189,7 +203,12 @@ open class BlockType<T : Block>(initializer: BlockType<T>.() -> Unit = {}) : Lev
                 val newContainer = containers.filter { it.key === node.container }.entries.first().value
                 random.nextBytes(byteArray)
                 val nodeId = UUID.nameUUIDFromBytes(byteArray)
-                val newNode = node.copy(coord.xTile + xTile, coord.yTile + yTile, Geometry.addAngles(node.rotation, rotation), attachedContainer = newContainer)
+                val newNode = node.copy(
+                    coord.xTile + xTile,
+                    coord.yTile + yTile,
+                    Geometry.addAngles(node.rotation, rotation),
+                    attachedContainer = newContainer
+                )
 //                if (node.behavior.forceOut != newNode.behavior.forceOut) {
 //                    println("oops behaviors diff")
 //                }
@@ -214,52 +233,52 @@ class PipeBlockType<T : PipeBlock>(initializer: PipeBlockType<T>.() -> Unit = {}
 
         val ALL = mutableListOf<PipeBlockType<*>>()
 
-        val FLUID_PIPE = PipeBlockType<FluidPipeBlock> {
+        val FLUID_PIPE = PipeBlockType {
+            placedClass = FluidPipeBlock::class.java
             category = ResourceCategory.FLUID
             name = "Pipe"
-            textures = LevelObjectTextures(Image.Block.PIPE_2_WAY_VERTICAL)
-            instantiate = { x, y, _ -> FluidPipeBlock(x shr 4, y shr 4) }
+            textures = PhysicalLevelObjectTextures(Image.Block.PIPE_2_WAY_VERTICAL)
             images = mapOf(
-                    PipeState.ALL to Image.Block.PIPE_4_WAY,
-                    PipeState.NONE to Image.Block.PIPE_2_WAY_VERTICAL,
-                    PipeState.UP_DOWN to Image.Block.PIPE_2_WAY_VERTICAL,
-                    PipeState.DOWN_ONLY to Image.Block.PIPE_2_WAY_VERTICAL,
-                    PipeState.UP_ONLY to Image.Block.PIPE_2_WAY_VERTICAL,
-                    PipeState.RIGHT_LEFT to Image.Block.PIPE_2_WAY_HORIZONTAL,
-                    PipeState.LEFT_ONLY to Image.Block.PIPE_2_WAY_HORIZONTAL,
-                    PipeState.RIGHT_ONLY to Image.Block.PIPE_2_WAY_HORIZONTAL,
-                    PipeState.UP_RIGHT to ImageCollection.PIPE_CORNER[0],
-                    PipeState.RIGHT_DOWN to ImageCollection.PIPE_CORNER[1],
-                    PipeState.DOWN_LEFT to ImageCollection.PIPE_CORNER[2],
-                    PipeState.LEFT_UP to ImageCollection.PIPE_CORNER[3],
-                    PipeState.LEFT_UP_RIGHT to ImageCollection.PIPE_3_WAY[0],
-                    PipeState.UP_RIGHT_DOWN to ImageCollection.PIPE_3_WAY[1],
-                    PipeState.RIGHT_DOWN_LEFT to ImageCollection.PIPE_3_WAY[2],
-                    PipeState.DOWN_LEFT_UP to ImageCollection.PIPE_3_WAY[3]
+                PipeState.ALL to Image.Block.PIPE_4_WAY,
+                PipeState.NONE to Image.Block.PIPE_2_WAY_VERTICAL,
+                PipeState.UP_DOWN to Image.Block.PIPE_2_WAY_VERTICAL,
+                PipeState.DOWN_ONLY to Image.Block.PIPE_2_WAY_VERTICAL,
+                PipeState.UP_ONLY to Image.Block.PIPE_2_WAY_VERTICAL,
+                PipeState.RIGHT_LEFT to Image.Block.PIPE_2_WAY_HORIZONTAL,
+                PipeState.LEFT_ONLY to Image.Block.PIPE_2_WAY_HORIZONTAL,
+                PipeState.RIGHT_ONLY to Image.Block.PIPE_2_WAY_HORIZONTAL,
+                PipeState.UP_RIGHT to ImageCollection.PIPE_CORNER[0],
+                PipeState.RIGHT_DOWN to ImageCollection.PIPE_CORNER[1],
+                PipeState.DOWN_LEFT to ImageCollection.PIPE_CORNER[2],
+                PipeState.LEFT_UP to ImageCollection.PIPE_CORNER[3],
+                PipeState.LEFT_UP_RIGHT to ImageCollection.PIPE_3_WAY[0],
+                PipeState.UP_RIGHT_DOWN to ImageCollection.PIPE_3_WAY[1],
+                PipeState.RIGHT_DOWN_LEFT to ImageCollection.PIPE_3_WAY[2],
+                PipeState.DOWN_LEFT_UP to ImageCollection.PIPE_3_WAY[3]
             )
         }
-        val ITEM_PIPE = PipeBlockType<ItemPipeBlock> {
+        val ITEM_PIPE = PipeBlockType {
+            placedClass = ItemPipeBlock::class.java
             category = ResourceCategory.ITEM
             name = "Tube"
-            textures = LevelObjectTextures(Image.Block.TUBE_2_WAY_VERTICAL)
-            instantiate = { x, y, _ -> ItemPipeBlock(x shr 4, y shr 4) }
+            textures = PhysicalLevelObjectTextures(Image.Block.TUBE_2_WAY_VERTICAL)
             images = mapOf(
-                    PipeState.ALL to Image.Block.TUBE_4_WAY,
-                    PipeState.NONE to Image.Block.TUBE_2_WAY_VERTICAL,
-                    PipeState.UP_DOWN to Image.Block.TUBE_2_WAY_VERTICAL,
-                    PipeState.DOWN_ONLY to Image.Block.TUBE_2_WAY_VERTICAL,
-                    PipeState.UP_ONLY to Image.Block.TUBE_2_WAY_VERTICAL,
-                    PipeState.RIGHT_LEFT to Image.Block.TUBE_2_WAY_HORIZONTAL,
-                    PipeState.LEFT_ONLY to Image.Block.TUBE_2_WAY_HORIZONTAL,
-                    PipeState.RIGHT_ONLY to Image.Block.TUBE_2_WAY_HORIZONTAL,
-                    PipeState.UP_RIGHT to ImageCollection.TUBE_CORNER[0],
-                    PipeState.RIGHT_DOWN to ImageCollection.TUBE_CORNER[1],
-                    PipeState.DOWN_LEFT to ImageCollection.TUBE_CORNER[2],
-                    PipeState.LEFT_UP to ImageCollection.TUBE_CORNER[3],
-                    PipeState.LEFT_UP_RIGHT to ImageCollection.TUBE_3_WAY[0],
-                    PipeState.UP_RIGHT_DOWN to ImageCollection.TUBE_3_WAY[1],
-                    PipeState.RIGHT_DOWN_LEFT to ImageCollection.TUBE_3_WAY[2],
-                    PipeState.DOWN_LEFT_UP to ImageCollection.TUBE_3_WAY[3]
+                PipeState.ALL to Image.Block.TUBE_4_WAY,
+                PipeState.NONE to Image.Block.TUBE_2_WAY_VERTICAL,
+                PipeState.UP_DOWN to Image.Block.TUBE_2_WAY_VERTICAL,
+                PipeState.DOWN_ONLY to Image.Block.TUBE_2_WAY_VERTICAL,
+                PipeState.UP_ONLY to Image.Block.TUBE_2_WAY_VERTICAL,
+                PipeState.RIGHT_LEFT to Image.Block.TUBE_2_WAY_HORIZONTAL,
+                PipeState.LEFT_ONLY to Image.Block.TUBE_2_WAY_HORIZONTAL,
+                PipeState.RIGHT_ONLY to Image.Block.TUBE_2_WAY_HORIZONTAL,
+                PipeState.UP_RIGHT to ImageCollection.TUBE_CORNER[0],
+                PipeState.RIGHT_DOWN to ImageCollection.TUBE_CORNER[1],
+                PipeState.DOWN_LEFT to ImageCollection.TUBE_CORNER[2],
+                PipeState.LEFT_UP to ImageCollection.TUBE_CORNER[3],
+                PipeState.LEFT_UP_RIGHT to ImageCollection.TUBE_3_WAY[0],
+                PipeState.UP_RIGHT_DOWN to ImageCollection.TUBE_3_WAY[1],
+                PipeState.RIGHT_DOWN_LEFT to ImageCollection.TUBE_3_WAY[2],
+                PipeState.DOWN_LEFT_UP to ImageCollection.TUBE_3_WAY[3]
             )
         }
     }
@@ -310,10 +329,10 @@ open class MachineBlockType<T : MachineBlock>(initializer: MachineBlockType<T>.(
 
         val ALL = mutableListOf<MachineBlockType<*>>()
 
-        val SMELTER = MachineBlockType<SmelterBlock> {
-            instantiate = { x, y, rotation -> SmelterBlock(x shr 4, y shr 4, rotation) }
+        val SMELTER = MachineBlockType {
+            placedClass = SmelterBlock::class.java
             name = "Smelter"
-            textures = LevelObjectTextures(Image.Block.SMELTER)
+            textures = PhysicalLevelObjectTextures(Image.Block.SMELTER)
             widthTiles = 2
             heightTiles = 2
             hitbox = Hitbox.TILE2X2
@@ -326,20 +345,20 @@ open class MachineBlockType<T : MachineBlock>(initializer: MachineBlockType<T>.(
             guiPool = GuiPool({ GuiSmelterBlock(it as SmelterBlock) })
         }
 
-        val FARSEEKER = MachineBlockType<FarseekerBlock> {
-            instantiate = { x, y, rotation -> FarseekerBlock(x shr 4, y shr 4, rotation) }
+        val FARSEEKER = MachineBlockType {
+            placedClass = FarseekerBlock::class.java
             name = "Farseeker"
-            textures = LevelObjectTextures(Image.Block.FARSEEKER)
+            textures = PhysicalLevelObjectTextures(Image.Block.FARSEEKER)
             widthTiles = 4
             heightTiles = 4
             hitbox = Hitbox.TILE4X4
             guiPool = GuiPool({ GuiFarseekerBlock(it as FarseekerBlock) })
         }
 
-        val MINER = MachineBlockType<MinerBlock> {
+        val MINER = MachineBlockType {
+            placedClass = MinerBlock::class.java
             name = "Miner"
-            instantiate = { x, y, rotation -> MinerBlock(x shr 4, y shr 4, rotation) }
-            textures = LevelObjectTextures(Animation.MINER)
+            textures = PhysicalLevelObjectTextures(Animation.MINER)
             maxWork = 350
             widthTiles = 2
             heightTiles = 2
@@ -353,53 +372,35 @@ open class MachineBlockType<T : MachineBlock>(initializer: MachineBlockType<T>.(
             guiPool = GuiPool({ GuiMinerBlock(it as MinerBlock) })
         }
 
-        val FURNACE = MachineBlockType<FurnaceBlock> {
+        val FURNACE = MachineBlockType {
+            placedClass = FurnaceBlock::class.java
             name = "Furnace"
-            instantiate = { x, y, rotation -> FurnaceBlock(this, x shr 4, y shr 4, rotation) }
             widthTiles = 2
-            textures = LevelObjectTextures(Image.Block.FURNACE)
+            textures = PhysicalLevelObjectTextures(Image.Block.FURNACE)
             loop = true
             hitbox = Hitbox.TILE2X1
-            nodeTemplate {
-                val internalInventory = Inventory(1, 1)
-                val internalTank = FluidTank(1)
-                node(0, 0, 0, internalInventory, "true", ResourceTypeGroup.ORE_ITEMS.types, "false")
-                node(0, 0, 2, internalTank, allowIn = "false", allowOut = "true", forceOut = "true")
-            }
             guiPool = GuiPool({ GuiFurnaceBlock(it as FurnaceBlock) })
         }
-        val SOLIDIFIER = MachineBlockType<SolidifierBlock> {
+        val SOLIDIFIER = MachineBlockType {
+            placedClass = SolidifierBlock::class.java
             name = "Molten Ore Solidifer"
-            instantiate = { x, y, rotation -> SolidifierBlock(x shr 4, y shr 4, rotation) }
             widthTiles = 2
             heightTiles = 2
             loop = true
-            textures = LevelObjectTextures(Animation.SOLIDIFIER)
+            textures = PhysicalLevelObjectTextures(Animation.SOLIDIFIER)
             hitbox = Hitbox.TILE2X2
-            nodeTemplate {
-                val tank = FluidTank(10)
-                val out = Inventory(1, 1)
-                node(0, 1, 0, tank, "true", ResourceTypeGroup.MOLTEN_ORE_FLUIDS.types, "false")
-                node(0, 0, 2, out, "false", allowOut = "true", forceOut = "true")
-            }
             guiPool = GuiPool({ GuiSolidifierBlock(it as SolidifierBlock) }, 3)
         }
-        val ARMORY = MachineBlockType<ArmoryBlock> {
+        val ARMORY = MachineBlockType {
+            placedClass = ArmoryBlock::class.java
             name = "Armory"
-            textures = LevelObjectTextures(Image.Block.ARMORY)
-            instantiate = { x, y, rotation -> ArmoryBlock(x shr 4, y shr 4, rotation) }
+            textures = PhysicalLevelObjectTextures(Image.Block.ARMORY)
             widthTiles = 2
             heightTiles = 2
             loop = true
             startOn = true
             hitbox = Hitbox.TILE2X2
             guiPool = GuiPool({ GuiArmoryBlock(it as ArmoryBlock) }, 3)
-            nodeTemplate {
-                val inputInv = Inventory(3, 1)
-                node(0, 1, 0, inputInv, "true", allowOut = "false")
-                node(1, 1, 0, inputInv, "true", allowOut = "false")
-                container(Inventory(3, 1))
-            }
         }
     }
 
@@ -422,46 +423,23 @@ class CrafterBlockType<T : CrafterBlock>(initializer: CrafterBlockType<T>.() -> 
 
         val ALL = mutableListOf<CrafterBlockType<*>>()
 
-        val ERROR = CrafterBlockType<CrafterBlock> {
-            instantiate = { x, y, rotation -> CrafterBlock(this, x shr 4, y shr 4, rotation) }
-            nodeTemplate {
-                val input = Inventory(internalStorageSize, 1)
-                node(0, 1, 0, input, "true", allowOut = "false")
-                val output = Inventory(1, 1)
-                node(0, 0, 2, output, "false", allowOut = "true", forceOut = "true")
-            }
-        }
-
-        val ITEM_CRAFTER = CrafterBlockType<CrafterBlock> {
+        val ITEM_CRAFTER = CrafterBlockType {
+            placedClass = CrafterBlock::class.java
             name = "Crafter"
             crafterType = Crafter.Type.ITEM
             hitbox = Hitbox.TILE2X2
-            instantiate = { x, y, rotation -> CrafterBlock(this, x shr 4, y shr 4, rotation) }
-            textures = LevelObjectTextures(Image.Block.CRAFTER)
-            nodeTemplate {
-                val input = Inventory(internalStorageSize, 1)
-                node(0, 1, 0, input, "true", allowOut = "false")
-                val output = Inventory(1, 1)
-                node(0, 0, 2, output, "false", allowOut = "true", forceOut = "true")
-            }
+            textures = PhysicalLevelObjectTextures(Image.Block.CRAFTER)
         }
 
-        val ROBOT_FACTORY = CrafterBlockType<RobotFactoryBlock> {
+        val ROBOT_FACTORY = CrafterBlockType {
+            placedClass = RobotFactoryBlock::class.java
             name = "Robot Factory"
             crafterType = Crafter.Type.ROBOT
-            instantiate = { x, y, rotation -> RobotFactoryBlock(x shr 4, y shr 4, rotation) }
             widthTiles = 3
             heightTiles = 3
             internalStorageSize = 3
-            textures = LevelObjectTextures(Texture(Image.Block.ROBOT_CRAFTER, xOffset = -8))
+            textures = PhysicalLevelObjectTextures(Texture(Image.Block.ROBOT_CRAFTER, xOffset = -8))
             hitbox = Hitbox.TILE3X3
-            nodeTemplate {
-                val internalInventory = Inventory(internalStorageSize, 1)
-                node(0, 1, 3, internalInventory, "true", allowOut = "false")
-                node(2, 1, 1, internalInventory, "true", allowOut = "false")
-                val output = Inventory(1, 1)
-                node(1, 0, 2, output, "false", allowOut = "true", forceOut = "true")
-            }
         }
     }
 
@@ -472,14 +450,7 @@ class FluidTankBlockType(initializer: FluidTankBlockType.() -> Unit) : BlockType
     var maxAmount = 1
 
     init {
-        instantiate = { x, y, rotation -> FluidTankBlock(this, x shr 4, y shr 4, rotation) }
-        nodeTemplate {
-            val storage = FluidTank(maxAmount)
-            node(0, 0, 0, storage, "true", allowOut = "true")
-            node(0, 0, 1, storage, "true", allowOut = "true")
-            node(0, 0, 2, storage, "true", allowOut = "true")
-            node(0, 0, 3, storage, "true", allowOut = "true")
-        }
+        placedClass = FluidTankBlock::class.java
 //        guiPool = BlockGUIPool({ FluidTankBlockGUI(it as FluidTankBlock) }, 3)
         initializer()
         ALL.add(this)
@@ -503,16 +474,9 @@ class ChestBlockType(initializer: ChestBlockType.() -> Unit) : BlockType<ChestBl
     var invName = "Chest"
 
     init {
-        instantiate = { x, y, rotation -> ChestBlock(this, x shr 4, y shr 4, rotation) }
+        placedClass = ChestBlock::class.java
         guiPool = GuiPool({ GuiChestBlock(it as ChestBlock) })
         initializer()
-        nodeTemplate {
-            val storage = Inventory(invWidth, invHeight)
-            node(0, 0, 0, storage, "true", allowOut = "true")
-            node(0, 0, 1, storage, "true", allowOut = "true")
-            node(0, 0, 2, storage, "true", allowOut = "true")
-            node(0, 0, 3, storage, "true", allowOut = "true")
-        }
         ALL.add(this)
     }
 
@@ -523,14 +487,14 @@ class ChestBlockType(initializer: ChestBlockType.() -> Unit) : BlockType<ChestBl
         val SMALL = ChestBlockType {
             name = "Small chest"
             invName = "Small chest"
-            textures = LevelObjectTextures(Image.Block.CHEST_SMALL)
+            textures = PhysicalLevelObjectTextures(Image.Block.CHEST_SMALL)
             invWidth = 8
             invHeight = 3
         }
         val LARGE = ChestBlockType {
             name = "Large chest"
             invName = "Large chest"
-            textures = LevelObjectTextures(Image.Block.CHEST_LARGE)
+            textures = PhysicalLevelObjectTextures(Image.Block.CHEST_LARGE)
             invWidth = 8
             invHeight = 6
         }

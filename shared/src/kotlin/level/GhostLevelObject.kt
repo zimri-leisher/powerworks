@@ -9,8 +9,8 @@ import main.width
 import misc.Geometry
 import network.GhostLevelObjectReference
 
-class GhostLevelObject(type: LevelObjectType<*>, x: Int, y: Int, rotation: Int) : LevelObject(type, x, y, rotation) {
-    private constructor() : this(LevelObjectType.ERROR, 0, 0, 0)
+class GhostLevelObject(type: PhysicalLevelObjectType<*>, x: Int, y: Int) : PhysicalLevelObject(type, x, y) {
+    private constructor() : this(PhysicalLevelObjectType.ERROR, 0, 0)
 
     lateinit var pipeState: PipeState
         private set

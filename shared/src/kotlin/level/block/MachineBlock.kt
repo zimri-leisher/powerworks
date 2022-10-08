@@ -6,10 +6,10 @@ import level.update.MachineBlockFinishWork
 import network.BlockReference
 import serialization.Id
 
-abstract class MachineBlock(override val type: MachineBlockType<out MachineBlock>, xTile: Int, yTile: Int, rotation: Int, on: Boolean = type.startOn) : Block(type, xTile, yTile, rotation) {
+abstract class MachineBlock(override val type: MachineBlockType<out MachineBlock>, xTile: Int, yTile: Int) : Block(type, xTile, yTile) {
 
     @Id(20)
-    var on = on
+    var on = type.startOn
         set(value) {
             if (!value && field) {
                 onTurnOff()
@@ -51,7 +51,7 @@ abstract class MachineBlock(override val type: MachineBlockType<out MachineBlock
                 if (!type.loop)
                     on = false
                 currentWork = (type.maxWork / type.speed).toInt()
-                level.modify(MachineBlockFinishWork(toReference() as BlockReference))
+                level.modify(MachineBlockFinishWork(toReference() as BlockReference, level))
             }
         }
     }

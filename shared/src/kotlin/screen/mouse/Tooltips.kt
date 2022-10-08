@@ -1,7 +1,7 @@
 package screen.mouse
 
 import level.LevelManager
-import level.LevelObject
+import level.PhysicalLevelObject
 import main.GameState
 import screen.ScreenLayer
 import screen.ScreenManager
@@ -9,7 +9,7 @@ import screen.gui.*
 
 object Tooltips {
 
-    private val levelTooltipTemplates = sortedMapOf<Int, MutableList<(LevelObject) -> String?>>()
+    private val levelTooltipTemplates = sortedMapOf<Int, MutableList<(PhysicalLevelObject) -> String?>>()
 
     private val screenTooltipTemplates = sortedMapOf<Int, MutableList<(GuiElement) -> String?>>()
 
@@ -32,7 +32,7 @@ object Tooltips {
     /**
      * @param f called for each LevelObject under the mouse. Returned text will be rendered at mouse
      */
-    fun addLevelTooltipTemplate(f: (LevelObject) -> String?, priority: Int = 0) {
+    fun addLevelTooltipTemplate(f: (PhysicalLevelObject) -> String?, priority: Int = 0) {
         if (levelTooltipTemplates.get(priority) == null)
             levelTooltipTemplates.put(priority, mutableListOf())
         levelTooltipTemplates.get(priority)!!.add(f)

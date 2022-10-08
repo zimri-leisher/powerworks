@@ -9,27 +9,33 @@ import item.Inventory
 import resource.ResourceContainer
 import resource.ResourceContainerChangeListener
 import resource.ResourceList
+import resource.ResourceNode
 import serialization.Id
 
-class SolidifierBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(MachineBlockType.SOLIDIFIER, xTile, yTile, rotation), ResourceContainerChangeListener {
+class SolidifierBlock(xTile: Int, yTile: Int) :
+    MachineBlock(MachineBlockType.SOLIDIFIER, xTile, yTile), ResourceContainerChangeListener {
 
     @Id(23)
-    val tank = containers.first { it is FluidTank } as FluidTank
+    val input = FluidTank(10)
 
     @Id(24)
-    val out = containers.first { it is Inventory } as Inventory
+    val output = Inventory(1, 1)
 
     @Id(25)
     var currentlySolidifying: MoltenOreFluidType? = null
 
     init {
-        containers.forEach { it.listeners.add(this) }
+        input.listeners.add(this)
+    }
+
+    override fun createNodes(): List<ResourceNode> {
+        return listOf(ResourceNode(input, xTile, yTile + 1), ResourceNode(output, xTile, yTile))
     }
 
     override fun onAddToContainer(container: ResourceContainer, resources: ResourceList) {
-        if (container.id == tank.id) {
-            if (tank.currentAmount > 0) {
-                currentlySolidifying = tank.currentFluidType!! as MoltenOreFluidType
+        if (container.id == input.id) {
+            if (input.currentAmount > 0) {
+                currentlySolidifying = input.currentFluidType!! as MoltenOreFluidType
                 on = true
             } else {
                 on = false
@@ -39,9 +45,9 @@ class SolidifierBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(Mach
     }
 
     override fun onRemoveFromContainer(container: ResourceContainer, resources: ResourceList) {
-        if (container.id == tank.id) {
-            if (tank.currentAmount > 0) {
-                currentlySolidifying = tank.currentFluidType!! as MoltenOreFluidType
+        if (container.id == input.id) {
+            if (input.currentAmount > 0) {
+                currentlySolidifying = input.currentFluidType!! as MoltenOreFluidType
                 on = true
             } else {
                 on = false
@@ -51,14 +57,22 @@ class SolidifierBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(Mach
     }
 
     override fun onContainerClear(container: ResourceContainer) {
-        if (container.id == tank.id) {
+        if (container.id == input.id) {
             currentlySolidifying = null
             on = false
             currentWork = 0
         }
     }
 
-    override fun onInteractOn(event: ControlEvent, x: Int, y: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+    override fun onInteractOn(
+        event: ControlEvent,
+        x: Int,
+        y: Int,
+        button: Int,
+        shift: Boolean,
+        ctrl: Boolean,
+        alt: Boolean
+    ) {
         if (event.type == ControlEventType.PRESS && !shift && !ctrl && !alt) {
             if (button == Input.Buttons.LEFT) {
                 this.type.guiPool!!.toggle(this)
@@ -70,12 +84,12 @@ class SolidifierBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(Mach
         if (currentlySolidifying == null) {
             return
         }
-        if (out.add(currentlySolidifying!!.ingot)) {
-            tank.remove(currentlySolidifying!!)
+        if (output.add(currentlySolidifying!!.ingot)) {
+            input.remove(currentlySolidifying!!)
         } else {
             currentWork = type.maxWork
         }
-        if (tank.currentAmount == 0) {
+        if (input.currentAmount == 0) {
             currentlySolidifying = null
         }
     }

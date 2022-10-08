@@ -1,6 +1,7 @@
 package level.update
 
 import behavior.leaves.EntityPath
+import level.Level
 import level.LevelManager
 import level.LevelPosition
 import level.entity.Entity
@@ -14,20 +15,25 @@ import java.util.*
  * A level update for setting the [EntityPath] of an [Entity].
  */
 class EntitySetPath(
-        /**
-         * A reference to the [Entity] to set the path of.
-         */
-        @Id(2) val entityReference: MovingObjectReference,
-        /**
-         * The starting position of that entity.
-         */
-        @Id(4) val startPosition: Coord,
-        /**
-         * The path to give the [Entity].
-         */
-        @Id(3) val path: EntityPath) : GameUpdate(LevelUpdateType.ENTITY_SET_PATH) {
+    /**
+     * A reference to the [Entity] to set the path of.
+     */
+    @Id(2) val entityReference: MovingObjectReference,
+    /**
+     * The starting position of that entity.
+     */
+    @Id(4) val startPosition: Coord,
+    /**
+     * The path to give the [Entity].
+     */
+    @Id(3) val path: EntityPath, level: Level
+) : LevelUpdate(LevelUpdateType.ENTITY_SET_PATH, level) {
 
-    private constructor() : this(MovingObjectReference(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0), Coord(0, 0), EntityPath(LevelPosition(0, 0, LevelManager.EMPTY_LEVEL), listOf()))
+    private constructor() : this(
+        MovingObjectReference(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0),
+        Coord(0, 0),
+        EntityPath(LevelPosition(0, 0, LevelManager.EMPTY_LEVEL), listOf()), LevelManager.EMPTY_LEVEL
+    )
 
     override val playersToSendTo: Set<Player>?
         get() = null
@@ -49,7 +55,7 @@ class EntitySetPath(
     override fun cancelActGhost() {
     }
 
-    override fun equivalent(other: GameUpdate): Boolean {
+    override fun equivalent(other: LevelUpdate): Boolean {
         if (other !is EntitySetPath) {
             return false
         }

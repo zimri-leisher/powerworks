@@ -12,10 +12,10 @@ class GuiFurnaceBlock(block: FurnaceBlock) : Gui(ScreenLayer.MENU_1), PoolableGu
         set(value) {
             if (field != value) {
                 field = value
-                input.container = value.queue
+                input.container = value.input
                 progressBar.maxProgress = value.type.maxWork
-                output.tank = value.tank
-                containerLink.container = value.queue
+                output.tank = value.output
+                containerLink.container = value.input
             }
         }
 
@@ -29,16 +29,16 @@ class GuiFurnaceBlock(block: FurnaceBlock) : Gui(ScreenLayer.MENU_1), PoolableGu
             openAtCenter(0)
             openWithBrainInventory()
             keepInsideScreen()
-            containerLink = linkToContainer(block.queue)
+            containerLink = linkToContainer(block.input)
             background {
                 makeDraggable()
                 dimensions = Dimensions.FitChildren.pad(4, 9)
                 closeButton(Placement.Align(HorizontalAlign.RIGHT, VerticalAlign.TOP).offset(-1, -1))
                 text("Furnace", Placement.Align(HorizontalAlign.LEFT, VerticalAlign.TOP).offset(1, -1)) { makeDraggable() }
                 list(Placement.Align(HorizontalAlign.CENTER, VerticalAlign.BOTTOM).offset(0, 2)) {
-                    input = inventory(block.queue)
+                    input = inventory(block.input)
                     progressBar = progressBar(block.type.maxWork, { this@GuiFurnaceBlock.block.currentWork })
-                    output = fluidTank(block.tank)
+                    output = fluidTank(block.output)
                 }
             }
         }

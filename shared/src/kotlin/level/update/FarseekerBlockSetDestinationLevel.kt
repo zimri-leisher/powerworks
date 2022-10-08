@@ -12,18 +12,23 @@ import java.util.*
  * A level update for setting the current destination level of a [FarseekerBlock].
  */
 class FarseekerBlockSetDestinationLevel(
-        /**
-         * A reference to the [FarseekerBlock] to set the destination level of.
-         */
-        @Id(3)
-        val blockReference: BlockReference,
-        /**
-         * The level to set the destination to.
-         */
-        @Id(4)
-        val level: Level) : GameUpdate(LevelUpdateType.FARSEEKER_SET_DESTINATION_LEVEL) {
+    /**
+     * A reference to the [FarseekerBlock] to set the destination level of.
+     */
+    @Id(3)
+    val blockReference: BlockReference,
+    /**
+     * The level to set the destination to.
+     */
+    @Id(4)
+    val destinationLevel: Level, level: Level
+) : LevelUpdate(LevelUpdateType.FARSEEKER_SET_DESTINATION_LEVEL, level) {
 
-    private constructor() : this(BlockReference(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0), LevelManager.EMPTY_LEVEL)
+    private constructor() : this(
+        BlockReference(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0),
+        LevelManager.EMPTY_LEVEL,
+        LevelManager.EMPTY_LEVEL
+    )
 
     override val playersToSendTo: Set<Player>?
         get() = null
@@ -56,7 +61,7 @@ class FarseekerBlockSetDestinationLevel(
     override fun cancelActGhost() {
     }
 
-    override fun equivalent(other: GameUpdate): Boolean {
+    override fun equivalent(other: LevelUpdate): Boolean {
         if (other !is FarseekerBlockSetDestinationLevel) {
             return false
         }
