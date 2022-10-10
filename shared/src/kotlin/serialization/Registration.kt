@@ -122,7 +122,7 @@ object Registration {
         }
     }
 
-    private var nextId = Primitive.values().maxByOrNull { it.id }!!.id + 1
+    private var nextId = Primitive.values().maxBy { it.id }.id + 1
 
     val REFERENCE_ID = nextId++
 
@@ -273,9 +273,7 @@ object Registration {
 
         /* LEVEL */
         register(ActualLevel::class, 57)
-            .setSerializer(LevelSerializer::class)
         register(UnknownLevel::class, 58)
-            .setSerializer(LevelSerializer::class)
         register(Chunk::class, 59)
         register(Hitbox::class, 60)
         register(LevelData::class, 61)
@@ -284,7 +282,6 @@ object Registration {
         register(LevelObjectType::class, 64)
             .setSerializer(AutoIDSerializer::class)
         register(RemoteLevel::class, 65)
-            .setSerializer(LevelSerializer::class)
         register(ChunkData::class, 66)
         register(GhostLevelObject::class, 67)
         register(LevelObjectAdd::class, 68)
@@ -571,6 +568,9 @@ object Registration {
                     val createStrategyClass = CreateStrategySetting.getFrom(field).createStrategyClass
                     val ctor = createStrategyClass.primaryConstructor
                     newCreateStrategy = ctor!!.call(field.type)
+                }
+                else -> {
+                    // it is a setting meant for individual strategies
                 }
             }
         }

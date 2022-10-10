@@ -12,6 +12,13 @@ import serialization.Id
 // should be the way that they have physicality
 // should be the way that they filter what resources can be allowed in
 // expectations and shit are handled by the network
+
+// this is a network flow problem.
+// each tick:
+// get in and out requests
+// each resource type is considered separately?
+// oh fuck i dont think that's possible because then it would be order dependent if containers can get full
+//
 class ResourceNode2(
     val container: ResourceContainer,
     xTile: Int,

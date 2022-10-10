@@ -72,7 +72,7 @@ open class TaggedSerializer<R : Any>(type: Class<R>, settings: List<SerializerSe
                         val fieldValue = field.field.get(obj)
                         SerializerDebugger.writeln("Writing tagged field $field = $fieldValue")
                         output.writeInt(field.field.id)
-                        output.write(field.field, field.serializer as Serializer<Any>)
+                        output.write(fieldValue, field.serializer as Serializer<Any>)
                     } catch (e: IllegalAccessException) {
                         System.err.println("Error while getting value of field ${field.field} from class ${obj::class} (accessible: ${field.field.isAccessible}")
                         throw e

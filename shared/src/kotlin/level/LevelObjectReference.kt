@@ -12,6 +12,13 @@ import serialization.Reference
 import serialization.Serializer
 import java.util.*
 
+abstract class LevelObjectReference(
+    @Id(1)
+    val level: Level,
+    @Id(2)
+    val objectId: UUID
+) : Reference<LevelObject>()
+
 class ResourceNodeReference(
     @Id(1)
     val xTile: Int,
@@ -22,6 +29,7 @@ class ResourceNodeReference(
     @Id(4)
     val id: UUID
 ) : Reference<ResourceNode>() {
+
     constructor(node: ResourceNode) : this(node.xTile, node.yTile, node.level, node.id) {
         value = node
     }
@@ -32,15 +40,7 @@ class ResourceNodeReference(
         val nodes = level.getResourceNodesAt(xTile, yTile)
         return nodes.firstOrNull { it.id == id }
     }
-
 }
-
-abstract class LevelObjectReference(
-    @Id(1)
-    val level: Level,
-    @Id(2)
-    val objectId: UUID
-) : Reference<LevelObject>()
 
 class ResourceNode2Reference(
     level: Level, objectId: UUID,

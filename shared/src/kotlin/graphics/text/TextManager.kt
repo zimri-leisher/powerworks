@@ -132,7 +132,7 @@ object TextManager {
             return Rectangle(0, 0)
         val lines = s.split("\n")
         val f = getFont(size, style)
-        return Rectangle(ceil(lines.maxBy { it.length }!!.length * f.charWidth).toInt(), ceil(lines.size * f.charHeight).toInt())
+        return Rectangle(ceil(lines.maxBy { it.length }.length * f.charWidth).toInt(), ceil(lines.size * f.charHeight).toInt())
     }
 
     /**
@@ -143,7 +143,7 @@ object TextManager {
             return 0
         val lines = s.split("\n")
         val f = getFont(size, style)
-        return ceil((lines.maxBy { it.length }!!.length * f.charWidth)).toInt()
+        return ceil((lines.maxBy { it.length }.length * f.charWidth)).toInt()
     }
 
     /**

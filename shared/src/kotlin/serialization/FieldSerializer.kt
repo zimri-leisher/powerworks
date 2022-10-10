@@ -22,14 +22,5 @@ open class FieldSerializer<T : Any>(type: Class<T>, settings: List<SerializerSet
         }
 
         fields = getFields(type).map { CachedField(it, Registration.getSerializer(it)) }.toTypedArray()
-
-        if (fields.isNotEmpty()) {
-            SerializerDebugger.writeln("Found fields:")
-            for (field in fields) {
-                SerializerDebugger.writeln("    ${field.field.name}: ${field.field.type.simpleName} ")
-            }
-        } else {
-            SerializerDebugger.writeln("Found no fields")
-        }
     }
 }

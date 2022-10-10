@@ -34,9 +34,9 @@ class ElementTabs(parent: GuiElement, val padding: Int = 0) : GuiElement(parent)
 
     init {
         dimensions = Dimensions.Dynamic({
-            tabs.sumBy { it.width + padding * 2 }
+            tabs.sumOf { it.width + padding * 2 }
         }, {
-            (tabs.maxBy { it.height }?.height ?: 0) + padding * 2
+            (tabs.maxByOrNull { it.height }?.height ?: 0) + padding * 2
         })
     }
 

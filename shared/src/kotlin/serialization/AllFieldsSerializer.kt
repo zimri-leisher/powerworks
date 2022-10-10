@@ -9,6 +9,17 @@ import kotlin.reflect.jvm.kotlinProperty
  */
 open class AllFieldsSerializer<T : Any>(type: Class<T>, settings: List<SerializerSetting<*>>) : FieldSerializer<T>(type, settings) {
 
+    init {
+        if(fields.isNotEmpty()) {
+            SerializerDebugger.writeln("Fields:")
+            for(field in fields ) {
+                SerializerDebugger.writeln("    ${field.field.name}: ${field.field.type.simpleName}")
+            }
+        } else {
+            SerializerDebugger.writeln("No fields found.")
+        }
+    }
+
     override val writeStrategy = object : WriteStrategy<T>(type) {
         override fun write(obj: T, output: Output) {
             SerializerDebugger.writeln("Writing number of fields: ${fields.size}")
@@ -19,7 +30,6 @@ open class AllFieldsSerializer<T : Any>(type: Class<T>, settings: List<Serialize
                     if (!field.trySetAccessible()) {
                         throw WriteException("Unable to set accessible of field $field from class ${obj::class}")
                     }
-
                      */
                     field.field.isAccessible = true
                     val fieldValue = field.field.get(obj)

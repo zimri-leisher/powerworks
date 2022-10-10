@@ -55,7 +55,7 @@ class FluidTank(
                 return resourceListOf(currentFluidType!! to min(maxAmount - currentAmount, desiredAddition))
             }
         } else {
-            val biggestEntry = list.filterKeys { it.category == ResourceCategory.FLUID }.maxBy { (_, value) -> value }
+            val biggestEntry = list.filterKeys { it.category == ResourceCategory.FLUID }.maxByOrNull { (_, value) -> value }
                     ?: return emptyResourceList()
             return resourceListOf(biggestEntry.key to min(maxAmount, biggestEntry.value))
         }

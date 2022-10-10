@@ -5,12 +5,13 @@ import serialization.Id
 import java.lang.Integer.min
 
 class Inventory(
-        @Id(11)
-        val width: Int,
-        @Id(7)
-        val height: Int,
-        @Id(8)
-        private val items: Array<Item?> = arrayOfNulls(width * height)) : ResourceContainer(ResourceCategory.ITEM) {
+    @Id(11)
+    val width: Int,
+    @Id(7)
+    val height: Int,
+    @Id(8)
+    private val items: Array<Item?> = arrayOfNulls(width * height)
+) : ResourceContainer(ResourceCategory.ITEM) {
 
     private constructor() : this(0, 0, arrayOf())
 
@@ -69,7 +70,7 @@ class Inventory(
         return true
     }
 
-    override fun getQuantity(resource: ResourceType) = items.filter { it?.type == resource }.sumBy { it?.quantity ?: 0 }
+    override fun getQuantity(resource: ResourceType) = items.filter { it?.type == resource }.sumOf { it?.quantity ?: 0 }
 
     fun add(i: Item): Boolean {
         return add(i.type, i.quantity)
@@ -88,7 +89,7 @@ class Inventory(
                     existingStackAmount = item.quantity
                 }
             }
-            if (existingStackAmount > 0 && type.maxStack - existingStackAmount >= quantity ) {
+            if (existingStackAmount > 0 && type.maxStack - existingStackAmount >= quantity) {
                 possible.put(type, quantity)
             } else {
                 val extraStackAmount = type.maxStack - existingStackAmount
