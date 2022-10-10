@@ -7,7 +7,7 @@ import network.MovingObjectReference
 import serialization.Id
 import kotlin.math.*
 
-abstract class MovingObject(type: MovingObjectType<out MovingObject>, x: Int, y: Int, rotation: Int = 0) : LevelObject(type, x, y, rotation, true) {
+abstract class MovingObject(type: MovingObjectType<out MovingObject>, x: Int, y: Int) : PhysicalLevelObject(type, x, y) {
     override val type = type
     /* Only allow setting of non tile/chunk values because otherwise it would cause infinite loop (unless I added a lot of boilerplate private values) */
 
@@ -107,7 +107,7 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, x: Int, y:
         yVel += sin(angle) * accel
     }
 
-    private fun isCollidingAlongXAxis(o: LevelObject): Boolean {
+    private fun isCollidingAlongXAxis(o: PhysicalLevelObject): Boolean {
         val range = (y + hitbox.yStart) until (y + hitbox.yStart + hitbox.height)
         val otherRange = (o.y + o.hitbox.yStart) until (o.y + o.hitbox.yStart + o.hitbox.height)
         return range.any { it in otherRange }
@@ -139,7 +139,7 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, x: Int, y:
         }
     }
 
-    override fun onCollide(obj: LevelObject) {
+    override fun onCollide(obj: PhysicalLevelObject) {
 
     }
 
@@ -225,7 +225,7 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, x: Int, y:
                     this.onCollide(it)
                 }
             } else {
-                var collisions: MutableSet<LevelObject>? = null
+                var collisions: MutableSet<PhysicalLevelObject>? = null
                 val g = getCollisions(newX, newY).toMutableSet()
                 var xOk = false
                 var yOk = false
@@ -278,7 +278,7 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, x: Int, y:
         onChangeChunks(newChunk, newChunk)
     }
 
-    override fun onHitboxChange() {
+    override fun onHitboxChange(oldHitbox: Hitbox) {
         updateIntersectingChunks()
     }
 
@@ -296,7 +296,7 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, x: Int, y:
     }
 
     /**
-     * @return this [LevelObject] as a [LevelObjectReference]
+     * @return this [PhysicalLevelObject] as a [LevelObjectReference]
      * @see [LevelObjectReference]
      */
     override fun toReference(): LevelObjectReference {

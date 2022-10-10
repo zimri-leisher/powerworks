@@ -1,11 +1,15 @@
 package resource
 
-import data.WeakMutableList
 import level.Level
+import level.LevelObject
+import level.LevelObjectType
+import level.PhysicalLevelObject
 
-var ResourceNetwork_nextId = 0
+abstract class ResourceNetwork<V : ResourceNetworkVertex<V>>(level: Level, val networkType: ResourceNetworkType) :
+    LevelObject(LevelObjectType.RESOURCE_NETWORK) {
 
-abstract class ResourceNetwork(val level: Level) {
+    // make these resource containers? NOPE ??? or yepP?????
+
     // is this even useful abstraction?
     // right now there are pipe networks
     // conceivably could have "teleporter" networks
@@ -16,25 +20,58 @@ abstract class ResourceNetwork(val level: Level) {
     // producers will add some power to their own internal batteries every tick
     // but will this
 
-    val id = ResourceNetwork_nextId++
+    // shit. now our problem is, if this is all between resource nodes, how do we
+    // have transmission zones for power?
+    // i want the vertices of resource networks to be blocks too. i want to be able to go directly to a block.
+    // nope. hmm.... give each block in a large block a resource node. default behavior accepts energy
+    //
+    // this should also be abstract enoguh for node-node connections
+
+    val vertices = mutableSetOf<V>()
+
     val market = ResourceMarket(this)
-    abstract val nodes: List<ResourceNode2>
+    abstract val nodes: MutableList<ResourceNode>
 
     init {
-        ALL.add(this)
+        level.add(this)
     }
 
-    abstract fun getConnection(from: ResourceNode2, to: ResourceNode2): ResourceNodeConnection?
+    abstract fun getConnection(from: ResourceContainer, to: ResourceContainer): ResourceNodeConnection?
+    protected abstract fun updateEdges(vert: V)
+    abstract fun canBeVertex(obj: PhysicalLevelObject): Boolean
+    abstract fun makeVertex(obj: PhysicalLevelObject): V
 
-    open fun render() {}
+    open fun add(obj: PhysicalLevelObject) {
+        if (obj.level != level) {
+            throw Exception("Tried to add a vertex in level ${obj.level} to ResourceNetwork in level $level")
+        }
+        if (!canBeVertex(obj)) {
+            throw Exception("$obj cannot be a vertex for $this")
+        }
+        val vert = makeVertex(obj)
+        vertices.add(vert)
+        updateEdges(vert)
+        tryMerge(vert)
+    }
 
-    open fun update() {
+    open fun remove(obj: PhysicalLevelObject) {
+        val vert = vertices.firstOrNull { it.obj == obj }
+            ?: throw Exception("Tried to remove $obj which is not in network $this")
+        updateEdges(vert)
+        trySplit(vert)
+        vertices.remove(vert)
+        if (vert.obj is ResourceNode) {
+            nodes.remove(vert.obj)
+        }
+    }
+
+    override fun update() {
         val transactions = market.getTransactions()
-        for(transaction in transactions) {
+        for (transaction in transactions) {
             // market transactions should always have a non null src and dest
             val connection = getConnection(transaction.src, transaction.dest)
-            if(connection != null) {
-                if(connection.canExecute(transaction)) {
+            if (connection != null) {
+                if (connection.canExecute(transaction)) {
                     connection.execute(transaction)
                 }
             } else {
@@ -45,15 +82,57 @@ abstract class ResourceNetwork(val level: Level) {
         }
     }
 
-    companion object {
-        val ALL = WeakMutableList<ResourceNetwork>()
+    private fun tryMerge(around: ResourceNetworkVertex<V>) {
+        val toCombine = mutableSetOf(this)
+        for (dir in 0..3) {
+            val edgesNetwork = around.edges[dir]?.obj?.getNetwork(networkType)
+            if (edgesNetwork != null && edgesNetwork != this) {
+                toCombine.add(edgesNetwork as ResourceNetwork<V>)
+            }
+        }
+        merge(toCombine)
+    }
 
-        fun render() {
-            ALL.forEach { it.render() }
+    fun mergeFrom(network: ResourceNetwork<V>) {
+        for (vertex in network.vertices) {
+            vertex.obj.onRemoveFromNetwork(network)
+            vertex.obj.onAddToNetwork(this)
+        }
+        vertices.addAll(network.vertices)
+        nodes.addAll(network.nodes)
+        network.vertices.clear()
+        network.nodes.clear()
+    }
+
+    protected abstract fun trySplit(around: V)
+
+    protected abstract fun splitOff(vertices: Collection<V>): ResourceNetwork<V>
+
+
+    companion object {
+
+        private fun merge(networks: Set<ResourceNetwork<*>>) {
+            if (networks.isEmpty()) {
+                return
+            }
+            if (networks.map { it.networkType }.distinct().size != 1) {
+                throw Exception("Tried to merge ResourceNetworks of different types: $networks")
+            }
+            val dest = networks.maxBy { it.vertices.size }
+            for (other in networks - dest) {
+                // do some not correct casts probably. there is no reason why these might actually be PNVs, but if I don't cast it to something it doesn't work
+                (dest as ResourceNetwork<PipeNetworkVertex>).mergeFrom(other as ResourceNetwork<PipeNetworkVertex>)
+            }
         }
 
-        fun update() {
-            ALL.forEach { it.update() }
+        fun split(network: ResourceNetwork<*>, groups: Set<Set<ResourceNetworkVertex<*>>>) {
+            val largestGroup = groups.withIndex().maxBy { (_, value) -> value.size }.index
+            for ((i, newVertices) in groups.withIndex()) {
+                if (i != largestGroup) {
+                    // do some not correct casts probably. there is no reason why these might actually be PNVs, but if I don't cast it to something it doesn't work
+                    (network as ResourceNetwork<PipeNetworkVertex>).splitOff(newVertices as Collection<PipeNetworkVertex>)
+                }
+            }
         }
     }
 }

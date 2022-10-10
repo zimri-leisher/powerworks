@@ -1,7 +1,6 @@
 package routing.script
 
 import resource.ResourceNode
-import resource.ResourceNode2
 import resource.ResourceType
 import serialization.*
 import java.util.*
@@ -82,7 +81,7 @@ class RoutingLanguageStatement(val text: String, tokens: Array<Token>? = null, b
         return tokenList.toTypedArray()
     }
 
-    fun evaluate(context: ResourceNode2) = baseNode.visit(context)
+    fun evaluate(context: ResourceNode) = baseNode.visit(context)
 
     private fun compile(): Node<Boolean> {
         val base = nextExpression(OperatorPrecedence.LOWEST)

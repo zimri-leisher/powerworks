@@ -12,7 +12,7 @@ class GuiSolidifierBlock(block: SolidifierBlock) : Gui(ScreenLayer.MENU_1), Pool
         set(value) {
             if (field != value) {
                 field = value
-                inputTank.tank = value.tank
+                inputTank.tank = value.input
                 outputInventory.container = value.out
             }
         }
@@ -32,7 +32,7 @@ class GuiSolidifierBlock(block: SolidifierBlock) : Gui(ScreenLayer.MENU_1), Pool
                 text("Solidifier", Placement.Align(HorizontalAlign.LEFT, VerticalAlign.TOP).offset(1, -1)) { makeDraggable() }
                 list(Placement.Align.Center.offset(0, -3), padding = 1) {
                     makeDraggable()
-                    inputTank = fluidTank(block.tank)
+                    inputTank = fluidTank(block.input)
                     progressArrow = progressBar(block.type.maxWork, { this@GuiSolidifierBlock.block.currentWork })
                     outputInventory = inventory(block.out)
                 }

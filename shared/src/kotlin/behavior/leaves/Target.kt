@@ -3,7 +3,7 @@ package behavior.leaves
 import behavior.BehaviorTree
 import behavior.DataLeaf
 import behavior.Variable
-import level.LevelObject
+import level.PhysicalLevelObject
 import level.update.EntitySetTarget
 import level.entity.Entity
 import network.LevelObjectReference
@@ -14,7 +14,7 @@ class Target(parent: BehaviorTree, val targetVar: Variable) : DataLeaf(parent) {
         val target = getData<Any>(targetVar)
         val actualTarget = when (target) {
             is LevelObjectReference -> target
-            is LevelObject -> target.toReference()
+            is PhysicalLevelObject -> target.toReference()
             null -> null
             else -> return false
         }

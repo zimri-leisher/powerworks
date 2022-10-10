@@ -1,5 +1,6 @@
 package level.update
 
+import level.Level
 import level.LevelManager
 import level.canAdd
 import level.moving.MovingObject
@@ -11,12 +12,13 @@ import serialization.Id
 import java.util.*
 
 class LevelObjectSwitchLevelsTo(
-        @Id(3)
-        val reference: LevelObjectReference,
-        @Id(5)
-        val destinationPosition: TileCoord) : GameUpdate(LevelUpdateType.LEVEL_OBJECT_SWITCH_LEVELS) {
+    @Id(3)
+    val reference: LevelObjectReference,
+    @Id(5)
+    val destinationPosition: TileCoord, level: Level
+) : LevelUpdate(LevelUpdateType.LEVEL_OBJECT_SWITCH_LEVELS, level) {
 
-    private constructor() : this(BlockReference(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0), TileCoord(0, 0))
+    private constructor() : this(BlockReference(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0), TileCoord(0, 0), LevelManager.EMPTY_LEVEL)
 
     override val playersToSendTo: Set<Player>?
         get() = null
@@ -54,7 +56,7 @@ class LevelObjectSwitchLevelsTo(
     override fun cancelActGhost() {
     }
 
-    override fun equivalent(other: GameUpdate): Boolean {
+    override fun equivalent(other: LevelUpdate): Boolean {
         if (other !is LevelObjectSwitchLevelsTo) {
             return false
         }

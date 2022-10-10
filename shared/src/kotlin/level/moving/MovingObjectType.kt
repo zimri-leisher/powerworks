@@ -2,12 +2,12 @@ package level.moving
 
 import graphics.Image
 import level.Hitbox
-import level.LevelObjectTextures
-import level.LevelObjectType
+import level.PhysicalLevelObjectTextures
+import level.PhysicalLevelObjectType
 import screen.Camera
 import serialization.ObjectList
 
-open class MovingObjectType<T : MovingObject>(initializer: MovingObjectType<T>.() -> Unit = {}) : LevelObjectType<T>() {
+open class MovingObjectType<T : MovingObject>(initializer: MovingObjectType<T>.() -> Unit = {}) : PhysicalLevelObjectType<T>() {
     var maxSpeed = 10.0
     var drag = 2
     var density = 1.0
@@ -25,15 +25,13 @@ open class MovingObjectType<T : MovingObject>(initializer: MovingObjectType<T>.(
         val ALL = mutableListOf<MovingObjectType<*>>()
 
         val ERROR = MovingObjectType<DefaultMovingObject> {
-            instantiate = { x, y, rotation -> DefaultMovingObject(this, x, y, rotation) }
-            textures = LevelObjectTextures(Image.Misc.ERROR)
+            textures = PhysicalLevelObjectTextures(Image.Misc.ERROR)
             hitbox = Hitbox.NONE
         }
 
         val CAMERA = MovingObjectType<Camera> {
             maxSpeed = 1.5
             hitbox = Hitbox.NONE
-            instantiate = { x, y, _ -> Camera(x, y) }
         }
     }
 }

@@ -5,24 +5,26 @@ import io.ControlEvent
 import io.ControlEventType
 import item.Inventory
 import item.OreItemType
-import resource.ResourceContainer
-import resource.ResourceContainerChangeListener
-import resource.ResourceList
-import resource.resourceListOf
+import resource.*
 import serialization.Id
 
-class SmelterBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(MachineBlockType.SMELTER, xTile, yTile, rotation), ResourceContainerChangeListener {
+class SmelterBlock(xTile: Int, yTile: Int) : MachineBlock(MachineBlockType.SMELTER, xTile, yTile),
+    ResourceContainerChangeListener {
     @Id(23)
-    val input: Inventory = nodes.first().container as Inventory // FIXME { it.behavior.allowIn.statements.keys.first().text == "true" }.attachedContainer as Inventory
+    val input = Inventory(1, 1)
 
     @Id(24)
-    val output: Inventory = nodes.first().container as Inventory // FIXME { it.behavior.allowOut.statements.keys.first().text == "true" }.attachedContainer as Inventory
+    val output = Inventory(1, 1)
 
     @Id(25)
     var currentlySmelting: OreItemType? = null
 
     init {
-        containers.forEach { it.listeners.add(this) }
+        input.listeners.add(this)
+    }
+
+    override fun createNodes(): List<ResourceNode> {
+        return listOf(ResourceNode(input, xTile, yTile + 1), ResourceNode(output, xTile, yTile))
     }
 
     override fun onContainerClear(container: ResourceContainer) {
@@ -62,7 +64,7 @@ class SmelterBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(Machine
         }
         if (output.canAdd(resourceListOf(currentlySmelting!!.moltenForm.ingot to 1))) {
             if (input.remove(currentlySmelting!!, 2)) {
-                output.add(currentlySmelting!!.moltenForm.ingot, 1, checkIfAble = false)
+                output.add(currentlySmelting!!.moltenForm.ingot, 1)
             }
         }
         if (input.totalQuantity > 1) {
@@ -77,7 +79,15 @@ class SmelterBlock(xTile: Int, yTile: Int, rotation: Int) : MachineBlock(Machine
         }
     }
 
-    override fun onInteractOn(event: ControlEvent, x: Int, y: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
+    override fun onInteractOn(
+        event: ControlEvent,
+        x: Int,
+        y: Int,
+        button: Int,
+        shift: Boolean,
+        ctrl: Boolean,
+        alt: Boolean
+    ) {
         if (event.type == ControlEventType.PRESS && !shift && !ctrl && !alt) {
             if (button == Input.Buttons.LEFT) {
                 this.type.guiPool!!.toggle(this)

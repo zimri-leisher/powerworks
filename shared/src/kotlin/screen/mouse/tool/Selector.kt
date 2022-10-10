@@ -32,8 +32,8 @@ object Selector : Tool(Control.Group.SELECTOR_TOOLS.controls), ControlEventHandl
 
     private var mode = SelectorMode.ALL
 
-    var currentSelected = mutableSetOf<LevelObject>()
-    var newlySelected = mutableSetOf<LevelObject>()
+    var currentSelected = mutableSetOf<PhysicalLevelObject>()
+    var newlySelected = mutableSetOf<PhysicalLevelObject>()
 
     init {
         InputManager.register(this, Control.Group.SELECTOR_TOOLS)

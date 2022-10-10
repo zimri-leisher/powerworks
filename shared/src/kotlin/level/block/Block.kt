@@ -1,19 +1,17 @@
 package level.block
 
 import level.Level
-import level.LevelObject
+import level.PhysicalLevelObject
 import level.getBlockAtTile
 import level.getMovingObjectCollisions
 import level.particle.ParticleEffect
 import network.BlockReference
 import network.LevelObjectReference
 import resource.ResourceNode
-import resource.ResourceNode2
-import resource.getAttachedContainers
 import serialization.Id
-import kotlin.math.abs
 
-abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotation: Int = 0) : LevelObject(type, xTile shl 4, yTile shl 4, rotation) {
+abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int) :
+    PhysicalLevelObject(type, xTile shl 4, yTile shl 4) {
 
     override val type = type
 
@@ -31,11 +29,45 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotatio
      * into account, so, for example, if that same block were placed with a rotation of 1 (rotated 90 degrees clockwise), the node would be at (1, 0) relative, pointing right.
      */
     @Id(18)
-    val nodes: MutableList<ResourceNode2> = type.nodesTemplate.instantiate(xTile, yTile, rotation, id).toMutableList()
+    var nodes = listOf<ResourceNode>()
 
-    init {
-        containers = nodes.map { it.container }
-//        containers.forEach { it.attachedLevelObject = this }
+    open fun createNodes(): List<ResourceNode> {
+        return listOf()
+    }
+
+    override fun onRotate(oldDir: Int) {
+        super.onRotate(oldDir)
+        nodes.forEach { level.remove(it) }
+        nodes = createNodes()
+        nodes.forEach { level.add(it) }
+    }
+
+    fun getAdjacentBlocks(): Set<Block> {
+        val ret = mutableSetOf<Block>()
+        // this one covers the strip of blocks above and below this block
+        // includes corners
+        for (w in -1..type.widthTiles) {
+            val blockAbove = level.getBlockAtTile(xTile + w, yTile - 1)
+            if (blockAbove != null && blockAbove != this) {
+                ret.add(blockAbove)
+            }
+            val blockBelow = level.getBlockAtTile(xTile + w, yTile + type.heightTiles + 1)
+            if (blockBelow != null && blockBelow != this) {
+                ret.add(blockBelow)
+            }
+        }
+        // covers strip of blocks to left and right, exclude corners
+        for (h in 0 until type.heightTiles) {
+            val blockLeft = level.getBlockAtTile(xTile - 1, yTile + h)
+            if (blockLeft != null && blockLeft != this) {
+                ret.add(blockLeft)
+            }
+            val blockRight = level.getBlockAtTile(xTile + type.widthTiles + 1, yTile + h)
+            if (blockRight != null && blockRight != this) {
+                ret.add(blockRight)
+            }
+        }
+        return ret
     }
 
     /**
@@ -43,23 +75,9 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotatio
      */
     override fun afterAddToLevel(oldLevel: Level) {
         ParticleEffect.BLOCK_PLACE.instantiate(this)
+        nodes = createNodes()
         nodes.forEach { level.add(it) }
-        // loop through each block touching this one, accounting for width and height
-        val adjacent = mutableSetOf<Block>()
-        for (w in 0 until type.widthTiles) {
-            for (h in 0 until type.heightTiles) {
-                for (y in -1..1) {
-                    for (x in -1..1) {
-                        if (abs(x) != abs(y)) {
-                            val b = level.getBlockAtTile(xTile + x + w, yTile + y + h)
-                            if (b != null && b != this)
-                                adjacent.add(b)
-                        }
-                    }
-                }
-            }
-        }
-        adjacent.forEach {
+        getAdjacentBlocks().forEach {
             it.onAdjacentBlockAdd(this)
         }
     }
@@ -69,22 +87,7 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotatio
      */
     override fun afterRemoveFromLevel(oldLevel: Level) {
         nodes.forEach { oldLevel.remove(it) }
-        // loop through each block touching this one, accounting for width and height
-        val adjacent = mutableSetOf<Block>()
-        for (w in 0 until type.widthTiles) {
-            for (h in 0 until type.heightTiles) {
-                for (y in -1..1) {
-                    for (x in -1..1) {
-                        if (abs(x) != abs(y)) {
-                            val b = oldLevel.getBlockAtTile(xTile + x + w, yTile + y + h)
-                            if (b != null && b != this)
-                                adjacent.add(b)
-                        }
-                    }
-                }
-            }
-        }
-        adjacent.forEach {
+        getAdjacentBlocks().forEach {
             it.onAdjacentBlockRemove(this)
         }
         type.guiPool?.close(this)
@@ -104,22 +107,18 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotatio
 
     }
 
-    override fun update() {
-        super.update()
-    }
-
-    override fun getCollisions(x: Int, y: Int, level: Level): Sequence<LevelObject> {
+    override fun getCollisions(x: Int, y: Int, level: Level): Sequence<PhysicalLevelObject> {
         // Check if a block is already present
         val nXTile = x shr 4
         val nYTile = y shr 4
         return level.getMovingObjectCollisions(hitbox, x, y) +
                 (nXTile until (nXTile + type.widthTiles)).asSequence()
-                        .flatMap { x ->
-                            (nYTile until (nYTile + type.heightTiles)).asSequence().map { x to it }
-                        }
-                        .map { level.getBlockAtTile(it.first, it.second) }
-                        .filterNotNull()
-                        .filter { it !== this }
+                    .flatMap { x ->
+                        (nYTile until (nYTile + type.heightTiles)).asSequence().map { x to it }
+                    }
+                    .map { level.getBlockAtTile(it.first, it.second) }
+                    .filterNotNull()
+                    .filter { it !== this }
     }
 
     override fun toReference(): LevelObjectReference {
@@ -144,12 +143,6 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotatio
                 return false
             }
         }
-        if (containers.size != other.containers.size) return false
-        for (container in containers) {
-            if (container !in other.containers) {
-                return false
-            }
-        }
 
         return true
     }
@@ -158,7 +151,6 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int, rotatio
         var result = super.hashCode()
         result = 31 * result + textures.hashCode()
         result = 31 * result + nodes.hashCode()
-        result = 31 * result + containers.hashCode()
         return result
     }
 }

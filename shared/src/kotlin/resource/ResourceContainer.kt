@@ -1,14 +1,14 @@
 package resource
 
+import level.LevelObject
+import level.LevelObjectType
+import network.ResourceContainerReference
 import serialization.Id
 import java.util.*
 
-abstract class ResourceContainer {
+abstract class ResourceContainer : LevelObject(LevelObjectType.RESOURCE_CONTAINER) {
 
     // TODO make resource containers just resource lists with a capacity total max
-
-    @Id(2)
-    var id: UUID = UUID.randomUUID()
 
     /**
      * Mutator methods should send appropriate calls to these
@@ -17,7 +17,7 @@ abstract class ResourceContainer {
     val listeners = mutableListOf<ResourceContainerChangeListener>()
 
     @Id(-4)
-    val nodes = mutableListOf<ResourceNode2>()
+    val nodes = mutableListOf<ResourceNode>()
 
     abstract val totalQuantity: Int
 
@@ -110,6 +110,8 @@ abstract class ResourceContainer {
      * @return a set of [ResourceType]s present with quantity greater than 0
      */
     fun toTypeList(): Set<ResourceType> = toResourceList().keys
+
+    override fun toReference() = ResourceContainerReference(this)
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

@@ -7,7 +7,6 @@ import behavior.decorators.Succeeder
 import behavior.leaves.*
 import behavior.leaves.Target
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import level.LevelObject
 
 class CompositeContext(val node: Composite) {
 

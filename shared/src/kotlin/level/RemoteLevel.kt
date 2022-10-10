@@ -2,7 +2,7 @@ package level
 
 import level.update.LevelObjectAdd
 import level.update.LevelObjectRemove
-import level.update.GameUpdate
+import level.update.LevelUpdate
 import main.removeIfKey
 import network.ClientNetworkManager
 import network.ServerNetworkManager
@@ -18,10 +18,10 @@ import java.util.*
  */
 class RemoteLevel(id: UUID, info: LevelInfo) : Level(id, info), PacketHandler {
 
-    val outgoingUpdates = mutableMapOf<GameUpdate, Int>()
+    val outgoingUpdates = mutableMapOf<LevelUpdate, Int>()
 
     // level update - the update, boolean - whether or not it was acted on, int - time received
-    val incomingUpdates = mutableMapOf<Pair<GameUpdate, Boolean>, Int>()
+    val incomingUpdates = mutableMapOf<Pair<LevelUpdate, Boolean>, Int>()
 
     override fun initialize() {
         println("initialize remote level with id $id")
@@ -47,7 +47,7 @@ class RemoteLevel(id: UUID, info: LevelInfo) : Level(id, info), PacketHandler {
         return modify(LevelObjectRemove(l), l is GhostLevelObject) // transient if l is ghost object
     }
 
-    override fun modify(update: GameUpdate, transient: Boolean): Boolean {
+    override fun modify(update: LevelUpdate, transient: Boolean): Boolean {
         if (!transient && incomingUpdates.any { (updateAndHasActed, _) -> updateAndHasActed.first.equivalent(update) && updateAndHasActed.second }) {
             // if there are any incoming updates that are equivalent to this action and have already been taken
             // return true because this action has already happened
@@ -81,7 +81,7 @@ class RemoteLevel(id: UUID, info: LevelInfo) : Level(id, info), PacketHandler {
             }
         }
         val incomingIterator = incomingUpdates.iterator()
-        val updatesActedOn = mutableMapOf<Pair<GameUpdate, Boolean>, Int>()
+        val updatesActedOn = mutableMapOf<Pair<LevelUpdate, Boolean>, Int>()
         for ((updateAndHasActed, time) in incomingIterator) {
             val (update, hasActed) = updateAndHasActed
             val equivalentOutgoings = outgoingUpdates.filterKeys { it.equivalent(update) }

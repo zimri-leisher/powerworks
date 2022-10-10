@@ -10,7 +10,7 @@ package resource
  * the MinerBlock, instead of the it having an outputNode attribute which is manually set to the correct one, it simply
  * calls nodes.output(resource, quantity) which finds the available node and outputs the resources
  */
-typealias ResourceNodeGroup = Collection<ResourceNode>
+typealias ResourceNodeGroup = Collection<ResourceNodeOld>
 
 /**
  * @return a list of all unique attached containers in this node group

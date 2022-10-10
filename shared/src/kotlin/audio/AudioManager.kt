@@ -1,7 +1,7 @@
 package audio
 
 import data.ConcurrentlyModifiableMutableList
-import level.LevelObject
+import level.PhysicalLevelObject
 import level.MovementListener
 import level.moving.MovingObject
 import java.util.*
@@ -42,7 +42,7 @@ object AudioManager : MovementListener {
      * Whether or not to play level sounds
      */
     var LEVEL_SOUNDS_PAUSED = false
-    var ears: LevelObject? = null
+    var ears: PhysicalLevelObject? = null
         set(value) {
             if (value is MovingObject) {
                 value.moveListeners.add(this)

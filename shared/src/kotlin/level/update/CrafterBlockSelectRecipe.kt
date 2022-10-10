@@ -1,6 +1,7 @@
 package level.update
 
 import crafting.Recipe
+import level.Level
 import level.LevelManager
 import level.block.CrafterBlock
 import network.BlockReference
@@ -19,10 +20,11 @@ class CrafterBlockSelectRecipe(
         /**
          * The recipe to set the [CrafterBlock]'s recipe to.
          */
-        @Id(3) val recipe: Recipe?
-) : GameUpdate(LevelUpdateType.CRAFTER_SELECT_RECIPE) {
+        @Id(3) val recipe: Recipe?,
+        level: Level
+) : LevelUpdate(LevelUpdateType.CRAFTER_SELECT_RECIPE, level) {
 
-    private constructor() : this(BlockReference(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0), null)
+    private constructor() : this(BlockReference(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0), null, LevelManager.EMPTY_LEVEL)
 
     override val playersToSendTo: Set<Player>?
         get() = null
@@ -42,7 +44,7 @@ class CrafterBlockSelectRecipe(
         // TODO undo graphical change
     }
 
-    override fun equivalent(other: GameUpdate): Boolean {
+    override fun equivalent(other: LevelUpdate): Boolean {
         if (other !is CrafterBlockSelectRecipe) {
             return false
         }

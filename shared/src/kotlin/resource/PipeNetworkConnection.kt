@@ -6,7 +6,7 @@ import misc.Geometry
 class PipeNetworkConnection(
     val network: PipeNetwork,
     val steps: List<PipeNetworkVertex>
-) : ResourceNodeConnection(steps.first() as ResourceNode2, steps.last() as ResourceNode2) {
+) : ResourceNodeConnection(steps.first() as ResourceNode, steps.last() as ResourceNode) {
     val currentPackets = mutableListOf<PipeNetworkPacket>()
 
     override fun execute(transaction: ResourceTransaction) {

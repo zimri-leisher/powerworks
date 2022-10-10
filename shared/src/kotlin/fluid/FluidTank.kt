@@ -33,7 +33,7 @@ class FluidTank(
     override val totalQuantity: Int
         get() = currentAmount
 
-    override fun add(resources: ResourceList, from: ResourceNode?, checkIfAble: Boolean): Boolean {
+    override fun add(resources: ResourceList, from: ResourceNodeOld?, checkIfAble: Boolean): Boolean {
         if (checkIfAble)
             if (!canAdd(resources))
                 return false
@@ -61,7 +61,7 @@ class FluidTank(
         }
     }
 
-    override fun remove(resources: ResourceList, to: ResourceNode?, checkIfAble: Boolean): Boolean {
+    override fun remove(resources: ResourceList, to: ResourceNodeOld?, checkIfAble: Boolean): Boolean {
         if (checkIfAble)
             if (!canRemove(resources))
                 return false

@@ -24,13 +24,13 @@ enum class ResourceOrderPriority {
 data class ResourceOrder(val origin: ResourceContainer, val resources: ResourceBalance, val priority: ResourceOrderPriority)
 
 sealed class ResourceDistributor(val network: ResourceNetwork) {
-    abstract fun distribute(from: ResourceContainer, type: ResourceType, quantity: Int, destinations: Map<ResourceContainer, Int>): List<ResourceTransaction>
+    abstract fun distribute(from: ResourceContainer, type: ResourceType, quantity: Int, destinations: Map<ResourceContainer, Int>): Map<ResourceNode, Int>
 
     class EqualizeContainers(network: ResourceNetwork) : ResourceDistributor(network) {
 
         val containersSentTo = mutableMapOf<ResourceType, List<ResourceContainer>>()
 
-        private fun getNodes(container: ResourceContainer, destinations: Map<ResourceNode2, Int>): Set<ResourceNode2> {
+        private fun getNodes(container: ResourceContainer, destinations: Map<ResourceNode, Int>): Set<ResourceNode> {
             return destinations.filterKeys { it.container == container }.keys
         }
 
@@ -57,11 +57,12 @@ sealed class ResourceDistributor(val network: ResourceNetwork) {
         }
 
         override fun distribute(
+            from: ResourceNode,
             from: ResourceContainer,
             type: ResourceType,
             quantity: Int,
             destinations: Map<ResourceContainer, Int>
-        ): List<ResourceTransaction> {
+        ): Map<ResourceNode, Int> {
             val filteredDests = destinations.filterValues { it < 0 }.toMutableMap()
             // end distributions
             val distribution = destinations.keys.associateWith { 0 }.toMutableMap()
@@ -131,8 +132,8 @@ class ResourceMarket(val network: ResourceNetwork) {
     val typesAndDestinations = mutableMapOf<ResourceType, MutableList<ResourceContainer>>()
 
     private fun combine(
-        map: MutableMap<ResourceNode2, MutableMap<ResourceType, Int>>,
-        node: ResourceNode2,
+        map: MutableMap<ResourceNode, MutableMap<ResourceType, Int>>,
+        node: ResourceNode,
         amounts: Map<ResourceType, Int>
     ) {
         val entry = map[node]
@@ -143,27 +144,27 @@ class ResourceMarket(val network: ResourceNetwork) {
         }
     }
 
-    fun demand(node: ResourceNode2, amounts: Map<ResourceType, Int>) {
+    fun demand(node: ResourceNode, amounts: Map<ResourceType, Int>) {
         combine(demands, node, amounts)
     }
 
-    fun request(node: ResourceNode2, amounts: Map<ResourceType, Int>) {
+    fun request(node: ResourceNode, amounts: Map<ResourceType, Int>) {
         combine(requests, node, amounts)
     }
 
-    fun requestOut(from: ResourceNode2, resources: ResourceList) {
+    fun requestOut(from: ResourceNode, resources: ResourceList) {
         request(from, resources)
     }
 
-    fun requestIn(to: ResourceNode2, resources: ResourceList) {
+    fun requestIn(to: ResourceNode, resources: ResourceList) {
         request(to, resources.mapValues { (_, v) -> -v })
     }
 
-    fun demandOut(from: ResourceNode2, resources: ResourceList) {
+    fun demandOut(from: ResourceNode, resources: ResourceList) {
         demand(from, resources)
     }
 
-    fun demandIn(to: ResourceNode2, resources: ResourceList) {
+    fun demandIn(to: ResourceNode, resources: ResourceList) {
         demand(to, resources.mapValues { (_, v) -> -v })
     }
 

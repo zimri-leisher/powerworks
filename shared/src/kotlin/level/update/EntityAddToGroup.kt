@@ -1,5 +1,7 @@
 package level.update
 
+import level.Level
+import level.LevelManager
 import level.entity.Entity
 import level.entity.EntityGroup
 import network.MovingObjectReference
@@ -10,12 +12,14 @@ import serialization.Id
  * A level update for adding entities to an [EntityGroup].
  */
 class EntityAddToGroup(
-        /**
-         * A list of references to entities to add to the group.
-         */
-        @Id(2) val entitiesInGroup: List<MovingObjectReference>) : GameUpdate(LevelUpdateType.ENTITY_ADD_TO_GROUP) {
+    /**
+     * A list of references to entities to add to the group.
+     */
+    @Id(2) val entitiesInGroup: List<MovingObjectReference>,
+    level: Level
+) : LevelUpdate(LevelUpdateType.ENTITY_ADD_TO_GROUP, level) {
 
-    private constructor() : this(listOf())
+    private constructor() : this(listOf(), LevelManager.EMPTY_LEVEL)
 
     override val playersToSendTo: Set<Player>?
         get() = null
@@ -36,7 +40,7 @@ class EntityAddToGroup(
     override fun cancelActGhost() {
     }
 
-    override fun equivalent(other: GameUpdate): Boolean {
+    override fun equivalent(other: LevelUpdate): Boolean {
         if (other !is EntityAddToGroup) {
             return false
         }

@@ -1,6 +1,7 @@
 package level.update
 
 import item.weapon.ProjectileType
+import level.Level
 import level.LevelManager
 import level.entity.Entity
 import misc.Coord
@@ -14,29 +15,36 @@ import kotlin.math.absoluteValue
  * A level update for the firing of an [Entity]'s weapon.
  */
 class EntityFireWeapon(
-        /**
-         * The position of the [Entity] when it fired.
-         */
-        @Id(2)
-        val positionWhenFired: Coord,
-        /**
-         * The angle the [Entity] fired at.
-         */
-        @Id(3)
-        val angleFired: Float,
-        /**
-         * The type of [Projectile] fired.
-         */
-        @Id(4)
-        val projectileType: ProjectileType,
-        /**
-         * A reference to the [Entity] that fired.
-         */
-        @Id(5)
-        val entityReference: MovingObjectReference
-) : GameUpdate(LevelUpdateType.ENTITY_FIRE_WEAPON) {
+    /**
+     * The position of the [Entity] when it fired.
+     */
+    @Id(2)
+    val positionWhenFired: Coord,
+    /**
+     * The angle the [Entity] fired at.
+     */
+    @Id(3)
+    val angleFired: Float,
+    /**
+     * The type of [Projectile] fired.
+     */
+    @Id(4)
+    val projectileType: ProjectileType,
+    /**
+     * A reference to the [Entity] that fired.
+     */
+    @Id(5)
+    val entityReference: MovingObjectReference,
+    level: Level
+) : LevelUpdate(LevelUpdateType.ENTITY_FIRE_WEAPON, level) {
 
-    private constructor() : this(Coord(0, 0), 0f, ProjectileType.ERROR, MovingObjectReference(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0))
+    private constructor() : this(
+        Coord(0, 0),
+        0f,
+        ProjectileType.ERROR,
+        MovingObjectReference(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0),
+        LevelManager.EMPTY_LEVEL
+    )
 
     override val playersToSendTo: Set<Player>?
         get() = null
@@ -79,7 +87,7 @@ class EntityFireWeapon(
     override fun cancelActGhost() {
     }
 
-    override fun equivalent(other: GameUpdate): Boolean {
+    override fun equivalent(other: LevelUpdate): Boolean {
         if (other !is EntityFireWeapon) {
             return false
         }

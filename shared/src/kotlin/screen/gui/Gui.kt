@@ -11,7 +11,7 @@ import graphics.text.TextRenderParams
 import io.ControlBind
 import item.Inventory
 import level.LevelInfo
-import level.LevelObject
+import level.PhysicalLevelObject
 import main.PowerworksDelegates
 import main.height
 import main.toColor
@@ -671,7 +671,7 @@ abstract class GuiElement(parent: GuiElement?) {
 
         fun levelView(
             placement: Placement = currentDefaultPlacement,
-            camera: LevelObject,
+            camera: PhysicalLevelObject,
             block: Context.() -> Unit = {}
         ) =
             ElementLevelView(inElement, camera).apply {

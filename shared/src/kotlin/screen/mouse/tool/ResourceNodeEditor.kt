@@ -5,11 +5,11 @@ import io.ControlEvent
 import io.ControlEventType
 import level.LevelManager
 import level.getResourceNodesAt
-import resource.ResourceNode
+import resource.ResourceNodeOld
 
 object ResourceNodeEditor : Tool(Control.EDIT_RESOURCE_NODE) {
 
-    var selectedNodes = setOf<ResourceNode>()
+    var selectedNodes = setOf<ResourceNodeOld>()
 
     init {
         activationPredicate = {

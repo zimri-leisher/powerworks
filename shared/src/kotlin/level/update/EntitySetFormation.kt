@@ -1,5 +1,6 @@
 package level.update
 
+import level.Level
 import level.LevelManager
 import level.LevelPosition
 import level.entity.Entity
@@ -12,19 +13,19 @@ import serialization.Id
  * A level update for setting the formation positions of a group of entities.
  */
 class EntitySetFormation(
-        /**
-         * A map of references to entities and their positions in the formation.
-         */
-        @Id(2)
-        val positions: Map<MovingObjectReference, LevelPosition>,
-        /**
-         * The center of the formation.
-         */
-        @Id(3)
-        val center: LevelPosition
-) : GameUpdate(LevelUpdateType.ENTITY_SET_FORMATION) {
+    /**
+     * A map of references to entities and their positions in the formation.
+     */
+    @Id(2)
+    val positions: Map<MovingObjectReference, LevelPosition>,
+    /**
+     * The center of the formation.
+     */
+    @Id(3)
+    val center: LevelPosition, level: Level
+) : LevelUpdate(LevelUpdateType.ENTITY_SET_FORMATION, level) {
 
-    private constructor() : this(mapOf(), LevelPosition(0, 0, LevelManager.EMPTY_LEVEL))
+    private constructor() : this(mapOf(), LevelPosition(0, 0, LevelManager.EMPTY_LEVEL), LevelManager.EMPTY_LEVEL)
 
     override val playersToSendTo: Set<Player>?
         get() = null
@@ -45,7 +46,7 @@ class EntitySetFormation(
     }
 
     override fun act() {
-        if(positions.isEmpty()) {
+        if (positions.isEmpty()) {
             return
         }
         val group = (positions.keys.first().value!! as Entity).group!!
@@ -59,7 +60,7 @@ class EntitySetFormation(
     override fun cancelActGhost() {
     }
 
-    override fun equivalent(other: GameUpdate): Boolean {
+    override fun equivalent(other: LevelUpdate): Boolean {
         if (other !is EntitySetFormation) {
             return false
         }
@@ -68,11 +69,11 @@ class EntitySetFormation(
             return false
         }
         if (other.positions.any { (key, value) ->
-                    key.value == null ||
-                            positions.none { (key2, value2) ->
-                                key.value !== key2.value && value != value2
-                            }
-                }) {
+                key.value == null ||
+                        positions.none { (key2, value2) ->
+                            key.value !== key2.value && value != value2
+                        }
+            }) {
             return false
         }
 

@@ -30,7 +30,7 @@ class Inventory(
     override var totalQuantity = 0
         private set
 
-    override fun add(resources: ResourceList, from: ResourceNode?, checkIfAble: Boolean): Boolean {
+    override fun add(resources: ResourceList, from: ResourceNodeOld?, checkIfAble: Boolean): Boolean {
         if (checkIfAble)
             if (!canAdd(resources))
                 return false
@@ -106,7 +106,7 @@ class Inventory(
         return possible
     }
 
-    override fun remove(resources: ResourceList, to: ResourceNode?, checkIfAble: Boolean): Boolean {
+    override fun remove(resources: ResourceList, to: ResourceNodeOld?, checkIfAble: Boolean): Boolean {
         if (checkIfAble)
             if (!canRemove(resources))
                 return false

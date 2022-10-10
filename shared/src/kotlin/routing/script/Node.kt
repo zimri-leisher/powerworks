@@ -1,13 +1,12 @@
 package routing.script
 
 import resource.ResourceNode
-import resource.ResourceNode2
 import resource.ResourceType
 import serialization.*
 
 sealed class Node<R>(
         val token: Token) {
-    abstract fun visit(context: ResourceNode2): R
+    abstract fun visit(context: ResourceNode): R
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -27,7 +26,7 @@ sealed class Node<R>(
 }
 
 sealed class Literal<R>(token: Token, val value: R) : Node<R>(token) {
-    override fun visit(context: ResourceNode2): R {
+    override fun visit(context: ResourceNode): R {
         return value
     }
 
@@ -63,13 +62,13 @@ class ResourceTypeListLiteral(token: Token) : Literal<List<ResourceType>>(token,
 sealed class Statement<R>(token: Token) : Node<R>(token)
 
 class TotalQuantity(token: Token) : Statement<Int>(token) {
-    override fun visit(context: ResourceNode2): Int {
+    override fun visit(context: ResourceNode): Int {
         return context.container.totalQuantity + context.container.expected.totalQuantity
     }
 }
 
 class TotalNetworkQuantity(token: Token) : Statement<Int>(token) {
-    override fun visit(context: ResourceNode2): Int {
+    override fun visit(context: ResourceNode): Int {
         return 0 //context.network.totalQuantity
     }
 }
@@ -101,14 +100,14 @@ sealed class UnaryOperator<P, R>(token: Token, val arg: Node<P>) : Node<R>(token
 }
 
 class Not(token: Token, arg: Node<Boolean>) : UnaryOperator<Boolean, Boolean>(token, arg) {
-    override fun visit(context: ResourceNode2): Boolean {
+    override fun visit(context: ResourceNode): Boolean {
         return !arg.visit(context)
     }
 
 }
 
 class QuantityOf(token: Token, arg: Node<ResourceType>) : UnaryOperator<ResourceType, Int>(token, arg) {
-    override fun visit(context: ResourceNode2): Int {
+    override fun visit(context: ResourceNode): Int {
         val type = arg.visit(context)
         return context.container.getQuantity(type) + context.container.expected[type]
     }
@@ -116,7 +115,7 @@ class QuantityOf(token: Token, arg: Node<ResourceType>) : UnaryOperator<Resource
 }
 
 class NetworkQuantityOf(token: Token, arg: Node<ResourceType>) : UnaryOperator<ResourceType, Int>(token, arg) {
-    override fun visit(context: ResourceNode2): Int {
+    override fun visit(context: ResourceNode): Int {
         return 0 //context.network.getQuantity(arg.visit(context))
     }
 }
@@ -148,7 +147,7 @@ sealed class BinaryOperator<P1, P2, R>(token: Token, val left: Node<P1>, val rig
 }
 
 class Implies(token: Token, left: Node<Boolean>, right: Node<Boolean>) : BinaryOperator<Boolean, Boolean, Boolean>(token, left, right) {
-    override fun visit(context: ResourceNode2): Boolean {
+    override fun visit(context: ResourceNode): Boolean {
         val leftValue = left.visit(context)
         val rightValue = right.visit(context)
         return !leftValue || (leftValue && rightValue)
@@ -156,7 +155,7 @@ class Implies(token: Token, left: Node<Boolean>, right: Node<Boolean>) : BinaryO
 }
 
 class IfAndOnlyIf(token: Token, left: Node<Boolean>, right: Node<Boolean>) : BinaryOperator<Boolean, Boolean, Boolean>(token, left, right) {
-    override fun visit(context: ResourceNode2): Boolean {
+    override fun visit(context: ResourceNode): Boolean {
         val leftValue = left.visit(context)
         val rightValue = right.visit(context)
         return leftValue == rightValue
@@ -165,7 +164,7 @@ class IfAndOnlyIf(token: Token, left: Node<Boolean>, right: Node<Boolean>) : Bin
 }
 
 class ExclusiveOr(token: Token, left: Node<Boolean>, right: Node<Boolean>) : BinaryOperator<Boolean, Boolean, Boolean>(token, left, right) {
-    override fun visit(context: ResourceNode2): Boolean {
+    override fun visit(context: ResourceNode): Boolean {
         val leftValue = left.visit(context)
         val rightValue = right.visit(context)
         return leftValue != rightValue
@@ -174,7 +173,7 @@ class ExclusiveOr(token: Token, left: Node<Boolean>, right: Node<Boolean>) : Bin
 }
 
 class Or(token: Token, left: Node<Boolean>, right: Node<Boolean>) : BinaryOperator<Boolean, Boolean, Boolean>(token, left, right) {
-    override fun visit(context: ResourceNode2): Boolean {
+    override fun visit(context: ResourceNode): Boolean {
         val leftValue = left.visit(context)
         val rightValue = right.visit(context)
         return leftValue || rightValue
@@ -182,7 +181,7 @@ class Or(token: Token, left: Node<Boolean>, right: Node<Boolean>) : BinaryOperat
 }
 
 class And(token: Token, left: Node<Boolean>, right: Node<Boolean>) : BinaryOperator<Boolean, Boolean, Boolean>(token, left, right) {
-    override fun visit(context: ResourceNode2): Boolean {
+    override fun visit(context: ResourceNode): Boolean {
         val leftValue = left.visit(context)
         val rightValue = right.visit(context)
         return leftValue && rightValue
@@ -190,7 +189,7 @@ class And(token: Token, left: Node<Boolean>, right: Node<Boolean>) : BinaryOpera
 }
 
 class Plus(token: Token, left: Node<Number>, right: Node<Number>) : BinaryOperator<Number, Number, Number>(token, left, right) {
-    override fun visit(context: ResourceNode2): Number {
+    override fun visit(context: ResourceNode): Number {
         val leftValue = left.visit(context)
         val rightValue = right.visit(context)
         if (leftValue is Int && rightValue is Int) {
@@ -201,7 +200,7 @@ class Plus(token: Token, left: Node<Number>, right: Node<Number>) : BinaryOperat
 }
 
 class Minus(token: Token, left: Node<Number>, right: Node<Number>) : BinaryOperator<Number, Number, Number>(token, left, right) {
-    override fun visit(context: ResourceNode2): Number {
+    override fun visit(context: ResourceNode): Number {
         val leftValue = left.visit(context)
         val rightValue = right.visit(context)
         if (leftValue is Int && rightValue is Int) {
@@ -212,7 +211,7 @@ class Minus(token: Token, left: Node<Number>, right: Node<Number>) : BinaryOpera
 }
 
 class Multiply(token: Token, left: Node<Number>, right: Node<Number>) : BinaryOperator<Number, Number, Number>(token, left, right) {
-    override fun visit(context: ResourceNode2): Number {
+    override fun visit(context: ResourceNode): Number {
         val leftValue = left.visit(context)
         val rightValue = right.visit(context)
         if (leftValue is Int && rightValue is Int) {
@@ -223,7 +222,7 @@ class Multiply(token: Token, left: Node<Number>, right: Node<Number>) : BinaryOp
 }
 
 class Divide(token: Token, left: Node<Number>, right: Node<Number>) : BinaryOperator<Number, Number, Number>(token, left, right) {
-    override fun visit(context: ResourceNode2): Number {
+    override fun visit(context: ResourceNode): Number {
         val leftValue = left.visit(context)
         val rightValue = right.visit(context)
         if (leftValue is Int && rightValue is Int) {
@@ -234,7 +233,7 @@ class Divide(token: Token, left: Node<Number>, right: Node<Number>) : BinaryOper
 }
 
 class GreaterThan(token: Token, left: Node<Number>, right: Node<Number>) : BinaryOperator<Number, Number, Boolean>(token, left, right) {
-    override fun visit(context: ResourceNode2): Boolean {
+    override fun visit(context: ResourceNode): Boolean {
         val leftValue = left.visit(context)
         val rightValue = right.visit(context)
         if (leftValue is Int && rightValue is Int) {
@@ -245,7 +244,7 @@ class GreaterThan(token: Token, left: Node<Number>, right: Node<Number>) : Binar
 }
 
 class GreaterThanOrEqual(token: Token, left: Node<Number>, right: Node<Number>) : BinaryOperator<Number, Number, Boolean>(token, left, right) {
-    override fun visit(context: ResourceNode2): Boolean {
+    override fun visit(context: ResourceNode): Boolean {
         val leftValue = left.visit(context)
         val rightValue = right.visit(context)
         if (leftValue is Int && rightValue is Int) {
@@ -256,7 +255,7 @@ class GreaterThanOrEqual(token: Token, left: Node<Number>, right: Node<Number>) 
 }
 
 class LessThan(token: Token, left: Node<Number>, right: Node<Number>) : BinaryOperator<Number, Number, Boolean>(token, left, right) {
-    override fun visit(context: ResourceNode2): Boolean {
+    override fun visit(context: ResourceNode): Boolean {
         val leftValue = left.visit(context)
         val rightValue = right.visit(context)
         if (leftValue is Int && rightValue is Int) {
@@ -267,7 +266,7 @@ class LessThan(token: Token, left: Node<Number>, right: Node<Number>) : BinaryOp
 }
 
 class LessThanOrEqual(token: Token, left: Node<Number>, right: Node<Number>) : BinaryOperator<Number, Number, Boolean>(token, left, right) {
-    override fun visit(context: ResourceNode2): Boolean {
+    override fun visit(context: ResourceNode): Boolean {
         val leftValue = left.visit(context)
         val rightValue = right.visit(context)
         if (leftValue is Int && rightValue is Int) {
@@ -278,7 +277,7 @@ class LessThanOrEqual(token: Token, left: Node<Number>, right: Node<Number>) : B
 }
 
 class Equal(token: Token, left: Node<Any>, right: Node<Any>) : BinaryOperator<Any, Any, Boolean>(token, left, right) {
-    override fun visit(context: ResourceNode2): Boolean {
+    override fun visit(context: ResourceNode): Boolean {
         return left.visit(context) == right.visit(context)
     }
 }

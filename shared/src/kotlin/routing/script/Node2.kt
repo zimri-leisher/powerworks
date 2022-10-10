@@ -1,13 +1,13 @@
 package routing.script
 
-import resource.ResourceNode2
+import resource.ResourceNode
 
 sealed class Node2(val type: Type<*>) {
 
-    abstract fun eval(context: ResourceNode2): Any?
+    abstract fun eval(context: ResourceNode): Any?
 
     object Error : Node2(Type.None) {
-        override fun eval(context: ResourceNode2): Any {
+        override fun eval(context: ResourceNode): Any {
             return Unit
         }
     }
@@ -15,20 +15,20 @@ sealed class Node2(val type: Type<*>) {
     sealed class OpUnary(val arg: Node2, type: Type<*>) : Node2(type)
 
     class Not(arg: Node2) : OpUnary(arg, Type.Boolean) {
-        override fun eval(context: ResourceNode2): Any {
+        override fun eval(context: ResourceNode): Any {
             return !(arg.eval(context) as Boolean)
         }
     }
 
     class Print(arg: Node2) : OpUnary(arg, Type.None) {
-        override fun eval(context: ResourceNode2): Any? {
+        override fun eval(context: ResourceNode): Any? {
             print(arg.eval(context))
             return Unit
         }
     }
 
     sealed class Literal<R>(val value: R, type: Type<R>) : Node2(type) {
-        override fun eval(context: ResourceNode2): Any? {
+        override fun eval(context: ResourceNode): Any? {
             return value
         }
 

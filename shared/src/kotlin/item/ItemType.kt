@@ -4,7 +4,9 @@ import fluid.MoltenOreFluidType
 import graphics.*
 import item.weapon.WeaponItemType
 import level.block.*
+import level.entity.Entity
 import level.entity.EntityType
+import level.entity.robot.Robot
 import level.entity.robot.RobotType
 import resource.ResourceCategory
 import resource.ResourceType
@@ -58,12 +60,13 @@ open class ItemType(initializer: ItemType.() -> Unit = {}) : ResourceType() {
 }
 
 open class EntityItemType(initializer: EntityItemType.() -> Unit = {}) : ItemType() {
-    var spawnedEntity: EntityType<*> = EntityType.ERROR
+    var spawnedEntity = EntityType.ERROR
+    var spawn: (Int, Int) -> Entity = {_, _ -> throw Exception("No spawn function defined for entity item type $this")}
+    // TODO need to figure out best solution: lambdas or functions that call default constructors with reflection?
 
     init {
         initializer()
         ALL.add(this)
-        spawnedEntity.itemForm = this
     }
 
     companion object {
@@ -78,7 +81,6 @@ class RobotItemType(initializer: RobotItemType.() -> Unit) : EntityItemType() {
         maxStack = 100
         initializer()
         ALL.add(this)
-        spawnedEntity.itemForm = this
     }
 
     companion object {
@@ -89,7 +91,7 @@ class RobotItemType(initializer: RobotItemType.() -> Unit) : EntityItemType() {
         val STANDARD = RobotItemType {
             name = "Standard Robot"
             icon = Texture(ImageCollection.ROBOT[0])
-            spawnedEntity = RobotType.STANDARD
+            spawn = { x, y -> Robot(RobotType.STANDARD, x, y) }
         }
     }
 }
@@ -100,7 +102,6 @@ class BlockItemType(initializer: BlockItemType.() -> Unit) : ItemType() {
     init {
         initializer()
         ALL.add(this)
-        placedBlock.itemForm = this
     }
 
     companion object {

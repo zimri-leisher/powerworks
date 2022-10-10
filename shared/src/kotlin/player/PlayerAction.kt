@@ -25,10 +25,23 @@ sealed class PlayerAction(
 
     /**
      * Takes the action this [PlayerAction] represents. Implementations of this method have no responsibility to
-     * communicate actions over the network, all of that should be handled in [GameUpdate] instances
+     * communicate actions over the network, all of that should be handled in [LevelUpdate] instances
      * @return `true` if the action was successful, `false` otherwise
      */
-    abstract fun getUpdates(): List<GameUpdate>
+    abstract fun getUpdates(): List<LevelUpdate>
+
+    /**
+     * Visually fakes the action that would be taken if [act] were called. Implementations of this method should make no
+     * change to the game state. This is only so that there is instantaneous client visual feedback
+     */
+    fun actGhost() {
+        getUpdates().forEach { it.actGhost() }
+    }
+
+    /**
+     * Cancel the fake action taken by [actGhost]
+     */
+    abstract fun cancelActGhost()
 }
 
 class ActionError : PlayerAction(Player(User(UUID.randomUUID(), ""), UUID.randomUUID(), UUID.randomUUID())) {
@@ -37,7 +50,7 @@ class ActionError : PlayerAction(Player(User(UUID.randomUUID(), ""), UUID.random
         return false
     }
 
-    override fun getUpdates() = emptyList<GameUpdate>()
+    override fun getUpdates() = emptyList<LevelUpdate>()
 
 }
 
@@ -99,8 +112,8 @@ class ActionTransferResourcesBetweenLevelObjects(
 
     private constructor() : this(
         Player(User(UUID.randomUUID(), ""), UUID.randomUUID(), UUID.randomUUID()),
-        GhostLevelObjectReference(GhostLevelObject(LevelObjectType.ERROR, 0, 0, 0)), UUID.randomUUID(),
-        GhostLevelObjectReference(GhostLevelObject(LevelObjectType.ERROR, 0, 0, 0)), UUID.randomUUID(), resourceListOf()
+        GhostLevelObjectReference(GhostLevelObject(PhysicalLevelObjectType.ERROR, 0, 0, 0)), UUID.randomUUID(),
+        GhostLevelObjectReference(GhostLevelObject(PhysicalLevelObjectType.ERROR, 0, 0, 0)), UUID.randomUUID(), resourceListOf()
     )
 
     override fun verify(): Boolean {
@@ -245,13 +258,13 @@ class ActionFarseekerBlockSetLevel(
 }
 
 /**
- * Places a [LevelObject] of the given [levelObjType] at the given [x], [y] and with the given [rotation] in the
+ * Places a [PhysicalLevelObject] of the given [levelObjType] at the given [x], [y] and with the given [rotation] in the
  * given [level].
  */
 class ActionLevelObjectPlace(
     owner: Player,
     @Id(2)
-    val levelObjType: LevelObjectType<*>,
+    val levelObjType: PhysicalLevelObjectType<*>,
     @Id(3)
     val x: Int,
     @Id(4)
@@ -266,7 +279,7 @@ class ActionLevelObjectPlace(
 
     private constructor() : this(
         Player(User(UUID.randomUUID(), ""), UUID.randomUUID(), UUID.randomUUID()),
-        LevelObjectType.ERROR,
+        PhysicalLevelObjectType.ERROR,
         0,
         0,
         0,
@@ -310,7 +323,7 @@ class ActionLevelObjectPlace(
 }
 
 /**
- * Removes the [LevelObject]s specified by the given [references] from their respective [Level]s, and adds their item forms,
+ * Removes the [PhysicalLevelObject]s specified by the given [references] from their respective [Level]s, and adds their item forms,
  * if they exist, to the [owner]'s brain robot inventory
  */
 class ActionLevelObjectRemove(

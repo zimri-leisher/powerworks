@@ -8,17 +8,14 @@ import network.LevelObjectReference
 import network.User
 import serialization.Id
 
-class BrainRobot(x: Int, y: Int, rotation: Int,
-                 @Id(28)
-                 var user: User) : Robot(RobotType.BRAIN, x, y, rotation) {
+class BrainRobot(
+    x: Int, y: Int,
+    @Id(28)
+    var user: User
+) : Robot(RobotType.BRAIN, x, y) {
 
     @Id(29)
     val inventory = Inventory(8, 3)
-
-    init {
-//        inventory.attachedLevelObject = this
-        containers = listOf(inventory)
-    }
 
     override fun render() {
         super.render()
