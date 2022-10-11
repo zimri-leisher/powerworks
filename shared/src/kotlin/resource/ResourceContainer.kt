@@ -8,7 +8,9 @@ import java.util.*
 
 abstract class ResourceContainer : LevelObject(LevelObjectType.RESOURCE_CONTAINER) {
 
-    // TODO make resource containers just resource lists with a capacity total max
+    // todo we want a "constrain" function
+    // which takes a resource order and constrains it to what this container can perform
+    // todo interface that has a constrain function? ResourceHandler??
 
     /**
      * Mutator methods should send appropriate calls to these
@@ -30,6 +32,8 @@ abstract class ResourceContainer : LevelObject(LevelObjectType.RESOURCE_CONTAINE
      * @return true if resources were added
      */
     fun add(resource: ResourceType, quantity: Int = 1) = add(resourceListOf(resource to quantity))
+
+    fun add(stack: ResourceStack) = add(resourceListOf(stack))
 
     /**
      * Adds all the resources in the [resources] list to this container, and notifies listeners of this event
@@ -79,14 +83,14 @@ abstract class ResourceContainer : LevelObject(LevelObjectType.RESOURCE_CONTAINE
     fun remove(resource: ResourceType, quantity: Int = 1) = remove(resourceListOf(resource to quantity))
 
     /**
-     * Removes the [list] from this container, and notifies listeners of this event
+     * Removes the [resources] from this container, and notifies listeners of this event
      * @param checkIfAble whether or not to check with contains, isRightType and removalRule. Set to false if you already know there are sufficient amounts,
      * the resource is valid and it matches the removal rule. This function is unsafe when this parameter is false, meaning there are no guarantees as to how it will work
      * given unexpected parameters
      * @param to the node that is removing from this, null if none
      * @return true if resources were removed
      */
-    abstract fun remove(list: ResourceList): Boolean
+    abstract fun remove(resources: ResourceList): Boolean
 
     /**
      * Removes all resources from this container
@@ -100,7 +104,7 @@ abstract class ResourceContainer : LevelObject(LevelObjectType.RESOURCE_CONTAINE
      */
     abstract fun copy(): ResourceContainer
 
-    abstract fun getQuantity(resource: ResourceType): Int
+    abstract fun getQuantity(type: ResourceType): Int
 
     abstract fun toResourceList(): ResourceList
 

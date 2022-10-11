@@ -16,7 +16,7 @@ class SourceContainer : ResourceContainer() {
         return list
     }
 
-    override fun remove(list: ResourceList): Boolean {
+    override fun remove(resources: ResourceList): Boolean {
         return true
     }
 
@@ -27,7 +27,7 @@ class SourceContainer : ResourceContainer() {
         return this
     }
 
-    override fun getQuantity(resource: ResourceType): Int {
+    override fun getQuantity(type: ResourceType): Int {
         throw Exception("Cannot get type of resources in a source container")
     }
 

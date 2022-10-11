@@ -21,34 +21,11 @@ abstract class LevelObjectReference(
     val objectId: UUID
 ) : Reference<LevelObject>()
 
-class ResourceNodeReference(
-    @Id(1)
-    val xTile: Int,
-    @Id(2)
-    val yTile: Int,
-    @Id(3)
-    val level: Level,
-    @Id(4)
-    val id: UUID
-) : Reference<ResourceNodeOld>() {
-
-    constructor(node: ResourceNodeOld) : this(node.xTile, node.yTile, node.level, node.id) {
-        value = node
-    }
-
-    private constructor() : this(0, 0, LevelManager.EMPTY_LEVEL, UUID.randomUUID())
-
-    override fun resolve(): ResourceNodeOld? {
-        val nodes = level.getResourceNodesAt(xTile, yTile)
-        return nodes.firstOrNull { it.id == id }
-    }
-}
-
 class ResourceNetworkReference(
     level: Level,
     objectId: UUID
 ) : LevelObjectReference(level, objectId) {
-    constructor(obj: ResourceNetwork) : this(obj.level, obj.id)
+    constructor(obj: ResourceNetwork<*>) : this(obj.level, obj.id)
 
     private constructor() : this(LevelManager.EMPTY_LEVEL, UUID.randomUUID())
 

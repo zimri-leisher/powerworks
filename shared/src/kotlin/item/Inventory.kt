@@ -8,34 +8,22 @@ class Inventory(
     @Id(11)
     val width: Int,
     @Id(7)
-    val height: Int,
-    @Id(8)
-    private val items: Array<Item?> = arrayOfNulls(width * height)
-) : ResourceContainer(ResourceCategory.ITEM) {
+    val height: Int
+) : ResourceContainer() {
 
-    private constructor() : this(0, 0, arrayOf())
+    private constructor() : this(0, 0)
 
-    val full: Boolean
-        get() {
-            if (items[items.lastIndex] != null) {
-                return items.any { it!!.quantity != it.type.maxStack }
-            }
-            return false
-        }
+    val size get() = width * height
 
-    @Id(9)
-    override val expected = mutableResourceListOf()
+    val resources = mutableResourceListOf()
 
     @Id(10)
     override var totalQuantity = 0
         private set
 
-    override fun add(resources: ResourceList, from: ResourceNodeOld?, checkIfAble: Boolean): Boolean {
-        if (checkIfAble)
-            if (!canAdd(resources))
-                return false
-
-        cancelExpectation(resources)
+    override fun add(resources: ResourceList): Boolean {
+        if (!canAdd(resources))
+            return false
 
         list@ for ((resource, quantity) in resources) {
             resource as ItemType
@@ -70,12 +58,6 @@ class Inventory(
         return true
     }
 
-    override fun getQuantity(resource: ResourceType) = items.filter { it?.type == resource }.sumOf { it?.quantity ?: 0 }
-
-    fun add(i: Item): Boolean {
-        return add(i.type, i.quantity)
-    }
-
     override fun mostPossibleToAdd(list: ResourceList): ResourceList {
         val possible = mutableResourceListOf()
         var extraSlots = items.count { it == null }
@@ -106,10 +88,9 @@ class Inventory(
         return possible
     }
 
-    override fun remove(resources: ResourceList, to: ResourceNodeOld?, checkIfAble: Boolean): Boolean {
-        if (checkIfAble)
-            if (!canRemove(resources))
-                return false
+    override fun remove(resources: ResourceList): Boolean {
+        if (!canRemove(resources))
+            return false
         list@ for ((resource, quantity) in resources) {
             var amountLeftToRemove = quantity
             for (i in items.indices.reversed()) {
@@ -132,10 +113,6 @@ class Inventory(
         return true
     }
 
-    fun remove(i: Item): Boolean {
-        return remove(i.type, i.quantity)
-    }
-
     override fun mostPossibleToRemove(list: ResourceList): ResourceList {
         val possible = mutableResourceListOf()
         for ((type, quantity) in list) {
@@ -145,67 +122,24 @@ class Inventory(
         return possible
     }
 
-    override fun toResourceList(): ResourceList {
-        val map = mutableMapOf<ResourceType, Int>()
-        for (item in items) {
-            if (item != null) {
-                if (item.type in map) {
-                    val newQ = map.get(item.type)!! + item.quantity
-                    map.replace(item.type, newQ)
-                } else {
-                    map.put(item.type, item.quantity)
-                }
-            }
-        }
-        return ResourceList(map)
-    }
+    override fun getQuantity(type: ResourceType) = resources[type]
 
-    /**
-     * Inclusive, goes to the end of items from this index
-     */
-    private fun shiftRight(index: Int, num: Int): Int {
-        var count = 0
-        // Don't worry about out of bounds, we assume that we've already checked for space
-        while (count < num) {
-            for (i in items.lastIndex downTo (index + 1)) {
-                items[i] = items[i - 1]
-            }
-            count++
-        }
-        return count
-    }
-
-    /**
-     * Inclusive, goes to the end of items from this index
-     */
-    private fun shiftLeft(index: Int, num: Int): Int {
-        var count = 0
-        // Don't worry about out of bounds, we assume that we've already checked for space
-        while (count < num) {
-            for (i in index until (items.lastIndex - 1)) {
-                items[i] = items[i + 1]
-            }
-            count++
-        }
-        items[items.lastIndex - 1] = null
-        return count
-    }
+    override fun toResourceList() = resources
 
     override fun clear() {
-        for (i in items.indices) {
-            items[i] = null
-        }
+        resources.clear()
         listeners.forEach { it.onContainerClear(this) }
     }
 
     override fun copy(): Inventory {
-        val inv = Inventory(width, height, items.copyOf())
+        val inv = Inventory(width, height)
+        inv.resources.putAll(resources)
         return inv
     }
 
-    operator fun iterator() = items.iterator()
+    operator fun iterator() = resources.iterator()
 
-    operator fun get(i: Int) = items[i]
+    operator fun get(i: Int):
 
     operator fun set(i: Int, v: Item?) {
         if (items[i] != null)
