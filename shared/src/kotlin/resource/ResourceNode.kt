@@ -4,10 +4,6 @@ import level.*
 import network.LevelObjectReference
 import network.ResourceNode2Reference
 
-interface Test : PotentialResourceNetworkVertex {
-    val t: Int
-}
-
 // handles transactions for a resource container
 // should be the way that they have physicality
 // should be the way that they filter what resources can be allowed in

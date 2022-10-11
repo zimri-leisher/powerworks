@@ -4,7 +4,6 @@ import graphics.Renderer
 import graphics.TextureRenderParams
 import level.*
 import level.pipe.PipeBlock
-import level.pipe.PipeState
 import main.toColor
 import misc.Geometry
 import misc.TileCoord
@@ -81,7 +80,7 @@ class PipeNetwork(level: Level) : ResourceNetwork<PipeNetworkVertex>(level, Reso
 
     fun updateNearConnections(vert: PipeNetworkVertex) {
         for (dir in 0..3) {
-            val nearVert = findNearVertex(vert, dir)
+            val nearVert = tryMakeNearVertex(vert, dir)
             if (vert.inLevel) {
                 vert.edges[dir] = nearVert
                 nearVert?.edges?.set(Geometry.getOppositeAngle(dir), vert)
@@ -97,7 +96,8 @@ class PipeNetwork(level: Level) : ResourceNetwork<PipeNetworkVertex>(level, Reso
     fun updateFarConnections(vert: PipeNetworkVertex) {
         if (vert.inLevel && vert.validFarVertex) {
             for (dir in 0..3) {
-                vert.farEdges[dir] = findFarVertex(vert, dir)
+                val potentialVert = tryMakeFarVertex(vert, dir)
+                vert.farEdges[dir] = potentialVert
                 vert.farEdges[dir]?.farEdges?.set(Geometry.getOppositeAngle(dir), vert)
             }
         } else if (vert.inLevel) {
@@ -114,7 +114,7 @@ class PipeNetwork(level: Level) : ResourceNetwork<PipeNetworkVertex>(level, Reso
             }
         } else {
             for (dir in 0..3) {
-                val farVert = findFarVertex(vert, dir)
+                val farVert = tryMakeFarVertex(vert, dir)
                 farVert?.farEdges?.set(Geometry.getOppositeAngle(dir), null)
                 vert.farEdges[dir] = null
             }
@@ -124,8 +124,8 @@ class PipeNetwork(level: Level) : ResourceNetwork<PipeNetworkVertex>(level, Reso
     private fun updateFarConnectionsRecurse(vert: PipeNetworkVertex) {
         updateFarConnections(vert)
         for (dir in 0..3) {
-            val farVert = findFarVertex(vert, dir)
-            val nearVert = findNearVertex(vert, dir)
+            val farVert = tryMakeFarVertex(vert, dir)
+            val nearVert = tryMakeNearVertex(vert, dir)
             if (farVert == nearVert) {
                 farVert?.let { updateFarConnections(it) }
             } else {
@@ -143,11 +143,11 @@ class PipeNetwork(level: Level) : ResourceNetwork<PipeNetworkVertex>(level, Reso
     override fun trySplit(around: PipeNetworkVertex) {
         val found = Array<MutableSet<PipeNetworkVertex>?>(4) { null }
         for (dir in 0..3) {
-            val start = findNearVertex(around, dir)
+            val start = around.edges[dir]
             if (start != null) {
                 found[dir] = mutableSetOf()
                 bfs(start,
-                    getChildren = { it.edges },
+                    getChildren = { it.edges.toTypedArray() },
                     processVertex = {
                         found[dir]!!.add(it)
                     })
@@ -209,7 +209,7 @@ class PipeNetwork(level: Level) : ResourceNetwork<PipeNetworkVertex>(level, Reso
     private fun route(from: PipeNetworkVertex, to: PipeNetworkVertex): List<PipeNetworkVertex>? {
 
         fun h(src: PipeNetworkVertex): Double {
-            return Geometry.distance(src.xTile * 16, src.yTile * 16, to.x, to.y)
+            return Geometry.distance(src.xTile * 16, src.yTile * 16, to.xTile * 16, to.yTile * 16)
         }
 
         val start = PipeNetworkRoutingNode(from, null, h(from))
@@ -251,14 +251,22 @@ class PipeNetwork(level: Level) : ResourceNetwork<PipeNetworkVertex>(level, Reso
         return null
     }
 
-    private fun findNearVertex(vert: PipeNetworkVertex, dir: Int): PipeNetworkVertex? {
+    private fun tryMakeNearVertex(vert: PipeNetworkVertex, dir: Int): PipeNetworkVertex? {
+        return findPotentialNearVertex(vert, dir)?.let { makeVertex(it as PhysicalLevelObject) }
+    }
+
+    private fun findPotentialNearVertex(vert: PipeNetworkVertex, dir: Int): PotentialPipeNetworkVertex? {
         val x = vert.xTile + Geometry.getXSign(dir)
         val y = vert.yTile + Geometry.getYSign(dir)
         return level.getBlockAtTile(x, y) as? PipeBlock ?: level.getResourceNodeAt(x, y)
     }
 
+    private fun tryMakeFarVertex(vert: PipeNetworkVertex, dir: Int): PipeNetworkVertex? {
+        return findPotentialFarVertex(vert, dir)?.let { makeVertex(it as PhysicalLevelObject) }
+    }
+
     // depends on adjacent vertices being set
-    private fun findFarVertex(vert: PipeNetworkVertex, dir: Int): PipeNetworkVertex? {
+    private fun findPotentialFarVertex(vert: PipeNetworkVertex, dir: Int): PotentialPipeNetworkVertex? {
         var x = vert.xTile
         var y = vert.yTile
         while (true) {
@@ -280,7 +288,7 @@ class PipeNetwork(level: Level) : ResourceNetwork<PipeNetworkVertex>(level, Reso
 
     private fun bfs(
         start: PipeNetworkVertex,
-        getChildren: (parent: PipeNetworkVertex) -> MutableList<PipeNetworkVertex?> = { it.farEdges },
+        getChildren: (parent: PipeNetworkVertex) -> Array<PipeNetworkVertex?> = { it.farEdges },
         processEdge: (parent: PipeNetworkVertex, child: PipeNetworkVertex) -> Unit = { _, _ -> },
         processVertex: (vert: PipeNetworkVertex) -> Unit = { }
     ) {
@@ -301,7 +309,7 @@ class PipeNetwork(level: Level) : ResourceNetwork<PipeNetworkVertex>(level, Reso
     }
 
     override fun render() {
-        val start = pipeVertices.firstOrNull { it.validFarVertex } ?: return
+        val start = vertices.firstOrNull { it.validFarVertex } ?: return
         val rand = Random(id.leastSignificantBits)
         val color = toColor(rand.nextInt(255), rand.nextInt(255), rand.nextInt(255))
         bfs(start, processEdge = { parent, child ->

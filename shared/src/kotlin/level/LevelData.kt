@@ -17,7 +17,7 @@ data class LevelData(
     @Id(3)
     val chunks: Array<Chunk>,
     @Id(5)
-    val resourceNetworks: MutableList<ResourceNetwork>,
+    val resourceNetworks: MutableList<ResourceNetwork<*>>,
     @Id(6)
     val resourceContainers: MutableList<ResourceContainer>,
     @Id(4)

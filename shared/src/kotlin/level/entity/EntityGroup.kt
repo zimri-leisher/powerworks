@@ -60,8 +60,8 @@ class EntityGroup(
 
     val center: Coord
         get() {
-            val averageX = entities.sumBy { it.x } / entities.size
-            val averageY = entities.sumBy { it.y } / entities.size
+            val averageX = entities.sumOf { it.x } / entities.size
+            val averageY = entities.sumOf { it.y } / entities.size
             return Coord(averageX, averageY)
         }
 
@@ -139,7 +139,8 @@ class EntityGroup(
         // what we're going to do to find out which entity should go to which point is:
         // recenter the formation around the center of the entity group
         // for each point, find the nearest entity and assign it to that
-        val formationCenter = Coord(formationPositions.sumBy { it.x } / formationPositions.size, formationPositions.sumBy { it.y } / formationPositions.size)
+        val formationCenter = Coord(formationPositions.sumOf { it.x } / formationPositions.size,
+            formationPositions.sumOf { it.y } / formationPositions.size)
         val groupCenter = this.center
 
         val remainingEntities = mutableListOf<Entity>()

@@ -14,56 +14,18 @@ import serialization.Reference
 import serialization.Serializer
 import java.util.*
 
-
-// TODO annotation that tells serializer to turn something into a reference
-sealed class NetworkReference<T> {
-    var value: T? = null
-
-    abstract fun resolve(): T?
-
-    override fun toString() = value.toString()
-}
-
-class ResourceNodeReference(
-    @Id(1)
-    val xTile: Int,
-    @Id(2)
-    val yTile: Int,
-    @Id(3)
-    val level: Level,
-    @Id(4)
-    val id: UUID
-) : NetworkReference<ResourceNodeOld>() {
-    constructor(node: ResourceNodeOld) : this(node.xTile, node.yTile, node.level, node.id) {
-        value = node
-    }
-
-    private constructor() : this(0, 0, LevelManager.EMPTY_LEVEL, UUID.randomUUID())
-
-    override fun resolve(): ResourceNodeOld? {
-        val nodes = level.getResourceNodesAt(xTile, yTile)
-        return nodes.firstOrNull { it.id == id }
-    }
-
-}
-
 abstract class LevelObjectReference(
     @Id(1)
     val level: Level,
     @Id(2)
     val objectId: UUID
-) : NetworkReference<LevelObject>() {
-
-    constructor(obj: LevelObject) : this(obj.level, obj.id) {
-        value = obj
-    }
-}
+) : Reference<LevelObject>()
 
 class ResourceNetworkReference(
     level: Level,
     objectId: UUID
 ) : LevelObjectReference(level, objectId) {
-    constructor(obj: ResourceNetwork) : this(obj.level, obj.id)
+    constructor(obj: ResourceNetwork<*>) : this(obj.level, obj.id)
 
     private constructor() : this(LevelManager.EMPTY_LEVEL, UUID.randomUUID())
 

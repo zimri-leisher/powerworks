@@ -11,11 +11,11 @@ class Input(inputStream: InputStream) : DataInputStream(inputStream) {
 
     private var nextReferenceId = 0
 
-    fun <R : Any> instantiate(type: Class<R>): R {
+    fun <R : Any> instantiate(type: Class<R>, useSerializer: Serializer<out Any>? = null): R {
         SerializerDebugger.writeln("-- Begin instantiating $type")
         SerializerDebugger.increaseDepth()
-        val registry = Registration.getSerializer(type)
-        val instance = SerializerDebugger.catchAndPrintIfSafe { registry.createStrategy.create(this) as R }
+        val serializer = useSerializer ?: Registration.getSerializer(type)
+        val instance = SerializerDebugger.catchAndPrintIfSafe { serializer.createStrategy.create(this) as R }
         SerializerDebugger.decreaseDepth()
         SerializerDebugger.writeln("-- End instantiating $type = $instance")
         return instance
@@ -67,7 +67,7 @@ class Input(inputStream: InputStream) : DataInputStream(inputStream) {
         return value
     }
 
-    fun readUnknown(): Any {
+    fun readUnknown(useSerializer: Serializer<out Any>? = null): Any {
         SerializerDebugger.writeln("-- Begin read of unknown non-null")
         SerializerDebugger.increaseDepth()
         val supposedClassId = readUnsignedShort()
@@ -85,10 +85,10 @@ class Input(inputStream: InputStream) : DataInputStream(inputStream) {
         val supposedClassType = Registration.getType(supposedClassId)
             ?: throw ReadException("Unregistered class id $supposedClassId encountered while trying to read value of unknown class")
         SerializerDebugger.writeln("Found class id $supposedClassId -> $supposedClassType")
-        return SerializerDebugger.catchAndPrintIfSafe { unsafeRead(supposedClassType) }
+        return SerializerDebugger.catchAndPrintIfSafe { unsafeRead(supposedClassType, useSerializer) }
     }
 
-    fun readUnknownNullable(): Any? {
+    fun readUnknownNullable(useSerializer: Serializer<out Any>? = null): Any? {
         SerializerDebugger.writeln("-- Begin read of unknown nullable")
         SerializerDebugger.increaseDepth()
         val supposedClassId = readUnsignedShort()
@@ -105,10 +105,10 @@ class Input(inputStream: InputStream) : DataInputStream(inputStream) {
         val supposedClassType = Registration.getType(supposedClassId)
             ?: throw ReadException("Unregistered class id $supposedClassId encountered while trying to read value of unknown class")
         SerializerDebugger.writeln("Found class id $supposedClassId -> $supposedClassType")
-        return SerializerDebugger.catchAndPrintIfSafe { unsafeRead(supposedClassType) }
+        return SerializerDebugger.catchAndPrintIfSafe { unsafeRead(supposedClassType, useSerializer) }
     }
 
-    fun <R> readNullable(type: Class<R>): R? {
+    fun <R> readNullable(type: Class<R>, useSerializer: Serializer<out Any>? = null): R? {
         SerializerDebugger.writeln("-- Begin read of potentially null $type")
         SerializerDebugger.increaseDepth()
         val actualType = makeTypeNice(type)
@@ -129,10 +129,10 @@ class Input(inputStream: InputStream) : DataInputStream(inputStream) {
             SerializerDebugger.writeln("-- End read of potentially null $type = $prim")
             return prim
         }
-        return SerializerDebugger.catchAndPrintIfSafe { unsafeRead(supposedClassType) as R }
+        return SerializerDebugger.catchAndPrintIfSafe { unsafeRead(supposedClassType, useSerializer) as R }
     }
 
-    fun <R> read(type: Class<R>): R {
+    fun <R> read(type: Class<R>, useSerializer: Serializer<out Any>? = null): R {
         SerializerDebugger.writeln("-- Begin read of non-null $type")
         SerializerDebugger.increaseDepth()
         val actualType = makeTypeNice(type)
@@ -151,7 +151,8 @@ class Input(inputStream: InputStream) : DataInputStream(inputStream) {
             SerializerDebugger.writeln("-- End read of non-null $type = $prim")
             return prim
         }
-        return SerializerDebugger.catchAndPrintIfSafe { unsafeRead(supposedClassType) as R }
+        val serializer = useSerializer ?: Registration.getSerializer(type)
+        return SerializerDebugger.catchAndPrintIfSafe { unsafeRead(supposedClassType, serializer) as R }
     }
 
     private fun makeTypeNice(type: Class<*>): Class<*> {
@@ -191,14 +192,14 @@ class Input(inputStream: InputStream) : DataInputStream(inputStream) {
     // thus we first give references to the inner objects, and then to the array instance
     // when writing, we give a reference id to the array first, and then its inner classes
 
-    private fun unsafeRead(type: Class<*>): Any {
+    private fun unsafeRead(type: Class<*>, useSerializer: Serializer<out Any>?): Any {
         SerializerDebugger.writeln("Reading non-primitive $type")
         // we want to reserve a reference id for the instance before we instantiate it, because in instantiation it could create
         // new references
         val referenceId = reserveReference()
-        val instance = instantiate(type)
+        val serializer = useSerializer ?: Registration.getSerializer(type)
+        val instance = instantiate(type, serializer)
         addReference(instance, referenceId)
-        val serializer = Registration.getSerializer(type)
         (serializer.readStrategy as ReadStrategy<Any>).read(instance, this)
         SerializerDebugger.decreaseDepth()
         SerializerDebugger.writeln("-- End read of $type = $instance")

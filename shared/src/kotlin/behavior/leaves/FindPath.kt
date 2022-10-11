@@ -115,8 +115,8 @@ class FindPath(parent: BehaviorTree, val goalVar: Variable, val pathDestVar: Var
                         Renderer.renderFilledRectangle(node.pos.xTile shl 4, node.pos.yTile shl 4, 16, 16, params = TextureRenderParams(color = toColor(r = 1.0f, g = 0.0f, b = 0.0f)))
                     }
                     for (node in openNodes!!) {
-                        val max = openNodes!!.maxBy { it.f }!!.f
-                        val min = openNodes!!.minBy { it.f }!!.f
+                        val max = openNodes!!.maxBy { it.f }.f
+                        val min = openNodes!!.minBy { it.f }.f
                         var hue = (node.f - min) / (max - min)
                         hue = 1 - floor(hue * 10) / 10
                         //Renderer.renderText(hue, node.pos.xTile shl 4, node.pos.yTile shl 4)

@@ -24,7 +24,7 @@ open class LevelObjectType<T : LevelObject>(initializer: LevelObjectType<T>.() -
             requiresUpdate = true
         }
 
-        val RESOURCE_NETWORK = LevelObjectType<ResourceNetwork> {
+        val RESOURCE_NETWORK = LevelObjectType<ResourceNetwork<*>> {
             requiresUpdate = true
         }
 

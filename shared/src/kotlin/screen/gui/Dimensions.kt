@@ -67,17 +67,19 @@ sealed class Dimensions {
             val dimensions = element.children.filter { it.placement is Placement.VerticalList && it.open }.map { gui.layout.getExactDimensions(it) }
             return if (dimensions.any { it is Unknown }) Unknown(
                 dimensions.maxByOrNull { it.width }?.width
-                    ?: 0, dimensions.sumBy { it.height + padding } - padding)
-            else Exact(dimensions.maxByOrNull { it.width }?.width ?: 0, dimensions.sumBy { it.height + padding } - padding)
+                    ?: 0, dimensions.sumOf { it.height + padding } - padding)
+            else Exact(
+                dimensions.maxByOrNull { it.width }?.width ?: 0,
+                dimensions.sumOf { it.height + padding } - padding)
         }
     }
 
     class HorizontalList(val padding: Int) : Dimensions() {
         override fun get(element: GuiElement, gui: Gui): Exact {
             val dimensions = element.children.filter { it.placement is Placement.HorizontalList && it.open }.map { gui.layout.getExactDimensions(it) }
-            return if (dimensions.any { it is Unknown }) Unknown(dimensions.sumBy { it.width + padding } - padding,
-                    dimensions.maxByOrNull { it.height }?.height ?: 0)
-            else Exact(dimensions.sumBy { it.width + padding } - padding, dimensions.maxByOrNull { it.height }?.height ?: 0)
+            return if (dimensions.any { it is Unknown }) Unknown(dimensions.sumOf { it.width + padding } - padding,
+                dimensions.maxByOrNull { it.height }?.height ?: 0)
+            else Exact(dimensions.sumOf { it.width + padding } - padding, dimensions.maxByOrNull { it.height }?.height ?: 0)
         }
     }
 

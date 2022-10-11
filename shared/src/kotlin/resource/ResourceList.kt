@@ -3,23 +3,40 @@ package resource
 import serialization.Id
 import java.lang.Integer.min
 
+typealias ResourceStack = Map.Entry<ResourceType, Int>
+
+fun stackOf(type: ResourceType, quantity: Int) = object : ResourceStack {
+    override val key get() = type
+    override val value get() = quantity
+}
+
 fun emptyResourceList() = EmptyResourceList
 
 fun resourceListOf(vararg pairs: Pair<ResourceType, Int>) = ResourceList(*pairs)
 
-fun Map<ResourceType, Int>.toResourceList() = ResourceList(this)
+fun resourceListOf(vararg entries: ResourceStack) = ResourceList(*entries)
+
+fun Map<ResourceType, Int>.toResourceList() = if (this is ResourceList) this else ResourceList(this)
+
+val ResourceStack.type get() = this.key
+val ResourceStack.quantity get() = this.value
 
 /**
  * A list of [ResourceType] - quantity pairs with some convenience methods
  */
 open class ResourceList(
     @Id(1) protected val resources: Map<ResourceType, Int> = mapOf()
-) : Map<ResourceType, Int> {
+) : Map<ResourceType, Int>, Set<ResourceStack> {
 
     constructor(vararg pairs: Pair<ResourceType, Int>) : this(pairs.toMap())
+    constructor(vararg entries: ResourceStack) : this(entries.associate { it.toPair() })
 
     override val size: Int
         get() = resources.size
+
+    override fun containsAll(elements: Collection<ResourceStack>) = elements.all { it in this }
+
+    override fun contains(element: ResourceStack) = element in entries
 
     @Id(2)
     open val totalQuantity = resources.values.sum()
@@ -79,6 +96,7 @@ open class ResourceList(
     operator fun get(index: Int) = resources.entries.toList()[index]
 
     override fun isEmpty() = resources.isEmpty()
+    override fun iterator() = entries.iterator()
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

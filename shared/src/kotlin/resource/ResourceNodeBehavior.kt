@@ -15,6 +15,7 @@ private fun <K, V> MutableMap<K, V>.copy(): MutableMap<K, V> {
     return map
 }
 
+/*
 /**
  * The input/output behavior of this node. This encompasses which resource types are allowed to be inputted/outputted, as
  * well as which resources types to actively send from this node to the resource network and to actively request be sent
@@ -204,3 +205,4 @@ class RoutingLanguageIORule(
         return statements.hashCode()
     }
 }
+*/

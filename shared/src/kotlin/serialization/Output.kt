@@ -48,7 +48,7 @@ class Output(outputStream: OutputStream) : DataOutputStream(outputStream) {
         SerializerDebugger.writeln("Written primitive")
     }
 
-    fun write(obj: Any?, useSerializer: Serializer<Any>? = null) {
+    fun write(obj: Any?, useSerializer: Serializer<out Any>? = null) {
         SerializerDebugger.writeln("-- Begin writing ${if (obj == null) null else obj::class.java} = $obj")
         SerializerDebugger.increaseDepth()
         if (obj == null) {
@@ -68,7 +68,7 @@ class Output(outputStream: OutputStream) : DataOutputStream(outputStream) {
         SerializerDebugger.writeln("-- End writing $niceType = $obj")
     }
 
-    private fun writeNonNullNonPrimitive(id: Int, niceType: Class<*>, obj: Any, serializer: Serializer<Any>) {
+    private fun writeNonNullNonPrimitive(id: Int, niceType: Class<*>, obj: Any, serializer: Serializer<out Any>) {
         val reference = references.get(obj)
         if (reference != null) {
             SerializerDebugger.writeln("(Object has been written before)")
@@ -79,7 +79,7 @@ class Output(outputStream: OutputStream) : DataOutputStream(outputStream) {
         }
         addReference(obj)
         writeShort(id)
-        serializer.writeStrategy.write(obj, this)
+        (serializer.writeStrategy as WriteStrategy<Any>).write(obj, this)
     }
 
     fun clearReferences() {

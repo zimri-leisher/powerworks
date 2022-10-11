@@ -56,21 +56,30 @@ abstract class Level(
      * the generation settings and other related things (see [LevelInfo] for more detail). Two levels with the same [info] should be identically generated
      */
     val info: LevelInfo
-) {
+) : Referencable<Level> {
 
+    @Id(1)
     val generator = info.levelType.getGenerator(this)
 
-    var data: LevelData by PowerworksDelegates.lateinitVal()
+    @Id(2)
+    lateinit var data: LevelData
 
+    @Id(3)
     val widthChunks = info.levelType.widthChunks
+    @Id(4)
     val heightChunks = info.levelType.heightChunks
 
+    @Id(5)
     val widthTiles = widthChunks shl CHUNK_TILE_EXP
+    @Id(6)
     val heightTiles = widthChunks shl CHUNK_TILE_EXP
 
+    @Id(7)
     val height = heightChunks shl CHUNK_EXP
+    @Id(8)
     val width = widthChunks shl CHUNK_EXP
 
+    @Id(9)
     var loaded = false
         set(value) {
             if (field != value) {
@@ -87,6 +96,7 @@ abstract class Level(
             }
         }
 
+    @Id(10)
     var initialized = false
         set(value) {
             if (field != value) {
@@ -97,6 +107,7 @@ abstract class Level(
             }
         }
 
+    @Id(11)
     var paused = false
         set(value) {
             if (field != value) {
@@ -105,6 +116,7 @@ abstract class Level(
             }
         }
 
+    @Id(12)
     var updatesCount = 0
 
     open fun initialize() {
@@ -292,28 +304,29 @@ abstract class Level(
         return result
     }
 
-}
-
-class LevelSerializer<R : Level> : Serializer<R>() {
-
-    // TODO change this to fully serialize the level, and just make everything else send it as @Reference
-
-    override val writeStrategy = object : WriteStrategy<R>(type) {
-        override fun write(obj: R, output: Output) {
-            output.write(obj.id)
-        }
+    override fun toReference(): Reference<Level> {
+        return LevelReference(this)
     }
 
-    override val createStrategy = object : CreateStrategy<R>(type) {
-        override fun create(input: Input): R {
-            val id = input.read(UUID::class.java)
-            val existingLevel = LevelManager.getLevelByIdOrNull(id)
-                ?: if (id == LevelManager.EMPTY_LEVEL.id) LevelManager.EMPTY_LEVEL else null
-            if (existingLevel == null) {
-                println("Unknown level $id")
-                return UnknownLevel(id) as R
-            }
-            return existingLevel as R
+}
+
+class NonexistentLevelException(message: String) : Exception(message)
+
+class LevelReference(val id: UUID) : Reference<Level>() {
+
+    constructor(level: Level) : this(level.id) {
+        value = level
+    }
+
+    constructor() : this(UUID.randomUUID())
+
+    override fun resolve(): Level? {
+        val existingLevel = LevelManager.getLevelByIdOrNull(id)
+            ?: if (id == LevelManager.EMPTY_LEVEL.id) LevelManager.EMPTY_LEVEL else null
+        if (existingLevel == null) {
+            println("Unknown level $id")
+            return null
         }
+        return existingLevel
     }
 }

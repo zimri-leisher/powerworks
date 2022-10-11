@@ -3,7 +3,7 @@ package serialization
 import kotlin.reflect.KClass
 
 /**
- * An annotation that tells [Serializer.Tagged] what id to give this field when reading and writing it. There are no
+ * An annotation that tells [TaggedSerializer] what id to give this field when reading and writing it. There are no
  * constraints on [id]
  */
 @Target(AnnotationTarget.FIELD)
