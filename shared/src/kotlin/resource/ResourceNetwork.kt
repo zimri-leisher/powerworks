@@ -28,15 +28,39 @@ abstract class ResourceNetwork<V : ResourceNetworkVertex<V>>(level: Level, val n
     // this should also be abstract enoguh for node-node connections
 
     val vertices = mutableSetOf<V>()
-
     val market = ResourceMarket(this)
+
     abstract val nodes: MutableList<ResourceNode>
 
     init {
         level.add(this)
     }
 
-    abstract fun getConnection(from: ResourceContainer, to: ResourceContainer): ResourceNodeConnection?
+    abstract fun getConnection(from: ResourceNode, to: ResourceNode): ResourceNodeConnection?
+
+    fun getBestConnection(
+        from: ResourceContainer,
+        to: ResourceContainer
+    ): ResourceNodeConnection? {
+        val toNodes = to.nodes
+        val fromNodes = from.nodes
+        // find the best (by cost) pairing
+        var minCost = Int.MAX_VALUE
+        var bestConnection: ResourceNodeConnection? = null
+        for (toNode in toNodes) {
+            for (fromNode in fromNodes) {
+                val connection = getConnection(fromNode, toNode)
+                if (connection != null) {
+                    if (connection.cost < minCost) {
+                        minCost = connection.cost
+                        bestConnection = connection
+                    }
+                }
+            }
+        }
+        return bestConnection
+    }
+
     protected abstract fun updateEdges(vert: V)
     abstract fun canBeVertex(obj: PhysicalLevelObject): Boolean
     abstract fun makeVertex(obj: PhysicalLevelObject): V
@@ -107,7 +131,6 @@ abstract class ResourceNetwork<V : ResourceNetworkVertex<V>>(level: Level, val n
     protected abstract fun trySplit(around: V)
 
     protected abstract fun splitOff(vertices: Collection<V>): ResourceNetwork<V>
-
 
     companion object {
 

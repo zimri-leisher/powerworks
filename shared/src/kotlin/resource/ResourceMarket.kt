@@ -21,69 +21,59 @@ enum class ResourceOrderPriority {
     DEMAND, REQUEST
 }
 
-data class ResourceOrder(val origin: ResourceContainer, val resources: ResourceBalance, val priority: ResourceOrderPriority)
+enum class ResourceOrderDirection {
+    IN, OUT
+}
 
-sealed class ResourceDistributor(val network: ResourceNetwork) {
-    abstract fun distribute(from: ResourceContainer, type: ResourceType, quantity: Int, destinations: Map<ResourceContainer, Int>): Map<ResourceNode, Int>
+data class ResourceOrder(
+    val type: ResourceType,
+    val quantity: Int,
+    val direction: ResourceOrderDirection,
+    val priority: ResourceOrderPriority
+)
 
-    class EqualizeContainers(network: ResourceNetwork) : ResourceDistributor(network) {
+sealed class ResourceDistributor(val network: ResourceNetwork<*>) {
 
-        val containersSentTo = mutableMapOf<ResourceType, List<ResourceContainer>>()
+    abstract fun distribute(
+        out: ResourceOrder,
+        inputs: Map<ResourceNode, ResourceOrder>,
+    ): Map<ResourceNode, ResourceOrder>
 
-        private fun getNodes(container: ResourceContainer, destinations: Map<ResourceNode, Int>): Set<ResourceNode> {
-            return destinations.filterKeys { it.container == container }.keys
-        }
+}
 
-        private fun getBestConnection(from: ResourceContainer, type: ResourceType, quantity: Int, to: ResourceContainer): ResourceNodeConnection? {
-            val potentialTrans = ResourceTransaction(from, to, resourceListOf(type to quantity))
-            val toNodes = to.nodes
-            val fromNodes = from.nodes
-            // find the best (by travel time) pairing
-            var minCost = Int.MAX_VALUE
-            var bestConnection: ResourceNodeConnection? = null
-            for(toNode in toNodes) {
-                for(fromNode in fromNodes) {
-                    val connection = network.getConnection(fromNode, toNode)
-                    if(connection != null) {
-                        val cost = connection.getExecutionCost(potentialTrans)
-                        if(cost < minCost) {
-                            minCost = cost
-                            bestConnection = connection
-                        }
-                    }
-                }
+class EqualizeContainers(network: ResourceNetwork<*>) : ResourceDistributor(network) {
+
+    val containersSentTo = mutableMapOf<ResourceType, List<ResourceContainer>>()
+
+    private fun getNodes(container: ResourceContainer, destinations: Map<ResourceNode, Int>): Set<ResourceNode> {
+        return destinations.filterKeys { it.container == container }.keys
+    }
+
+    override fun distribute(
+        out: ResourceOrder,
+        inputs: Map<ResourceNode, ResourceOrder>,
+    ): Map<ResourceNode, ResourceOrder> {
+        val filteredDests = destinations.filterValues { it < 0 }.toMutableMap()
+        // end distributions
+        val distribution = destinations.keys.associateWith { 0 }.toMutableMap()
+
+        // amount left undistributed
+        var remainingSupply = quantity
+        // the input should be negative to indicate demand, this makes it positive
+        val remainingDemand = filteredDests.mapValues { -it.value }.toMutableMap()
+
+        val destinationContainers = filteredDests.keys
+        val containersSentTo =
+            (containersSentTo[type] ?: listOf()).filter { it in destinationContainers }.toMutableList()
+        val containersNotSentTo = destinationContainers.filter { it !in containersSentTo }
+
+        for (container in containersNotSentTo) {
+            if (remainingSupply == 0 || remainingDemand.isEmpty()) {
+                return distribution
             }
-            return bestConnection
-        }
-
-        override fun distribute(
-            from: ResourceNode,
-            from: ResourceContainer,
-            type: ResourceType,
-            quantity: Int,
-            destinations: Map<ResourceContainer, Int>
-        ): Map<ResourceNode, Int> {
-            val filteredDests = destinations.filterValues { it < 0 }.toMutableMap()
-            // end distributions
-            val distribution = destinations.keys.associateWith { 0 }.toMutableMap()
-
-            // amount left undistributed
-            var remainingSupply = quantity
-            // the input should be negative to indicate demand, this makes it positive
-            val remainingDemand = filteredDests.mapValues { -it.value }.toMutableMap()
-
-            val destinationContainers = filteredDests.keys
-            val containersSentTo = (containersSentTo[type] ?: listOf()).filter { it in destinationContainers }.toMutableList()
-            val containersNotSentTo = destinationContainers.filter { it !in containersSentTo }
-
-            for(container in containersNotSentTo) {
-                if(remainingSupply == 0 || remainingDemand.isEmpty()) {
-                    return distribution
-                }
-                // give 1 to this container
-                remainingSupply--
-                remainingDemand[container] = remainingDemand[container] - 1
-            }
+            // give 1 to this container
+            remainingSupply--
+            remainingDemand[container] = remainingDemand[container] - 1
         }
     }
 }
@@ -293,6 +283,26 @@ class ResourceMarket(val network: ResourceNetwork) {
     }
 
     fun getTransactions(): List<ResourceTransaction> {
+        // we want to store the last time that we sent resources to some node
+        // network flow problem
+        // create a source and sink
+        // consider only high priority requests
+        // for each resource type
+        // create a graph
+        // source with edges going to each output container, capacity of edge is equal to desired output
+        // edges connecting output containers to input containers, if they both allow this type currently
+        // i need to simplify something here... something has to give. i think that these demands are basically
+        // impossible... if the resource nodes can stop accepting things based on the amounts contained in other
+        // resources nodes...
+
+        // alright. break it into steps
+        // we have resource containers which have demands
+        // use bipartite matching to create a distribution. doesn't matter yet if this is impossible due to resource
+        // node constraints. we just vaguely know that this container should send to this container.
+        // questions: using bipartite matching, can we make sure that we send to close containers first?
+
+        // what if we think about this in a radically different way?
+        // what if we take advantage of the fact that the machines produce on a schedule.. a period.. no i don't think so
         val demandsToDemands = createTransactions(demands, demands)
         confirmTransactions(demands, demands, demandsToDemands)
         val demandsToRequests = createTransactions(demands, requests)

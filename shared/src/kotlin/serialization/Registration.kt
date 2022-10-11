@@ -280,7 +280,7 @@ object Registration {
         register(Hitbox::class, 60)
         register(LevelData::class, 61)
         register(LevelInfo::class, 62)
-        register(LevelObjectTextures::class, 63)
+        register(PhysicalLevelObjectTextures::class, 63)
         register(LevelObjectType::class, 64)
             .setSerializer(AutoIDSerializer::class)
         register(RemoteLevel::class, 65)
@@ -306,7 +306,6 @@ object Registration {
         register(ResourceNodeBehaviorEdit::class, 83)
         register(LevelObjectSwitchLevelsTo::class, 84)
         register(LevelPosition::class, 85)
-        register(LevelObjectResourceContainerModify::class, 86)
 
         /* /BLOCK */
         register(BlockType::class, 87)

@@ -2,6 +2,8 @@ package routing.script
 
 import resource.ResourceNode
 
+// script should take in resource type, quantity, input/output, priority requests and output that but modified
+
 sealed class Node2(val type: Type<*>) {
 
     abstract fun eval(context: ResourceNode): Any?

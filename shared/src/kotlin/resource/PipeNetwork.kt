@@ -21,7 +21,7 @@ interface PotentialPipeNetworkVertex : PotentialResourceNetworkVertex {
 
 class PipeNetworkVertex(
     obj: PotentialPipeNetworkVertex,
-    edges: MutableList<PipeNetworkVertex>,
+    edges: MutableList<PipeNetworkVertex?>,
     val farEdges: Array<PipeNetworkVertex?>
 ) :
     ResourceNetworkVertex<PipeNetworkVertex>(obj, edges, ResourceNetworkType.PIPE) {
@@ -51,12 +51,26 @@ class PipeNetwork(level: Level) : ResourceNetwork<PipeNetworkVertex>(level, Reso
         return PipeNetworkVertex(obj as PotentialPipeNetworkVertex, mutableListOf(), arrayOfNulls(4))
     }
 
-    override fun getConnection(from: ResourceNode2, to: ResourceNode2): ResourceNodeConnection? {
+    override fun getConnection(
+        from: ResourceContainer,
+        to: ResourceContainer,
+        type: ResourceType,
+        quantity: Int
+    ): ResourceNodeConnection? {
+        val fromNodes = nodes.filter { it.container == from && it.allowsOutput(type, quantity) }
+        val toNodes = nodes.filter { it.container == to && it.allowsInput(type, quantity) }
+        var bestPath: PipeNetworkConnection? = null
+        var bestLength: Int = Int.MAX_VALUE
+        for (fromNode in fromNodes) {
+            for (toNode in toNodes) {
+
+            }
+        }
         if (from !in nodes || to !in nodes) {
             return null
         }
         val existingConnection = connections.firstOrNull { it.from == from && it.to == to }
-        if(existingConnection != null) {
+        if (existingConnection != null) {
             return existingConnection
         }
         val steps = route(from, to) ?: return null
@@ -192,7 +206,7 @@ class PipeNetwork(level: Level) : ResourceNetwork<PipeNetworkVertex>(level, Reso
         }
     }
 
-    private fun route(from: ResourceNode, to: ResourceNode): List<PipeNetworkVertex>? {
+    private fun route(from: PipeNetworkVertex, to: PipeNetworkVertex): List<PipeNetworkVertex>? {
 
         fun h(src: PipeNetworkVertex): Double {
             return Geometry.distance(src.xTile * 16, src.yTile * 16, to.x, to.y)

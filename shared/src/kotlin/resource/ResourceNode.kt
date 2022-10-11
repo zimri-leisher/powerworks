@@ -23,6 +23,16 @@ class ResourceNode(
     private var networks = mutableListOf<ResourceNetwork<*>>()
     override val validFarVertex get() = true
 
+    override var vertex: PipeNetworkVertex? = null
+
+    fun allowsOutput(type: ResourceType, quantity: Int): Boolean {
+        return true
+    }
+
+    fun allowsInput(type: ResourceType, quantity: Int): Boolean {
+        return true
+    }
+
     override fun getNetwork(type: ResourceNetworkType) = networks.firstOrNull { it.networkType == type }
 
     override fun onAddToNetwork(network: ResourceNetwork<*>) {
