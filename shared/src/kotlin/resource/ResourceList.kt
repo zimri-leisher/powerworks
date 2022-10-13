@@ -28,8 +28,12 @@ open class ResourceList(
     @Id(1) protected val resources: Map<ResourceType, Int> = mapOf()
 ) : Map<ResourceType, Int>, Set<ResourceStack> {
 
-    constructor(vararg pairs: Pair<ResourceType, Int>) : this(pairs.toMap())
-    constructor(vararg entries: ResourceStack) : this(entries.associate { it.toPair() })
+    constructor(vararg pairs: Pair<ResourceType, Int>) : this(
+        pairs.map { it.first }.distinct()
+            .associateWith { type -> pairs.filter { it.first == type }.sumOf { it.second } })
+
+    constructor(vararg entries: ResourceStack) : this(entries.map { it.type }.distinct()
+        .associateWith { type -> entries.filter { it.type == type }.sumOf { it.quantity } })
 
     override val size: Int
         get() = resources.size

@@ -1,5 +1,6 @@
 package resource
 
+/*
 typealias ResourceContainerGroup = List<ResourceContainer>
 
 /**
@@ -82,3 +83,5 @@ fun ResourceContainerGroup.getQuantityOf(resource: ResourceType): Int {
     }
     return q
 }
+
+ */

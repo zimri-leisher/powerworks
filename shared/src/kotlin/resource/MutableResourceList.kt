@@ -8,6 +8,9 @@ fun Map<ResourceType, Int>.toMutableResourceList() =
     if (this is MutableResourceList) this.copy() else MutableResourceList(*this.entries.map { (key, value) -> key to value }
         .toTypedArray())
 
+fun Collection<ResourceStack>.toMutableResourceList() = MutableResourceList(this)
+
+
 /**
  * A list of [ResourceType] - quantity pairs with some convenience methods. Use [take] and [put] to do operations
  * logically for resources. [add], [remove] only add/remove exact matches.
@@ -22,6 +25,17 @@ class MutableResourceList(
         private set
 
     constructor(vararg pairs: Pair<ResourceType, Int>) : this(pairs.toMap().toMutableMap())
+    constructor(vararg entries: ResourceStack) : this() {
+        for (entry in entries) {
+            put(entry.type, entry.quantity)
+        }
+    }
+
+    constructor(entries: Collection<ResourceStack>) : this() {
+        for (entry in entries) {
+            put(entry.type, entry.quantity)
+        }
+    }
 
     override val entries: MutableSet<MutableMap.MutableEntry<ResourceType, Int>>
         get() = _mutableResources.entries
@@ -110,7 +124,8 @@ class MutableResourceList(
      * Removes the [resources] from this resource list.
      * @return true if any resources were removed
      */
-    fun takeAll(resources: ResourceList) = (resources as Map<ResourceType, Int>).any { (type, quantity) -> take(type, quantity) }
+    fun takeAll(resources: ResourceList) =
+        (resources as Map<ResourceType, Int>).any { (type, quantity) -> take(type, quantity) }
 
     override operator fun plus(other: ResourceList): MutableResourceList {
         val list = mutableResourceListOf()

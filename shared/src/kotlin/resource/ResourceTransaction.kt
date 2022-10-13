@@ -13,7 +13,7 @@ enum class TransactionState {
 }
 
 // TODO maybe this should be between two resource containers?
-data class ResourceTransaction(val src: ResourceContainer, val dest: ResourceContainer, val resources: ResourceList) {
+data class ResourceTransaction(val src: ResourceContainer, val dest: ResourceContainer, val resources: ResourceStack) {
     var state = TransactionState.NEW
 
     fun isValid(): Boolean {

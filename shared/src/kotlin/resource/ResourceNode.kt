@@ -1,8 +1,7 @@
 package resource
 
 import level.*
-import network.LevelObjectReference
-import network.ResourceNode2Reference
+import network.ResourceNodeReference
 
 // handles transactions for a resource container
 // should be the way that they have physicality
@@ -12,7 +11,8 @@ class ResourceNode(
     val container: ResourceContainer,
     xTile: Int,
     yTile: Int
-) : PhysicalLevelObject(PhysicalLevelObjectType.RESOURCE_NODE, xTile * 16, yTile * 16), PotentialPipeNetworkVertex {
+) : PhysicalLevelObject(PhysicalLevelObjectType.RESOURCE_NODE, xTile * 16, yTile * 16), PotentialPipeNetworkVertex,
+    ResourceOrderer {
 
     private constructor() : this(SourceContainer(), 0, 0)
 
@@ -21,12 +21,9 @@ class ResourceNode(
 
     override var vertex: PipeNetworkVertex? = null
 
-    fun allowsOutput(type: ResourceType, quantity: Int): Boolean {
-        return true
-    }
-
-    fun allowsInput(type: ResourceType, quantity: Int): Boolean {
-        return true
+    override fun getNecessaryFlow(order: ResourceOrder): ResourceOrder {
+        // no constraints
+        return order
     }
 
     override fun getNetwork(type: ResourceNetworkType) = networks.firstOrNull { it.networkType == type }
@@ -58,7 +55,7 @@ class ResourceNode(
         }
     }
 
-    override fun toReference(): LevelObjectReference {
-        return ResourceNode2Reference(this)
+    override fun toReference(): ResourceNodeReference {
+        return ResourceNodeReference(this)
     }
 }

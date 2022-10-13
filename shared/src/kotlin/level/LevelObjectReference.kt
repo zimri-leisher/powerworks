@@ -6,30 +6,27 @@ import level.entity.robot.BrainRobot
 import level.moving.MovingObject
 import resource.ResourceContainer
 import resource.ResourceNetwork
-import resource.ResourceNodeOld
 import resource.ResourceNode
 import serialization.Id
-import serialization.Input
 import serialization.Reference
-import serialization.Serializer
 import java.util.*
 
-abstract class LevelObjectReference(
+abstract class LevelObjectReference<T : LevelObject>(
     @Id(1)
     val level: Level,
     @Id(2)
     val objectId: UUID
-) : Reference<LevelObject>()
+) : Reference<T>()
 
 class ResourceNetworkReference(
     level: Level,
     objectId: UUID
-) : LevelObjectReference(level, objectId) {
+) : LevelObjectReference<ResourceNetwork<*>>(level, objectId) {
     constructor(obj: ResourceNetwork<*>) : this(obj.level, obj.id)
 
     private constructor() : this(LevelManager.EMPTY_LEVEL, UUID.randomUUID())
 
-    override fun resolve(): LevelObject? {
+    override fun resolve(): ResourceNetwork<*>? {
         return level.data.resourceNetworks.firstOrNull { it.id == objectId }
     }
 }
@@ -37,28 +34,29 @@ class ResourceNetworkReference(
 class ResourceContainerReference(
     level: Level,
     objectId: UUID
-) : LevelObjectReference(level, objectId) {
+) : LevelObjectReference<ResourceContainer>(level, objectId) {
 
     constructor(obj: ResourceContainer) : this(obj.level, obj.id)
 
     private constructor() : this(LevelManager.EMPTY_LEVEL, UUID.randomUUID())
 
-    override fun resolve(): LevelObject? {
+    override fun resolve(): ResourceContainer? {
         return level.data.resourceContainers.firstOrNull { it.id == objectId }
     }
 }
 
-abstract class PhysicalLevelObjectReference(level: Level, objectId: UUID) : LevelObjectReference(level, objectId) {
+abstract class PhysicalLevelObjectReference<T : PhysicalLevelObject>(level: Level, objectId: UUID) :
+    LevelObjectReference<T>(level, objectId) {
     constructor(obj: PhysicalLevelObject) : this(obj.level, obj.id)
 }
 
-class ResourceNode2Reference(
+class ResourceNodeReference(
     level: Level, objectId: UUID,
     @Id(1)
     val xTile: Int,
     @Id(2)
     val yTile: Int,
-) : PhysicalLevelObjectReference(level, objectId) {
+) : PhysicalLevelObjectReference<ResourceNode>(level, objectId) {
 
     constructor(node: ResourceNode) : this(node.level, node.id, node.xTile, node.yTile) {
         value = node
@@ -71,7 +69,8 @@ class ResourceNode2Reference(
     }
 }
 
-class GhostLevelObjectReference(val obj: GhostLevelObject) : PhysicalLevelObjectReference(obj.level, obj.id) {
+class GhostLevelObjectReference(val obj: GhostLevelObject) :
+    PhysicalLevelObjectReference<GhostLevelObject>(obj.level, obj.id) {
 
     init {
         value = obj
@@ -80,15 +79,15 @@ class GhostLevelObjectReference(val obj: GhostLevelObject) : PhysicalLevelObject
     override fun resolve() = obj
 }
 
-open class MovingObjectReference(
+open class MovingObjectReference<T : MovingObject>(
     level: Level, objectId: UUID,
     @Id(3)
     val x: Int,
     @Id(4)
     val y: Int
-) : PhysicalLevelObjectReference(level, objectId) {
+) : PhysicalLevelObjectReference<T>(level, objectId) {
 
-    constructor(movingObject: MovingObject) : this(
+    constructor(movingObject: T) : this(
         movingObject.level,
         movingObject.id,
         movingObject.x,
@@ -99,7 +98,7 @@ open class MovingObjectReference(
 
     private constructor() : this(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0)
 
-    override fun resolve(): MovingObject? {
+    override fun resolve(): T? {
         val xChunk = x shr CHUNK_EXP
         val yChunk = y shr CHUNK_EXP
         var currentChunkRange = 0
@@ -113,7 +112,7 @@ open class MovingObjectReference(
             for (chunk in currentChunks) {
                 val moving = chunk.data.moving.firstOrNull { it.id == objectId }
                 if (moving != null) {
-                    return moving
+                    return moving as T
                 }
             }
             currentChunkRange++
@@ -138,7 +137,7 @@ open class MovingObjectReference(
 class BrainRobotReference(
     @Id(5)
     val brainRobotId: UUID
-) : MovingObjectReference(LevelManager.loadedLevels.firstOrNull { it.data.brainRobots.any { it.id == brainRobotId } }
+) : MovingObjectReference<BrainRobot>(LevelManager.loadedLevels.firstOrNull { it.data.brainRobots.any { it.id == brainRobotId } }
     ?: LevelManager.EMPTY_LEVEL, brainRobotId, 0, 0) {
 
     private constructor() : this(UUID.randomUUID())
@@ -147,7 +146,7 @@ class BrainRobotReference(
         value = brainRobot
     }
 
-    override fun resolve(): MovingObject? {
+    override fun resolve(): BrainRobot? {
         return level.data.brainRobots.firstOrNull { it.id == brainRobotId }
     }
 
@@ -162,7 +161,7 @@ class BlockReference(
     val xTile: Int,
     @Id(4)
     val yTile: Int
-) : PhysicalLevelObjectReference(level, objectId) {
+) : PhysicalLevelObjectReference<Block>(level, objectId) {
 
     constructor(block: Block) : this(block.level, block.id, block.xTile, block.yTile) {
         value = block

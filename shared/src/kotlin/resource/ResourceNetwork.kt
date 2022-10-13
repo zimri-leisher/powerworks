@@ -31,12 +31,69 @@ abstract class ResourceNetwork<V : ResourceNetworkVertex<V>>(level: Level, val n
     val market = ResourceMarket(this)
 
     abstract val nodes: MutableList<ResourceNode>
+    abstract val containers: MutableList<ResourceContainer>
 
     init {
         level.add(this)
     }
 
+    open fun add(obj: PhysicalLevelObject) {
+        if (obj.level != level) {
+            throw Exception("Tried to add a vertex in level ${obj.level} to ResourceNetwork in level $level")
+        }
+        if (!canBeVertex(obj)) {
+            throw Exception("$obj cannot be a vertex for $this")
+        }
+        val vert = makeVertex(obj)
+        vertices.add(vert)
+        if (obj is ResourceNode) {
+            nodes.add(obj)
+            if (obj.container !in containers) {
+                containers.add(obj.container)
+            }
+        }
+        updateEdges(vert)
+        tryMerge(vert)
+    }
+
+    open fun remove(obj: PhysicalLevelObject) {
+        val vert = vertices.firstOrNull { it.obj == obj }
+            ?: throw Exception("Tried to remove $obj which is not in network $this")
+        updateEdges(vert)
+        trySplit(vert)
+        vertices.remove(vert)
+        if (vert.obj is ResourceNode) {
+            nodes.remove(vert.obj)
+            if(nodes.none { it.container == vert.obj.container }) {
+                containers.remove(vert.obj.container)
+            }
+        }
+    }
+
+    override fun update() {
+        val transactions = market.getTransactions()
+        for (transaction in transactions) {
+            // market transactions should always have a non null src and dest
+            val connection = getBestConnection(transaction.src, transaction.dest)
+            if (connection != null) {
+                if (connection.canExecute(transaction)) {
+                    connection.execute(transaction)
+                }
+            } else {
+                // handle transaction that has no valid route
+                // this might happen if resource container has space but no node attached to it can accept
+
+            }
+        }
+    }
+
     abstract fun getConnection(from: ResourceNode, to: ResourceNode): ResourceNodeConnection?
+
+    protected abstract fun updateEdges(vert: V)
+
+    abstract fun canBeVertex(obj: PhysicalLevelObject): Boolean
+
+    abstract fun makeVertex(obj: PhysicalLevelObject): V
 
     fun getBestConnection(
         from: ResourceContainer,
@@ -61,61 +118,7 @@ abstract class ResourceNetwork<V : ResourceNetworkVertex<V>>(level: Level, val n
         return bestConnection
     }
 
-    protected abstract fun updateEdges(vert: V)
-    abstract fun canBeVertex(obj: PhysicalLevelObject): Boolean
-    abstract fun makeVertex(obj: PhysicalLevelObject): V
-
-    open fun add(obj: PhysicalLevelObject) {
-        if (obj.level != level) {
-            throw Exception("Tried to add a vertex in level ${obj.level} to ResourceNetwork in level $level")
-        }
-        if (!canBeVertex(obj)) {
-            throw Exception("$obj cannot be a vertex for $this")
-        }
-        val vert = makeVertex(obj)
-        vertices.add(vert)
-        updateEdges(vert)
-        tryMerge(vert)
-    }
-
-    open fun remove(obj: PhysicalLevelObject) {
-        val vert = vertices.firstOrNull { it.obj == obj }
-            ?: throw Exception("Tried to remove $obj which is not in network $this")
-        updateEdges(vert)
-        trySplit(vert)
-        vertices.remove(vert)
-        if (vert.obj is ResourceNode) {
-            nodes.remove(vert.obj)
-        }
-    }
-
-    override fun update() {
-        val transactions = market.getTransactions()
-        for (transaction in transactions) {
-            // market transactions should always have a non null src and dest
-            val connection = getConnection(transaction.src, transaction.dest)
-            if (connection != null) {
-                if (connection.canExecute(transaction)) {
-                    connection.execute(transaction)
-                }
-            } else {
-                // handle transaction that has no valid route
-                // this might happen if resource container has space but no node attached to it can accept
-
-            }
-        }
-    }
-
-    private fun tryMerge(around: ResourceNetworkVertex<V>) {
-        val toCombine = mutableSetOf(this)
-        for (dir in 0..3) {
-            val edgesNetwork = around.edges[dir]?.obj?.getNetwork(networkType)
-            if (edgesNetwork != null && edgesNetwork != this) {
-                toCombine.add(edgesNetwork as ResourceNetwork<V>)
-            }
-        }
-        merge(toCombine)
-    }
+    protected abstract fun tryMerge(around: ResourceNetworkVertex<V>)
 
     fun mergeFrom(network: ResourceNetwork<V>) {
         for (vertex in network.vertices) {
@@ -130,11 +133,23 @@ abstract class ResourceNetwork<V : ResourceNetworkVertex<V>>(level: Level, val n
 
     protected abstract fun trySplit(around: V)
 
-    protected abstract fun splitOff(vertices: Collection<V>): ResourceNetwork<V>
+    protected fun splitOff(vertices: Collection<V>): ResourceNetwork<V> {
+        val newNetwork = vertices.first().type.makeNew(level) as ResourceNetwork<V>
+        newNetwork.vertices.addAll(vertices)
+        for (vert in vertices) {
+            vert.obj.onRemoveFromNetwork(this)
+            vert.obj.onAddToNetwork(newNetwork)
+            this.vertices.remove(vert)
+            if (vert.obj is ResourceNode) {
+                this.nodes.remove(vert.obj)
+            }
+        }
+        return newNetwork
+    }
 
     companion object {
 
-        private fun merge(networks: Set<ResourceNetwork<*>>) {
+        fun merge(networks: Set<ResourceNetwork<*>>) {
             if (networks.isEmpty()) {
                 return
             }

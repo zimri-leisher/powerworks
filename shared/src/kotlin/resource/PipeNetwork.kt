@@ -51,20 +51,9 @@ class PipeNetwork(level: Level) : ResourceNetwork<PipeNetworkVertex>(level, Reso
     }
 
     override fun getConnection(
-        from: ResourceContainer,
-        to: ResourceContainer,
-        type: ResourceType,
-        quantity: Int
+        from: ResourceNode,
+        to: ResourceNode,
     ): ResourceNodeConnection? {
-        val fromNodes = nodes.filter { it.container == from && it.allowsOutput(type, quantity) }
-        val toNodes = nodes.filter { it.container == to && it.allowsInput(type, quantity) }
-        var bestPath: PipeNetworkConnection? = null
-        var bestLength: Int = Int.MAX_VALUE
-        for (fromNode in fromNodes) {
-            for (toNode in toNodes) {
-
-            }
-        }
         if (from !in nodes || to !in nodes) {
             return null
         }
@@ -72,7 +61,7 @@ class PipeNetwork(level: Level) : ResourceNetwork<PipeNetworkVertex>(level, Reso
         if (existingConnection != null) {
             return existingConnection
         }
-        val steps = route(from, to) ?: return null
+        val steps = route(from.vertex!!, to.vertex!!) ?: return null
         val connection = PipeNetworkConnection(this, steps)
         connections.add(connection)
         return connection
@@ -140,6 +129,17 @@ class PipeNetwork(level: Level) : ResourceNetwork<PipeNetworkVertex>(level, Reso
         updateFarConnectionsRecurse(vert)
     }
 
+    override fun tryMerge(around: ResourceNetworkVertex<PipeNetworkVertex>) {
+        val toCombine = mutableSetOf(this)
+        for (dir in 0..3) {
+            val edgesNetwork = around.edges[dir]?.obj?.getNetwork(networkType)
+            if (edgesNetwork != null && edgesNetwork != this) {
+                toCombine.add(edgesNetwork as PipeNetwork)
+            }
+        }
+        merge(toCombine)
+    }
+
     override fun trySplit(around: PipeNetworkVertex) {
         val found = Array<MutableSet<PipeNetworkVertex>?>(4) { null }
         for (dir in 0..3) {
@@ -182,19 +182,6 @@ class PipeNetwork(level: Level) : ResourceNetwork<PipeNetworkVertex>(level, Reso
         split(this, groups)
     }
 
-    override fun splitOff(vertices: Collection<PipeNetworkVertex>): ResourceNetwork<PipeNetworkVertex> {
-        val newNetwork = PipeNetwork(level)
-        newNetwork.vertices.addAll(vertices)
-        for (vert in vertices) {
-            vert.obj.onRemoveFromNetwork(this)
-            vert.obj.onAddToNetwork(newNetwork)
-            this.vertices.remove(vert)
-            if (vert.obj is ResourceNode) {
-                this.nodes.remove(vert.obj)
-            }
-        }
-        return newNetwork
-    }
 
     private data class PipeNetworkRoutingNode(
         val vert: PipeNetworkVertex,
@@ -325,7 +312,7 @@ class PipeNetwork(level: Level) : ResourceNetwork<PipeNetworkVertex>(level, Reso
         })
     }
 
-    override fun toReference(): LevelObjectReference {
+    override fun toReference(): ResourceNetworkReference {
         return ResourceNetworkReference(this)
     }
 
@@ -340,6 +327,4 @@ class PipeNetwork(level: Level) : ResourceNetwork<PipeNetworkVertex>(level, Reso
     override fun hashCode(): Int {
         return id.hashCode()
     }
-
-
 }

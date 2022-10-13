@@ -15,11 +15,8 @@ import level.update.LevelObjectRemove
 import level.update.LevelUpdate
 import main.DebugCode
 import main.Game
-import main.PowerworksDelegates
 import network.ClientNetworkManager
 import network.ServerNetworkManager
-import resource.ResourceNetwork
-import routing.ResourceRoutingNetwork
 import screen.element.ElementLevelView
 import screen.mouse.tool.Tool
 import serialization.*
