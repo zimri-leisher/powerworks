@@ -24,6 +24,7 @@ class MutableResourceList(
     override var totalQuantity = super.totalQuantity
         private set
 
+    constructor(resources: ResourceList) : this(resources.toMutableMap())
     constructor(vararg pairs: Pair<ResourceType, Int>) : this(pairs.toMap().toMutableMap())
     constructor(vararg entries: ResourceStack) : this() {
         for (entry in entries) {

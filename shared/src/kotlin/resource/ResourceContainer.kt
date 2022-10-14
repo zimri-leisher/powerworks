@@ -8,8 +8,7 @@ import serialization.Referencable
 import java.util.*
 import kotlin.math.absoluteValue
 
-abstract class ResourceContainer : LevelObject(LevelObjectType.RESOURCE_CONTAINER), Referencable<ResourceContainer>,
-    ResourceOrderer, ResourceConduit {
+abstract class ResourceContainer : LevelObject(LevelObjectType.RESOURCE_CONTAINER), Referencable<ResourceContainer>, ResourceConduit {
 
     // todo we want a "constrain" function
     // which takes a resource order and constrains it to what this container can perform
@@ -104,30 +103,8 @@ abstract class ResourceContainer : LevelObject(LevelObjectType.RESOURCE_CONTAINE
      */
     abstract fun remove(resources: ResourceList): Boolean
 
-    override fun getNecessaryFlow(order: ResourceOrder): ResourceFlow {
-        val currentAmount = getQuantity(order.stack.type)
-        val difference = currentAmount - order.stack.quantity
-        if (order.type == ResourceOrderType.EXACTLY) {
-            return ResourceFlow(
-                stackOf(order.stack.type, difference.absoluteValue),
-                if (difference < 0) ResourceFlowDirection.IN else ResourceFlowDirection.OUT
-            )
-        } else if (order.type == ResourceOrderType.NO_LESS_THAN) {
-            return ResourceFlow(
-                stackOf(order.stack.type, difference.coerceAtMost(0) * -1),
-                ResourceFlowDirection.IN
-            )
-        } else {
-            // no more than
-            return ResourceFlow(
-                stackOf(order.stack.type, difference.coerceAtLeast(0)),
-                ResourceFlowDirection.OUT
-            )
-        }
-    }
-
     override fun maxFlow(flow: ResourceFlow): ResourceFlow {
-        if(flow.direction == ResourceFlowDirection.IN) {
+        if (flow.direction == ResourceFlowDirection.IN) {
             val addable = mostPossibleToAdd(resourceListOf(flow.stack))
             return ResourceFlow(addable[0], ResourceFlowDirection.IN)
         } else {
@@ -152,7 +129,7 @@ abstract class ResourceContainer : LevelObject(LevelObjectType.RESOURCE_CONTAINE
 
     abstract fun toResourceList(): ResourceList
 
-    fun toMutableResourceList() = toResourceList().toMutableResourceList()
+    fun toMutableResourceList() = MutableResourceList(toResourceList())
 
     /**
      * @return a set of [ResourceType]s present with quantity greater than 0

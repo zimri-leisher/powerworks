@@ -18,10 +18,8 @@ class PipeNetworkPacket(
     var currentVertexIdx = 0
 
     fun render() {
-        for ((type, quantity) in transaction.resources) {
-            type.icon.render(pos.x, pos.y)
-            Renderer.renderText(quantity, pos.x, pos.y)
-        }
+        transaction.resources.type.icon.render(pos.x, pos.y)
+        Renderer.renderText(transaction.resources.quantity, pos.x, pos.y)
     }
 
     fun update() {
@@ -33,7 +31,7 @@ class PipeNetworkPacket(
             // do something
         }
         // check for invalid state
-        if(!connection.canExecute(transaction)) {
+        if (!connection.canExecute(transaction)) {
             state = PipeNetworkPacketState.INVALID
             return
         }

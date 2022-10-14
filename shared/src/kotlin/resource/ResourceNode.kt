@@ -11,8 +11,7 @@ class ResourceNode(
     val container: ResourceContainer,
     xTile: Int,
     yTile: Int
-) : PhysicalLevelObject(PhysicalLevelObjectType.RESOURCE_NODE, xTile * 16, yTile * 16), PotentialPipeNetworkVertex,
-    ResourceOrderer {
+) : PhysicalLevelObject(PhysicalLevelObjectType.RESOURCE_NODE, xTile * 16, yTile * 16), PotentialPipeNetworkVertex {
 
     private constructor() : this(SourceContainer(), 0, 0)
 
@@ -20,11 +19,6 @@ class ResourceNode(
     override val validFarVertex get() = true
 
     override var vertex: PipeNetworkVertex? = null
-
-    override fun getNecessaryFlow(order: ResourceOrder): ResourceOrder {
-        // no constraints
-        return order
-    }
 
     override fun getNetwork(type: ResourceNetworkType) = networks.firstOrNull { it.networkType == type }
 

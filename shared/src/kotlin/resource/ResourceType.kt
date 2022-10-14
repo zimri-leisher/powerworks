@@ -23,7 +23,7 @@ abstract class ResourceType {
     var hidden = false
 
     @ObjectIdentifier
-    val id = ResourceNetwork_nextId++
+    val id = nextId++
 
     init {
         ALL.add(this)
@@ -42,10 +42,10 @@ abstract class ResourceType {
         val ALL = mutableListOf<ResourceType>()
 
         fun getPossibleTypes(name: String) = ALL.filter {
-            it.name.toLowerCase(Locale.getDefault()).contains(name) or it.technicalName.contains(name)
+            it.name.lowercase(Locale.getDefault()).contains(name) or it.technicalName.contains(name)
         }
 
         fun getType(name: String) =
-            ALL.firstOrNull { it.name.toLowerCase(Locale.getDefault()) == name || it.technicalName == name }
+            ALL.firstOrNull { it.name.lowercase(Locale.getDefault()) == name || it.technicalName == name }
     }
 }

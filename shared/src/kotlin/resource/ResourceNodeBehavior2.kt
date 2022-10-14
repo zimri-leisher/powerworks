@@ -16,5 +16,4 @@ class ResourceFilter {
     //      we want this to resolve to a ResourceOrder
     //      ResourceOrder will be converted to a set of transactions
     //      get a transaction executor
-    fun check(type: ResourceType, quantity: Int, )
 }

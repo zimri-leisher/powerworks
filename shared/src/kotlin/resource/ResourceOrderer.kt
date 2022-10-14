@@ -2,35 +2,14 @@ package resource
 
 interface ResourceOrderer {
     /**
-     * Given a [ResourceOrder], return the [ResourceOrder] that this will permit.
+     * Given a [ResourceOrder], return the [ResourceFlow] necessary to satisfy that order.
      */
     fun getNecessaryFlow(order: ResourceOrder): ResourceFlow
 }
 
 interface ResourceConduit {
+    /**
+     * Given a [ResourceFlow], return the amount of that flow that this can take
+     */
     fun maxFlow(flow: ResourceFlow): ResourceFlow
-}
-
-class Quantity {
-
-
-    //
-
-    fun cons(order: ResourceOrder, network: ResourceNetwork<*>, node: ResourceNode) {
-
-    }
-
-}
-
-class LessThan {
-
-    val left = 0
-    val right = 1
-
-    fun cons(order: ResourceOrder, network: ResourceNetwork<*>, node: ResourceNode) {
-        // quantity of iron < 25
-        // if order.type == iron
-        //    if order.dir == in
-        //
-    }
 }

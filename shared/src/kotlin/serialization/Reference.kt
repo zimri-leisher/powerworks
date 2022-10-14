@@ -17,6 +17,9 @@ class ReferencableCreateStrategy(type: Class<out Referencable<Any>>) :
     override fun create(input: Input): Referencable<Any> {
         val reference = input.read(Reference::class.java) as Reference<Any>
         reference.value = reference.resolve()
+        if(reference.value == null) {
+            throw Exception("Reference $reference resolved to null")
+        }
         return reference.value as Referencable<Any>
     }
 }

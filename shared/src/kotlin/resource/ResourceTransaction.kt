@@ -12,7 +12,6 @@ enum class TransactionState {
     NEW, PENDING, FINISHED
 }
 
-// TODO maybe this should be between two resource containers?
 data class ResourceTransaction(val src: ResourceContainer, val dest: ResourceContainer, val resources: ResourceStack) {
     var state = TransactionState.NEW
 

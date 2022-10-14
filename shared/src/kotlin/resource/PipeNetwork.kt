@@ -40,7 +40,24 @@ class PipeNetworkVertex(
 class PipeNetwork(level: Level) : ResourceNetwork<PipeNetworkVertex>(level, ResourceNetworkType.PIPE) {
 
     val connections = mutableListOf<PipeNetworkConnection>()
+
     override val nodes = mutableListOf<ResourceNode>()
+    override val containers = mutableListOf<ResourceContainer>()
+
+    override fun getFlowInProgress(container: ResourceContainer): List<ResourceFlow> {
+        val flows = mutableListOf<ResourceFlow>()
+        for (connection in connections) {
+            for (packet in connection.currentPackets) {
+                if (packet.transaction.dest == container
+                    && packet.state != PipeNetworkPacketState.INVALID
+                    && packet.state != PipeNetworkPacketState.FINISHED
+                ) {
+                    flows.add(ResourceFlow(packet.transaction.resources, ResourceFlowDirection.IN))
+                }
+            }
+        }
+        return flows
+    }
 
     override fun canBeVertex(obj: PhysicalLevelObject): Boolean {
         return obj is PotentialPipeNetworkVertex

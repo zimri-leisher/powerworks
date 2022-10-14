@@ -4,6 +4,7 @@ import level.Level
 import level.LevelObject
 import level.LevelObjectType
 import level.PhysicalLevelObject
+import kotlin.math.absoluteValue
 
 abstract class ResourceNetwork<V : ResourceNetworkVertex<V>>(level: Level, val networkType: ResourceNetworkType) :
     LevelObject(LevelObjectType.RESOURCE_NETWORK) {
@@ -94,6 +95,42 @@ abstract class ResourceNetwork<V : ResourceNetworkVertex<V>>(level: Level, val n
     abstract fun canBeVertex(obj: PhysicalLevelObject): Boolean
 
     abstract fun makeVertex(obj: PhysicalLevelObject): V
+
+    abstract fun getFlowInProgress(container: ResourceContainer): List<ResourceFlow>
+
+    fun getNecessaryFlow(container: ResourceContainer, order: ResourceOrder): ResourceFlow {
+        var currentAmount = container.getQuantity(order.stack.type)
+
+        for(currentFlow in getFlowInProgress(container)) {
+            if(currentFlow.stack.type != order.stack.type) {
+                continue
+            }
+            if(currentFlow.direction == ResourceFlowDirection.IN) {
+                currentAmount += currentFlow.stack.quantity
+            } else {
+                currentAmount -= currentFlow.stack.quantity
+            }
+        }
+
+        val difference = currentAmount - order.stack.quantity
+        if (order.type == ResourceOrderType.EXACTLY) {
+            return ResourceFlow(
+                stackOf(order.stack.type, difference.absoluteValue),
+                if (difference < 0) ResourceFlowDirection.IN else ResourceFlowDirection.OUT
+            )
+        } else if (order.type == ResourceOrderType.NO_LESS_THAN) {
+            return ResourceFlow(
+                stackOf(order.stack.type, difference.coerceAtMost(0) * -1),
+                ResourceFlowDirection.IN
+            )
+        } else {
+            // no more than
+            return ResourceFlow(
+                stackOf(order.stack.type, difference.coerceAtLeast(0)),
+                ResourceFlowDirection.OUT
+            )
+        }
+    }
 
     fun getBestConnection(
         from: ResourceContainer,

@@ -9,7 +9,6 @@ import level.generator.LevelType
 import main.Game
 import main.GameState
 import network.User
-import resource.ResourceNodeOld
 import screen.CameraMovementListener
 import screen.element.ElementLevelView
 import screen.ScreenManager

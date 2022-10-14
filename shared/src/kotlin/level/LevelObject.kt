@@ -89,5 +89,5 @@ abstract class LevelObject protected constructor(
     open fun render() {
     }
 
-    abstract fun toReference(): LevelObjectReference
+    abstract fun toReference(): LevelObjectReference<out LevelObject>
 }

@@ -72,12 +72,6 @@ abstract class LevelUpdate(
      * and client are in sync.
      */
     abstract fun equivalent(other: LevelUpdate): Boolean
-
-    /**
-     * Should re-resolve any [NetworkReference]s this [LevelUpdate] stores. Necessary for when actions are initially unable to be taken due to
-     * unresolved references but eventually become possible.
-     */
-    abstract fun resolveReferences()
 }
 
 

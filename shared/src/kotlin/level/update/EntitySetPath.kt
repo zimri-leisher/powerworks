@@ -8,6 +8,7 @@ import level.entity.Entity
 import misc.Coord
 import network.MovingObjectReference
 import player.Player
+import serialization.AsReference
 import serialization.Id
 import java.util.*
 
@@ -18,7 +19,8 @@ class EntitySetPath(
     /**
      * A reference to the [Entity] to set the path of.
      */
-    @Id(2) val entityReference: MovingObjectReference,
+    @AsReference
+    @Id(2) val entity: Entity,
     /**
      * The starting position of that entity.
      */
@@ -60,14 +62,9 @@ class EntitySetPath(
             return false
         }
 
-        if (other.entityReference.value == null || other.entityReference.value !== entityReference.value) {
+        if (other.entity || other.entityReference.value !== entityReference.value) {
             return false
         }
         return path == other.path && startPosition == other.startPosition
     }
-
-    override fun resolveReferences() {
-        entityReference.value = entityReference.resolve()
-    }
-
 }

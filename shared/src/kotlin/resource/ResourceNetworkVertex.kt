@@ -12,12 +12,8 @@ interface PotentialResourceNetworkVertex {
     fun onRemoveFromNetwork(network: ResourceNetwork<*>)
 }
 
-abstract class ResourceNetworkVertex<T : ResourceNetworkVertex<T>>(val obj: PotentialResourceNetworkVertex, val edges: MutableList<T?>, val type: ResourceNetworkType) {
-}
-
-//data class PipeNetworkVertex  {
-//    val xTile get() = x / 16
-//    val yTile get() = y / 16
-//    val farEdges: MutableList<PipeNetworkVertex?>
-//    val validFarVertex: Boolean
-//}
+abstract class ResourceNetworkVertex<T : ResourceNetworkVertex<T>>(
+    val obj: PotentialResourceNetworkVertex,
+    val edges: MutableList<T?>,
+    val type: ResourceNetworkType
+)

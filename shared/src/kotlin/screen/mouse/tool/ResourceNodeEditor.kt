@@ -5,7 +5,6 @@ import io.ControlEvent
 import io.ControlEventType
 import level.LevelManager
 import level.getResourceNodesAt
-import resource.ResourceNodeOld
 
 object ResourceNodeEditor : Tool(Control.EDIT_RESOURCE_NODE) {
 

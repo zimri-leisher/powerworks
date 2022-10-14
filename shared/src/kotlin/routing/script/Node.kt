@@ -63,7 +63,7 @@ sealed class Statement<R>(token: Token) : Node<R>(token)
 
 class TotalQuantity(token: Token) : Statement<Int>(token) {
     override fun visit(context: ResourceNode): Int {
-        return context.container.totalQuantity + context.container.expected.totalQuantity
+        return context.container.totalQuantity
     }
 }
 
@@ -109,7 +109,7 @@ class Not(token: Token, arg: Node<Boolean>) : UnaryOperator<Boolean, Boolean>(to
 class QuantityOf(token: Token, arg: Node<ResourceType>) : UnaryOperator<ResourceType, Int>(token, arg) {
     override fun visit(context: ResourceNode): Int {
         val type = arg.visit(context)
-        return context.container.getQuantity(type) + context.container.expected[type]
+        return context.container.getQuantity(type)
     }
 
 }
