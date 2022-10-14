@@ -17,7 +17,7 @@ class EntitySetFormation(
      * A map of references to entities and their positions in the formation.
      */
     @Id(2)
-    @UseWriteStrategy()
+    @AsReference(true)
     val positions: Map<MovingObjectReference<out Entity>, LevelPosition>,
     /**
      * The center of the formation.
@@ -83,12 +83,5 @@ class EntitySetFormation(
         }
 
         return true
-    }
-}
-
-class EntityFormationPositionsWriteStrategy(type: Class<Map<MovingObjectReference<out Entity>, LevelPosition>>) :
-    WriteStrategy<Map<MovingObjectReference<out Entity>, LevelPosition>>(type) {
-    override fun write(obj: Map<MovingObjectReference<out Entity>, LevelPosition>, output: Output) {
-
     }
 }

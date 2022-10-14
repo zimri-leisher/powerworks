@@ -7,7 +7,9 @@ import graphics.Animation
 import graphics.Image
 import graphics.ImageCollection
 import graphics.Texture
+import item.BlockItemType
 import item.Inventory
+import item.ItemType
 import level.Hitbox
 import level.PhysicalLevelObjectTextures
 import level.PhysicalLevelObjectType
@@ -49,11 +51,6 @@ import java.util.*
 open class BlockType<T : Block>(initializer: BlockType<T>.() -> Unit = {}) : PhysicalLevelObjectType<T>() {
 
     /**
-     * The user-friendly name of this [BlockType]. This will be displayed in in inventories and other GUIs
-     */
-    var name = "Error"
-
-    /**
      * How many tiles wide the base of this [BlockType] will be
      */
     var widthTiles = 1
@@ -75,6 +72,7 @@ open class BlockType<T : Block>(initializer: BlockType<T>.() -> Unit = {}) : Phy
     var guiPool: GuiPool<*>? = null
 
     var placedClass: Class<T>? = null
+    var itemForm = BlockItemType.ERROR
 
     init {
         hitbox = Hitbox.TILE

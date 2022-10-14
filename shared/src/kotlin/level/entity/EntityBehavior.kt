@@ -95,7 +95,7 @@ class EntityBehavior(
             if (dist < 1 && timesReachedStep[currentPathStepIndex] == null) { // if we just reached this for the first time
                 // reached step
                 timesReachedStep[currentPathStepIndex] = timeSincePathingStart
-                parent.level.modify(EntityPathUpdate(parent.toReference() as MovingObjectReference, currentPathStepIndex, timeSincePathingStart, path.hashCode(), parent.level))
+                parent.level.modify(EntityPathUpdate(parent, currentPathStepIndex, timeSincePathingStart, path.hashCode(), parent.level))
                 currentPathStepIndex++
             }
             timeSincePathingStart++

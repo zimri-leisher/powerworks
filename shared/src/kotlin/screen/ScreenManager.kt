@@ -163,7 +163,7 @@ object ScreenManager : ControlEventHandler {
         var highestContainer: ResourceContainer? = null
         var highestGui: Gui? = null
         for((gui, container) in resourceContainerDisplays) {
-            if(gui.open && container.id != other.id && container.resourceCategory == other.resourceCategory) {
+            if(gui.open && container.id != other.id) {
                 if(highestContainer == null || gui.layer.ordinal > highestGui!!.layer.ordinal){
                     highestContainer = container
                     highestGui = gui

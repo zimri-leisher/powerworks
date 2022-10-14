@@ -45,7 +45,7 @@ class FarseekerBlockSetDestinationLevel(
     }
 
     override fun act() {
-        farseeker.destinationLevel = this.level
+        farseeker.destinationLevel = destinationLevel
     }
 
     override fun actGhost() {

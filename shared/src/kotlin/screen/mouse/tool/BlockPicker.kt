@@ -19,8 +19,11 @@ object BlockPicker : Tool(Control.PICK_BLOCK) {
 
     override fun onUse(event: ControlEvent, mouseLevelX: Int, mouseLevelY: Int): Boolean {
         if (event.type == ControlEventType.PRESS) {
-            val selectedBlock = LevelManager.levelObjectUnderMouse!!
-            if (selectedBlock.type.itemForm != null && PlayerManager.localPlayer.brainRobot.inventory.canRemove(selectedBlock.type.itemForm!!)) {
+            val selectedBlock = LevelManager.levelObjectUnderMouse!! as? Block
+            if (selectedBlock?.type?.itemForm != null && PlayerManager.localPlayer.brainRobot.inventory.canRemove(
+                    selectedBlock.type.itemForm
+                )
+            ) {
                 Mouse.heldItemType = selectedBlock.type.itemForm
                 GuiIngame.Hotbar.selectedSlotIndex = GuiIngame.Hotbar.slots.indexOf(Mouse.heldItemType)
             }

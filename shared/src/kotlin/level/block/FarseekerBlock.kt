@@ -60,14 +60,14 @@ class FarseekerBlock(xTile: Int, yTile: Int) : MachineBlock(MachineBlockType.FAR
             // move the second view camera to the new level TODO find a more permanent solution for this?
             val cameraToMove = GuiIngame.secondView.camera
             if(cameraToMove is Camera) {
-                destinationLevel!!.modify(LevelObjectSwitchLevelsTo(cameraToMove.toReference(), TileCoord(cameraToMove.xTile, cameraToMove.yTile), destinationLevel!!), true)
+                destinationLevel!!.modify(LevelObjectSwitchLevelsTo(cameraToMove, TileCoord(cameraToMove.xTile, cameraToMove.yTile), destinationLevel!!), true)
             }
         }
     }
 
     override fun afterAddToLevel(oldLevel: Level) {
         super.afterAddToLevel(oldLevel)
-        level.modify(FarseekerBlockSetAvailableLevels(toReference() as BlockReference, ProgressionManager.getAvailableEnemyLevels(team.players.first()), level))
+        level.modify(FarseekerBlockSetAvailableLevels(this, ProgressionManager.getAvailableEnemyLevels(team.players.first()), level))
     }
 
     override fun onInteractOn(event: ControlEvent, x: Int, y: Int, button: Int, shift: Boolean, ctrl: Boolean, alt: Boolean) {
@@ -96,7 +96,7 @@ class FarseekerBlock(xTile: Int, yTile: Int) : MachineBlock(MachineBlockType.FAR
         }
         for(obj in iter) {
             if(destinationLevel != null && destinationPosition != null) {
-                if(destinationLevel!!.modify(LevelObjectSwitchLevelsTo(obj.toReference(), destinationPosition!!, destinationLevel!!))) {
+                if(destinationLevel!!.modify(LevelObjectSwitchLevelsTo(obj, destinationPosition!!, destinationLevel!!))) {
                     iter.remove()
                     println("switched levels succesfully")
                 }

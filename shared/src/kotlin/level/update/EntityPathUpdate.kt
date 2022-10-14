@@ -7,6 +7,7 @@ import level.entity.Entity
 import level.entity.EntityType
 import network.MovingObjectReference
 import player.Player
+import serialization.AsReference
 import serialization.Id
 import java.util.*
 
@@ -17,7 +18,9 @@ class EntityPathUpdate(
     /**
      * A reference to the [Entity] which reached the path step.
      */
-    @Id(2) val entity: Entity,
+    @Id(2)
+    @AsReference
+    val entity: Entity,
     /**
      * The index of that path step in the overall path.
      */

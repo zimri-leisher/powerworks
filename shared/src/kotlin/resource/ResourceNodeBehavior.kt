@@ -2,7 +2,6 @@ package resource
 
 import item.Inventory
 import level.LevelManager
-import level.updateResourceNodeAttachments
 import main.GameState
 import main.joinToString
 import routing.script.RoutingLanguage

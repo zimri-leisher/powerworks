@@ -11,6 +11,11 @@ open class LevelObjectType<T : LevelObject>(initializer: LevelObjectType<T>.() -
     val id = nextId++
     var requiresUpdate = false
 
+    /**
+     * User-friendly name of this type
+     */
+    var name = "Error"
+
     init {
         initializer()
         ALL.add(this)
@@ -22,10 +27,12 @@ open class LevelObjectType<T : LevelObject>(initializer: LevelObjectType<T>.() -
 
         val RESOURCE_CONTAINER = LevelObjectType<ResourceContainer> {
             requiresUpdate = true
+            name = "Resource Container"
         }
 
         val RESOURCE_NETWORK = LevelObjectType<ResourceNetwork<*>> {
             requiresUpdate = true
+            name = "Resource Network"
         }
 
         val ERROR = LevelObjectType<LevelObject>()

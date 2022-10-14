@@ -72,6 +72,8 @@ open class EntityItemType(initializer: EntityItemType.() -> Unit = {}) : ItemTyp
     companion object {
         @ObjectList
         val ALL = mutableListOf<EntityItemType>()
+
+        val ERROR = EntityItemType()
     }
 }
 
@@ -96,17 +98,20 @@ class RobotItemType(initializer: RobotItemType.() -> Unit) : EntityItemType() {
     }
 }
 
-class BlockItemType(initializer: BlockItemType.() -> Unit) : ItemType() {
+class BlockItemType(initializer: BlockItemType.() -> Unit = {}) : ItemType() {
     var placedBlock: BlockType<*> = BlockType.ERROR
 
     init {
         initializer()
         ALL.add(this)
+        placedBlock.itemForm = this
     }
 
     companion object {
         @ObjectList
         val ALL = mutableListOf<BlockItemType>()
+
+        val ERROR = BlockItemType()
 
         val FARSEEKER = BlockItemType {
             name = "Farseeker"

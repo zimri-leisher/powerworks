@@ -51,7 +51,7 @@ abstract class MachineBlock(override val type: MachineBlockType<out MachineBlock
                 if (!type.loop)
                     on = false
                 currentWork = (type.maxWork / type.speed).toInt()
-                level.modify(MachineBlockFinishWork(toReference() as BlockReference, level))
+                level.modify(MachineBlockFinishWork(this, level))
             }
         }
     }

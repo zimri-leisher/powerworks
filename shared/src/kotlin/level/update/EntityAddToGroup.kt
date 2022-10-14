@@ -4,8 +4,10 @@ import level.Level
 import level.LevelManager
 import level.entity.Entity
 import level.entity.EntityGroup
+import level.moving.MovingObject
 import network.MovingObjectReference
 import player.Player
+import serialization.AsReference
 import serialization.Id
 
 /**
@@ -15,7 +17,9 @@ class EntityAddToGroup(
     /**
      * A list of references to entities to add to the group.
      */
-    @Id(2) val entitiesInGroup: List<MovingObjectReference>,
+    @Id(2)
+    @AsReference(true)
+    val entitiesInGroup: List<Entity>,
     level: Level
 ) : LevelUpdate(LevelUpdateType.ENTITY_ADD_TO_GROUP, level) {
 
@@ -25,13 +29,12 @@ class EntityAddToGroup(
         get() = null
 
     override fun canAct(): Boolean {
-        return entitiesInGroup.all { it.value != null }
+        return true
     }
 
     override fun act() {
-        val dereferencedEntities = entitiesInGroup.map { it.value!! as Entity }
-        val group = EntityGroup(dereferencedEntities)
-        dereferencedEntities.forEach { it.group = group }
+        val group = EntityGroup(entitiesInGroup)
+        entitiesInGroup.forEach { it.group = group }
     }
 
     override fun actGhost() {
@@ -49,14 +52,9 @@ class EntityAddToGroup(
             return false
         }
 
-        if (other.entitiesInGroup.any { otherEntityRef -> otherEntityRef.value == null || entitiesInGroup.none { it.value === otherEntityRef.value } }) {
+        if (other.entitiesInGroup.any { otherEntity ->  entitiesInGroup.none { it === otherEntity } }) {
             return false
         }
         return true
     }
-
-    override fun resolveReferences() {
-        entitiesInGroup.forEach { it.value = it.resolve() }
-    }
-
 }

@@ -29,7 +29,7 @@ object EntityPlacer : Tool(Control.SPAWN_ENTITY) {
     override fun onUse(event: ControlEvent, mouseLevelX: Int, mouseLevelY: Int): Boolean {
         if (event.type == ControlEventType.RELEASE && event.control == Control.SPAWN_ENTITY) {
             if (canSpawn) {
-                PlayerManager.takeAction(ActionLevelObjectPlace(PlayerManager.localPlayer, type!!.spawnedEntity, mouseLevelX, mouseLevelY, 0, LevelManager.levelUnderMouse!!))
+                PlayerManager.takeAction(ActionLevelObjectPlace(PlayerManager.localPlayer, type!!.spawnedEntity, mouseLevelX, mouseLevelY, LevelManager.levelUnderMouse!!))
             }
             return true
         }
