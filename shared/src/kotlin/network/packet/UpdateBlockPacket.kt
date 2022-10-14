@@ -8,5 +8,5 @@ import serialization.Id
 class UpdateBlockPacket(
         @Id(2)
         val block: Block) : Packet(PacketType.UPDATE_BLOCK) {
-    private constructor() : this(DefaultBlock(BlockType.ERROR, 0, 0, 0))
+    private constructor() : this(DefaultBlock(BlockType.ERROR, 0, 0))
 }

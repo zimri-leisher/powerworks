@@ -19,8 +19,9 @@ import serialization.Id
  * generated from this every time.
  */
 abstract class LevelGenerator(
-        @Id(1)
-        val level: Level) {
+    @Id(1)
+    val level: Level
+) {
 
     private constructor() : this(LevelManager.EMPTY_LEVEL)
 
@@ -38,6 +39,13 @@ abstract class LevelGenerator(
         return chunks.requireNoNulls()
     }
 
-    fun generateData() = LevelData(ConcurrentlyModifiableMutableList(), ConcurrentlyModifiableMutableList(), generateChunks(), mutableListOf(), mutableListOf())
+    fun generateData() = LevelData(
+        ConcurrentlyModifiableMutableList(),
+        ConcurrentlyModifiableMutableList(),
+        generateChunks(),
+        mutableListOf(),
+        mutableListOf(),
+        mutableListOf()
+    )
 
 }

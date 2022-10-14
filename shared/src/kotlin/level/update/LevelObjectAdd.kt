@@ -81,7 +81,7 @@ class LevelObjectAdd(
                 obj.inLevel = true
             }
         } else {
-            if(obj is ResourceNetwork) {
+            if(obj is ResourceNetwork<*>) {
                 level.data.resourceNetworks.add(obj)
             } else if(obj is ResourceContainer) {
                 level.data.resourceContainers.add(obj)
@@ -123,8 +123,5 @@ class LevelObjectAdd(
 
     override fun toString(): String {
         return "LevelObjectAdd(obj=$obj)"
-    }
-
-    override fun resolveReferences() {
     }
 }

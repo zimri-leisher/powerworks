@@ -299,7 +299,7 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, x: Int, y:
      * @return this [PhysicalLevelObject] as a [LevelObjectReference]
      * @see [LevelObjectReference]
      */
-    override fun toReference(): LevelObjectReference {
+    override fun toReference(): MovingObjectReference<out MovingObject> {
         return MovingObjectReference(this)
     }
 

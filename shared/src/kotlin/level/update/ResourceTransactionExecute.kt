@@ -1,12 +1,10 @@
 package level.update
 
+import item.ItemType
 import level.Level
 import level.LevelManager
 import player.Player
-import resource.ResourceTransaction
-import resource.ResourceTransactionExecutor
-import resource.SourceContainer
-import resource.emptyResourceList
+import resource.*
 import serialization.Id
 
 class ResourceTransactionExecute(
@@ -18,7 +16,7 @@ class ResourceTransactionExecute(
 ) : LevelUpdate(LevelUpdateType.RESOURCE_TRANSACTION_EXECUTE, level) {
 
     private constructor() : this(
-        ResourceTransaction(SourceContainer(), SourceContainer(), emptyResourceList()),
+        ResourceTransaction(SourceContainer(), SourceContainer(), stackOf(ItemType.ERROR, 0)),
         ResourceTransactionExecutor.Source,
         LevelManager.EMPTY_LEVEL
     )
@@ -40,8 +38,5 @@ class ResourceTransactionExecute(
 
     override fun equivalent(other: LevelUpdate): Boolean {
         return other is ResourceTransactionExecute && other.transaction == transaction && other.executor == executor
-    }
-
-    override fun resolveReferences() {
     }
 }

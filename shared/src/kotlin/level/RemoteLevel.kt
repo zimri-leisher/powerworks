@@ -93,7 +93,8 @@ class RemoteLevel(id: UUID, info: LevelInfo) : Level(id, info), PacketHandler {
                 updatesActedOn.put(update to true, time)
             } else {
                 if (!hasActed && (updatesCount - time) % 10 == 0) {
-                    update.resolveReferences()
+//                    update.resolveReferences()
+                    // todo figure out way to repeatedly resolve references... or just crash if they don't resolve
                 }
                 if (updatesCount - time > 60) {
                     incomingIterator.remove()

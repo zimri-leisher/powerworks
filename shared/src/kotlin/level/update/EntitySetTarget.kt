@@ -3,12 +3,19 @@ package level.update
 import level.Level
 import level.LevelManager
 import level.PhysicalLevelObject
+import level.block.BlockType
+import level.block.DefaultBlock
+import level.entity.DefaultEntity
 import level.entity.Entity
+import level.entity.EntityType
+import level.moving.DefaultMovingObject
+import level.moving.MovingObjectType
 import network.BlockReference
 import network.LevelObjectReference
 import network.MovingObjectReference
 import network.PhysicalLevelObjectReference
 import player.Player
+import serialization.AsReference
 import serialization.Id
 import java.util.*
 
@@ -19,36 +26,36 @@ class EntitySetTarget(
     /**
      * A reference to the [Entity] to set the target of.
      */
+    @AsReference
     @Id(2)
-    val entityReference: MovingObjectReference,
+    val entity: Entity,
     /**
      * A reference to the target, or null if there is none.
      */
+    @AsReference
     @Id(3)
-    val target: PhysicalLevelObjectReference?, level: Level
+    val target: PhysicalLevelObject?, level: Level
 
 ) : LevelUpdate(LevelUpdateType.ENTITY_SET_TARGET, level) {
 
     private constructor() : this(
-        MovingObjectReference(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0),
-        BlockReference(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0), LevelManager.EMPTY_LEVEL
+        DefaultEntity(EntityType.ERROR, 0, 0),
+        DefaultBlock(BlockType.ERROR, 0, 0),
+        LevelManager.EMPTY_LEVEL
     )
 
     override val playersToSendTo: Set<Player>?
         get() = null
 
     override fun canAct(): Boolean {
-        if (entityReference.value == null) {
-            return false
-        }
-        if (target != null && target.value == null) {
+        if (target != null) {
             return false
         }
         return true
     }
 
     override fun act() {
-        (entityReference.value!! as Entity).behavior.attackTarget = target?.value as PhysicalLevelObject
+        entity.behavior.attackTarget = target
     }
 
     override fun actGhost() {
@@ -61,17 +68,12 @@ class EntitySetTarget(
         if (other !is EntitySetTarget) {
             return false
         }
-        if (entityReference.value == null || other.entityReference.value !== entityReference.value) {
+        if (entity !== other.entity) {
             return false
         }
-        if (target?.value != other.target?.value) {
+        if (target != other.target) {
             return false
         }
         return true
     }
-
-    override fun resolveReferences() {
-        entityReference.value = entityReference.resolve()
-    }
-
 }

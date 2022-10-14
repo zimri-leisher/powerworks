@@ -278,45 +278,6 @@ fun Level.doHitboxesCollide(
     )
 }
 
-/**
- * Updates the [ResourceNodeOld.attachedNode] of the given [node]
- */
-fun Level.updateResourceNodeAttachments(node: ResourceNodeOld) {
-    val attached = getResourceNodesAt(
-        node.xTile + Geometry.getXSign(node.dir),
-        node.yTile + Geometry.getYSign(node.dir),
-        { it.resourceCategory == node.resourceCategory })
-        .filter { it.dir == Geometry.getOppositeAngle(node.dir) }.firstOrNull()
-    node.attachedNode = attached
-    if (attached != null && node.network.id != attached.network.id) {
-        // merge networks
-        if (node.network.attachedNodes.size >= attached.network.attachedNodes.size) {
-            node.network.mergeIntoThis(attached.network)
-        } else {
-            attached.network.mergeIntoThis(node.network)
-        }
-    }
-    // TODO combine networks
-}
-
-/**
- * @return a set of [ResourceNodeOld]s in this [Level] at [xTile], [yTile] which match the given [predicate] (defaults to { true })
- */
-fun Level.getResourceNodesAt(
-    xTile: Int,
-    yTile: Int,
-    predicate: (ResourceNodeOld) -> Boolean = { true }
-): Set<ResourceNodeOld> {
-    val set = mutableSetOf<ResourceNodeOld>()
-    if (!isTileWithinBounds(xTile, yTile))
-        return emptySet()
-    val chunk = getChunkAtTile(xTile, yTile)
-//    chunk.data.resourceNodes.forEach {
-//        it.filter { predicate(it) && it.xTile == xTile && it.yTile == yTile }.forEach { set.add(it) }
-//    }
-    return set
-}
-
 fun Level.getResourceNodeAt(xTile: Int, yTile: Int): ResourceNode? {
     if (!isTileWithinBounds(xTile, yTile))
         return null

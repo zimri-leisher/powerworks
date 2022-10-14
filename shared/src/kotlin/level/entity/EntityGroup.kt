@@ -14,10 +14,11 @@ import serialization.Id
 import java.awt.Rectangle
 
 data class Formation(
-        @Id(1)
-        val center: LevelPosition,
-        @Id(2)
-        val positions: Map<Entity, LevelPosition>) {
+    @Id(1)
+    val center: LevelPosition,
+    @Id(2)
+    val positions: Map<Entity, LevelPosition>
+) {
 
     private constructor() : this(LevelPosition(0, 0, LevelManager.EMPTY_LEVEL), mapOf())
 
@@ -26,11 +27,14 @@ data class Formation(
 
     init {
         for ((entity, position) in positions) {
-            boundaries.add(Rectangle(
+            boundaries.add(
+                Rectangle(
                     position.x + entity.hitbox.xStart + entity.hitbox.width / 2,
                     position.y + entity.hitbox.yStart + entity.hitbox.height / 2,
                     entity.hitbox.width,
-                    entity.hitbox.height))
+                    entity.hitbox.height
+                )
+            )
         }
     }
 }
@@ -40,7 +44,8 @@ data class Formation(
  * group [Formation] is stored.
  */
 class EntityGroup(
-        entities: List<Entity> = listOf()) {
+    entities: List<Entity> = listOf()
+) {
 
     @Id(1)
     private val mutableEntities = mutableListOf<Entity>()
@@ -68,7 +73,12 @@ class EntityGroup(
     val inFormation: Boolean
         get() = formation != null &&
                 formation!!.positions.all { (entity, pos) ->
-                    Geometry.distance(entity.x + entity.hitbox.xStart + entity.hitbox.width / 2, entity.y + entity.hitbox.yStart + entity.hitbox.height / 2, pos.x, pos.y) < 8
+                    Geometry.distance(
+                        entity.x + entity.hitbox.xStart + entity.hitbox.width / 2,
+                        entity.y + entity.hitbox.yStart + entity.hitbox.height / 2,
+                        pos.x,
+                        pos.y
+                    ) < 8
                 }
 
     init {
@@ -115,8 +125,10 @@ class EntityGroup(
         var currentLengthOfSpiral = 0
         var currentPosOnSpiral = 0
         while (remainingEntityCount > 0) {
-            val nextPosition = Coord(lastPosition.x + padding * Geometry.getXSign(currentDir),
-                    lastPosition.y + padding * Geometry.getYSign(currentDir))
+            val nextPosition = Coord(
+                lastPosition.x + padding * Geometry.getXSign(currentDir),
+                lastPosition.y + padding * Geometry.getYSign(currentDir)
+            )
             if (level.canAdd(biggestHitbox, nextPosition.x, nextPosition.y)) {
                 formationPositions.add(nextPosition)
                 remainingEntityCount--
@@ -147,15 +159,24 @@ class EntityGroup(
         remainingEntities.addAll(entities)
 
         formationPositions.forEach {
-            val readjustedPoint = Coord(it.x - formationCenter.x + groupCenter.x, it.y - formationCenter.y + groupCenter.y)
-            val nearestEntity = remainingEntities.minBy { entity -> Geometry.distanceSq(readjustedPoint.x, readjustedPoint.y, entity.x, entity.y) }!!
+            val readjustedPoint =
+                Coord(it.x - formationCenter.x + groupCenter.x, it.y - formationCenter.y + groupCenter.y)
+            val nearestEntity = remainingEntities.minBy { entity ->
+                Geometry.distanceSq(
+                    readjustedPoint.x,
+                    readjustedPoint.y,
+                    entity.x,
+                    entity.y
+                )
+            }
             remainingEntities.remove(nearestEntity)
             newFormation[nearestEntity] = it
         }
 
         val level = entities.first().level
         println("creating formation")
-        level.modify(EntitySetFormation(newFormation.mapKeys { it.key.toReference() as MovingObjectReference }.mapValues { LevelPosition(it.value.x, it.value.y, level) }, LevelPosition(x, y, level), level))
+        level.modify(EntitySetFormation(newFormation.mapKeys { it.key.toReference() as MovingObjectReference<out Entity> }
+            .mapValues { LevelPosition(it.value.x, it.value.y, level) }, LevelPosition(x, y, level), level))
     }
 
     fun render() {

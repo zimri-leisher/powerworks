@@ -90,7 +90,4 @@ class DefaultLevelUpdate : LevelUpdate(LevelUpdateType.DEFAULT, LevelManager.EMP
     }
 
     override fun equivalent(other: LevelUpdate) = other is DefaultLevelUpdate
-
-    override fun resolveReferences() {
-    }
 }

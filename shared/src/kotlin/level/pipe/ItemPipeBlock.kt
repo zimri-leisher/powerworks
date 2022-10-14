@@ -32,9 +32,11 @@ class ItemPipeBlock(xTile: Int, yTile: Int) : PipeBlock(PipeBlockType.ITEM_PIPE,
         if (Game.currentDebugCode == DebugCode.RENDER_HITBOXES)
             renderHitbox()
         if (Game.currentDebugCode == DebugCode.PIPE_INFO && LevelManager.levelObjectUnderMouse == this) {
-            for (connection in farEdges) {
-                if (connection != null) {
-                    Renderer.renderEmptyRectangle(connection.xTile * 16, connection.yTile * 16, 16, 16)
+            if(vertex != null) {
+                for (connection in vertex!!.farEdges) {
+                    if (connection != null) {
+                        Renderer.renderEmptyRectangle(connection.xTile * 16, connection.yTile * 16, 16, 16)
+                    }
                 }
             }
         }

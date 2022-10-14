@@ -5,6 +5,7 @@ import level.LevelManager
 import level.block.FarseekerBlock
 import network.BlockReference
 import player.Player
+import serialization.AsReference
 import serialization.Id
 import java.util.*
 
@@ -16,7 +17,8 @@ class FarseekerBlockSetDestinationLevel(
      * A reference to the [FarseekerBlock] to set the destination level of.
      */
     @Id(3)
-    val blockReference: BlockReference,
+    @AsReference
+    val farseeker: FarseekerBlock,
     /**
      * The level to set the destination to.
      */
@@ -25,7 +27,7 @@ class FarseekerBlockSetDestinationLevel(
 ) : LevelUpdate(LevelUpdateType.FARSEEKER_SET_DESTINATION_LEVEL, level) {
 
     private constructor() : this(
-        BlockReference(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0),
+        FarseekerBlock(0, 0),
         LevelManager.EMPTY_LEVEL,
         LevelManager.EMPTY_LEVEL
     )
@@ -34,25 +36,16 @@ class FarseekerBlockSetDestinationLevel(
         get() = null
 
     override fun canAct(): Boolean {
-        if (blockReference.value == null) {
-            println("reference null")
-            return false
-        }
-        if (blockReference.value !is FarseekerBlock) {
-            println("not farseeker")
-            return false
-        }
-        if (this.level.id !in (blockReference.value as FarseekerBlock).availableDestinations.keys) {
+        if (this.level.id !in farseeker.availableDestinations.keys) {
             println("not available ${this.level.id}")
-            println("available levels: ${(blockReference.value as FarseekerBlock).availableDestinations}")
+            println("available levels: ${farseeker.availableDestinations}")
             return false
         }
         return true
     }
 
     override fun act() {
-        val block = blockReference.value as FarseekerBlock
-        block.destinationLevel = this.level
+        farseeker.destinationLevel = this.level
     }
 
     override fun actGhost() {
@@ -66,14 +59,6 @@ class FarseekerBlockSetDestinationLevel(
             return false
         }
 
-        if (other.blockReference.value == null) {
-            return false
-        }
-        return other.blockReference.value == blockReference.value && other.level.id == level.id
+        return other.farseeker === farseeker && other.level.id == level.id
     }
-
-    override fun resolveReferences() {
-        blockReference.value = blockReference.resolve()
-    }
-
 }

@@ -11,6 +11,7 @@ import level.update.*
 import network.*
 import player.team.TeamPermission
 import resource.*
+import serialization.AsReference
 import serialization.Id
 import java.util.*
 
@@ -18,6 +19,9 @@ sealed class PlayerAction(
     @Id(1)
     val owner: Player
 ) {
+
+    var ghostActions: List<LevelUpdate>? = null
+
     /**
      * @return `true` if the action is possible for [owner] at the current game state, `false` otherwise
      */
@@ -30,18 +34,24 @@ sealed class PlayerAction(
      */
     abstract fun getUpdates(): List<LevelUpdate>
 
+    fun act() = getUpdates().all { it.level.modify(it) }
+
     /**
      * Visually fakes the action that would be taken if [act] were called. Implementations of this method should make no
      * change to the game state. This is only so that there is instantaneous client visual feedback
      */
     fun actGhost() {
-        getUpdates().forEach { it.actGhost() }
+        ghostActions = getUpdates()
+        ghostActions!!.forEach { it.actGhost() }
     }
 
     /**
      * Cancel the fake action taken by [actGhost]
      */
-    abstract fun cancelActGhost()
+    fun cancelActGhost() {
+        ghostActions?.forEach { it.cancelActGhost() }
+        ghostActions = null
+    }
 }
 
 class ActionError : PlayerAction(Player(User(UUID.randomUUID(), ""), UUID.randomUUID(), UUID.randomUUID())) {
@@ -51,7 +61,6 @@ class ActionError : PlayerAction(Player(User(UUID.randomUUID(), ""), UUID.random
     }
 
     override fun getUpdates() = emptyList<LevelUpdate>()
-
 }
 
 class ActionDoResourceTransaction(
@@ -79,99 +88,9 @@ class ActionDoResourceTransaction(
         return true
     }
 
-    override fun act() {
-        // call to PlayerResourceTransactionExecutor
-        owner.resourceTransactionExecutor.execute(transaction)
+    override fun getUpdates(): List<LevelUpdate> {
+        return listOf(ResourceTransactionExecute(transaction, owner.resourceTransactionExecutor, transaction.src.level))
     }
-
-    override fun actGhost() {
-    }
-
-    override fun cancelActGhost() {
-    }
-
-}
-
-/**
- * Adds or removes items from the container matching the given [toContainerId] in the given [blockReference], and removes or
- * adds them to/from the [owner]'s brain robot inventory
- */
-class ActionTransferResourcesBetweenLevelObjects(
-    owner: Player,
-    @Id(2)
-    val fromReference: LevelObjectReference,
-    @Id(6)
-    val fromContainerId: UUID,
-    @Id(3)
-    val toReference: LevelObjectReference,
-    @Id(5)
-    val toContainerId: UUID,
-    @Id(4)
-    val resources: ResourceList
-) : PlayerAction(owner) {
-
-    private constructor() : this(
-        Player(User(UUID.randomUUID(), ""), UUID.randomUUID(), UUID.randomUUID()),
-        GhostLevelObjectReference(GhostLevelObject(PhysicalLevelObjectType.ERROR, 0, 0, 0)), UUID.randomUUID(),
-        GhostLevelObjectReference(GhostLevelObject(PhysicalLevelObjectType.ERROR, 0, 0, 0)), UUID.randomUUID(), resourceListOf()
-    )
-
-    override fun verify(): Boolean {
-        if (fromReference.value == null || toReference.value == null) {
-            println("reference null")
-            return false
-        }
-        val from = fromReference.value!!
-        if (!from.team.check(TeamPermission.MODIFY_LEVEL_OBJECTS, owner)) {
-            println("no perms")
-            return false
-        }
-        val to = toReference.value!!
-        if (!to.team.check(TeamPermission.MODIFY_LEVEL_OBJECTS, owner)) {
-            println("no perms")
-            return false
-        }
-        val fromContainer = from.containers.firstOrNull { it.id == fromContainerId } ?: return false
-        val toContainer = to.containers.firstOrNull { it.id == toContainerId } ?: return false
-        if (!fromContainer.canRemove(resources) || !toContainer.canAdd(resources)) {
-            println(
-                "can't remove from $fromContainer ${fromContainer.canRemove(resources)}, to $toContainer, ${
-                    toContainer.canAdd(
-                        resources
-                    )
-                }"
-            )
-            return false
-        }
-        return true
-    }
-
-    override fun act() {
-        fromReference.level.modify(
-            LevelObjectResourceContainerModify(
-                fromReference,
-                fromContainerId,
-                false,
-                resources
-            )
-        )
-
-        toReference.level.modify(
-            LevelObjectResourceContainerModify(
-                toReference,
-                toContainerId,
-                true,
-                resources
-            )
-        )
-    }
-
-    override fun actGhost() {
-    }
-
-    override fun cancelActGhost() {
-    }
-
 }
 
 /**
@@ -180,6 +99,7 @@ class ActionTransferResourcesBetweenLevelObjects(
 class ActionEntityCreateGroup(
     owner: Player,
     @Id(2)
+    // TODO list reference
     val entities: List<MovingObjectReference>
 ) : PlayerAction(owner) {
 
@@ -203,22 +123,16 @@ class ActionEntityCreateGroup(
         return true
     }
 
-    override fun act() {
-        entities.first().level.modify(EntityAddToGroup(entities))
+    override fun getUpdates(): List<LevelUpdate> {
+        return listOf(EntityAddToGroup(entities, entities.first().level))
     }
-
-    override fun actGhost() {
-    }
-
-    override fun cancelActGhost() {
-    }
-
 }
 
 class ActionFarseekerBlockSetLevel(
     owner: Player,
     @Id(2)
-    val blockReference: BlockReference,
+    @AsReference
+    val block: FarseekerBlock,
     @Id(3)
     val level: Level
 ) : PlayerAction(owner) {
@@ -243,6 +157,10 @@ class ActionFarseekerBlockSetLevel(
             return false
         }
         return true
+    }
+
+    override fun getUpdates(): List<LevelUpdate> {
+        return listOf(FarseekerBlockSetDestinationLevel(blockReference))
     }
 
     override fun act() {

@@ -7,7 +7,7 @@ import level.entity.Entity
 import level.entity.Formation
 import network.MovingObjectReference
 import player.Player
-import serialization.Id
+import serialization.*
 
 /**
  * A level update for setting the formation positions of a group of entities.
@@ -17,7 +17,8 @@ class EntitySetFormation(
      * A map of references to entities and their positions in the formation.
      */
     @Id(2)
-    val positions: Map<MovingObjectReference, LevelPosition>,
+    @UseWriteStrategy()
+    val positions: Map<MovingObjectReference<out Entity>, LevelPosition>,
     /**
      * The center of the formation.
      */
@@ -83,9 +84,11 @@ class EntitySetFormation(
 
         return true
     }
+}
 
-    override fun resolveReferences() {
-        positions.forEach { key, _ -> key.value = key.resolve() }
+class EntityFormationPositionsWriteStrategy(type: Class<Map<MovingObjectReference<out Entity>, LevelPosition>>) :
+    WriteStrategy<Map<MovingObjectReference<out Entity>, LevelPosition>>(type) {
+    override fun write(obj: Map<MovingObjectReference<out Entity>, LevelPosition>, output: Output) {
+
     }
-
 }

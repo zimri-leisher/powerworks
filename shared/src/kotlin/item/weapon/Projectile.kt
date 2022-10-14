@@ -26,7 +26,7 @@ class Projectile(
         @Id(5)
         val parent: PhysicalLevelObject) {
 
-    private constructor() : this(ProjectileType.SMALL_BULLET, 0, 0, 0f, DefaultBlock(BlockType.ERROR, 0, 0, 0))
+    private constructor() : this(ProjectileType.SMALL_BULLET, 0, 0, 0f, DefaultBlock(BlockType.ERROR, 0, 0))
 
     @Id(7)
     var xVel = 0f

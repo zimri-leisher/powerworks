@@ -1,40 +1,42 @@
 package level.update
 
-import level.Level
-import level.LevelManager
-import level.canAdd
+import level.*
+import level.block.BlockType
+import level.block.DefaultBlock
 import level.moving.MovingObject
 import misc.TileCoord
 import network.BlockReference
 import network.LevelObjectReference
+import network.PhysicalLevelObjectReference
 import player.Player
+import serialization.AsReference
 import serialization.Id
 import java.util.*
 
 class LevelObjectSwitchLevelsTo(
     @Id(3)
-    val reference: LevelObjectReference,
+    @AsReference
+    val obj: LevelObject,
     @Id(5)
     val destinationPosition: TileCoord, level: Level
 ) : LevelUpdate(LevelUpdateType.LEVEL_OBJECT_SWITCH_LEVELS, level) {
 
-    private constructor() : this(BlockReference(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0), TileCoord(0, 0), LevelManager.EMPTY_LEVEL)
+    private constructor() : this(DefaultBlock(BlockType.ERROR, 0, 0), TileCoord(0, 0), LevelManager.EMPTY_LEVEL)
 
     override val playersToSendTo: Set<Player>?
         get() = null
 
     override fun canAct(): Boolean {
-        if (reference.value == null) {
-            return false
+        if (obj !is PhysicalLevelObject) {
+            return true
         }
-        if (!level.canAdd(reference.value!!.type, destinationPosition.xTile shl 4, destinationPosition.yTile shl 4)) {
+        if (!level.canAdd(obj.type, destinationPosition.xTile shl 4, destinationPosition.yTile shl 4)) {
             return false
         }
         return true
     }
 
     override fun act() {
-        val obj = reference.value!!
         if (obj is MovingObject) {
             obj.setPosition(destinationPosition.xTile shl 4, destinationPosition.yTile shl 4)
         }
@@ -60,14 +62,6 @@ class LevelObjectSwitchLevelsTo(
         if (other !is LevelObjectSwitchLevelsTo) {
             return false
         }
-        if (other.reference.value == null) {
-            return false
-        }
-        return other.reference.value == reference.value && destinationPosition == other.destinationPosition
+        return other.obj === obj && destinationPosition == other.destinationPosition
     }
-
-    override fun resolveReferences() {
-        reference.value = reference.resolve()
-    }
-
 }

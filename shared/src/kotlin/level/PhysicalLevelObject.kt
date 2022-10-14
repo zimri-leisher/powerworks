@@ -7,14 +7,7 @@ import io.ControlEvent
 import main.DebugCode
 import main.Game
 import main.toColor
-import network.LevelObjectReference
-import network.PhysicalLevelObjectReference
-import player.team.Team
-import resource.ResourceContainerGroup
 import serialization.Id
-import serialization.Input
-import serialization.Output
-import serialization.Serializer
 import java.util.*
 
 abstract class PhysicalLevelObject protected constructor(

@@ -4,6 +4,7 @@ import com.badlogic.gdx.Input
 import io.ControlEvent
 import io.ControlEventType
 import item.Inventory
+import item.ItemType
 import item.OreItemType
 import resource.*
 import serialization.Id
@@ -53,7 +54,7 @@ class SmelterBlock(xTile: Int, yTile: Int) : MachineBlock(MachineBlockType.SMELT
     }
 
     override fun update() {
-        on = input.totalQuantity > 1 && !(output[0] != null && output[0]!!.quantity >= output[0]!!.type.maxStack)
+        on = input.totalQuantity > 1 && !(output[0] != null && output[0]!!.quantity >= (output[0]!!.type as ItemType).maxStack)
         super.update()
     }
 

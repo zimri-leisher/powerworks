@@ -4,7 +4,9 @@ import behavior.leaves.EntityPath
 import level.Level
 import level.LevelManager
 import level.LevelPosition
+import level.entity.DefaultEntity
 import level.entity.Entity
+import level.entity.EntityType
 import misc.Coord
 import network.MovingObjectReference
 import player.Player
@@ -32,7 +34,7 @@ class EntitySetPath(
 ) : LevelUpdate(LevelUpdateType.ENTITY_SET_PATH, level) {
 
     private constructor() : this(
-        MovingObjectReference(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0),
+        DefaultEntity(EntityType.ERROR, 0, 0),
         Coord(0, 0),
         EntityPath(LevelPosition(0, 0, LevelManager.EMPTY_LEVEL), listOf()), LevelManager.EMPTY_LEVEL
     )
@@ -41,11 +43,11 @@ class EntitySetPath(
         get() = null
 
     override fun canAct(): Boolean {
-        return entityReference.value != null
+        return true
     }
 
     override fun act() {
-        (entityReference.value!! as Entity).apply {
+        entity.apply {
             setPosition(startPosition.x, startPosition.y)
             behavior.follow(path)
         }
@@ -62,7 +64,7 @@ class EntitySetPath(
             return false
         }
 
-        if (other.entity || other.entityReference.value !== entityReference.value) {
+        if (other.entity !== entity) {
             return false
         }
         return path == other.path && startPosition == other.startPosition

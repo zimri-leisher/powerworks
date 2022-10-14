@@ -19,7 +19,7 @@ class FollowPath(parent: BehaviorTree, val pathVar: Variable) : Leaf(parent) {
             return
         }
         setData(DefaultVariable.PATH_BEING_FOLLOWED, path)
-        entity.level.modify(EntitySetPath(entity.toReference() as MovingObjectReference, Coord(entity.x, entity.y), path))
+        entity.level.modify(EntitySetPath(entity, Coord(entity.x, entity.y), path, entity.level))
     }
 
     override fun updateState(entity: Entity): NodeState {
@@ -31,7 +31,7 @@ class FollowPath(parent: BehaviorTree, val pathVar: Variable) : Leaf(parent) {
             } else {
                 path = recheckPath
                 setData(DefaultVariable.PATH_BEING_FOLLOWED, path)
-                entity.level.modify(EntitySetPath(entity.toReference() as MovingObjectReference, Coord(entity.x, entity.y), path))
+                entity.level.modify(EntitySetPath(entity, Coord(entity.x, entity.y), path, entity.level))
                 if (recheckPath.steps.isEmpty()) {
                     return NodeState.SUCCESS
                 }

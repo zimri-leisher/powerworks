@@ -3,7 +3,9 @@ package level.update
 import item.weapon.ProjectileType
 import level.Level
 import level.LevelManager
+import level.entity.DefaultEntity
 import level.entity.Entity
+import level.entity.EntityType
 import misc.Coord
 import network.MovingObjectReference
 import player.Player
@@ -34,7 +36,7 @@ class EntityFireWeapon(
      * A reference to the [Entity] that fired.
      */
     @Id(5)
-    val entityReference: MovingObjectReference,
+    val entity: Entity,
     level: Level
 ) : LevelUpdate(LevelUpdateType.ENTITY_FIRE_WEAPON, level) {
 
@@ -42,7 +44,7 @@ class EntityFireWeapon(
         Coord(0, 0),
         0f,
         ProjectileType.ERROR,
-        MovingObjectReference(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0),
+        DefaultEntity(EntityType.ERROR, 0, 0),
         LevelManager.EMPTY_LEVEL
     )
 
@@ -50,10 +52,6 @@ class EntityFireWeapon(
         get() = null
 
     override fun canAct(): Boolean {
-        if (entityReference.value == null) {
-            return false
-        }
-        val entity = entityReference.value!! as Entity
         if (entity.weapon == null) {
             return false
         }
@@ -64,7 +62,6 @@ class EntityFireWeapon(
     }
 
     override fun act() {
-        val entity = entityReference.value!! as Entity
         entity.setPosition(positionWhenFired.x, positionWhenFired.y)
         if (entity.weapon != null) {
             if (!entity.weapon!!.canFire) {
@@ -92,11 +89,8 @@ class EntityFireWeapon(
             return false
         }
 
-        if (other.entityReference.value == null) {
-            return false
-        }
 
-        if (other.entityReference.value !== entityReference.value) {
+        if (other.entity !== entity) {
             return false
         }
 
@@ -114,9 +108,4 @@ class EntityFireWeapon(
 
         return true
     }
-
-    override fun resolveReferences() {
-        entityReference.value = entityReference.resolve()
-    }
-
 }

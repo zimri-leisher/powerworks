@@ -5,6 +5,7 @@ import graphics.text.TextRenderParams
 import item.Inventory
 import network.BrainRobotReference
 import network.LevelObjectReference
+import network.MovingObjectReference
 import network.User
 import serialization.Id
 
@@ -22,7 +23,7 @@ class BrainRobot(
         Renderer.renderText("${user.displayName}'s BRAIN", x - 8, y + 44, params = TextRenderParams(size = 10))
     }
 
-    override fun toReference(): LevelObjectReference {
+    override fun toReference(): BrainRobotReference {
         return BrainRobotReference(this)
     }
 }

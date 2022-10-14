@@ -106,7 +106,7 @@ class MapSerializer<R : Map<*, *>>(
     override val createStrategy = object : CreateStrategy<R>(type) {
         override fun create(input: Input): R {
             val mutableCollection = mutableMapOf<Any?, Any?>()
-            val size = input.readUnsignedShort()
+            val size = input.readInt()
             for (i in 0 until size) {
                 val pair = input.read(Pair::class.java)
                 mutableCollection[pair.first] = pair.second
@@ -117,7 +117,7 @@ class MapSerializer<R : Map<*, *>>(
 
     override val writeStrategy = object : WriteStrategy<R>(type) {
         override fun write(obj: R, output: Output) {
-            output.writeShort(obj.size)
+            output.writeInt(obj.size)
             for ((first, second) in obj) {
                 output.write(first to second)
             }

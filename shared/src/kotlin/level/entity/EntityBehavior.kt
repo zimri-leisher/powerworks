@@ -77,7 +77,7 @@ class EntityBehavior(
                 val xDiff = target.x + target.hitbox.xStart + target.hitbox.width / 2 - parent.x
                 val yDiff = target.y + target.hitbox.yStart + target.hitbox.height / 2 - parent.y
                 val angle = atan2(yDiff.toFloat(), xDiff.toFloat())
-                parent.level.modify(EntityFireWeapon(Coord(parent.x, parent.y), angle, parent.weapon!!.type.projectileType, parent.toReference() as MovingObjectReference, parent.level))
+                parent.level.modify(EntityFireWeapon(Coord(parent.x, parent.y), angle, parent.weapon!!.type.projectileType, parent, parent.level))
             }
         }
     }

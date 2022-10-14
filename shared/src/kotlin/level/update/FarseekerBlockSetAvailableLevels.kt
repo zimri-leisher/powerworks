@@ -6,6 +6,7 @@ import level.LevelManager
 import level.block.FarseekerBlock
 import network.BlockReference
 import player.Player
+import serialization.AsReference
 import serialization.Id
 import java.util.*
 
@@ -17,7 +18,8 @@ class FarseekerBlockSetAvailableLevels(
      * A reference to the [FarseekerBlock] to set the destination levels of.
      */
     @Id(3)
-    val farseekerReference: BlockReference,
+    @AsReference
+    val farseeker: FarseekerBlock,
     /**
      * A map of the UUID of the level and its [LevelInfo] to set as the available destination levels.
      */
@@ -26,7 +28,7 @@ class FarseekerBlockSetAvailableLevels(
 ) : LevelUpdate(LevelUpdateType.FARSEEKER_SET_AVAILABLE_LEVELS, level) {
 
     private constructor() : this(
-        BlockReference(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0),
+        FarseekerBlock(0, 0),
         mapOf(),
         LevelManager.EMPTY_LEVEL
     )
@@ -35,11 +37,10 @@ class FarseekerBlockSetAvailableLevels(
         get() = null
 
     override fun canAct(): Boolean {
-        return farseekerReference.value != null && farseekerReference.value is FarseekerBlock
+        return true
     }
 
     override fun act() {
-        val farseeker = farseekerReference.value!! as FarseekerBlock
         farseeker.availableDestinations = levels
     }
 
@@ -54,11 +55,6 @@ class FarseekerBlockSetAvailableLevels(
             return false
         }
 
-        return other.farseekerReference.value != null && other.farseekerReference.value === farseekerReference.value && levels == other.levels
+        return other.farseeker === farseeker && levels == other.levels
     }
-
-    override fun resolveReferences() {
-        farseekerReference.value = farseekerReference.resolve()
-    }
-
 }
