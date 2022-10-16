@@ -9,6 +9,7 @@ import io.ControlEventType
 import item.Inventory
 import item.ItemType
 import main.toColor
+import player.ActionDoResourceTransaction
 import player.ActionTransferResourcesBetweenLevelObjects
 import player.PlayerManager
 import resource.*
@@ -55,34 +56,29 @@ open class ElementResourceContainer(
                         // try to transfer resources from this to the highest elementresourcecontainer that isn't this
                         val other = ScreenManager.getSecondaryResourceContainer(this.container)
                         println("trying to transfer to $other")
-                        if (other?.attachedLevelObject != null && this.container.attachedLevelObject != null) {
-                            // verification will check whether or not this is possible
-                            println("transferring")
+                        if (other != null) {
                             PlayerManager.takeAction(
-                                ActionTransferResourcesBetweenLevelObjects(
+                                ActionDoResourceTransaction(
                                     PlayerManager.localPlayer,
-                                    this.container.attachedLevelObject!!.toReference(),
-                                    this.container.id,
-                                    other.attachedLevelObject!!.toReference(),
-                                    other.id, resourceListOf(type to quantity)
+                                    ResourceTransaction(this.container, other, stackOf(type, quantity))
                                 )
                             )
                         }
-                    } else if (interaction.event.control == Control.SECONDARY_INTERACT && container.resourceCategory == ResourceCategory.ITEM) {
-                        GuiIngame.Hotbar.addItemType(type as ItemType)
+                    } else if (interaction.event.control == Control.SECONDARY_INTERACT && type is ItemType) {
+                        GuiIngame.Hotbar.addItemType(type)
                     }
                 } else {
-                    if (interaction.event.control == Control.INTERACT && Mouse.heldItemType != null && container.resourceCategory == ResourceCategory.ITEM) {
+                    if (interaction.event.control == Control.INTERACT && Mouse.heldItemType != null) {
                         val quantity = PlayerManager.localPlayer.brainRobot.inventory.getQuantity(Mouse.heldItemType!!)
                         if (quantity > 0) {
                             PlayerManager.takeAction(
-                                ActionTransferResourcesBetweenLevelObjects(
+                                ActionDoResourceTransaction(
                                     PlayerManager.localPlayer,
-                                    PlayerManager.localPlayer.brainRobot.toReference(),
-                                    PlayerManager.localPlayer.brainRobot.inventory.id,
-                                    container.attachedLevelObject!!.toReference(),
-                                    container.id,
-                                    resourceListOf(Mouse.heldItemType!! to quantity)
+                                    ResourceTransaction(
+                                        PlayerManager.localPlayer.brainRobot.inventory,
+                                        container,
+                                        stackOf(Mouse.heldItemType!!, quantity)
+                                    )
                                 )
                             )
                         }
@@ -94,7 +90,21 @@ open class ElementResourceContainer(
         getToolTip = { index ->
             if (index < currentResources.size) {
                 val entry = currentResources[index]
-                val expectedOfType = container.expected[entry.key]
+                val expectedOfType = container.nodes.map { node ->
+                    node.networks.map { network ->
+                        network.getFlowInProgress(container).map { flow ->
+                            if (flow.stack.type == entry.key) {
+                                if (flow.direction == ResourceFlowDirection.IN)
+                                    flow.stack.quantity
+                                else
+                                // out
+                                    -flow.stack.quantity
+                            } else
+                            // it is not of the right type
+                                0
+                        }
+                    }
+                }
                 "${entry.key} * ${entry.value}" + if (expectedOfType != 0) "(+$expectedOfType)" else ""
             } else {
                 val expected = container.expected

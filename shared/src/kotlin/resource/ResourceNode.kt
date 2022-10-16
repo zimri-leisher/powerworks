@@ -15,7 +15,7 @@ class ResourceNode(
 
     private constructor() : this(SourceContainer(), 0, 0)
 
-    private var networks = mutableListOf<ResourceNetwork<*>>()
+    override val networks = mutableListOf<ResourceNetwork<*>>()
     override val validFarVertex get() = true
 
     override var vertex: PipeNetworkVertex? = null

@@ -7,6 +7,8 @@ interface PotentialResourceNetworkVertex {
     val y: Int
     val level: Level
     val inLevel: Boolean
+
+    val networks: List<ResourceNetwork<*>>
     fun getNetwork(type: ResourceNetworkType): ResourceNetwork<*>?
     fun onAddToNetwork(network: ResourceNetwork<*>)
     fun onRemoveFromNetwork(network: ResourceNetwork<*>)
