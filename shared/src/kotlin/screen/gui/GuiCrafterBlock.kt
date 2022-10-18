@@ -54,7 +54,7 @@ class GuiCrafterBlock(block: CrafterBlock) : Gui(ScreenLayer.MENU_1), PoolableGu
                                 it.validCrafterTypes == null || this@GuiCrafterBlock.block.crafterType in it.validCrafterTypes
                             },
                             {
-                                PlayerManager.takeAction(ActionSelectCrafterRecipe(PlayerManager.localPlayer, this@GuiCrafterBlock.block.toReference() as BlockReference, it))
+                                PlayerManager.takeAction(ActionSelectCrafterRecipe(PlayerManager.localPlayer, this@GuiCrafterBlock.block, it))
                             })
                     input = resourceContainerView(block.inputContainer, block.type.internalStorageSize, 1, allowSelection = true, allowModification = true)
                     progressBar = progressBar(block.type.maxWork, { this@GuiCrafterBlock.block.currentWork }, Dimensions.Exact(32, 6))

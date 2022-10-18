@@ -17,17 +17,17 @@ abstract class PipeBlock(override val type: PipeBlockType<out PipeBlock>, xTile:
     val closedEnds: Array<Boolean>
         get() = state.closedEnds
 
-    private var network: PipeNetwork? = null
+    override val networks = mutableListOf<ResourceNetwork<*>>()
     override fun getNetwork(type: ResourceNetworkType): ResourceNetwork<*>? {
         if(type == ResourceNetworkType.PIPE) {
-            return network
+            return networks[0]
         }
         return null
     }
 
     override fun onAddToNetwork(network: ResourceNetwork<*>) {
         if(network.networkType != ResourceNetworkType.PIPE) {
-            this.network = network as PipeNetwork
+            networks.add(network)
         } else {
             throw Exception("Unable to add $this to $network, it is not a pipe network")
         }
@@ -35,9 +35,7 @@ abstract class PipeBlock(override val type: PipeBlockType<out PipeBlock>, xTile:
 
     override fun onRemoveFromNetwork(network: ResourceNetwork<*>) {
         if(network.networkType == ResourceNetworkType.PIPE) {
-            if(this.network == network) {
-                this.network = null
-            } else {
+            if(!networks.remove(network)) {
                 throw Exception("Can't remove $this from $network because it is not in that network")
             }
         } else {
@@ -54,7 +52,7 @@ abstract class PipeBlock(override val type: PipeBlockType<out PipeBlock>, xTile:
     }
 
     override fun afterRemoveFromLevel(oldLevel: Level) {
-        network?.remove(this)
+        networks.getOrNull(0)?.remove(this)
         super.afterRemoveFromLevel(oldLevel)
     }
 

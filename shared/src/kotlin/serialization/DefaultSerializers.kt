@@ -3,12 +3,14 @@ package serialization
 import item.ItemType
 import main.isKotlinClass
 import java.lang.reflect.Field
+import java.lang.reflect.Method
 import java.util.*
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.companionObject
 import kotlin.reflect.full.companionObjectInstance
 import kotlin.reflect.full.hasAnnotation
 import kotlin.reflect.full.memberProperties
+import kotlin.reflect.jvm.javaField
 
 class EmptyListSerializer(type: Class<*>, settings: List<SerializerSetting<*>>) :
     Serializer<Collection<Nothing>>(type, settings) {
@@ -253,14 +255,32 @@ open class AutoIDSerializer<R : Any>(
 
     override val getId: (R) -> Any
         get() = {
-            idGetter.get(it)
+            idGetter(it)
         }
 
     companion object {
-        private fun getIdGetter(type: Class<*>): Field {
+        private fun getIdGetter(type: Class<*>): (Any) -> Any {
+            println("getting id for $type")
+            println(type.declaredMethods.joinToString())
             for (field in type.fields) {
+                println("found field ${field.name} with annotations ${field.annotations.joinToString()}")
                 if (field.isAnnotationPresent(ObjectIdentifier::class.java)) {
-                    return field
+                    return { field.get(it) }
+                }
+            }
+            for (field in type.kotlin.members) {
+                println("KField $field with annotations ${field.annotations}")
+                if (field.hasAnnotation<ObjectIdentifier>()) {
+                    return { field.call(it)!! }
+                }
+            }
+            for (method in type.methods) {
+                println("checking method $method ${method.annotations.joinToString()}")
+                if (method.isAnnotationPresent(ObjectIdentifier::class.java)) {
+                    if (method.parameterCount != 0) {
+                        throw Exception("Method $method was marked @ObjectIdentifier but its parameter count was not 0")
+                    }
+                    return { method.invoke(it) }
                 }
             }
             throw Exception("No fields in class $type marked @ObjectIdentifier")
@@ -272,20 +292,27 @@ open class AutoIDSerializer<R : Any>(
             }
             val companion =
                 type.kotlin.companionObject ?: throw Exception("IDSerializable classes must have companion objects")
-            val fields = companion.memberProperties.filter { it.hasAnnotation<ObjectList>() }
-            if (fields.size != 1) {
+            val fields = companion.memberProperties.map { it.javaField!! }
+                .filter { it.isAnnotationPresent(ObjectList::class.java) }
+
+            if (fields.size > 1) {
                 throw Exception("More than 1 field with the @ObjectList annotation: ${fields.joinToString()}")
+            } else if (fields.isEmpty()) {
+                throw Exception("No fields with @ObjectList annotation")
             }
-            val objectList = fields[0] as KProperty1<Any?, Any?>
-            if (!List::class.java.isAssignableFrom(objectList.returnType.javaClass)) {
+            val objectList = fields[0]
+            if (!List::class.java.isAssignableFrom(objectList.type)) {
                 throw Exception("@ObjectList field does not extend List")
             }
-            val objects = objectList.get(type.kotlin.companionObjectInstance) as List<*>
+            val wasAccessible = objectList.canAccess(null)
+            objectList.isAccessible = true
+            val objects = objectList.get(null) as List<*>
             for (obj in objects) {
                 if (obj == null || !type.isAssignableFrom(obj::class.java)) {
                     throw Exception("@ObjectList does not only contain $type, it contained $obj")
                 }
             }
+            objectList.isAccessible = wasAccessible
             return objects
         }
     }

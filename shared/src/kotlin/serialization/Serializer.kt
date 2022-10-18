@@ -54,4 +54,6 @@ open class Serializer<R : Any>(
      *
      */
     open val readStrategy: ReadStrategy<R> = ReadStrategy.None,
-    )
+    ) {
+    constructor(type: Class<*>, settings: List<SerializerSetting<*>>) : this(type, settings, CreateStrategy.None as CreateStrategy<R>, WriteStrategy.None, ReadStrategy.None)
+}

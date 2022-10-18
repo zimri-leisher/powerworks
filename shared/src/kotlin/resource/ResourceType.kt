@@ -15,7 +15,7 @@ abstract class ResourceType {
     abstract val category: ResourceCategory
     abstract val name: String
 
-    val technicalName get() = name.toLowerCase(Locale.getDefault()).replace(" ", "_")
+    val technicalName get() = name.lowercase(Locale.getDefault()).replace(" ", "_")
 
     /**
      * Whether to show this when searching all resource types

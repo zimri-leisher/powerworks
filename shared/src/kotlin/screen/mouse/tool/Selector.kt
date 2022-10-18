@@ -89,7 +89,7 @@ object Selector : Tool(Control.Group.SELECTOR_TOOLS.controls), ControlEventHandl
                 }.toMutableSet()
                 val entitiesSelected = currentSelected.filterIsInstance<Entity>()
                 if (entitiesSelected.isNotEmpty()) {
-                    PlayerManager.takeAction(ActionEntityCreateGroup(PlayerManager.localPlayer, entitiesSelected.map { it.toReference() as MovingObjectReference }))
+                    PlayerManager.takeAction(ActionEntityCreateGroup(PlayerManager.localPlayer, entitiesSelected))
                 }
                 newlySelected = mutableSetOf()
                 dragging = false
@@ -145,7 +145,7 @@ object Selector : Tool(Control.Group.SELECTOR_TOOLS.controls), ControlEventHandl
                 }.toMutableSet()
                 val entitiesSelected = currentSelected.filterIsInstance<Entity>()
                 if (entitiesSelected.isNotEmpty()) {
-                    PlayerManager.takeAction(ActionEntityCreateGroup(PlayerManager.localPlayer, entitiesSelected.map { it.toReference() as MovingObjectReference }))
+                    PlayerManager.takeAction(ActionEntityCreateGroup(PlayerManager.localPlayer, entitiesSelected))
                 }
                 newlySelected = mutableSetOf()
                 dragging = false

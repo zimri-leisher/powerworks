@@ -29,27 +29,28 @@ import kotlin.reflect.jvm.kotlinProperty
 open class TaggedSerializer<R : Any>(type: Class<R>, settings: List<SerializerSetting<*>>) :
     FieldSerializer<R>(type, settings) {
 
-    val taggedFields: Array<CachedField> =
-        fields.filter { IdSetting in it.serializer.settings }.sortedBy { it.field.id }
+    // we have to make this lazy because if we don't, then FieldSerializer will call Registration.getSerializer
+    // on classes that haven't been assigned a serializer yet and so it will have the wrong serializer.
+    val taggedFields: Array<CachedField> by lazy {
+        val tags = fields.filter { IdSetting in it.serializer.settings }.sortedBy { it.field.id }
             .toTypedArray()
-
-    init {
         // make sure we don't have conflicting ids
-        for (taggedField in taggedFields) {
+        for (taggedField in tags) {
             val id = taggedField.field.id
-            val alreadyExisting = taggedFields.firstOrNull { it.field.id == id }
+            val alreadyExisting = tags.firstOrNull { it.field.id == id }
             if (alreadyExisting != null) {
                 throw RegistrationException("Two fields in class $type have the same id ($id): ${taggedField.field.name} and ${alreadyExisting.field.name}")
             }
         }
-        if (taggedFields.isNotEmpty()) {
+        if (tags.isNotEmpty()) {
             SerializerDebugger.writeln("Found tagged fields:")
-            for (field in taggedFields) {
+            for (field in tags) {
                 SerializerDebugger.writeln("    $field")
             }
         } else {
             SerializerDebugger.writeln("Found no tagged fields")
         }
+        tags
     }
 
     /**

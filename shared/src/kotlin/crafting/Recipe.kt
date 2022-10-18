@@ -8,6 +8,7 @@ import item.weapon.WeaponItemType
 import resource.ResourceList
 import resource.ResourceType
 import resource.resourceListOf
+import serialization.ObjectIdentifier
 import serialization.ObjectList
 
 private var nextId = 0
@@ -32,6 +33,7 @@ class Recipe(
         val validCrafterTypes: List<Crafter.Type>? = null,
         val category: RecipeCategory = RecipeCategory.WEAPONS) {
 
+    @ObjectIdentifier
     val id = nextId++
 
     init {

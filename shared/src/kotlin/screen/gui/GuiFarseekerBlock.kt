@@ -34,7 +34,7 @@ class GuiFarseekerBlock(block: FarseekerBlock) : Gui(ScreenLayer.MENU_1), Poolab
                 closeButton(Placement.Align(HorizontalAlign.RIGHT, VerticalAlign.TOP).offset(-1, -1))
                 text("Farseeker", Placement.Align(HorizontalAlign.LEFT, VerticalAlign.TOP).offset(1, -1))
                 levelSelector = levelSelector(block.availableDestinations, { uuid, levelInfo ->
-                    PlayerManager.takeAction(ActionFarseekerBlockSetLevel(PlayerManager.localPlayer, block.toReference() as BlockReference, LevelManager.getLevelByIdOrNull(uuid)
+                    PlayerManager.takeAction(ActionFarseekerBlockSetLevel(PlayerManager.localPlayer, block, LevelManager.getLevelByIdOrNull(uuid)
                             ?: RemoteLevel(uuid, levelInfo).apply { initialize() }))
                 }, Placement.Align(HorizontalAlign.CENTER, VerticalAlign.BOTTOM).offset(0, 2))
                 if (block.destinationLevel != null) {

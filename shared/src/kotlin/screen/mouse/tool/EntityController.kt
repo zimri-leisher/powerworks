@@ -100,12 +100,12 @@ object EntityController : Tool(Control.USE_ENTITY_COMMAND) {
                     }
                 }
                 PlayerManager.takeAction(ActionControlEntity(PlayerManager.localPlayer,
-                        Selector.currentSelected.filterIsInstance<Entity>().map { it.toReference() as MovingObjectReference },
+                        Selector.currentSelected.filterIsInstance<Entity>(),
                         command, LevelPosition(LevelManager.mouseLevelX, LevelManager.mouseLevelY, LevelManager.levelUnderMouse!!)))
             }
             Behavior.Offense.ATTACK_ARG -> {
                 PlayerManager.takeAction(ActionControlEntity(PlayerManager.localPlayer,
-                        Selector.currentSelected.filterIsInstance<Entity>().map { it.toReference() as MovingObjectReference },
+                        Selector.currentSelected.filterIsInstance<Entity>(),
                         command, LevelManager.levelObjectUnderMouse?.toReference()))
             }
         }

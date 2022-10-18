@@ -28,7 +28,7 @@ object BlockRemover : Tool(Control.REMOVE_BLOCK) {
                     listOf()
                 if (toRemove.isNotEmpty()) {
                     toRemove.forEach { Selector.currentSelected.remove(it) }
-                    PlayerManager.takeAction(ActionLevelObjectRemove(PlayerManager.localPlayer, toRemove.map { BlockReference(it) }))
+                    PlayerManager.takeAction(ActionLevelObjectRemove(PlayerManager.localPlayer, toRemove))
                 }
                 return true
             }

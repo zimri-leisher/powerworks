@@ -44,7 +44,7 @@ object BlockPlacer : Tool(Control.PLACE_BLOCK), ControlEventHandler {
                     if(GuiTutorial.currentTutorialStage == TutorialStage.PLACE_BLOCK) {
                         GuiTutorial.showNextStage()
                     }
-                    PlayerManager.takeAction(ActionLevelObjectPlace(PlayerManager.localPlayer, blockType, xTile shl 4, yTile shl 4, rotation, LevelManager.levelUnderMouse!!))
+                    PlayerManager.takeAction(ActionLevelObjectPlace(PlayerManager.localPlayer, blockType, xTile shl 4, yTile shl 4, LevelManager.levelUnderMouse!!))
                     canPlace = false
                     hasPlacedThisInteraction = true
                     return true

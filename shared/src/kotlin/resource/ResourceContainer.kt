@@ -8,7 +8,8 @@ import serialization.Referencable
 import java.util.*
 import kotlin.math.absoluteValue
 
-abstract class ResourceContainer : LevelObject(LevelObjectType.RESOURCE_CONTAINER), Referencable<ResourceContainer>, ResourceConduit {
+abstract class ResourceContainer : LevelObject(LevelObjectType.RESOURCE_CONTAINER), Referencable<ResourceContainer>,
+    ResourceConduit {
 
     // todo we want a "constrain" function
     // which takes a resource order and constrains it to what this container can perform
@@ -110,6 +111,28 @@ abstract class ResourceContainer : LevelObject(LevelObjectType.RESOURCE_CONTAINE
         } else {
             val removable = mostPossibleToRemove(resourceListOf(flow.stack))
             return ResourceFlow(removable[0], ResourceFlowDirection.OUT)
+        }
+    }
+
+    fun getFlowInProgress(): List<ResourceFlow> {
+        return nodes.flatMap { node ->
+            node.networks.flatMap { network ->
+                network.getFlowInProgress(this)
+            }
+        }
+    }
+
+    fun getFlowInProgressForType(type: ResourceType): Int {
+        return getFlowInProgress().sumOf { flow ->
+            if (flow.stack.type == type) {
+                if (flow.direction == ResourceFlowDirection.IN)
+                    flow.stack.quantity
+                else
+                // out
+                    -flow.stack.quantity
+            } else
+            // it is not of the right type
+                0
         }
     }
 

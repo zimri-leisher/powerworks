@@ -8,7 +8,7 @@ import io.MouseMovementListener
 import item.ItemType
 import level.CHUNK_EXP
 import level.LevelManager
-import level.getResourceNodesAt
+import level.getResourceNodeAt
 import level.pipe.PipeBlock
 import main.DebugCode
 import main.Game
@@ -18,6 +18,7 @@ import player.PlayerManager
 import resource.ResourceContainer
 import resource.ResourceContainerChangeListener
 import resource.ResourceList
+import resource.ResourceNetworkType
 import screen.ScreenManager
 
 object Mouse : ResourceContainerChangeListener {
@@ -71,46 +72,82 @@ object Mouse : ResourceContainerChangeListener {
                 if (t is PipeBlock) {
                     val tubeString = "Tube:\n" +
                             "  Tile: ${t.xTile}, ${t.yTile}\n" +
-                            "  Group: ${t.network?.id}\n"
-                    val intersectionString = "Far:\n   Up: ${t.farEdges[0]}\n   Right: ${t.farEdges[1]}\n   Down: ${t.farEdges[2]}\n   Left: ${t.farEdges[3]}\n" +
-                            "Near:\n   Up: ${t.edges[0]}\n   Right: ${t.edges[1]}\n   Down: ${t.edges[2]}\n   Left: ${t.edges[3]}\n"
-                    Renderer.renderText(tubeString + intersectionString, x, y, TextRenderParams(color = toColor(r = 255, g = 0, b = 0)))
+                            "  Group: ${t.getNetwork(ResourceNetworkType.PIPE)?.id}\n"
+                    val intersectionString =
+                        "Far:\n   Up: ${t.vertex?.farEdges?.get(0)}\n   Right: ${t.vertex?.farEdges?.get(1)}\n   Down: ${
+                            t.vertex?.farEdges?.get(2)
+                        }\n   Left: ${t.vertex?.farEdges?.get(3)}\n" +
+                                "Near:\n   Up: ${t.vertex?.edges?.get(0)}\n   Right: ${t.vertex?.edges?.get(1)}\n   Down: ${
+                                    t.vertex?.edges?.get(
+                                        2
+                                    )
+                                }\n   Left: ${t.vertex?.edges?.get(3)}\n"
+                    Renderer.renderText(
+                        tubeString + intersectionString,
+                        x,
+                        y,
+                        TextRenderParams(color = toColor(r = 255, g = 0, b = 0))
+                    )
                 }
             }
+
             DebugCode.RESOURCE_NODES_INFO -> {
-                val nodes = LevelManager.levelUnderMouse?.getResourceNodesAt(LevelManager.mouseLevelX shr 4, LevelManager.mouseLevelY shr 4)
-                if (nodes != null) {
+                val node = LevelManager.levelUnderMouse?.getResourceNodeAt(
+                    LevelManager.mouseLevelX shr 4,
+                    LevelManager.mouseLevelY shr 4
+                )
+                if (node != null) {
                     val s = StringBuilder()
-                    for (n in nodes) {
-                        s.append("    in: ${n.behavior.allowIn},       out: ${n.behavior.allowOut}\n" +
-                                "    force in: ${n.behavior.forceIn}, forceOut: ${n.behavior.forceOut}\n" +
-                                "    dir: ${n.dir}\n" +
-                                "    container: ${n.attachedContainer}")
-                    }
-                    Renderer.renderText("Resource nodes at ${LevelManager.mouseLevelX shr 4}, ${LevelManager.mouseLevelY shr 4}:\n$s", x, y, TextRenderParams(color = toColor(r = 255, g = 0, b = 0)))
+                    s.append(
+                        "${node.id}"
+                    )
+                    Renderer.renderText(
+                        "Resource nodes at ${LevelManager.mouseLevelX shr 4}, ${LevelManager.mouseLevelY shr 4}:\n$s",
+                        x,
+                        y,
+                        TextRenderParams(color = toColor(r = 255, g = 0, b = 0))
+                    )
                 }
             }
+
             DebugCode.SCREEN_INFO -> {
-                Renderer.renderText("Element under mouse:\n" +
-                        "  ${ScreenManager.elementUnderMouse}\n" +
-                        "Window under mouse:\n" +
-                        "  ${ScreenManager.guiUnderMouse}", x + 3, y + 3, TextRenderParams(color = toColor(r = 255, g = 0, b = 0)))
+                Renderer.renderText(
+                    "Element under mouse:\n" +
+                            "  ${ScreenManager.elementUnderMouse}\n" +
+                            "Window under mouse:\n" +
+                            "  ${ScreenManager.guiUnderMouse}",
+                    x + 3,
+                    y + 3,
+                    TextRenderParams(color = toColor(r = 255, g = 0, b = 0))
+                )
                 Renderer.renderFilledRectangle(x, y, 1, 1)
             }
+
             DebugCode.POSITION_INFO -> {
-                Renderer.renderText("Screen:\n" +
-                        "  Coord: $x, $y\n" +
-                        if (GameState.currentState == GameState.INGAME) "Level:\n" +
-                                "  Coord: ${LevelManager.mouseLevelX}, ${LevelManager.mouseLevelY}\n" +
-                                "  Tile: ${LevelManager.mouseLevelX shr 4}, ${LevelManager.mouseLevelY shr 4}\n" +
-                                "  Chunk: ${LevelManager.mouseLevelX shr CHUNK_EXP}, ${LevelManager.mouseLevelY shr CHUNK_EXP}" else "", x, y, TextRenderParams(color = toColor(r = 255, g = 0, b = 0)))
+                Renderer.renderText(
+                    "Screen:\n" +
+                            "  Coord: $x, $y\n" +
+                            if (GameState.currentState == GameState.INGAME) "Level:\n" +
+                                    "  Coord: ${LevelManager.mouseLevelX}, ${LevelManager.mouseLevelY}\n" +
+                                    "  Tile: ${LevelManager.mouseLevelX shr 4}, ${LevelManager.mouseLevelY shr 4}\n" +
+                                    "  Chunk: ${LevelManager.mouseLevelX shr CHUNK_EXP}, ${LevelManager.mouseLevelY shr CHUNK_EXP}" else "",
+                    x,
+                    y,
+                    TextRenderParams(color = toColor(r = 255, g = 0, b = 0))
+                )
             }
+
             DebugCode.LEVEL_INFO -> {
-                Renderer.renderText("Level object under mouse:\n" +
-                        "    Type: ${if(LevelManager.levelObjectUnderMouse != null) LevelManager.levelObjectUnderMouse!!::class.simpleName else ""} (${LevelManager.levelObjectUnderMouse?.type})\n" +
-                        "    Id: ${LevelManager.levelObjectUnderMouse?.id}\n" +
-                        "    Team: ${LevelManager.levelObjectUnderMouse?.team}\n" +
-                        "    In level: ${LevelManager.levelObjectUnderMouse?.level?.id}", x, y, TextRenderParams(color = toColor(r = 255, g = 0, b = 0)))
+                Renderer.renderText(
+                    "Level object under mouse:\n" +
+                            "    Type: ${if (LevelManager.levelObjectUnderMouse != null) LevelManager.levelObjectUnderMouse!!::class.simpleName else ""} (${LevelManager.levelObjectUnderMouse?.type})\n" +
+                            "    Id: ${LevelManager.levelObjectUnderMouse?.id}\n" +
+                            "    Team: ${LevelManager.levelObjectUnderMouse?.team}\n" +
+                            "    In level: ${LevelManager.levelObjectUnderMouse?.level?.id}",
+                    x,
+                    y,
+                    TextRenderParams(color = toColor(r = 255, g = 0, b = 0))
+                )
             }
 
             else -> {}

@@ -15,7 +15,7 @@ annotation class AsReference(val recursive: Boolean = false)
 @Target(AnnotationTarget.FIELD)
 annotation class Sparse
 
-@Target(AnnotationTarget.FIELD)
+@Target(AnnotationTarget.FIELD, AnnotationTarget.PROPERTY, AnnotationTarget.FUNCTION)
 annotation class ObjectIdentifier
 
 @Target(AnnotationTarget.FIELD)

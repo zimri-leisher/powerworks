@@ -3,12 +3,11 @@ package screen.mouse.tool
 import io.Control
 import io.ControlEvent
 import io.ControlEventType
-import level.LevelManager
-import level.getResourceNodesAt
+import resource.ResourceNode
 
 object ResourceNodeEditor : Tool(Control.EDIT_RESOURCE_NODE) {
 
-    var selectedNodes = setOf<ResourceNodeOld>()
+    var selectedNodes = setOf<ResourceNode>()
 
     init {
         activationPredicate = {
@@ -25,7 +24,7 @@ object ResourceNodeEditor : Tool(Control.EDIT_RESOURCE_NODE) {
     }
 
     override fun update() {
-        selectedNodes = LevelManager.levelUnderMouse?.getResourceNodesAt(LevelManager.mouseLevelX shr 4, LevelManager.mouseLevelY shr 4)
-                ?: emptySet()
+        selectedNodes = //LevelManager.levelUnderMouse?.getResourceNodesAt(LevelManager.mouseLevelX shr 4, LevelManager.mouseLevelY shr 4)
+                emptySet()
     }
 }

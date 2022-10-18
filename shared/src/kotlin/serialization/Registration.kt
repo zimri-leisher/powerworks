@@ -68,20 +68,59 @@ import kotlin.reflect.KClass
 import kotlin.reflect.full.primaryConstructor
 import kotlin.system.measureTimeMillis
 
+data class SerializerTemplate(
+    val type: Class<out Serializer<out Any>>,
+    val settings: List<SerializerSetting<*>> = listOf(),
+    val args: Array<out Any> = arrayOf()
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as SerializerTemplate
+
+        if (type != other.type) return false
+        if (settings != other.settings) return false
+        if (!args.contentEquals(other.args)) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = type.hashCode()
+        result = 31 * result + settings.hashCode()
+        result = 31 * result + args.contentHashCode()
+        return result
+    }
+}
+
 object Registration {
 
     private fun getSerializerCtor(
         type: Class<out Serializer<out Any>>,
         args: Array<out Any>
     ): Constructor<out Serializer<out Any>> {
+        val shouldBe = arrayOf(
+            Class::class.java,
+            List::class.java,
+            *args.map { arg -> arg::class.java }.toTypedArray()
+        )
         return type.constructors.firstOrNull { ctor ->
-            ctor.parameters.contentEquals(
-                arrayOf(
-                    Class::class.java,
-                    List::class.java,
-                    *args.map { arg -> arg::class.java }.toTypedArray()
-                )
-            )
+            println("comparing ${ctor.parameters.joinToString { it.type.toString() }} with ${shouldBe.joinToString { it.toString() }}")
+            if (ctor.parameters.size != shouldBe.size) {
+                println("diff size")
+                false
+            } else {
+                var matches = true
+                for (i in ctor.parameters.indices) {
+                    if (!ctor.parameters[i].type.isAssignableFrom(shouldBe[i])) {
+                        println("doesn't match")
+                        matches = false
+                        break
+                    }
+                }
+                matches
+            }
         } as Constructor<out Serializer<out Any>>?
             ?: throw Exception("Could not instantiate serializer ${type.simpleName} with (type, settings, *args) ctor")
     }
@@ -97,13 +136,11 @@ object Registration {
         settings: List<SerializerSetting<*>> = listOf(),
         vararg args: Any
     ) {
-        val ctor = getSerializerCtor(type, args)
-        defaultSerializerFactory = {
-            ctor.newInstance(it, settings, *args)
-        }
+        defaultSerializerTemplate = SerializerTemplate(type, settings, args)
     }
 
-    inline class RegistryEntry(val id: Int) {
+    @JvmInline
+    value class RegistryEntry(val id: Int) {
 
         fun setSerializer(
             serializerClass: KClass<out Serializer<*>>,
@@ -117,8 +154,7 @@ object Registration {
             vararg args: Any
         ) {
             val type = ids[id]!!
-            val ctor = getSerializerCtor(serializerClass, args)
-            defaultSerializers[type] = ctor.newInstance(type, settings, *args) as Serializer<Any>
+            defaultSerializerClasses[type] = SerializerTemplate(serializerClass, settings, args)
         }
     }
 
@@ -128,58 +164,60 @@ object Registration {
 
     private val ids = mutableMapOf<Int, Class<*>>()
 
+    private val defaultSerializerClasses =
+        mutableMapOf<Class<*>, SerializerTemplate>()
     private val defaultSerializers = mutableMapOf<Class<*>, Serializer<out Any>>()
-    private var defaultSerializerFactory: (type: Class<*>) -> Serializer<out Any> = { Serializer(it, listOf()) }
-
-    init {
-        ids.put(Primitive.NULL.id, Nothing::class.java)
-        ids.put(Primitive.BYTE.id, java.lang.Byte::class.java)
-        ids.put(Primitive.SHORT.id, java.lang.Short::class.java)
-        ids.put(Primitive.INT.id, java.lang.Integer::class.java)
-        ids.put(Primitive.LONG.id, java.lang.Long::class.java)
-        ids.put(Primitive.FLOAT.id, java.lang.Float::class.java)
-        ids.put(Primitive.DOUBLE.id, java.lang.Double::class.java)
-        ids.put(Primitive.CHAR.id, java.lang.Character::class.java)
-        ids.put(Primitive.BOOLEAN.id, java.lang.Boolean::class.java)
-        ids.put(Primitive.STRING.id, java.lang.String::class.java)
-    }
+    private var defaultSerializerTemplate: SerializerTemplate = SerializerTemplate(Serializer::class.java)
 
     private fun register(type: KClass<*>, id: Int) = register(type.java, id)
 
     private fun register(type: Class<*>, id: Int): RegistryEntry {
-        registerClass(type, id, defaultSerializerFactory(type))
+        registerClass(type, id, defaultSerializerTemplate)
         return RegistryEntry(id)
     }
 
     fun registerAll() {
 
-        // max 279
+        // max 221
+        /* PRIMITIVES */
+        setDefaultSerializer(Serializer::class)
+        register(Nothing::class, 0)
+        register(java.lang.Byte::class, 1)
+        register(java.lang.Short::class, 2)
+        register(java.lang.Integer::class, 3)
+        register(java.lang.Long::class, 4)
+        register(java.lang.Float::class, 5)
+        register(java.lang.Double::class, 6)
+        register(java.lang.Character::class, 7)
+        register(java.lang.Boolean::class, 8)
+        register(java.lang.String::class, 9)
+
         /* COLLECTIONS */
         val singletonList: List<Any> = listOf(1)
-        register(singletonList::class, 1)
+        register(singletonList::class, 221)
             .setSerializer(CollectionSerializer::class, listOf(), { it: MutableList<Any> -> it.toList() })
-        register(emptyList<Nothing>()::class, 2)
+        register(emptyList<Nothing>()::class, 211)
             .setSerializer(EmptyListSerializer::class)
         val immutableListClass = Class.forName("java.util.Arrays${'$'}ArrayList") as Class<Collection<Any?>>
-        register(immutableListClass, 3).setSerializer(
+        register(immutableListClass, 212).setSerializer(
             CollectionSerializer::class,
             listOf(),
             { it: MutableCollection<Any> -> it.toList() })
-        register(ArrayList::class, 4)
+        register(ArrayList::class, 213)
             .setSerializer(MutableCollectionSerializer::class)
-        register(LinkedHashSet::class, 5)
+        register(LinkedHashSet::class, 214)
             .setSerializer(MutableCollectionSerializer::class)
-        register(Array<out Any?>::class, 6)
+        register(Array<out Any?>::class, 215)
             .setSerializer(ArraySerializer::class)
-        register(kotlin.Pair::class, 7)
+        register(kotlin.Pair::class, 216)
             .setSerializer(PairSerializer::class)
-        register(LinkedHashMap::class, 8)
+        register(LinkedHashMap::class, 217)
             .setSerializer(MutableMapSerializer::class)
-        register(Set::class, 9)
-            .setSerializer(MutableCollectionSerializer::class)
-        register(Polygon::class, 10)
+        register(Set::class, 218)
+//            .setSerializer(MutableCollectionSerializer::class)
+        register(Rectangle::class, 220)
             .setSerializer(AllFieldsSerializer::class)
-        register(Rectangle::class, 11)
+        register(Polygon::class, 219)
             .setSerializer(AllFieldsSerializer::class)
         register(emptyMap<Nothing, Nothing>()::class, 12)
             .setSerializer(EmptyMapSerializer::class)
@@ -252,12 +290,10 @@ object Registration {
         register(Projectile::class, 44)
         register(ProjectileType::class, 45)
             .setSerializer(AutoIDSerializer::class)
-        register(WeaponItem::class, 46)
         register(Weapon::class, 47)
         register(WeaponItemType::class, 48)
             .setSerializer(AutoIDSerializer::class)
         register(Inventory::class, 49)
-        register(Item::class, 50)
         register(RobotItemType::class, 51)
             .setSerializer(AutoIDSerializer::class)
         register(EntityItemType::class, 52)
@@ -290,7 +326,6 @@ object Registration {
         register(LevelUpdateType::class, 71)
             .setSerializer(EnumSerializer::class)
         register(CrafterBlockSelectRecipe::class, 72)
-        register(ResourceNodeTransferThrough::class, 73)
         register(MachineBlockFinishWork::class, 74)
         register(EntitySetPath::class, 75)
         register(EntityPathUpdate::class, 76)
@@ -300,7 +335,6 @@ object Registration {
         register(EntityFireWeapon::class, 80)
         register(FarseekerBlockSetAvailableLevels::class, 81)
         register(FarseekerBlockSetDestinationLevel::class, 82)
-        register(ResourceNodeBehaviorEdit::class, 83)
         register(LevelObjectSwitchLevelsTo::class, 84)
         register(LevelPosition::class, 85)
 
@@ -318,7 +352,7 @@ object Registration {
         register(PipeBlockType::class, 92)
             .setSerializer(AutoIDSerializer::class)
 
-        setDefaultSerializer(LevelObjectSerializer::class)
+        setDefaultSerializer(TaggedSerializer::class)
 
         register(Block::class, 93)
         register(ChestBlock::class, 94)
@@ -364,7 +398,6 @@ object Registration {
 
         /* /MOVING */
         register(MovingObject::class, 120)
-            .setSerializer(LevelObjectSerializer::class)
         register(MovingObjectType::class, 121)
             .setSerializer(AutoIDSerializer::class)
 
@@ -374,9 +407,7 @@ object Registration {
 
         /* /PIPE */
         register(FluidPipeBlock::class, 123)
-            .setSerializer(LevelObjectSerializer::class)
         register(ItemPipeBlock::class, 124)
-            .setSerializer(LevelObjectSerializer::class)
         register(PipeState::class, 125)
             .setSerializer(EnumSerializer::class)
 
@@ -402,7 +433,7 @@ object Registration {
         register(User::class, 134)
 
         /* /PACKET */
-        register(ChunkDataPacket::class,  135)
+        register(ChunkDataPacket::class, 135)
         register(ClientHandshakePacket::class, 136)
         register(GenericPacket::class, 137)
         register(LevelDataPacket::class, 138)
@@ -433,28 +464,22 @@ object Registration {
         register(ActionLevelObjectRemove::class, 159)
         register(ActionSelectCrafterRecipe::class, 160)
         register(ActionControlEntity::class, 161)
-        register(ActionEditResourceNodeBehavior::class, 162)
         register(ActionEntityCreateGroup::class, 163)
-        register(ActionTransferResourcesBetweenLevelObjects::class, 164)
         register(ActionFarseekerBlockSetLevel::class, 165)
         register(Team::class, 166)
 
         /* RESOURCE */
         register(ResourceCategory::class, 167)
             .setSerializer(EnumSerializer::class)
-        register(ResourceContainer::class,  168)
+        register(ResourceContainer::class, 168)
         register(ResourceList::class, 169)
         register(MutableResourceList::class, 170)
         register(ResourceNode::class, 171)
-        register(ResourceNodeBehavior::class, 172)
-        register(RoutingLanguageIORule::class, 173)
         register(ResourceType::class, 174)
             .setSerializer(AutoIDSerializer::class)
-        register(ResourceNode2::class, 175)
         register(PipeNetworkVertex::class, 176)
 
         /* ROUTING */
-        register(ResourceRoutingNetwork::class, 177)
         register(RoutingLanguageStatement::class, 178)
             .setSerializer(RoutingLanguageStatementSerializer::class)
 
@@ -492,7 +517,6 @@ object Registration {
 
         /* SCREEN */
         register(Camera::class, 204)
-            .setSerializer(LevelObjectSerializer::class)
 
         /* SETTING */
         register(UnknownSetting::class, 205)
@@ -506,14 +530,15 @@ object Registration {
             .setSerializer(UUIDSerializer::class)
 
         //register(Comparator::class, FieldSerializer<Comparator<*>>(this, Comparator::class), 132)
+
+        createSerializers()
     }
 
-    fun registerClass(type: Class<*>, id: Int = nextId++, serializer: Serializer<out Any>) {
-        if (Serialization.isPrimitive(id)) throw RegistrationException("Cannot reregister a primitive id ($id)")
+    private fun registerClass(type: Class<*>, id: Int = nextId++, serializerTemplate: SerializerTemplate) {
         if (id < 0) throw RegistrationException("Cannot register an id less than 0 (tried to register $id)")
         if (Function::class.java.isAssignableFrom(type)) throw RegistrationException("Cannot register lambdas")
-        if (defaultSerializers.putIfAbsent(type, serializer) != null) {
-            throw RegistrationException("$type already has default settings")
+        if (defaultSerializerClasses.putIfAbsent(type, serializerTemplate) != null) {
+            throw RegistrationException("$type already has default serializer set")
         } else {
             if (ids.putIfAbsent(id, type) != null) {
                 throw RegistrationException("$id is already registered under ${ids[id]}, tried to reregister with $type")
@@ -535,6 +560,19 @@ object Registration {
         SerializerDebugger.writeln("Registered class $type with id $id")
     }
 
+    private fun createSerializers() {
+        for ((type, template) in defaultSerializerClasses) {
+            val ctor = getSerializerCtor(template.type, template.args)
+            println("trying to initialize ${ctor.parameters.joinToString { it.type.toString() }} with ${type::class.java} ${template.settings::class.java} ${template.args.joinToString { it::class.java.toString() }}")
+            try {
+                defaultSerializers[type] = ctor.newInstance(type, template.settings, *template.args) as Serializer<Any>
+            } catch (e: java.lang.Exception) {
+                System.err.println("Exception while registering $type with serializer template $template:")
+                throw e
+            }
+        }
+    }
+
     fun getSerializer(field: Field): Serializer<*> {
         val defaultSerializer = getSerializer(field.type)
         val options = SerializerSetting.getSettings(field)
@@ -545,7 +583,8 @@ object Registration {
             when (option) {
                 ReferenceSetting -> {
                     if (!Referencable::class.java.isAssignableFrom(field.type)) {
-                        throw Exception("Field ${field.name} in class ${field.declaringClass} was specified to be saved as a SerializationReference but ${field.type} does not implement SerializationReferencable")
+                        // if its not itself a referencable, check if recursive is true
+                        throw Exception("Field ${field.name} in class ${field.declaringClass} was specified to be saved as a Reference but ${field.type} does not implement Referencable")
                     }
                     newReadStrategy = ReadStrategy.None
                     newWriteStrategy =
@@ -553,21 +592,25 @@ object Registration {
                     newCreateStrategy =
                         ReferencableCreateStrategy(field.type as Class<Referencable<Any>>)
                 }
+
                 WriteStrategySetting -> {
                     val writeStrategyClass = WriteStrategySetting.getFrom(field).writeStrategyClass
                     val ctor = writeStrategyClass.primaryConstructor
                     newWriteStrategy = ctor!!.call(field.type) as WriteStrategy<Any>
                 }
+
                 ReadStrategySetting -> {
                     val readStrategyClass = ReadStrategySetting.getFrom(field).readStrategyClass
                     val ctor = readStrategyClass.primaryConstructor
                     newReadStrategy = ctor!!.call(field.type) as ReadStrategy<Any>
                 }
+
                 CreateStrategySetting -> {
                     val createStrategyClass = CreateStrategySetting.getFrom(field).createStrategyClass
                     val ctor = createStrategyClass.primaryConstructor
                     newCreateStrategy = ctor!!.call(field.type)
                 }
+
                 else -> {
                     // it is a setting meant for individual strategies
                 }

@@ -10,7 +10,6 @@ import item.Inventory
 import item.ItemType
 import main.toColor
 import player.ActionDoResourceTransaction
-import player.ActionTransferResourcesBetweenLevelObjects
 import player.PlayerManager
 import resource.*
 import screen.Interaction
@@ -18,6 +17,7 @@ import screen.ScreenManager
 import screen.gui.GuiElement
 import screen.gui.GuiIngame
 import screen.mouse.Mouse
+import kotlin.math.exp
 
 open class ElementResourceContainer(
     parent: GuiElement, width: Int, height: Int,
@@ -90,24 +90,11 @@ open class ElementResourceContainer(
         getToolTip = { index ->
             if (index < currentResources.size) {
                 val entry = currentResources[index]
-                val expectedOfType = container.nodes.map { node ->
-                    node.networks.map { network ->
-                        network.getFlowInProgress(container).map { flow ->
-                            if (flow.stack.type == entry.key) {
-                                if (flow.direction == ResourceFlowDirection.IN)
-                                    flow.stack.quantity
-                                else
-                                // out
-                                    -flow.stack.quantity
-                            } else
-                            // it is not of the right type
-                                0
-                        }
-                    }
-                }
+                val expectedOfType = container.getFlowInProgressForType(entry.type)
                 "${entry.key} * ${entry.value}" + if (expectedOfType != 0) "(+$expectedOfType)" else ""
             } else {
-                val expected = container.expected
+                val expected =
+                    container.getFlowInProgress().filter { it.direction == ResourceFlowDirection.IN }.map { it.stack }
                 if (index - currentResources.size < expected.size) {
                     val (type, quantity) = expected[index - currentResources.size]
                     if (type !in currentResources.keys) {
@@ -128,14 +115,16 @@ open class ElementResourceContainer(
         if (index < currentResources.size) {
             val entry = currentResources[index]
             entry.key.icon.render(x, y, iconSize, iconSize, true)
-            Renderer.renderText(entry.value, x, y)
+            Renderer.renderText(entry.quantity, x, y)
             val width = TextManager.getStringWidth(entry.value.toString())
-            val expectedOfType = container.expected[entry.key]
+            // TODO fix this code duplication...
+            val expectedOfType = container.getFlowInProgressForType(entry.type)
             if (expectedOfType != 0) {
                 Renderer.renderText("(+$expectedOfType)", x + width, y, TextRenderParams(size = 13))
             }
         } else {
-            val expected = container.expected
+            val expected =
+                container.getFlowInProgress().filter { it.direction == ResourceFlowDirection.IN }.map { it.stack }
             if (index - currentResources.size < expected.size) {
                 val (type, quantity) = expected[index - currentResources.size]
                 if (type !in currentResources.keys) {
