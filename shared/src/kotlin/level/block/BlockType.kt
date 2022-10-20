@@ -327,6 +327,7 @@ open class MachineBlockType<T : MachineBlock>(initializer: MachineBlockType<T>.(
 
     companion object {
 
+        @ObjectList
         val ALL = mutableListOf<MachineBlockType<*>>()
 
         val SMELTER = MachineBlockType {
@@ -421,6 +422,7 @@ class CrafterBlockType<T : CrafterBlock>(initializer: CrafterBlockType<T>.() -> 
 
     companion object {
 
+        @ObjectList
         val ALL = mutableListOf<CrafterBlockType<*>>()
 
         val ITEM_CRAFTER = CrafterBlockType {
@@ -458,6 +460,7 @@ class FluidTankBlockType(initializer: FluidTankBlockType.() -> Unit) : BlockType
 
     companion object {
 
+        @ObjectList
         val ALL = mutableListOf<FluidTankBlockType>()
 
         val SMALL = FluidTankBlockType {

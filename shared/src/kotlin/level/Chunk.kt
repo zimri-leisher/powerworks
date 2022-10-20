@@ -6,6 +6,7 @@ import level.moving.MovingObject
 import level.tile.Tile
 import resource.ResourceNode
 import serialization.Id
+import serialization.Sparse
 
 /**
  * This is just for holding data. Interaction with the level should be done through the [Level] and [LevelUpdate]s, not any of these
@@ -125,6 +126,7 @@ data class ChunkData(
     @Id(2)
     var modifiedTiles: MutableList<Tile> = mutableListOf(),
     @Id(3)
+    @Sparse
     var blocks: Array<Block?> = arrayOf(),
     @Id(4)
     var moving: MutableList<MovingObject> = mutableListOf(),
@@ -133,6 +135,7 @@ data class ChunkData(
     @Id(6)
     var updatesRequired: ConcurrentlyModifiableMutableList<PhysicalLevelObject> = ConcurrentlyModifiableMutableList(),
     @Id(8)
+    @Sparse
     var resourceNodes: Array<ResourceNode?> = arrayOf()
 ) {
     override fun equals(other: Any?): Boolean {

@@ -9,6 +9,8 @@ import resource.ResourceNode
 
 class RobotFactoryBlock(xTile: Int, yTile: Int) : CrafterBlock(CrafterBlockType.ROBOT_FACTORY, xTile, yTile) {
 
+    private constructor() : this(0, 0)
+
     val newRobotGroup = EntityGroup()
     var newRobotBehavior = Behavior.Movement.PATH_TO_FORMATION
 

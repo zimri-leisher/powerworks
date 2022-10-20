@@ -212,19 +212,19 @@ object RoutingLanguage {
 
 class RoutingLanguageStatementSerializer(type: Class<RoutingLanguageStatement>, settings: List<SerializerSetting<*>>) : Serializer<RoutingLanguageStatement>(type, settings) {
 
-    override val writeStrategy = object : WriteStrategy<RoutingLanguageStatement>(type) {
+    override val writeStrategy = object : WriteStrategy<RoutingLanguageStatement>(type, settings) {
         override fun write(obj: RoutingLanguageStatement, output: Output) {
             output.writeUTF(obj.text)
-            output.write(obj.tokens)
-            output.write(obj.baseNode)
+            output.write(obj.tokens, settings)
+            output.write(obj.baseNode, settings)
         }
     }
 
-    override val createStrategy = object : CreateStrategy<RoutingLanguageStatement>(type) {
+    override val createStrategy = object : CreateStrategy<RoutingLanguageStatement>(type, settings) {
         override fun create(input: Input): RoutingLanguageStatement {
             val text = input.readUTF()
-            val tokens = input.read(Array<Token>::class.java)
-            val baseNode = input.read(Node::class.java) as Node<Boolean>
+            val tokens = input.read(Array<Token>::class.java, settings)
+            val baseNode = input.read(Node::class.java, settings) as Node<Boolean>
             return RoutingLanguageStatement(text, tokens, baseNode)
         }
     }

@@ -14,7 +14,7 @@ import kotlin.reflect.jvm.javaField
 
 class EmptyListSerializer(type: Class<*>, settings: List<SerializerSetting<*>>) :
     Serializer<Collection<Nothing>>(type, settings) {
-    override val createStrategy = object : CreateStrategy<Collection<Nothing>>(type) {
+    override val createStrategy = object : CreateStrategy<Collection<Nothing>>(type, settings) {
         override fun create(input: Input): Collection<Nothing> {
             return emptyList()
         }
@@ -31,22 +31,22 @@ class CollectionSerializer<R : Collection<*>>(
     settings: List<SerializerSetting<*>>,
     val makeImmutable: (MutableCollection<*>) -> R
 ) : Serializer<R>(type, settings) {
-    override val createStrategy = object : CreateStrategy<R>(type) {
+    override val createStrategy = object : CreateStrategy<R>(type, settings) {
         override fun create(input: Input): R {
             val mutableCollection = mutableListOf<Any?>()
             val size = input.readUnsignedShort()
             for (i in 0 until size) {
-                mutableCollection.add(input.readUnknownNullable())
+                mutableCollection.add(input.readUnknownNullable(settings))
             }
             return makeImmutable(mutableCollection)
         }
     }
 
-    override val writeStrategy = object : WriteStrategy<R>(type) {
+    override val writeStrategy = object : WriteStrategy<R>(type, settings) {
         override fun write(obj: R, output: Output) {
             output.writeShort(obj.size)
             for (element in obj) {
-                output.write(element)
+                output.write(element, settings)
             }
         }
     }
@@ -60,24 +60,24 @@ class CollectionSerializer<R : Collection<*>>(
 class MutableCollectionSerializer<R : MutableCollection<*>>(type: Class<R>, settings: List<SerializerSetting<*>>) :
     Serializer<R>(type, settings) {
 
-    override val createStrategy = EmptyConstructorCreateStrategy(type)
+    override val createStrategy = EmptyConstructorCreateStrategy(type, settings)
 
-    override val writeStrategy = object : WriteStrategy<R>(type) {
+    override val writeStrategy = object : WriteStrategy<R>(type, settings) {
         override fun write(obj: R, output: Output) {
             obj as MutableCollection<Any?>
             output.writeShort(obj.size)
             for (element in obj) {
-                output.write(element)
+                output.write(element, settings)
             }
         }
     }
 
-    override val readStrategy = object : ReadStrategy<R>(type) {
+    override val readStrategy = object : ReadStrategy<R>(type, settings) {
         override fun read(obj: R, input: Input) {
             obj as MutableCollection<Any?>
             val size = input.readUnsignedShort()
             for (i in 0 until size) {
-                obj.add(input.readUnknownNullable())
+                obj.add(input.readUnknownNullable(settings))
             }
         }
     }
@@ -86,7 +86,7 @@ class MutableCollectionSerializer<R : MutableCollection<*>>(type: Class<R>, sett
 class EmptyMapSerializer(type: Class<Map<Nothing, Nothing>>, settings: List<SerializerSetting<*>>) :
     Serializer<Map<Nothing, Nothing>>(type, settings) {
 
-    override val createStrategy = object : CreateStrategy<Map<Nothing, Nothing>>(type) {
+    override val createStrategy = object : CreateStrategy<Map<Nothing, Nothing>>(type, settings) {
         override fun create(input: Input): Map<Nothing, Nothing> {
             return emptyMap()
         }
@@ -99,29 +99,28 @@ class EmptyMapSerializer(type: Class<Map<Nothing, Nothing>>, settings: List<Seri
  *
  * @param makeImmutable should take in a mutable collection and return an instance of [R] that is immutable
  */
-class MapSerializer<R : Map<*, *>>(
+class MapSerializer<R : Map<Any?, Any?>>(
     type: Class<R>,
-    settings: List<SerializerSetting<*>>,
-    val makeImmutable: (MutableMap<*, *>) -> R
+    settings: List<SerializerSetting<*>>
 ) : Serializer<R>(type, settings) {
 
-    override val createStrategy = object : CreateStrategy<R>(type) {
+    override val createStrategy = object : CreateStrategy<R>(type, settings) {
         override fun create(input: Input): R {
             val mutableCollection = mutableMapOf<Any?, Any?>()
             val size = input.readInt()
             for (i in 0 until size) {
-                val pair = input.read(Pair::class.java)
+                val pair = input.read(Pair::class.java, settings)
                 mutableCollection[pair.first] = pair.second
             }
-            return makeImmutable(mutableCollection)
+            return mutableCollection as R
         }
     }
 
-    override val writeStrategy = object : WriteStrategy<R>(type) {
+    override val writeStrategy = object : WriteStrategy<R>(type, settings) {
         override fun write(obj: R, output: Output) {
             output.writeInt(obj.size)
             for ((first, second) in obj) {
-                output.write(first to second)
+                output.write(first to second, settings)
             }
         }
     }
@@ -134,18 +133,18 @@ class MapSerializer<R : Map<*, *>>(
 class MutableMapSerializer<R : MutableMap<*, *>>(type: Class<R>, settings: List<SerializerSetting<*>>) :
     Serializer<R>(type, settings) {
 
-    override val createStrategy = EmptyConstructorCreateStrategy(type)
+    override val createStrategy = EmptyConstructorCreateStrategy(type, settings)
 
-    override val writeStrategy = object : WriteStrategy<R>(type) {
+    override val writeStrategy = object : WriteStrategy<R>(type, settings) {
         override fun write(obj: R, output: Output) {
-            output.write(obj.entries.map { Pair(it.key, it.value) })
+            output.write(obj.entries.map { Pair(it.key, it.value) }, settings)
         }
     }
 
-    override val readStrategy = object : ReadStrategy<R>(type) {
+    override val readStrategy = object : ReadStrategy<R>(type, settings) {
         override fun read(obj: R, input: Input) {
             obj as MutableMap<Any?, Any?>
-            val entries = input.read(ArrayList::class.java) as ArrayList<Pair<Any?, Any?>>
+            val entries = input.read(ArrayList::class.java, settings) as ArrayList<Pair<Any?, Any?>>
             obj.putAll(entries)
         }
     }
@@ -157,7 +156,7 @@ class MutableMapSerializer<R : MutableMap<*, *>>(type: Class<R>, settings: List<
 class ArraySerializer(type: Class<Array<out Any?>>, settings: List<SerializerSetting<*>>) :
     Serializer<Array<out Any?>>(type, settings) {
 
-    override val createStrategy = object : CreateStrategy<Array<out Any?>>(type) {
+    override val createStrategy = object : CreateStrategy<Array<out Any?>>(type, settings) {
         override fun create(input: Input): Array<out Any?> {
             val size = input.readInt()
             val arrayType = Registration.getType(input.readInt())
@@ -166,12 +165,17 @@ class ArraySerializer(type: Class<Array<out Any?>>, settings: List<SerializerSet
             while (i < size) {
                 val element = input.readUnknownNullable()
                 if (element == null) {
-                    val nullCount = input.readInt()
-                    SerializerDebugger.writeln("$nullCount null elements in a row")
-                    for (nullIndex in i until (i + nullCount)) {
-                        array[nullIndex] = null
+                    if (settings.any { it is SparseSetting }) {
+                        val nullCount = input.readInt()
+                        SerializerDebugger.writeln("$nullCount null elements in a row")
+                        for (nullIndex in i until (i + nullCount)) {
+                            array[nullIndex] = null
+                        }
+                        i += nullCount
+                    } else {
+                        array[i] = null
+                        i++
                     }
-                    i += nullCount
                 } else {
                     array[i] = element
                     i++
@@ -181,7 +185,7 @@ class ArraySerializer(type: Class<Array<out Any?>>, settings: List<SerializerSet
         }
     }
 
-    override val writeStrategy = object : WriteStrategy<Array<out Any?>>(type) {
+    override val writeStrategy = object : WriteStrategy<Array<out Any?>>(type, settings) {
         override fun write(obj: Array<out Any?>, output: Output) {
             // todo configure between sparse and not
             output.writeInt(obj.size)
@@ -190,21 +194,26 @@ class ArraySerializer(type: Class<Array<out Any?>>, settings: List<SerializerSet
             while (index <= obj.lastIndex) {
                 val element = obj[index]
                 if (element == null) {
-                    // simplify writing lots of nulls
-                    var nullIndicies = 1
-                    while (index + nullIndicies <= obj.lastIndex) {
-                        if (obj[index + nullIndicies] == null) {
-                            nullIndicies++
-                        } else {
-                            break
+                    if (settings.any { it is SparseSetting }) {
+                        // simplify writing lots of nulls
+                        var nullIndicies = 1
+                        while (index + nullIndicies <= obj.lastIndex) {
+                            if (obj[index + nullIndicies] == null) {
+                                nullIndicies++
+                            } else {
+                                break
+                            }
                         }
+                        SerializerDebugger.writeln("$nullIndicies nulls in a row")
+                        output.writeShort(Primitive.NULL.id)
+                        output.writeInt(nullIndicies)
+                        index += nullIndicies
+                    } else {
+                        output.write(null, settings)
+                        index++
                     }
-                    SerializerDebugger.writeln("$nullIndicies nulls in a row")
-                    output.writeShort(Primitive.NULL.id)
-                    output.writeInt(nullIndicies)
-                    index += nullIndicies
                 } else {
-                    output.write(element)
+                    output.write(element, settings)
                     index++
                 }
             }
@@ -221,12 +230,19 @@ open class IDSerializer<R : Any>(
 
     val values = getAllPossibleValues(type)
 
-    override val createStrategy = object : CreateStrategy<R>(type) {
+    override val createStrategy = object : CreateStrategy<R>(type, settings) {
         override fun create(input: Input): R {
-            val id = input.readUnknown()
+            val id = input.readUnknown(settings)
             return values.firstOrNull { getId(it) == id }
                 ?: throw ReadException("IDSerializer encountered a $type with id $id in the file, but none exists in $values")
 
+        }
+    }
+
+    override val writeStrategy = object : WriteStrategy<R>(type, settings) {
+        override fun write(obj: R, output: Output) {
+            val id = getId(obj)
+            output.write(id, settings)
         }
     }
 }
@@ -260,22 +276,18 @@ open class AutoIDSerializer<R : Any>(
 
     companion object {
         private fun getIdGetter(type: Class<*>): (Any) -> Any {
-            println("getting id for $type")
             println(type.declaredMethods.joinToString())
             for (field in type.fields) {
-                println("found field ${field.name} with annotations ${field.annotations.joinToString()}")
                 if (field.isAnnotationPresent(ObjectIdentifier::class.java)) {
                     return { field.get(it) }
                 }
             }
             for (field in type.kotlin.members) {
-                println("KField $field with annotations ${field.annotations}")
                 if (field.hasAnnotation<ObjectIdentifier>()) {
                     return { field.call(it)!! }
                 }
             }
             for (method in type.methods) {
-                println("checking method $method ${method.annotations.joinToString()}")
                 if (method.isAnnotationPresent(ObjectIdentifier::class.java)) {
                     if (method.parameterCount != 0) {
                         throw Exception("Method $method was marked @ObjectIdentifier but its parameter count was not 0")
@@ -335,29 +347,29 @@ class EnumSerializer<R : Enum<*>>(type: Class<R>, settings: List<SerializerSetti
 class PairSerializer(type: Class<Pair<Any?, Any?>>, settings: List<SerializerSetting<*>>) :
     Serializer<Pair<Any?, Any?>>(type, settings) {
 
-    override val createStrategy = object : CreateStrategy<Pair<Any?, Any?>>(type) {
+    override val createStrategy = object : CreateStrategy<Pair<Any?, Any?>>(type, settings) {
         override fun create(input: Input): Pair<Any?, Any?> {
-            return Pair(input.readUnknownNullable(), input.readUnknownNullable())
+            return Pair(input.readUnknownNullable(settings), input.readUnknownNullable(settings))
         }
     }
 
-    override val writeStrategy = object : WriteStrategy<Pair<Any?, Any?>>(type) {
+    override val writeStrategy = object : WriteStrategy<Pair<Any?, Any?>>(type, settings) {
         override fun write(obj: Pair<Any?, Any?>, output: Output) {
-            output.write(obj.first)
-            output.write(obj.second)
+            output.write(obj.first, settings)
+            output.write(obj.second, settings)
         }
     }
 }
 
 class UUIDSerializer(type: Class<UUID>, settings: List<SerializerSetting<*>>) : Serializer<UUID>(type, settings) {
 
-    override val createStrategy = object : CreateStrategy<UUID>(type) {
+    override val createStrategy = object : CreateStrategy<UUID>(type, settings) {
         override fun create(input: Input): UUID {
             return UUID.fromString(input.readUTF())
         }
     }
 
-    override val writeStrategy = object : WriteStrategy<UUID>(type) {
+    override val writeStrategy = object : WriteStrategy<UUID>(type, settings) {
         override fun write(obj: UUID, output: Output) {
             output.writeUTF(obj.toString())
         }

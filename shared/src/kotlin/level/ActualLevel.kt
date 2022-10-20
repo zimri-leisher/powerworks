@@ -1,12 +1,15 @@
 package level
 
+import level.generator.LevelType
 import level.update.LevelObjectAdd
 import level.update.LevelUpdate
 import main.Game
 import network.ServerNetworkManager
+import network.User
 import network.packet.*
 import player.PlayerManager
 import player.lobby.Lobby
+import serialization.Id
 import serialization.Serialization
 import java.util.*
 
@@ -16,14 +19,22 @@ import java.util.*
  */
 class ActualLevel(id: UUID, info: LevelInfo) : Level(id, info), PacketHandler {
 
+    private constructor() : this(UUID.randomUUID(), LevelInfo(User(UUID.randomUUID(), ""), "", "", LevelType.EMPTY, 0))
+
     /**
      * The current [Lobby] this level is loaded in. Used for determining who to send [LevelUpdate]s to.
      */
+    @Id(13)
     var currentLobby: Lobby? = null
 
     override fun initialize() {
         if (Game.IS_SERVER) {
-            ServerNetworkManager.registerClientPacketHandler(this, PacketType.REQUEST_LEVEL_DATA, PacketType.REQUEST_CHUNK_DATA, PacketType.LEVEL_LOADED_SUCCESS)
+            ServerNetworkManager.registerClientPacketHandler(
+                this,
+                PacketType.REQUEST_LEVEL_DATA,
+                PacketType.REQUEST_CHUNK_DATA,
+                PacketType.LEVEL_LOADED_SUCCESS
+            )
             super.initialize()
         }
     }

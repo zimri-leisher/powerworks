@@ -52,9 +52,9 @@ abstract class PhysicalLevelObjectReference<T : PhysicalLevelObject>(level: Leve
 
 class ResourceNodeReference(
     level: Level, objectId: UUID,
-    @Id(1)
+    @Id(3)
     val xTile: Int,
-    @Id(2)
+    @Id(4)
     val yTile: Int,
 ) : PhysicalLevelObjectReference<ResourceNode>(level, objectId) {
 

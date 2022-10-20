@@ -11,6 +11,8 @@ import serialization.Id
 class FurnaceBlock(xTile: Int, yTile: Int) : MachineBlock(MachineBlockType.FURNACE, xTile, yTile),
     ResourceContainerChangeListener {
 
+    private constructor() : this(0, 0)
+
     // the internal inventory, not the internal tank
     @Id(23)
     val input = Inventory(1, 1)

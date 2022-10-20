@@ -9,6 +9,7 @@ import java.util.*
 
 class UnknownLevel(id: UUID) : Level(id, LevelInfo(User(UUID.randomUUID(), ""), "", "", LevelType.EMPTY, 0L)) {
 
+    private constructor() : this(UUID.randomUUID())
     override fun canModify(update: LevelUpdate): Boolean {
         return false
     }

@@ -11,6 +11,8 @@ import serialization.Id
 
 class MinerBlock(xTile: Int, yTile: Int) : MachineBlock(MachineBlockType.MINER, xTile, yTile) {
 
+    private constructor() : this(0,0)
+
     @Id(23)
     val output = Inventory(1, 1)
 

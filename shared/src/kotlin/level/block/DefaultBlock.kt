@@ -1,3 +1,5 @@
 package level.block
 
-class DefaultBlock(type: BlockType<DefaultBlock>, xTile: Int, yTile: Int) : Block(type, xTile, yTile)
+class DefaultBlock(type: BlockType<DefaultBlock>, xTile: Int, yTile: Int) : Block(type, xTile, yTile) {
+    private constructor() : this(BlockType.ERROR, 0, 0)
+}

@@ -51,14 +51,14 @@ class AnimationCollection(val animations: List<Animation>) {
 class AnimationCollectionSerializer(type: Class<AnimationCollection>, settings: List<SerializerSetting<*>>) :
     Serializer<AnimationCollection>(type, settings) {
 
-    override val writeStrategy = object : WriteStrategy<AnimationCollection>(type) {
+    override val writeStrategy = object : WriteStrategy<AnimationCollection>(type, settings) {
         override fun write(obj: AnimationCollection, output: Output) {
             output.writeInt(obj.id)
             output.writeBoolean(obj.isLocal)
         }
     }
 
-    override val createStrategy = object : CreateStrategy<AnimationCollection>(type) {
+    override val createStrategy = object : CreateStrategy<AnimationCollection>(type, settings) {
         override fun create(input: Input): AnimationCollection {
             val id = input.readInt()
             val isCopy = input.readBoolean()

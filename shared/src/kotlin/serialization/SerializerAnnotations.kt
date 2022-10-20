@@ -10,7 +10,10 @@ import kotlin.reflect.KClass
 annotation class Id(val id: Int)
 
 @Target(AnnotationTarget.FIELD)
-annotation class AsReference(val recursive: Boolean = false)
+annotation class AsReference()
+
+@Target(AnnotationTarget.FIELD)
+annotation class AsReferenceRecursive()
 
 @Target(AnnotationTarget.FIELD)
 annotation class Sparse

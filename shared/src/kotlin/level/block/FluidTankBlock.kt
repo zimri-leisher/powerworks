@@ -9,6 +9,8 @@ import serialization.Id
 
 class FluidTankBlock(type: FluidTankBlockType, xTile: Int, yTile: Int) : Block(type, xTile, yTile) {
 
+    private constructor() : this(FluidTankBlockType.SMALL, 0, 0)
+
     @Id(20)
     val tank = FluidTank(type.maxAmount)
 

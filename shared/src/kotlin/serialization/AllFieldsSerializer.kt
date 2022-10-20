@@ -1,5 +1,6 @@
 package serialization
 
+import java.lang.reflect.Field
 import kotlin.reflect.jvm.kotlinProperty
 
 /**
@@ -7,20 +8,21 @@ import kotlin.reflect.jvm.kotlinProperty
  * of using the parameter of [Id] as an identifier, it saves them by name. Note this is brittle if you save an object,
  * rename one of its fields, and then reload it.
  */
-open class AllFieldsSerializer<T : Any>(type: Class<T>, settings: List<SerializerSetting<*>>) : FieldSerializer<T>(type, settings) {
+open class AllFieldsSerializer<T : Any>(type: Class<T>, settings: List<SerializerSetting<*>>) :
+    FieldSerializer<T>(type, settings) {
 
     init {
-        if(fields.isNotEmpty()) {
+        if (fields.isNotEmpty()) {
             SerializerDebugger.writeln("Fields:")
-            for(field in fields ) {
-                SerializerDebugger.writeln("    ${field.field.name}: ${field.field.type.simpleName}")
+            for (cached in fields) {
+                SerializerDebugger.writeln("    ${cached.field.name}: ${cached.field.type.simpleName}")
             }
         } else {
             SerializerDebugger.writeln("No fields found.")
         }
     }
 
-    override val writeStrategy = object : WriteStrategy<T>(type) {
+    override val writeStrategy = object : WriteStrategy<T>(type, settings) {
         override fun write(obj: T, output: Output) {
             SerializerDebugger.writeln("Writing number of fields: ${fields.size}")
             output.writeInt(fields.size)
@@ -35,14 +37,14 @@ open class AllFieldsSerializer<T : Any>(type: Class<T>, settings: List<Serialize
                     val fieldValue = field.field.get(obj)
                     SerializerDebugger.writeln("Writing field ${field.field.name}: ${field.field.type.simpleName} = $fieldValue")
                     output.writeUTF(field.field.name)
-                    output.write(field)
+                    output.write(fieldValue, field.settings)
                     field.field.isAccessible = false
                 }
             }
         }
     }
 
-    override val readStrategy = object : ReadStrategy<T>(type) {
+    override val readStrategy = object : ReadStrategy<T>(type, settings) {
         override fun read(obj: T, input: Input) {
             val supposedSize = input.readInt()
             SerializerDebugger.writeln("Supposed number of fields: $supposedSize")
@@ -57,34 +59,30 @@ open class AllFieldsSerializer<T : Any>(type: Class<T>, settings: List<Serialize
             val nameToValue = mutableMapOf<String, Any?>()
             for (i in 0 until supposedSize) {
                 val fieldName = input.readUTF()
-                val fieldValue = input.readUnknownNullable()
+                SerializerDebugger.writeln("Found field with name $fieldName")
+                var existingField: CachedField? = null
+                for (field in fields) {
+                    if (field.field.name == fieldName) {
+                        existingField = field
+                        break
+                    }
+                }
+                val fieldValue = input.readUnknownNullable(existingField?.settings ?: listOf())
                 nameToValue.put(fieldName, fieldValue)
             }
-            for (field in fields) {
-                if (field.field.name !in nameToValue.keys) {
-                    // uh oh
-                    throw ReadException(
-                        "A field with name ${field.field.name} in $type was not in the file. File contains names: \n${
-                            nameToValue.keys.joinToString(
-                                separator = "\n"
-                            )
-                        }"
-                    )
-                }
-            }
+
             for ((name, value) in nameToValue) {
                 val field = fields.firstOrNull { it.field.name == name }
                 if (field == null) {
                     // the field existed in a previous version of the class but no longer does,
                     // that is ok because that just means it is no longer necessary
                     SerializerDebugger.writeln("Found a field $name in the file that does not exist in the class $type")
-                    val uselessValue = input.readUnknownNullable()
-                    SerializerDebugger.writeln("It had a value of $uselessValue")
+                    SerializerDebugger.writeln("It had a value of $value")
                     continue
                 }
                 synchronized(field) {
                     SerializerDebugger.writeln("Reading field ${field.field.name}: ${field.field.type.simpleName} ")
-                    field.field.isAccessible = false
+                    field.field.isAccessible = true
                     /*
                     if (!field.trySetAccessible()) {
                         throw ReadException("Unable to set accessible of field $field from class ${newInstance::class}")

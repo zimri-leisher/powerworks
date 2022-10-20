@@ -26,13 +26,13 @@ enum class Version(
 class VersionSerializer(type: Class<Version>, settings: List<SerializerSetting<*>>) :
     Serializer<Version>(type, settings) {
 
-    override val writeStrategy = object : WriteStrategy<Version>(type) {
+    override val writeStrategy = object : WriteStrategy<Version>(type, settings) {
         override fun write(obj: Version, output: Output) {
             output.writeUTF("${obj.major}:${obj.minor}:${obj.patch}")
         }
     }
 
-    override val createStrategy = object : CreateStrategy<Version>(type) {
+    override val createStrategy = object : CreateStrategy<Version>(type, settings) {
         override fun create(input: Input): Version {
             val (major, minor, patch) = input.readUTF().split(":").map { it.replace(":", "") }
             return Version.values().firstOrNull { it.major == major && it.minor == minor && it.patch == patch }

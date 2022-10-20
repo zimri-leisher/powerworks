@@ -309,7 +309,9 @@ abstract class Level(
 
 class NonexistentLevelException(message: String) : Exception(message)
 
-class LevelReference(val id: UUID) : Reference<Level>() {
+class LevelReference(
+    @Id(1)
+    val id: UUID) : Reference<Level>() {
 
     constructor(level: Level) : this(level.id) {
         value = level

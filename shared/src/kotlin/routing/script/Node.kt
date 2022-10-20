@@ -284,35 +284,35 @@ class Equal(token: Token, left: Node<Any>, right: Node<Any>) : BinaryOperator<An
 
 class NodeSerializer(type: Class<Node<*>>, settings: List<SerializerSetting<*>>) : Serializer<Node<*>>(type, settings) {
 
-    override val writeStrategy = object : WriteStrategy<Node<*>>(type) {
+    override val writeStrategy = object : WriteStrategy<Node<*>>(type, settings) {
         override fun write(obj: Node<*>, output: Output) {
-            output.write(obj.token)
+            output.write(obj.token, settings)
             when (obj.token.type.category) {
                 TokenCategory.OP_BINARY_INFIX, TokenCategory.OP_BINARY_PREFIX -> {
                     obj as BinaryOperator<*, *, *>
-                    output.write(obj.left)
-                    output.write(obj.right)
+                    output.write(obj.left, settings)
+                    output.write(obj.right, settings)
                 }
                 TokenCategory.OP_UNARY_RIGHT, TokenCategory.OP_UNARY_LEFT -> {
                     obj as UnaryOperator<*, *>
-                    output.write(obj.arg)
+                    output.write(obj.arg, settings)
                 }
                 else -> {}
             }
         }
     }
 
-    override val createStrategy = object : CreateStrategy<Node<*>>(type) {
+    override val createStrategy = object : CreateStrategy<Node<*>>(type, settings) {
         override fun create(input: Input): Node<*> {
-            val token = input.read(Token::class.java)
+            val token = input.read(Token::class.java, settings)
             val args = mutableListOf<Node<*>>()
             when (token.type.category) {
                 TokenCategory.OP_BINARY_INFIX, TokenCategory.OP_BINARY_PREFIX -> {
-                    args.add(input.read(Node::class.java))
-                    args.add(input.read(Node::class.java))
+                    args.add(input.read(Node::class.java, settings))
+                    args.add(input.read(Node::class.java, settings))
                 }
                 TokenCategory.OP_UNARY_RIGHT, TokenCategory.OP_UNARY_LEFT -> {
-                    args.add(input.read(Node::class.java))
+                    args.add(input.read(Node::class.java, settings))
                 }
 
                 else -> {}

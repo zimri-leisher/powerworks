@@ -8,12 +8,15 @@ import network.LevelObjectReference
 import network.MovingObjectReference
 import network.User
 import serialization.Id
+import java.util.*
 
 class BrainRobot(
     x: Int, y: Int,
     @Id(28)
     var user: User
 ) : Robot(RobotType.BRAIN, x, y) {
+
+    private constructor() : this(0, 0, User(UUID.randomUUID(), ""))
 
     @Id(29)
     val inventory = Inventory(8, 3)

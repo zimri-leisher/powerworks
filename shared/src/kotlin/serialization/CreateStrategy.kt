@@ -6,8 +6,8 @@ import java.lang.reflect.Modifier
 /**
  * Classes extending [CreateStrategy] must implement a constructor with one argument: [type]
  */
-abstract class CreateStrategy<out T : Any>(val type: Class<*>) {
-    object None : CreateStrategy<Any>(Any::class.java) {
+abstract class CreateStrategy<out T : Any>(val type: Class<*>, val settings: List<SerializerSetting<*>>) {
+    object None : CreateStrategy<Any>(Any::class.java, listOf()) {
         override fun create(input: Input): Any {
             return Any()
         }
@@ -16,14 +16,15 @@ abstract class CreateStrategy<out T : Any>(val type: Class<*>) {
     abstract fun create(input: Input): T
 }
 
-class EmptyConstructorCreateStrategy<T : Any>(type: Class<T>) : CreateStrategy<T>(type) {
+class EmptyConstructorCreateStrategy<T : Any>(type: Class<T>, settings: List<SerializerSetting<*>>) :
+    CreateStrategy<T>(type, settings) {
 
-    private var cachedConstructor: Constructor<T>
+    private lateinit var cachedConstructor: Constructor<T>
 
     init {
         if (type.isInterface || Modifier.isAbstract(type.modifiers)) {
             // default won't happen with either of these because for any instance of these the actual type will be something else
-            throw InstantiationException("$type is an interface or abstract and so can't be instantiated")
+            // do nothing
         } else {
             val defaultConstructor = type.declaredConstructors.firstOrNull { it.parameterCount == 0 }
             if (defaultConstructor == null) {
@@ -63,7 +64,7 @@ class EmptyConstructorCreateStrategy<T : Any>(type: Class<T>) : CreateStrategy<T
      * that significantly more easy. For more details see the documentation for [AutoIDSerializer]
      */
     override fun create(input: Input): T {
-        SerializerDebugger.writeln("(Using default (0-arg) constructor instantiation)")
+        SerializerDebugger.writeln("(Using default (0-arg) constructor instantiation for $type)")
         if (cachedConstructor.parameterCount == 1) {
             val superClass = type.enclosingClass
             val superClassInstance = input.instantiate(superClass)

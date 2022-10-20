@@ -105,16 +105,16 @@ object Registration {
             List::class.java,
             *args.map { arg -> arg::class.java }.toTypedArray()
         )
+        println("creating serializer for ${type.simpleName}")
         return type.constructors.firstOrNull { ctor ->
-            println("comparing ${ctor.parameters.joinToString { it.type.toString() }} with ${shouldBe.joinToString { it.toString() }}")
             if (ctor.parameters.size != shouldBe.size) {
-                println("diff size")
+                println("size doesn't match")
                 false
             } else {
                 var matches = true
                 for (i in ctor.parameters.indices) {
+                    println("checking ${ctor.parameters[i].type} with ${shouldBe[i]}")
                     if (!ctor.parameters[i].type.isAssignableFrom(shouldBe[i])) {
-                        println("doesn't match")
                         matches = false
                         break
                     }
@@ -178,7 +178,7 @@ object Registration {
 
     fun registerAll() {
 
-        // max 221
+        // max 228
         /* PRIMITIVES */
         setDefaultSerializer(Serializer::class)
         register(Nothing::class, 0)
@@ -213,8 +213,12 @@ object Registration {
             .setSerializer(PairSerializer::class)
         register(LinkedHashMap::class, 217)
             .setSerializer(MutableMapSerializer::class)
+        register(Map::class, 227)
+            .setSerializer(MapSerializer::class)
         register(Set::class, 218)
-//            .setSerializer(MutableCollectionSerializer::class)
+            .setSerializer(CollectionSerializer::class, listOf(), { it: MutableCollection<*> -> it.toSet() })
+        register(List::class, 222)
+            .setSerializer(CollectionSerializer::class, listOf(), { it: MutableCollection<*> -> it.toList() })
         register(Rectangle::class, 220)
             .setSerializer(AllFieldsSerializer::class)
         register(Polygon::class, 219)
@@ -222,7 +226,7 @@ object Registration {
         register(emptyMap<Nothing, Nothing>()::class, 12)
             .setSerializer(EmptyMapSerializer::class)
         register(mapOf(1 to 1)::class, 13)
-            .setSerializer(MapSerializer::class, listOf(), { it: MutableMap<Any, Any> -> it.toMap() })
+            .setSerializer(MapSerializer::class)
         register(setOf(1)::class, 14)
             .setSerializer(CollectionSerializer::class, listOf(), { it: MutableCollection<Any> -> it.toSet() })
         register(emptySet<Int>()::class, 15)
@@ -308,14 +312,19 @@ object Registration {
             .setSerializer(AutoIDSerializer::class)
 
         /* LEVEL */
+        register(Level::class, 223)
         register(ActualLevel::class, 57)
         register(UnknownLevel::class, 58)
         register(Chunk::class, 59)
         register(Hitbox::class, 60)
         register(LevelData::class, 61)
         register(LevelInfo::class, 62)
+        register(LevelObject::class, 224)
+        register(PhysicalLevelObject::class, 226)
         register(PhysicalLevelObjectTextures::class, 63)
         register(LevelObjectType::class, 64)
+            .setSerializer(AutoIDSerializer::class)
+        register(PhysicalLevelObjectType::class, 225)
             .setSerializer(AutoIDSerializer::class)
         register(RemoteLevel::class, 65)
         register(ChunkData::class, 66)
@@ -454,6 +463,7 @@ object Registration {
         register(MovingObjectReference::class, 152)
         register(ResourceNodeReference::class, 153)
         register(BrainRobotReference::class, 154)
+        register(LevelReference::class, 228)
         register(LevelUpdatePacket::class, 155)
         register(LevelLoadedSuccessPacket::class, 156)
 
@@ -563,7 +573,6 @@ object Registration {
     private fun createSerializers() {
         for ((type, template) in defaultSerializerClasses) {
             val ctor = getSerializerCtor(template.type, template.args)
-            println("trying to initialize ${ctor.parameters.joinToString { it.type.toString() }} with ${type::class.java} ${template.settings::class.java} ${template.args.joinToString { it::class.java.toString() }}")
             try {
                 defaultSerializers[type] = ctor.newInstance(type, template.settings, *template.args) as Serializer<Any>
             } catch (e: java.lang.Exception) {
@@ -573,42 +582,73 @@ object Registration {
         }
     }
 
-    fun getSerializer(field: Field): Serializer<*> {
-        val defaultSerializer = getSerializer(field.type)
-        val options = SerializerSetting.getSettings(field)
+    fun getSerializer(field: Field, fieldValueClass: Class<*>): Serializer<*> {
+        SerializerDebugger.writeln("Getting serializer for field $field in class ${field.declaringClass}")
+        val settings = SerializerSetting.getSettings(field)
+        return getSerializer(fieldValueClass, settings)
+    }
+
+    fun getSerializer(type: Class<*>): Serializer<out Any> {
+        return getSerializer(type, listOf())
+    }
+
+    fun getSerializer(maybeNotNiceType: Class<*>, settings: List<SerializerSetting<*>>): Serializer<out Any> {
+        SerializerDebugger.writeln("Getting serializer for $maybeNotNiceType with settings $settings")
+        val type = Serialization.makeTypeNice(maybeNotNiceType)
+        val defaultSerializer = defaultSerializers[type]
+            ?: throw Exception("Class $type has not been assigned a default serializer")
         var newCreateStrategy: CreateStrategy<Any> = defaultSerializer.createStrategy
         var newReadStrategy: ReadStrategy<Any> = defaultSerializer.readStrategy as ReadStrategy<Any>
         var newWriteStrategy: WriteStrategy<Any> = defaultSerializer.writeStrategy as WriteStrategy<Any>
-        for (option in options) {
-            when (option) {
-                ReferenceSetting -> {
-                    if (!Referencable::class.java.isAssignableFrom(field.type)) {
+        val newSettings = mutableListOf<SerializerSetting<*>>()
+        for (setting in settings) {
+            when (setting) {
+                is InternalRecurseSetting -> {
+                    newSettings.add(RecursiveReferenceSetting(AsReferenceRecursive()))
+                }
+
+                is IdSetting, is ReferenceSetting, is WriteStrategySetting, is ReadStrategySetting, is CreateStrategySetting -> {}
+                else -> {
+                    newSettings.add(setting)
+                }
+            }
+        }
+        for (setting in settings) {
+            when (setting) {
+                is ReferenceSetting -> {
+                    if (!Referencable::class.java.isAssignableFrom(type)) {
                         // if its not itself a referencable, check if recursive is true
-                        throw Exception("Field ${field.name} in class ${field.declaringClass} was specified to be saved as a Reference but ${field.type} does not implement Referencable")
+                        throw Exception("ReferenceSetting was enabled, but $type does not implement Referencable")
                     }
                     newReadStrategy = ReadStrategy.None
                     newWriteStrategy =
-                        ReferencableWriteStrategy(field.type as Class<Referencable<Any>>) as WriteStrategy<Any>
+                        ReferencableWriteStrategy(type as Class<Referencable<Any>>, newSettings) as WriteStrategy<Any>
                     newCreateStrategy =
-                        ReferencableCreateStrategy(field.type as Class<Referencable<Any>>)
+                        ReferencableCreateStrategy(type, newSettings)
                 }
 
-                WriteStrategySetting -> {
-                    val writeStrategyClass = WriteStrategySetting.getFrom(field).writeStrategyClass
+                is WriteStrategySetting -> {
+                    val writeStrategyClass = setting.value.writeStrategyClass
                     val ctor = writeStrategyClass.primaryConstructor
-                    newWriteStrategy = ctor!!.call(field.type) as WriteStrategy<Any>
+                    newWriteStrategy = ctor!!.call(type, newSettings) as WriteStrategy<Any>
                 }
 
-                ReadStrategySetting -> {
-                    val readStrategyClass = ReadStrategySetting.getFrom(field).readStrategyClass
+                is ReadStrategySetting -> {
+                    val readStrategyClass = setting.value.readStrategyClass
                     val ctor = readStrategyClass.primaryConstructor
-                    newReadStrategy = ctor!!.call(field.type) as ReadStrategy<Any>
+                    newReadStrategy = ctor!!.call(type, newSettings) as ReadStrategy<Any>
                 }
 
-                CreateStrategySetting -> {
-                    val createStrategyClass = CreateStrategySetting.getFrom(field).createStrategyClass
+                is CreateStrategySetting -> {
+                    val createStrategyClass = setting.value.createStrategyClass
                     val ctor = createStrategyClass.primaryConstructor
-                    newCreateStrategy = ctor!!.call(field.type)
+                    newCreateStrategy = ctor!!.call(type, newSettings)
+                }
+
+                is RecursiveReferenceSetting -> {
+                    newReadStrategy = ReadStrategy.None
+                    newWriteStrategy = RecursiveReferencableWriteStrategy(type, newSettings)
+                    newCreateStrategy = RecursiveReferencableCreateStrategy(type, newSettings)
                 }
 
                 else -> {
@@ -619,16 +659,14 @@ object Registration {
         if (newReadStrategy != defaultSerializer.readStrategy
             || newWriteStrategy != defaultSerializer.writeStrategy
             || newCreateStrategy != defaultSerializer.createStrategy
+            || newSettings != defaultSerializer.settings
         ) {
-            return Serializer(field.type, options, newCreateStrategy, newWriteStrategy, newReadStrategy)
+            val serializer = Serializer(type, newSettings, newCreateStrategy, newWriteStrategy, newReadStrategy)
+            SerializerDebugger.writeln("Serializer got: $serializer")
+            return serializer
         }
+        SerializerDebugger.writeln("Serializer got: $defaultSerializer")
         return defaultSerializer
-    }
-
-    fun getSerializer(type: Class<*>): Serializer<out Any> {
-        val actualType = Serialization.makeTypeNice(type)
-        return defaultSerializers[actualType]
-            ?: throw Exception("Class $actualType has not been assigned a default serializer")
     }
 
     fun getId(type: Class<*>): Int {
@@ -643,7 +681,6 @@ object Registration {
     fun getType(id: Int): Class<*>? {
         return ids.get(id)
     }
-
 }
 
 enum class Primitive {

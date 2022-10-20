@@ -4,7 +4,8 @@ import serialization.Id
 
 sealed class Setting<T>(
     @Id(1)
-    val name: String, val isValid: (T) -> Boolean
+    val name: String,
+    val isValid: (T) -> Boolean
 ) {
 
     abstract fun get(): T

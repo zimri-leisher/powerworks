@@ -17,8 +17,8 @@ class EntitySetFormation(
      * A map of references to entities and their positions in the formation.
      */
     @Id(2)
-    @AsReference(true)
-    val positions: Map<MovingObjectReference<out Entity>, LevelPosition>,
+    @AsReferenceRecursive
+    val positions: Map<Entity, LevelPosition>,
     /**
      * The center of the formation.
      */
@@ -35,11 +35,7 @@ class EntitySetFormation(
         if (positions.isEmpty()) {
             return true
         }
-        val entities = positions.keys.map { it.value as Entity? }
-        if (entities.any { it == null }) {
-            return false
-        }
-        entities as List<Entity>
+        val entities = positions.keys
         if (entities.map { it.group }.distinct().size != 1) {
             return false
         }
@@ -50,8 +46,8 @@ class EntitySetFormation(
         if (positions.isEmpty()) {
             return
         }
-        val group = (positions.keys.first().value!! as Entity).group!!
-        val formation = Formation(center, positions.mapKeys { it.key.value!! as Entity })
+        val group = positions.keys.first().group!!
+        val formation = Formation(center, positions)
         group.formation = formation
     }
 
@@ -70,10 +66,9 @@ class EntitySetFormation(
             return false
         }
         if (other.positions.any { (key, value) ->
-                key.value == null ||
-                        positions.none { (key2, value2) ->
-                            key.value !== key2.value && value != value2
-                        }
+                positions.none { (key2, value2) ->
+                    key !== key2 && value != value2
+                }
             }) {
             return false
         }

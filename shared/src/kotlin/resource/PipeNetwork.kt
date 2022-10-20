@@ -9,6 +9,7 @@ import misc.Geometry
 import misc.TileCoord
 import network.LevelObjectReference
 import network.ResourceNetworkReference
+import serialization.Id
 import java.lang.Integer.max
 import java.lang.Integer.min
 import java.util.*
@@ -21,9 +22,12 @@ interface PotentialPipeNetworkVertex : PotentialResourceNetworkVertex {
 class PipeNetworkVertex(
     obj: PotentialPipeNetworkVertex,
     edges: MutableList<PipeNetworkVertex?>,
+    @Id(4)
     val farEdges: Array<PipeNetworkVertex?>
 ) :
     ResourceNetworkVertex<PipeNetworkVertex>(obj, edges, ResourceNetworkType.PIPE) {
+
+    private constructor() : this(ResourceNode(SourceContainer(),0,0), mutableListOf(), arrayOf())
 
     private val pipeObj get() = obj as PotentialPipeNetworkVertex
 
@@ -38,6 +42,8 @@ class PipeNetworkVertex(
 }
 
 class PipeNetwork(level: Level) : ResourceNetwork<PipeNetworkVertex>(level, ResourceNetworkType.PIPE) {
+
+    private constructor() : this(LevelManager.EMPTY_LEVEL)
 
     val connections = mutableListOf<PipeNetworkConnection>()
 

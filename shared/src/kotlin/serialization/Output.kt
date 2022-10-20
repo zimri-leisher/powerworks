@@ -38,7 +38,7 @@ class Output(outputStream: OutputStream) : DataOutputStream(outputStream) {
             Primitive.DOUBLE.id -> writeDouble(prim as Double)
             Primitive.BYTE.id -> writeByte((prim as Byte).toInt())
             Primitive.NULL.id -> writeShort(Primitive.NULL.id)
-            Primitive.CHAR.id -> writeChar((prim as Char).toInt())
+            Primitive.CHAR.id -> writeChar((prim as Char).code)
             Primitive.INT.id -> writeInt(prim as Int)
             Primitive.LONG.id -> writeLong(prim as Long)
             Primitive.SHORT.id -> writeShort((prim as Short).toInt())
@@ -48,7 +48,7 @@ class Output(outputStream: OutputStream) : DataOutputStream(outputStream) {
         SerializerDebugger.writeln("Written primitive")
     }
 
-    fun write(obj: Any?, useSerializer: Serializer<out Any>? = null) {
+    fun write(obj: Any?, settings: List<SerializerSetting<*>> = listOf()) {
         SerializerDebugger.writeln("-- Begin writing ${if (obj == null) null else obj::class.java} = $obj")
         SerializerDebugger.increaseDepth()
         if (obj == null) {
@@ -62,13 +62,13 @@ class Output(outputStream: OutputStream) : DataOutputStream(outputStream) {
         if (Serialization.isPrimitive(id)) {
             writePrimitive(id, obj)
         } else {
-            writeNonNullNonPrimitive(id, niceType, obj, useSerializer ?: Registration.getSerializer(obj::class.java))
+            writeNonNullNonPrimitive(id, niceType, obj, settings)
         }
         SerializerDebugger.decreaseDepth()
         SerializerDebugger.writeln("-- End writing $niceType = $obj")
     }
 
-    private fun writeNonNullNonPrimitive(id: Int, niceType: Class<*>, obj: Any, serializer: Serializer<out Any>) {
+    private fun writeNonNullNonPrimitive(id: Int, niceType: Class<*>, obj: Any, settings: List<SerializerSetting<*>> = listOf()) {
         val reference = references.get(obj)
         if (reference != null) {
             SerializerDebugger.writeln("(Object has been written before)")
@@ -79,6 +79,7 @@ class Output(outputStream: OutputStream) : DataOutputStream(outputStream) {
         }
         addReference(obj)
         writeShort(id)
+        val serializer = Registration.getSerializer(niceType, settings)
         (serializer.writeStrategy as WriteStrategy<Any>).write(obj, this)
     }
 

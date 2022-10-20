@@ -83,6 +83,7 @@ object ServerNetworkManager : PacketHandler {
         if (packet is ClientHandshakePacket) {
             if (clientInfos.none { (id, _) -> id == packet.connectionId }) {
                 val accepted = Game.VERSION.isCompatible(packet.version) && getConnectionIdByUserOrNull(packet.newUser) == null // version compatible, user is not previously connected
+                println("sending handshake to client: ${Game.VERSION.isCompatible(packet.version)}")
                 sendToClient(ServerHandshakePacket(packet.timestamp, System.currentTimeMillis(), accepted), packet.connectionId)
                 if (accepted) {
                     clientInfos.put(packet.connectionId, ClientInfo(packet.newUser, packet.version, packet.connection.remoteAddressTCP))

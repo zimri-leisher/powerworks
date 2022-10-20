@@ -16,6 +16,7 @@ import network.*
 import player.team.TeamPermission
 import resource.*
 import serialization.AsReference
+import serialization.AsReferenceRecursive
 import serialization.Id
 import java.util.*
 
@@ -103,7 +104,7 @@ class ActionDoResourceTransaction(
 class ActionEntityCreateGroup(
     owner: Player,
     @Id(2)
-    @AsReference(true)
+    @AsReferenceRecursive
     val entities: List<Entity>
 ) : PlayerAction(owner) {
 
@@ -228,7 +229,7 @@ class ActionLevelObjectPlace(
 class ActionLevelObjectRemove(
     owner: Player,
     @Id(2)
-    @AsReference(true)
+    @AsReferenceRecursive
     val objs: List<LevelObject>
 ) : PlayerAction(owner) {
 
@@ -272,7 +273,7 @@ class ActionLevelObjectRemove(
 class ActionControlEntity(
     owner: Player,
     @Id(2)
-    @AsReference(true)
+    @AsReferenceRecursive
     val entityReferences: List<Entity>,
     @Id(3)
     val behavior: BehaviorTree,

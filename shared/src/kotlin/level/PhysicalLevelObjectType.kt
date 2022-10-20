@@ -3,6 +3,7 @@ package level
 import graphics.Image
 import resource.ResourceNode
 import resource.ResourceType
+import serialization.ObjectList
 
 
 open class PhysicalLevelObjectType<T : PhysicalLevelObject>(initializer: PhysicalLevelObjectType<T>.() -> Unit = {}) :
@@ -19,6 +20,7 @@ open class PhysicalLevelObjectType<T : PhysicalLevelObject>(initializer: Physica
     }
 
     companion object {
+        @ObjectList
         val ALL = mutableListOf<PhysicalLevelObjectType<*>>()
 
         val ERROR = PhysicalLevelObjectType<PhysicalLevelObject>()

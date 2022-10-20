@@ -2,6 +2,7 @@ package level
 
 import network.LevelObjectReference
 import player.team.Team
+import serialization.AsReference
 import serialization.Id
 import java.util.*
 
@@ -16,6 +17,7 @@ abstract class LevelObject protected constructor(
     @Id(5)
     var id = UUID.randomUUID()!!
 
+    @AsReference
     @Id(6)
     var level: Level = LevelManager.EMPTY_LEVEL
         set(value) {

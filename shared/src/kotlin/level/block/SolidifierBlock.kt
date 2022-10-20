@@ -15,6 +15,8 @@ import serialization.Id
 class SolidifierBlock(xTile: Int, yTile: Int) :
     MachineBlock(MachineBlockType.SOLIDIFIER, xTile, yTile), ResourceContainerChangeListener {
 
+    private constructor() : this(0, 0)
+
     @Id(23)
     val input = FluidTank(10)
 

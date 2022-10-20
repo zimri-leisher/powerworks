@@ -13,12 +13,13 @@ import resource.ResourceContainerChangeListener
 import resource.ResourceList
 import resource.ResourceNode
 
+
 class ArmoryBlock(xTile: Int, yTile: Int) : MachineBlock(MachineBlockType.ARMORY, xTile, yTile),
     ResourceContainerChangeListener {
 
-    val inventory = Inventory(1, 1)
-
     private constructor() : this(0, 0)
+
+    val inventory = Inventory(1, 1)
 
     override fun createNodes(): List<ResourceNode> {
         return listOf(ResourceNode(inventory, xTile, yTile))

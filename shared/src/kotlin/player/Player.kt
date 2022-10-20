@@ -117,19 +117,19 @@ class Player(
 
 class PlayerSerializer(type: Class<Player>, settings: List<SerializerSetting<*>>) : Serializer<Player>(type, settings) {
 
-    override val writeStrategy = object : WriteStrategy<Player>(type) {
+    override val writeStrategy = object : WriteStrategy<Player>(type, settings) {
         override fun write(obj: Player, output: Output) {
-            output.write(obj.user)
-            output.write(obj.brainRobotId)
-            output.write(obj.homeLevelId)
+            output.write(obj.user, settings)
+            output.write(obj.brainRobotId, settings)
+            output.write(obj.homeLevelId, settings)
         }
     }
 
-    override val createStrategy = object : CreateStrategy<Player>(type) {
+    override val createStrategy = object : CreateStrategy<Player>(type, settings) {
         override fun create(input: Input): Player {
-            val user = input.read(User::class.java)
-            val brainRobotId = input.read(UUID::class.java)
-            val homeLevelId = input.read(UUID::class.java)
+            val user = input.read(User::class.java, settings)
+            val brainRobotId = input.read(UUID::class.java, settings)
+            val homeLevelId = input.read(UUID::class.java, settings)
             val alreadyExistingPlayer = PlayerManager.getInitializedPlayerOrNull(user)
             if (alreadyExistingPlayer != null) {
                 return alreadyExistingPlayer

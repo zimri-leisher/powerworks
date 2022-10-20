@@ -1,11 +1,13 @@
 package level
 
+import level.generator.LevelType
 import level.update.LevelObjectAdd
 import level.update.LevelObjectRemove
 import level.update.LevelUpdate
 import main.removeIfKey
 import network.ClientNetworkManager
 import network.ServerNetworkManager
+import network.User
 import network.packet.*
 import java.util.*
 
@@ -17,6 +19,8 @@ import java.util.*
  * @param info the information describing the [Level]
  */
 class RemoteLevel(id: UUID, info: LevelInfo) : Level(id, info), PacketHandler {
+
+    private constructor() : this(UUID.randomUUID(), LevelInfo(User(UUID.randomUUID(), ""), "", "", LevelType.EMPTY, 0))
 
     val outgoingUpdates = mutableMapOf<LevelUpdate, Int>()
 

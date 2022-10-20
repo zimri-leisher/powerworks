@@ -11,6 +11,9 @@ import serialization.Id
 
 class SmelterBlock(xTile: Int, yTile: Int) : MachineBlock(MachineBlockType.SMELTER, xTile, yTile),
     ResourceContainerChangeListener {
+
+    private constructor() : this(0,0)
+
     @Id(23)
     val input = Inventory(1, 1)
 

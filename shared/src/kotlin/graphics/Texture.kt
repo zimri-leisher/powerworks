@@ -35,7 +35,7 @@ class TextureSerializer(type: Class<Texture>, settings: List<SerializerSetting<*
     TaggedSerializer<Texture>(type, settings) {
 
     inner class TextureWriteStrategy(val taggedWrite: WriteStrategy<Texture> = super.writeStrategy) :
-        WriteStrategy<Texture>(type) {
+        WriteStrategy<Texture>(type, settings) {
         override fun write(obj: Texture, output: Output) {
             output.writeUTF(GameResourceManager.getIdentifier(obj.region)!!)
             taggedWrite.write(obj, output)
@@ -44,7 +44,7 @@ class TextureSerializer(type: Class<Texture>, settings: List<SerializerSetting<*
 
     override val writeStrategy = TextureWriteStrategy()
 
-    inner class TextureCreateStrategy : CreateStrategy<Texture>(type) {
+    inner class TextureCreateStrategy : CreateStrategy<Texture>(type, settings) {
         override fun create(input: Input): Texture {
             return Texture(GameResourceManager.getAtlasTexture(input.readUTF()))
         }

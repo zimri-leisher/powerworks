@@ -13,6 +13,8 @@ import serialization.Id
 open class CrafterBlock(override val type: CrafterBlockType<*>, xTile: Int, yTile: Int) :
     MachineBlock(type, xTile, yTile), ResourceContainerChangeListener, Crafter {
 
+    private constructor() : this(CrafterBlockType.ITEM_CRAFTER, 0, 0)
+
     override val crafterType: Crafter.Type
         get() = type.crafterType
 

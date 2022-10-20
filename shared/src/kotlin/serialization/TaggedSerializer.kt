@@ -1,5 +1,6 @@
 package serialization
 
+import java.lang.reflect.Field
 import kotlin.reflect.jvm.kotlinProperty
 
 
@@ -31,33 +32,37 @@ open class TaggedSerializer<R : Any>(type: Class<R>, settings: List<SerializerSe
 
     // we have to make this lazy because if we don't, then FieldSerializer will call Registration.getSerializer
     // on classes that haven't been assigned a serializer yet and so it will have the wrong serializer.
-    val taggedFields: Array<CachedField> by lazy {
-        val tags = fields.filter { IdSetting in it.serializer.settings }.sortedBy { it.field.id }
+    val taggedFields: Array<CachedField>
+
+    init {
+        taggedFields = fields.filter { it.settings.any { setting -> setting is IdSetting } }
+            .sortedBy { it.settings.filterIsInstance<IdSetting>().first().value.id }
             .toTypedArray()
         // make sure we don't have conflicting ids
-        for (taggedField in tags) {
-            val id = taggedField.field.id
-            val alreadyExisting = tags.firstOrNull { it.field.id == id }
+        for (taggedField in taggedFields) {
+            val id = taggedField.settings.filterIsInstance<IdSetting>().first().value.id
+            val alreadyExisting = taggedFields.firstOrNull {
+                it.field != taggedField.field && it.settings.filterIsInstance<IdSetting>().first().value.id == id
+            }
             if (alreadyExisting != null) {
                 throw RegistrationException("Two fields in class $type have the same id ($id): ${taggedField.field.name} and ${alreadyExisting.field.name}")
             }
         }
-        if (tags.isNotEmpty()) {
+        if (taggedFields.isNotEmpty()) {
             SerializerDebugger.writeln("Found tagged fields:")
-            for (field in tags) {
+            for (field in taggedFields) {
                 SerializerDebugger.writeln("    $field")
             }
         } else {
             SerializerDebugger.writeln("Found no tagged fields")
         }
-        tags
     }
 
     /**
      * Writes all fields in [type] that have been tagged with the annotation [Id] to the [output] stream. See [Serializer.write]
      * for more general details about this function
      */
-    override val writeStrategy = object : WriteStrategy<R>(type) {
+    override val writeStrategy = object : WriteStrategy<R>(type, settings) {
         override fun write(obj: R, output: Output) {
             // write size so that we know if the number has changed (possibly because something was changed, its class was edited, and it was reloaded again)
             output.writeInt(taggedFields.size)
@@ -72,8 +77,8 @@ open class TaggedSerializer<R : Any>(type: Class<R>, settings: List<SerializerSe
                     try {
                         val fieldValue = field.field.get(obj)
                         SerializerDebugger.writeln("Writing tagged field $field = $fieldValue")
-                        output.writeInt(field.field.id)
-                        output.write(fieldValue, field.serializer as Serializer<Any>)
+                        output.writeInt(field.settings.filterIsInstance<IdSetting>().first().value.id)
+                        output.write(fieldValue, field.settings)
                     } catch (e: IllegalAccessException) {
                         System.err.println("Error while getting value of field ${field.field} from class ${obj::class} (accessible: ${field.field.isAccessible}")
                         throw e
@@ -90,7 +95,7 @@ open class TaggedSerializer<R : Any>(type: Class<R>, settings: List<SerializerSe
      * Reads all fields in this [type] tagged with the annotation [Id], and sets the fields in [newInstance] to whatever
      * the values it reads are. See [Serializer.read] for more general details about this function
      */
-    override val readStrategy = object : ReadStrategy<R>(type) {
+    override val readStrategy = object : ReadStrategy<R>(type, settings) {
         override fun read(obj: R, input: Input) {
             val supposedSize = input.readInt()
             if (supposedSize > taggedFields.size) {
@@ -103,8 +108,9 @@ open class TaggedSerializer<R : Any>(type: Class<R>, settings: List<SerializerSe
             }
             for (i in 0 until supposedSize) {
                 val fieldId = input.readInt()
-                val taggedField = taggedFields.firstOrNull { it.field.id == fieldId }
-                val field = taggedField?.field
+                val taggedField =
+                    taggedFields.firstOrNull { it.settings.filterIsInstance<IdSetting>().first().value.id == fieldId }
+                val field = taggedField
                 if (field == null) {
                     // we found a field that exists in the file but not in our class
                     // read the next thing anyways so that we make a complete read of the object
@@ -117,26 +123,27 @@ open class TaggedSerializer<R : Any>(type: Class<R>, settings: List<SerializerSe
                     SerializerDebugger.writeln("Reading tagged field $field ")
 
                     // set the value of the tagged field by recursively deserializing it
-                    val nullable = field.kotlinProperty?.returnType?.isMarkedNullable
+                    val nullable = field.field.kotlinProperty?.returnType?.isMarkedNullable
                     val newValue: Any?
+                    // how do we get the serializer for the _real_ type?
                     if (nullable == true) {
-                        newValue = input.readNullable(field.type)
+                        newValue = input.readNullable(field.field.type, field.settings + settings)
                     } else {
-                        newValue = input.read(field.type)
+                        newValue = input.read(field.field.type, field.settings + settings)
                     }
                     /*
                     if (!field.trySetAccessible()) {
                         throw ReadException("Unable to set accessible of field $field from class ${newInstance::class}")
                     }
                      */
-                    field.isAccessible = true
+                    field.field.isAccessible = true
                     try {
-                        field.set(obj, newValue)
+                        field.field.set(obj, newValue)
                     } catch (e: IllegalAccessException) {
-                        println("Error while setting field $field in ${obj::class} to $newValue: (accessible: ${field.isAccessible})")
+                        println("Error while setting field $field in ${obj::class} to $newValue: (accessible: ${field.field.isAccessible})")
                         throw e
                     }
-                    field.isAccessible = false
+                    field.field.isAccessible = false
                 }
 
                 // this is commented out because i think there are issues in regards to multi-threading that happen when

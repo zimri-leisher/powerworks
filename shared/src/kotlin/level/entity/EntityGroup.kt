@@ -175,7 +175,7 @@ class EntityGroup(
 
         val level = entities.first().level
         println("creating formation")
-        level.modify(EntitySetFormation(newFormation.mapKeys { it.key.toReference() as MovingObjectReference<out Entity> }
+        level.modify(EntitySetFormation(newFormation.mapKeys { it.key }
             .mapValues { LevelPosition(it.value.x, it.value.y, level) }, LevelPosition(x, y, level), level))
     }
 

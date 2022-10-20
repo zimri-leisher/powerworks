@@ -12,6 +12,8 @@ import resource.PipeNetwork
 
 class ItemPipeBlock(xTile: Int, yTile: Int) : PipeBlock(PipeBlockType.ITEM_PIPE, xTile, yTile) {
 
+    private constructor() : this(0,0)
+
     override fun render() {
         val texture = type.images[state]!!
         Renderer.renderTexture(texture, x, y)
