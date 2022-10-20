@@ -64,6 +64,6 @@ open class Serializer<R : Any>(
     )
 
     override fun toString(): String {
-        return "${this::class.java.simpleName}(${type.simpleName}, [${settings.joinToString()}], ${createStrategy::class.java.simpleName}, ${writeStrategy::class.java.simpleName}, ${readStrategy::class.java.simpleName})"
+        return "${this::class.java.simpleName}(${type.simpleName}, [${settings.joinToString()}], ${createStrategy::class.java}, ${writeStrategy::class.java}, ${readStrategy::class.java})"
     }
 }

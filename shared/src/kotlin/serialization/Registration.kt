@@ -597,9 +597,9 @@ object Registration {
         val type = Serialization.makeTypeNice(maybeNotNiceType)
         val defaultSerializer = defaultSerializers[type]
             ?: throw Exception("Class $type has not been assigned a default serializer")
-        var newCreateStrategy: CreateStrategy<Any> = defaultSerializer.createStrategy
-        var newReadStrategy: ReadStrategy<Any> = defaultSerializer.readStrategy as ReadStrategy<Any>
-        var newWriteStrategy: WriteStrategy<Any> = defaultSerializer.writeStrategy as WriteStrategy<Any>
+        var newCreateStrategy: CreateStrategy<Any>? = null
+        var newReadStrategy: ReadStrategy<Any>? = null
+        var newWriteStrategy: WriteStrategy<Any>? = null
         val newSettings = mutableListOf<SerializerSetting<*>>()
         for (setting in settings) {
             when (setting) {
@@ -654,6 +654,36 @@ object Registration {
                 else -> {
                     // it is a setting meant for individual strategies
                 }
+            }
+        }
+        if (newSettings != defaultSerializer.settings) {
+            if (newReadStrategy == null) {
+                newReadStrategy = defaultSerializer.readStrategy::class.primaryConstructor!!.call(
+                    type,
+                    newSettings
+                ) as ReadStrategy<Any>
+            }
+            if (newWriteStrategy == null) {
+                newWriteStrategy = defaultSerializer.writeStrategy::class.primaryConstructor!!.call(
+                    type,
+                    newSettings
+                ) as WriteStrategy<Any>
+            }
+            if(newCreateStrategy == null) {
+                newCreateStrategy = defaultSerializer.createStrategy::class.primaryConstructor!!.call(
+                    type,
+                    newSettings
+                )
+            }
+        } else {
+            if(newReadStrategy == null) {
+                newReadStrategy = defaultSerializer.readStrategy as ReadStrategy<Any>
+            }
+            if(newWriteStrategy == null) {
+                newWriteStrategy = defaultSerializer.writeStrategy as WriteStrategy<Any>
+            }
+            if(newCreateStrategy == null) {
+                newCreateStrategy = defaultSerializer.createStrategy
             }
         }
         if (newReadStrategy != defaultSerializer.readStrategy

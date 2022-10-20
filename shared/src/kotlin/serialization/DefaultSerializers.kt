@@ -165,6 +165,7 @@ class ArraySerializer(type: Class<Array<out Any?>>, settings: List<SerializerSet
             while (i < size) {
                 val element = input.readUnknownNullable()
                 if (element == null) {
+                    println("found settings $settings")
                     if (settings.any { it is SparseSetting }) {
                         val nullCount = input.readInt()
                         SerializerDebugger.writeln("$nullCount null elements in a row")
