@@ -21,6 +21,18 @@ class EmptyListSerializer(type: Class<*>, settings: List<SerializerSetting<*>>) 
     }
 }
 
+class CollectionCreateStrategy<R : Collection<*>>(type: Class<R>, settings: List<SerializerSetting<*>>) :
+    CreateStrategy<R>(type, settings) {
+    override fun create(input: Input): R {
+        val mutableCollection = mutableListOf<Any?>()
+        val size = input.readUnsignedShort()
+        for (i in 0 until size) {
+            mutableCollection.add(input.readUnknownNullable(settings))
+        }
+        return mutableCollection.toList() as R
+    }
+}
+
 /**
  * A serializer for any non-mutable [Collection]
  *
@@ -33,12 +45,7 @@ class CollectionSerializer<R : Collection<*>>(
 ) : Serializer<R>(type, settings) {
     override val createStrategy = object : CreateStrategy<R>(type, settings) {
         override fun create(input: Input): R {
-            val mutableCollection = mutableListOf<Any?>()
-            val size = input.readUnsignedShort()
-            for (i in 0 until size) {
-                mutableCollection.add(input.readUnknownNullable(settings))
-            }
-            return makeImmutable(mutableCollection)
+
         }
     }
 

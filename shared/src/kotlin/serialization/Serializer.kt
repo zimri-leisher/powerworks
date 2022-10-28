@@ -10,6 +10,18 @@ import java.lang.reflect.Constructor
 // the type, whether we want it as a reference, maybe compression type? alright, clearly we should
 // make annotations able to specify arbitrary strategies Ooh, this would be just what I need for sending levels vs level references
 
+// now that we have a better understanding of the system...
+// there are default strategies for how to serialize
+// read/write strats come in pairs
+//  always? well sometimes create/write comes in pairs
+// we definitely want them to have internal state, right? cuz without internal state we have to (for taggedserializer)
+// iterate thru all fields every time, super bad :(
+// but we also want to have a new serializer for each list of settings/type
+// also, note that we never actually need a serializer instance for an abstract/interface type
+// i guess we shouldn't even need to register abstract/interface types
+// TODO remove registration of all abstract/interface classes
+// 
+
 /**
  * A serializer for reading and writing of arbitrary objects of type [R]. One can override this class and its methods to
  * implement custom reading and writing behavior. To be clear, this only has default behavior for instantiation, and read/write
