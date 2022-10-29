@@ -62,16 +62,43 @@ import java.awt.Rectangle
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.lang.reflect.Constructor
-import java.lang.reflect.Field
 import java.util.*
 import kotlin.reflect.KClass
 import kotlin.reflect.full.primaryConstructor
 import kotlin.system.measureTimeMillis
 
+data class SerializerArgs(
+    val serializedType: Class<*>,
+    val settings: List<SerializerSetting<*>>
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as SerializerArgs
+
+        if (serializedType != other.serializedType) return false
+
+        if (settings.size != other.settings.size) return false
+        for (setting in settings) {
+            if (setting !in other.settings) {
+                return false
+            }
+        }
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = serializedType.hashCode()
+        result = 31 * result + settings.hashCode()
+        return result
+    }
+}
+
 data class SerializerTemplate(
-    val type: Class<out Serializer<out Any>>,
-    val settings: List<SerializerSetting<*>> = listOf(),
-    val args: Array<out Any> = arrayOf()
+    val serializerType: Class<out Serializer<out Any>>,
+    val settings: List<SerializerSetting<*>>
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -79,17 +106,21 @@ data class SerializerTemplate(
 
         other as SerializerTemplate
 
-        if (type != other.type) return false
-        if (settings != other.settings) return false
-        if (!args.contentEquals(other.args)) return false
+        if (serializerType != other.serializerType) return false
+
+        if (settings.size != other.settings.size) return false
+        for (setting in settings) {
+            if (setting !in other.settings) {
+                return false
+            }
+        }
 
         return true
     }
 
     override fun hashCode(): Int {
-        var result = type.hashCode()
+        var result = serializerType.hashCode()
         result = 31 * result + settings.hashCode()
-        result = 31 * result + args.contentHashCode()
         return result
     }
 }
@@ -97,24 +128,22 @@ data class SerializerTemplate(
 object Registration {
 
     private fun getSerializerCtor(
-        type: Class<out Serializer<out Any>>,
-        args: Array<out Any>
+        serializerType: Class<out Serializer<out Any>>
     ): Constructor<out Serializer<out Any>> {
         val shouldBe = arrayOf(
             Class::class.java,
-            List::class.java,
-            *args.map { arg -> arg::class.java }.toTypedArray()
+            List::class.java
         )
-        println("creating serializer for ${type.simpleName}")
-        return type.constructors.firstOrNull { ctor ->
+        println("creating serializer for ${serializerType.simpleName}")
+        return serializerType.constructors.firstOrNull { ctor ->
             if (ctor.parameters.size != shouldBe.size) {
-                println("size doesn't match")
+                SerializerDebugger.writeln("(size of ctor ${ctor.parameters.joinToString()} doesn't match)")
                 false
             } else {
                 var matches = true
                 for (i in ctor.parameters.indices) {
-                    println("checking ${ctor.parameters[i].type} with ${shouldBe[i]}")
                     if (!ctor.parameters[i].type.isAssignableFrom(shouldBe[i])) {
+                        SerializerDebugger.writeln("(parameter type $i of ctor ${ctor.parameters[i].type} doesn't match ${shouldBe[i]})")
                         matches = false
                         break
                     }
@@ -122,21 +151,19 @@ object Registration {
                 matches
             }
         } as Constructor<out Serializer<out Any>>?
-            ?: throw Exception("Could not instantiate serializer ${type.simpleName} with (type, settings, *args) ctor")
+            ?: throw Exception("Could not instantiate serializer ${serializerType.simpleName} with (type, settings) ctor")
     }
 
     private fun setDefaultSerializer(
         type: KClass<out Serializer<out Any>>,
         settings: List<SerializerSetting<*>> = listOf(),
-        vararg args: Any
-    ) = setDefaultSerializer(type.java, settings, *args)
+    ) = setDefaultSerializer(type.java, settings)
 
     private fun setDefaultSerializer(
         type: Class<out Serializer<out Any>>,
         settings: List<SerializerSetting<*>> = listOf(),
-        vararg args: Any
     ) {
-        defaultSerializerTemplate = SerializerTemplate(type, settings, args)
+        defaultSerializerTemplate = SerializerTemplate(type, settings)
     }
 
     @JvmInline
@@ -144,30 +171,27 @@ object Registration {
 
         fun setSerializer(
             serializerClass: KClass<out Serializer<*>>,
-            settings: List<SerializerSetting<*>> = listOf(),
-            vararg args: Any
-        ) = setSerializer(serializerClass.java, settings, *args)
+            settings: List<SerializerSetting<*>> = listOf()
+        ) = setSerializer(serializerClass.java, settings)
 
         fun setSerializer(
             serializerClass: Class<out Serializer<*>>,
-            settings: List<SerializerSetting<*>> = listOf(),
-            vararg args: Any
+            settings: List<SerializerSetting<*>> = listOf()
         ) {
             val type = ids[id]!!
-            defaultSerializerClasses[type] = SerializerTemplate(serializerClass, settings, args)
+            defaultSerializerClasses[type] = SerializerTemplate(serializerClass, settings)
         }
     }
 
-    private var nextId = Primitive.values().maxBy { it.id }.id + 1
 
-    val REFERENCE_ID = nextId++
+    const val REFERENCE_ID = 10
 
     private val ids = mutableMapOf<Int, Class<*>>()
 
     private val defaultSerializerClasses =
         mutableMapOf<Class<*>, SerializerTemplate>()
-    private val defaultSerializers = mutableMapOf<Class<*>, Serializer<out Any>>()
-    private var defaultSerializerTemplate: SerializerTemplate = SerializerTemplate(Serializer::class.java)
+    private val cachedSerializers = mutableMapOf<SerializerArgs, Serializer<out Any>>()
+    private var defaultSerializerTemplate: SerializerTemplate = SerializerTemplate(Serializer::class.java, listOf())
 
     private fun register(type: KClass<*>, id: Int) = register(type.java, id)
 
@@ -191,18 +215,17 @@ object Registration {
         register(java.lang.Character::class, 7)
         register(java.lang.Boolean::class, 8)
         register(java.lang.String::class, 9)
+        // REFERENCE_ID == 10
 
         /* COLLECTIONS */
         val singletonList: List<Any> = listOf(1)
         register(singletonList::class, 221)
-            .setSerializer(CollectionSerializer::class, listOf(), { it: MutableList<Any> -> it.toList() })
+            .setSerializer(CollectionSerializer::class)
         register(emptyList<Nothing>()::class, 211)
             .setSerializer(EmptyListSerializer::class)
         val immutableListClass = Class.forName("java.util.Arrays${'$'}ArrayList") as Class<Collection<Any?>>
-        register(immutableListClass, 212).setSerializer(
-            CollectionSerializer::class,
-            listOf(),
-            { it: MutableCollection<Any> -> it.toList() })
+        register(immutableListClass, 212)
+            .setSerializer(CollectionSerializer::class)
         register(ArrayList::class, 213)
             .setSerializer(MutableCollectionSerializer::class)
         register(LinkedHashSet::class, 214)
@@ -215,10 +238,6 @@ object Registration {
             .setSerializer(MutableMapSerializer::class)
         register(Map::class, 227)
             .setSerializer(MapSerializer::class)
-        register(Set::class, 218)
-            .setSerializer(CollectionSerializer::class, listOf(), { it: MutableCollection<*> -> it.toSet() })
-        register(List::class, 222)
-            .setSerializer(CollectionSerializer::class, listOf(), { it: MutableCollection<*> -> it.toList() })
         register(Rectangle::class, 220)
             .setSerializer(AllFieldsSerializer::class)
         register(Polygon::class, 219)
@@ -228,9 +247,9 @@ object Registration {
         register(mapOf(1 to 1)::class, 13)
             .setSerializer(MapSerializer::class)
         register(setOf(1)::class, 14)
-            .setSerializer(CollectionSerializer::class, listOf(), { it: MutableCollection<Any> -> it.toSet() })
+            .setSerializer(CollectionSerializer::class)
         register(emptySet<Int>()::class, 15)
-            .setSerializer(CollectionSerializer::class, listOf(), { it: MutableCollection<Any> -> it.toSet() })
+            .setSerializer(CollectionSerializer::class)
 
 
         setDefaultSerializer(AllFieldsSerializer::class.java)
@@ -544,7 +563,7 @@ object Registration {
         createSerializers()
     }
 
-    private fun registerClass(type: Class<*>, id: Int = nextId++, serializerTemplate: SerializerTemplate) {
+    private fun registerClass(type: Class<*>, id: Int, serializerTemplate: SerializerTemplate) {
         if (id < 0) throw RegistrationException("Cannot register an id less than 0 (tried to register $id)")
         if (Function::class.java.isAssignableFrom(type)) throw RegistrationException("Cannot register lambdas")
         if (defaultSerializerClasses.putIfAbsent(type, serializerTemplate) != null) {
@@ -572,9 +591,10 @@ object Registration {
 
     private fun createSerializers() {
         for ((type, template) in defaultSerializerClasses) {
-            val ctor = getSerializerCtor(template.type, template.args)
+            val ctor = getSerializerCtor(template.serializerType)
             try {
-                defaultSerializers[type] = ctor.newInstance(type, template.settings, *template.args) as Serializer<Any>
+                cachedSerializers[SerializerArgs(type, template.settings)] =
+                    ctor.newInstance(type, template.settings) as Serializer<Any>
             } catch (e: java.lang.Exception) {
                 System.err.println("Exception while registering $type with serializer template $template:")
                 throw e
@@ -582,26 +602,27 @@ object Registration {
         }
     }
 
-    fun getSerializer(field: Field, fieldValueClass: Class<*>): Serializer<*> {
-        SerializerDebugger.writeln("Getting serializer for field $field in class ${field.declaringClass}")
-        val settings = SerializerSetting.getSettings(field)
-        return getSerializer(fieldValueClass, settings)
+    fun getSerializer(type: Class<*>, settings: List<SerializerSetting<*>> = listOf()): Serializer<out Any> {
+        return getSerializer(SerializerArgs(type, settings))
     }
 
-    fun getSerializer(type: Class<*>): Serializer<out Any> {
-        return getSerializer(type, listOf())
-    }
-
-    fun getSerializer(maybeNotNiceType: Class<*>, settings: List<SerializerSetting<*>>): Serializer<out Any> {
-        SerializerDebugger.writeln("Getting serializer for $maybeNotNiceType with settings $settings")
-        val type = Serialization.makeTypeNice(maybeNotNiceType)
-        val defaultSerializer = defaultSerializers[type]
-            ?: throw Exception("Class $type has not been assigned a default serializer")
+    fun getSerializer(args: SerializerArgs): Serializer<out Any> {
+        SerializerDebugger.writeln("Getting serializer for ${args.serializedType} with settings ${args.settings}")
+        val type = Serialization.makeTypeNice(args.serializedType)
+        var cachedSerializer = cachedSerializers[args]
+        if (cachedSerializer == null) {
+            // need to make a new serializer
+            // so we will get the default for this type with no settings (which should exist)
+            cachedSerializer = cachedSerializers[SerializerArgs(args.serializedType, listOf())]
+                ?: throw RegistrationException("No default serializer exists for type ${args.serializedType}")
+        } else {
+            return cachedSerializer
+        }
         var newCreateStrategy: CreateStrategy<Any>? = null
         var newReadStrategy: ReadStrategy<Any>? = null
         var newWriteStrategy: WriteStrategy<Any>? = null
         val newSettings = mutableListOf<SerializerSetting<*>>()
-        for (setting in settings) {
+        for (setting in args.settings) {
             when (setting) {
                 is InternalRecurseSetting -> {
                     newSettings.add(RecursiveReferenceSetting(AsReferenceRecursive()))
@@ -613,7 +634,7 @@ object Registration {
                 }
             }
         }
-        for (setting in settings) {
+        for (setting in args.settings) {
             when (setting) {
                 is ReferenceSetting -> {
                     if (!Referencable::class.java.isAssignableFrom(type)) {
@@ -656,47 +677,28 @@ object Registration {
                 }
             }
         }
-        if (newSettings != defaultSerializer.settings) {
-            if (newReadStrategy == null) {
-                newReadStrategy = defaultSerializer.readStrategy::class.primaryConstructor!!.call(
-                    type,
-                    newSettings
-                ) as ReadStrategy<Any>
-            }
-            if (newWriteStrategy == null) {
-                newWriteStrategy = defaultSerializer.writeStrategy::class.primaryConstructor!!.call(
-                    type,
-                    newSettings
-                ) as WriteStrategy<Any>
-            }
-            if(newCreateStrategy == null) {
-                newCreateStrategy = defaultSerializer.createStrategy::class.primaryConstructor!!.call(
-                    type,
-                    newSettings
-                )
-            }
-        } else {
-            if(newReadStrategy == null) {
-                newReadStrategy = defaultSerializer.readStrategy as ReadStrategy<Any>
-            }
-            if(newWriteStrategy == null) {
-                newWriteStrategy = defaultSerializer.writeStrategy as WriteStrategy<Any>
-            }
-            if(newCreateStrategy == null) {
-                newCreateStrategy = defaultSerializer.createStrategy
-            }
+        if (newReadStrategy == null) {
+            newReadStrategy = cachedSerializer.readStrategy::class.primaryConstructor!!.call(
+                type,
+                newSettings
+            ) as ReadStrategy<Any>
         }
-        if (newReadStrategy != defaultSerializer.readStrategy
-            || newWriteStrategy != defaultSerializer.writeStrategy
-            || newCreateStrategy != defaultSerializer.createStrategy
-            || newSettings != defaultSerializer.settings
-        ) {
-            val serializer = Serializer(type, newSettings, newCreateStrategy, newWriteStrategy, newReadStrategy)
-            SerializerDebugger.writeln("Serializer got: $serializer")
-            return serializer
+        if (newWriteStrategy == null) {
+            newWriteStrategy = cachedSerializer.writeStrategy::class.primaryConstructor!!.call(
+                type,
+                newSettings
+            ) as WriteStrategy<Any>
         }
-        SerializerDebugger.writeln("Serializer got: $defaultSerializer")
-        return defaultSerializer
+        if (newCreateStrategy == null) {
+            newCreateStrategy = cachedSerializer.createStrategy::class.primaryConstructor!!.call(
+                type,
+                newSettings
+            )
+        }
+        val serializer = Serializer(type, newSettings, newCreateStrategy, newWriteStrategy, newReadStrategy)
+        SerializerDebugger.writeln("Serializer got: $serializer")
+        cachedSerializers[args] = serializer
+        return serializer
     }
 
     fun getId(type: Class<*>): Int {

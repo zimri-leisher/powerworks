@@ -28,7 +28,7 @@ class Weapon(
 
     fun render() {
         if (parent != null) {
-            fireAnimation[parent!!.rotation].render(parent!!.x, parent!!.y)
+            fireAnimation[parent!!.rotation].render(parent!!.x + 4, parent!!.y + 12)
         }
     }
 
@@ -38,7 +38,7 @@ class Weapon(
         }
         fireAnimation[parent!!.rotation].playFrom("start")
         cooldown = type.cooldown
-        parent!!.level.add(Projectile(type.projectileType, parent!!.x, parent!!.y, angle, parent!!))
+        parent!!.level.add(Projectile(type.projectileType, parent!!.x + 20, parent!!.y + 16, angle, parent!!))
         return true
     }
 

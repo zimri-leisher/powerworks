@@ -29,7 +29,7 @@ enum class ResourceOrderType {
 
 data class ResourceOrder(
     val stack: ResourceStack,
-    val type: ResourceOrderType,
+    val type: ResourceOrderType = ResourceOrderType.NO_MORE_THAN,
     val priority: ResourceOrderPriority
 )
 
@@ -72,11 +72,14 @@ class EqualizeContainers(network: ResourceNetwork<*>) : ResourceDistributor(netw
                 } else {
                     remainingDemands[container] = demand - allotment
                 }
-                results[container] = allotment
+                results[container] = results[container]!! + allotment
                 if (remainingQuantity == 0 || remainingDemand == 0) {
                     break@outer
                 }
             }
+        }
+        for(container in results.keys) {
+            lastTimeSentTo[container] = network.level.updatesCount
         }
         return results
     }

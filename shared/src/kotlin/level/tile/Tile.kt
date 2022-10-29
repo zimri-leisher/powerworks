@@ -10,13 +10,15 @@ import kotlin.random.Random.Default.nextInt
 
 // This is not a level object for performance reasons, and besides,
 // why would we need it to be? It's not involved in anything except mining (for now)
-open class Tile(type: TileType = TileType.GRASS,
-                @Id(1)
-                val xTile: Int,
-                @Id(2)
-                val yTile: Int,
-                @Id(3)
-                val level: Level) {
+open class Tile(
+    type: TileType = TileType.GRASS,
+    @Id(1)
+    val xTile: Int,
+    @Id(2)
+    val yTile: Int,
+    @Id(3)
+    val level: Level
+) {
 
     private constructor() : this(TileType.GRASS, 0, 0, LevelManager.EMPTY_LEVEL)
 

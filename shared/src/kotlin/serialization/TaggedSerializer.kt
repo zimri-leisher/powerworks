@@ -30,8 +30,6 @@ import kotlin.reflect.jvm.kotlinProperty
 open class TaggedSerializer<R : Any>(type: Class<R>, settings: List<SerializerSetting<*>>) :
     FieldSerializer<R>(type, settings) {
 
-    // we have to make this lazy because if we don't, then FieldSerializer will call Registration.getSerializer
-    // on classes that haven't been assigned a serializer yet and so it will have the wrong serializer.
     val taggedFields: Array<CachedField>
 
     init {
@@ -84,8 +82,6 @@ open class TaggedSerializer<R : Any>(type: Class<R>, settings: List<SerializerSe
                         throw e
                     }
                     field.field.isAccessible = false
-                    // this is commented out because i think there are issues in regards to multi-threading that happen when
-                    // this is set to false
                 }
             }
         }
@@ -125,7 +121,6 @@ open class TaggedSerializer<R : Any>(type: Class<R>, settings: List<SerializerSe
                     // set the value of the tagged field by recursively deserializing it
                     val nullable = field.field.kotlinProperty?.returnType?.isMarkedNullable
                     val newValue: Any?
-                    // how do we get the serializer for the _real_ type?
                     if (nullable == true) {
                         newValue = input.readNullable(field.field.type, field.settings + settings)
                     } else {
