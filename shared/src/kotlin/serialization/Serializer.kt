@@ -39,8 +39,8 @@ import java.lang.reflect.Constructor
  * not be public, as it will be modified by reflection to be accessible
  */
 open class Serializer<R : Any>(
-    val type: Class<*>, val settings: List<SerializerSetting<*>>,
-    open val createStrategy: CreateStrategy<R> = CreateStrategy.None as CreateStrategy<R>,
+    val type: Class<*>, val settings: Set<SerializerSetting<*>>,
+    open val createStrategy: CreateStrategy<R> = CreateStrategy.None(type, settings) as CreateStrategy<R>,
     /**
      * Writes the entire [obj] to the [output] stream. [obj] is guaranteed to be an instance of [type], so casting it to [R] is safe.
      * It's not defined as `obj: R` here because I am not good enough with generics.
@@ -50,7 +50,7 @@ open class Serializer<R : Any>(
      * which is slightly more performance heavy for those basic types.
      *
      */
-    open val writeStrategy: WriteStrategy<R> = WriteStrategy.None,
+    open val writeStrategy: WriteStrategy<R> = WriteStrategy.None(type, settings),
     /**
      * Reads fields from [input] into the given [newInstance], in theory completely finishing reading all of [newInstance].
      *
@@ -65,14 +65,14 @@ open class Serializer<R : Any>(
      * which is slightly more performance heavy for those basic types.
      *
      */
-    open val readStrategy: ReadStrategy<R> = ReadStrategy.None,
+    open val readStrategy: ReadStrategy<R> = ReadStrategy.None(type, settings),
 ) {
-    constructor(type: Class<*>, settings: List<SerializerSetting<*>>) : this(
+    constructor(type: Class<*>, settings: Set<SerializerSetting<*>>) : this(
         type,
         settings,
-        CreateStrategy.None as CreateStrategy<R>,
-        WriteStrategy.None,
-        ReadStrategy.None
+        CreateStrategy.None(type, settings) as CreateStrategy<R>,
+        WriteStrategy.None(type, settings),
+        ReadStrategy.None(type, settings)
     )
 
     override fun toString(): String {

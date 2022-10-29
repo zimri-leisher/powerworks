@@ -6,8 +6,8 @@ import java.lang.reflect.Modifier
 /**
  * Classes extending [CreateStrategy] must implement a constructor with one argument: [type]
  */
-abstract class CreateStrategy<out T : Any>(val type: Class<*>, val settings: List<SerializerSetting<*>>) {
-    object None : CreateStrategy<Any>(Any::class.java, listOf()) {
+abstract class CreateStrategy<out T : Any>(val type: Class<*>, val settings: Set<SerializerSetting<*>>) {
+    class None(type: Class<*>, settings: Set<SerializerSetting<*>>) : CreateStrategy<Any>(type, settings) {
         override fun create(input: Input): Any {
             return Any()
         }
@@ -16,7 +16,7 @@ abstract class CreateStrategy<out T : Any>(val type: Class<*>, val settings: Lis
     abstract fun create(input: Input): T
 }
 
-class EmptyConstructorCreateStrategy<T : Any>(type: Class<T>, settings: List<SerializerSetting<*>>) :
+class EmptyConstructorCreateStrategy<T : Any>(type: Class<T>, settings: Set<SerializerSetting<*>>) :
     CreateStrategy<T>(type, settings) {
 
     private lateinit var cachedConstructor: Constructor<T>

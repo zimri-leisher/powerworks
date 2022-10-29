@@ -28,17 +28,21 @@ object GuiLevelLoadingScreen : Gui(ScreenLayer.MENU_0) {
     }
 
     override fun update() {
-        if(!ClientNetworkManager.hasConnected()) {
+        if (!ClientNetworkManager.hasConnected()) {
             connectingScreen.open = true
             loadingScreen.open = false
         } else {
             connectingScreen.open = false
             loadingScreen.open = true
         }
+//        println("tick level loading screen")
         if (PlayerManager.isLocalPlayerLoaded()) {
+            println("home level loaded: ${PlayerManager.localPlayer.homeLevel.loaded}")
+//            println("${LevelManager.allLevels.any { it.loaded && it.data.brainRobots.any { brainRobot -> brainRobot.id == PlayerManager.localPlayer.brainRobotId }}} found brain robot")
             if (((PlayerManager.localPlayer.homeLevel is RemoteLevel && (PlayerManager.localPlayer.homeLevel as RemoteLevel).loaded)
-                            || PlayerManager.localPlayer.homeLevel !is RemoteLevel)
-                    && LevelManager.allLevels.any { it.data.brainRobots.any { brainRobot -> brainRobot.id == PlayerManager.localPlayer.brainRobotId } }) {
+                        || PlayerManager.localPlayer.homeLevel !is RemoteLevel)
+                && LevelManager.allLevels.any { it.data.brainRobots.any { brainRobot -> brainRobot.id == PlayerManager.localPlayer.brainRobotId } }
+            ) {
                 open = false
                 GameState.setState(GameState.INGAME)
             }

@@ -596,7 +596,7 @@ class Animation(
     }
 }
 
-class AnimationSerializer(type: Class<Animation>, settings: List<SerializerSetting<*>>) :
+class AnimationSerializer(type: Class<Animation>, settings: Set<SerializerSetting<*>>) :
     Serializer<Animation>(type, settings) {
 
 

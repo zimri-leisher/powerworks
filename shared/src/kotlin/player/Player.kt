@@ -115,7 +115,7 @@ class Player(
     }
 }
 
-class PlayerSerializer(type: Class<Player>, settings: List<SerializerSetting<*>>) : Serializer<Player>(type, settings) {
+class PlayerSerializer(type: Class<Player>, settings: Set<SerializerSetting<*>>) : Serializer<Player>(type, settings) {
 
     override val writeStrategy = object : WriteStrategy<Player>(type, settings) {
         override fun write(obj: Player, output: Output) {

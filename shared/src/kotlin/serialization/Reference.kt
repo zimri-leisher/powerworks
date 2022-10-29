@@ -12,7 +12,7 @@ interface Referencable<T : Any> {
     fun toReference(): Reference<T>
 }
 
-class ReferencableCreateStrategy(type: Class<out Referencable<Any>>, settings: List<SerializerSetting<*>>) :
+class ReferencableCreateStrategy(type: Class<out Referencable<Any>>, settings: Set<SerializerSetting<*>>) :
     CreateStrategy<Referencable<Any>>(type, settings) {
     override fun create(input: Input): Referencable<Any> {
         val reference = input.read(Reference::class.java) as Reference<Any>
@@ -24,7 +24,7 @@ class ReferencableCreateStrategy(type: Class<out Referencable<Any>>, settings: L
     }
 }
 
-class ReferencableWriteStrategy(type: Class<out Referencable<Any>>, settings: List<SerializerSetting<*>>) :
+class ReferencableWriteStrategy(type: Class<out Referencable<Any>>, settings: Set<SerializerSetting<*>>) :
     WriteStrategy<Referencable<Any>>(type, settings) {
     override fun write(obj: Referencable<Any>, output: Output) {
         val reference = obj.toReference()
@@ -32,10 +32,10 @@ class ReferencableWriteStrategy(type: Class<out Referencable<Any>>, settings: Li
     }
 }
 
-class RecursiveReferencableWriteStrategy(type: Class<out Any>, settings: List<SerializerSetting<*>>) :
+class RecursiveReferencableWriteStrategy(type: Class<out Any>, settings: Set<SerializerSetting<*>>) :
     WriteStrategy<Any>(type, settings) {
 
-    private val recursiveSettings = settings.filter { it !is RecursiveReferenceSetting }
+    private val recursiveSettings = settings.filter { it !is RecursiveReferenceSetting }.toSet()
 
     override fun write(obj: Any, output: Output) {
         // we want to write the object normally except if it is referencable
@@ -52,10 +52,10 @@ class RecursiveReferencableWriteStrategy(type: Class<out Any>, settings: List<Se
     }
 }
 
-class RecursiveReferencableCreateStrategy(type: Class<out Any>, settings: List<SerializerSetting<*>>) :
+class RecursiveReferencableCreateStrategy(type: Class<out Any>, settings: Set<SerializerSetting<*>>) :
     CreateStrategy<Any>(type, settings) {
 
-    private val recursiveSettings = settings.filter { it !is RecursiveReferenceSetting }
+    private val recursiveSettings = settings.filter { it !is RecursiveReferenceSetting }.toSet()
 
     override fun create(input: Input): Any {
         if (Referencable::class.java.isAssignableFrom(type)) {

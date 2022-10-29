@@ -137,7 +137,7 @@ class RemoteLevel(id: UUID, info: LevelInfo) : Level(id, info), PacketHandler {
                     chunk.data.tiles = generator.generateTiles(chunk.xChunk, chunk.yChunk)
                 }
                 updatesCount = packet.updatesCount
-                loaded = true
+                println("loaded level AAAAAAAAAAAAAAAAAAAA")
                 ClientNetworkManager.sendToServer(LevelLoadedSuccessPacket(id))
             }
         } else if (packet is UpdateBlockPacket) {

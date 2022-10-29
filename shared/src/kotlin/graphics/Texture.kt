@@ -31,7 +31,7 @@ class Texture(
     }
 }
 
-class TextureSerializer(type: Class<Texture>, settings: List<SerializerSetting<*>>) :
+class TextureSerializer(type: Class<Texture>, settings: Set<SerializerSetting<*>>) :
     TaggedSerializer<Texture>(type, settings) {
 
     inner class TextureWriteStrategy(val taggedWrite: WriteStrategy<Texture> = super.writeStrategy) :

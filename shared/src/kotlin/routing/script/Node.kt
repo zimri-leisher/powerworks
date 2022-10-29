@@ -282,7 +282,7 @@ class Equal(token: Token, left: Node<Any>, right: Node<Any>) : BinaryOperator<An
     }
 }
 
-class NodeSerializer(type: Class<Node<*>>, settings: List<SerializerSetting<*>>) : Serializer<Node<*>>(type, settings) {
+class NodeSerializer(type: Class<Node<*>>, settings: Set<SerializerSetting<*>>) : Serializer<Node<*>>(type, settings) {
 
     override val writeStrategy = object : WriteStrategy<Node<*>>(type, settings) {
         override fun write(obj: Node<*>, output: Output) {

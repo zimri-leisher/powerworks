@@ -210,7 +210,7 @@ object RoutingLanguage {
     }
 }
 
-class RoutingLanguageStatementSerializer(type: Class<RoutingLanguageStatement>, settings: List<SerializerSetting<*>>) : Serializer<RoutingLanguageStatement>(type, settings) {
+class RoutingLanguageStatementSerializer(type: Class<RoutingLanguageStatement>, settings: Set<SerializerSetting<*>>) : Serializer<RoutingLanguageStatement>(type, settings) {
 
     override val writeStrategy = object : WriteStrategy<RoutingLanguageStatement>(type, settings) {
         override fun write(obj: RoutingLanguageStatement, output: Output) {

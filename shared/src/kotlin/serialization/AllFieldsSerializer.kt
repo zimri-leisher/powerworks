@@ -8,7 +8,7 @@ import kotlin.reflect.jvm.kotlinProperty
  * of using the parameter of [Id] as an identifier, it saves them by name. Note this is brittle if you save an object,
  * rename one of its fields, and then reload it.
  */
-open class AllFieldsSerializer<T : Any>(type: Class<T>, settings: List<SerializerSetting<*>>) :
+open class AllFieldsSerializer<T : Any>(type: Class<T>, settings: Set<SerializerSetting<*>>) :
     FieldSerializer<T>(type, settings) {
 
     init {
@@ -67,7 +67,7 @@ open class AllFieldsSerializer<T : Any>(type: Class<T>, settings: List<Serialize
                         break
                     }
                 }
-                val fieldValue = input.readUnknownNullable(existingField?.settings ?: listOf())
+                val fieldValue = input.readUnknownNullable(existingField?.settings ?: setOf())
                 nameToValue.put(fieldName, fieldValue)
             }
 

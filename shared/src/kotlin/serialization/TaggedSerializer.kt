@@ -27,7 +27,7 @@ import kotlin.reflect.jvm.kotlinProperty
  * Keep in mind that any field that does not have an [Id] annotation will not be read or written to, i.e. it is invisible
  * to the serializer and is effectively transient
  */
-open class TaggedSerializer<R : Any>(type: Class<R>, settings: List<SerializerSetting<*>>) :
+open class TaggedSerializer<R : Any>(type: Class<R>, settings: Set<SerializerSetting<*>>) :
     FieldSerializer<R>(type, settings) {
 
     val taggedFields: Array<CachedField>

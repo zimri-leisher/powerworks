@@ -284,6 +284,7 @@ object Game : ApplicationAdapter(), ControlEventHandler, PacketHandler {
     override fun handleServerPacket(packet: Packet) {
         if (packet is LoadGamePacket) {
             PlayerManager.localPlayer = packet.localPlayer
+            println("load game packet ${PlayerManager.isLocalPlayerLoaded()}")
             val localLevel = RemoteLevel(packet.localPlayer.homeLevelId, packet.currentLevelInfo)
             localLevel.initialize()
             localLevel.load()

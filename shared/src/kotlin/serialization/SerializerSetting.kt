@@ -1,15 +1,24 @@
 package serialization
 
 import java.lang.reflect.Field
-import java.net.URI
 
-sealed class SerializerSetting<T>(val value: T) {
+enum class SerializerSettingTarget {
+    STRATEGY, FIELD
+}
+
+sealed class SerializerSetting<T>(
+    val value: T,
+    vararg val targets: SerializerSettingTarget = arrayOf(
+        SerializerSettingTarget.STRATEGY,
+        SerializerSettingTarget.FIELD
+    )
+) {
 
     companion object {
         val ALL = mutableListOf<SerializerSetting<*>>()
 
-        fun getSettings(field: Field): List<SerializerSetting<*>> {
-            val settings = mutableListOf<SerializerSetting<*>>()
+        fun getSettings(field: Field): Set<SerializerSetting<*>> {
+            val settings = mutableSetOf<SerializerSetting<*>>()
             for (annotation in field.annotations) {
                 val setting = when (annotation.annotationClass.java) {
                     Sparse::class.java -> {
@@ -53,11 +62,11 @@ sealed class SerializerSetting<T>(val value: T) {
     }
 }
 
-class SparseSetting(value: Sparse) : SerializerSetting<Sparse>(value)
-class IdSetting(value: Id) : SerializerSetting<Id>(value)
-class WriteStrategySetting(value: UseWriteStrategy) : SerializerSetting<UseWriteStrategy>(value)
-class ReadStrategySetting(value: UseReadStrategy) : SerializerSetting<UseReadStrategy>(value)
-class CreateStrategySetting(value: UseCreateStrategy) : SerializerSetting<UseCreateStrategy>(value)
-class ReferenceSetting(value: AsReference) : SerializerSetting<AsReference>(value)
-class RecursiveReferenceSetting(value: AsReferenceRecursive) : SerializerSetting<AsReferenceRecursive>(value)
-class InternalRecurseSetting(value: AsReferenceRecursive) : SerializerSetting<AsReferenceRecursive>(value)
+class SparseSetting(value: Sparse) : SerializerSetting<Sparse>(value, SerializerSettingTarget.STRATEGY)
+class IdSetting(value: Id) : SerializerSetting<Id>(value, SerializerSettingTarget.FIELD)
+class WriteStrategySetting(value: UseWriteStrategy) : SerializerSetting<UseWriteStrategy>(value, SerializerSettingTarget.STRATEGY)
+class ReadStrategySetting(value: UseReadStrategy) : SerializerSetting<UseReadStrategy>(value, SerializerSettingTarget.STRATEGY)
+class CreateStrategySetting(value: UseCreateStrategy) : SerializerSetting<UseCreateStrategy>(value, SerializerSettingTarget.STRATEGY)
+class ReferenceSetting(value: AsReference) : SerializerSetting<AsReference>(value, SerializerSettingTarget.STRATEGY)
+class RecursiveReferenceSetting(value: AsReferenceRecursive) : SerializerSetting<AsReferenceRecursive>(value, SerializerSettingTarget.STRATEGY)
+class InternalRecurseSetting(value: AsReferenceRecursive) : SerializerSetting<AsReferenceRecursive>(value, SerializerSettingTarget.STRATEGY)

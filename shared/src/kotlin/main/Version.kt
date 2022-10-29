@@ -23,7 +23,7 @@ enum class Version(
     }
 }
 
-class VersionSerializer(type: Class<Version>, settings: List<SerializerSetting<*>>) :
+class VersionSerializer(type: Class<Version>, settings: Set<SerializerSetting<*>>) :
     Serializer<Version>(type, settings) {
 
     override val writeStrategy = object : WriteStrategy<Version>(type, settings) {

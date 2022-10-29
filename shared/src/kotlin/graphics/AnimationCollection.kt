@@ -48,7 +48,7 @@ class AnimationCollection(val animations: List<Animation>) {
     }
 }
 
-class AnimationCollectionSerializer(type: Class<AnimationCollection>, settings: List<SerializerSetting<*>>) :
+class AnimationCollectionSerializer(type: Class<AnimationCollection>, settings: Set<SerializerSetting<*>>) :
     Serializer<AnimationCollection>(type, settings) {
 
     override val writeStrategy = object : WriteStrategy<AnimationCollection>(type, settings) {

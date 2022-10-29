@@ -3,10 +3,10 @@ package serialization
 import java.lang.reflect.Field
 import java.lang.reflect.Modifier
 
-abstract class FieldSerializer<T : Any>(type: Class<T>, settings: List<SerializerSetting<*>>) :
+abstract class FieldSerializer<T : Any>(type: Class<T>, settings: Set<SerializerSetting<*>>) :
     Serializer<T>(type, settings, EmptyConstructorCreateStrategy(type, settings)) {
 
-    data class CachedField(val field: Field, val settings: List<SerializerSetting<*>>)
+    data class CachedField(val field: Field, val settings: Set<SerializerSetting<*>>)
 
     val fields: Array<CachedField> by lazy {
         fun getFields(type: Class<*>): Array<Field> {

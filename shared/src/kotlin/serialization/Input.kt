@@ -67,7 +67,7 @@ class Input(inputStream: InputStream) : DataInputStream(inputStream) {
         return value
     }
 
-    fun readUnknown(settings: List<SerializerSetting<*>> = listOf()): Any {
+    fun readUnknown(settings: Set<SerializerSetting<*>> = setOf()): Any {
         SerializerDebugger.writeln("-- Begin read of unknown non-null ${settings.joinToString()}")
         SerializerDebugger.increaseDepth()
         val supposedClassId = readUnsignedShort()
@@ -88,7 +88,7 @@ class Input(inputStream: InputStream) : DataInputStream(inputStream) {
         return SerializerDebugger.catchAndPrintIfSafe { unsafeRead(supposedClassType, settings) }
     }
 
-    fun readUnknownNullable(settings: List<SerializerSetting<*>> = listOf()): Any? {
+    fun readUnknownNullable(settings: Set<SerializerSetting<*>> = setOf()): Any? {
         SerializerDebugger.writeln("-- Begin read of unknown nullable ${settings.joinToString()}")
         SerializerDebugger.increaseDepth()
         val supposedClassId = readUnsignedShort()
@@ -108,7 +108,7 @@ class Input(inputStream: InputStream) : DataInputStream(inputStream) {
         return SerializerDebugger.catchAndPrintIfSafe { unsafeRead(supposedClassType, settings) }
     }
 
-    fun <R> readNullable(type: Class<R>, settings: List<SerializerSetting<*>> = listOf()): R? {
+    fun <R> readNullable(type: Class<R>, settings: Set<SerializerSetting<*>> = setOf()): R? {
         SerializerDebugger.writeln("-- Begin read of potentially null $type ${settings.joinToString()}")
         SerializerDebugger.increaseDepth()
         val actualType = makeTypeNice(type)
@@ -132,7 +132,7 @@ class Input(inputStream: InputStream) : DataInputStream(inputStream) {
         return SerializerDebugger.catchAndPrintIfSafe { unsafeRead(supposedClassType, settings) as R }
     }
 
-    fun <R> read(type: Class<R>, settings: List<SerializerSetting<*>> = listOf()): R {
+    fun <R> read(type: Class<R>, settings: Set<SerializerSetting<*>> = setOf()): R {
         SerializerDebugger.writeln("-- Begin read of non-null $type ${settings.joinToString()}")
         SerializerDebugger.increaseDepth()
         val actualType = makeTypeNice(type)
@@ -191,7 +191,7 @@ class Input(inputStream: InputStream) : DataInputStream(inputStream) {
     // thus we first give references to the inner objects, and then to the array instance
     // when writing, we give a reference id to the array first, and then its inner classes
 
-    private fun unsafeRead(type: Class<*>, settings: List<SerializerSetting<*>>): Any {
+    private fun unsafeRead(type: Class<*>, settings: Set<SerializerSetting<*>>): Any {
         SerializerDebugger.writeln("Reading non-primitive $type ${settings.joinToString()}")
         // we want to reserve a reference id for the instance before we instantiate it, because in instantiation it could create
         // new references
