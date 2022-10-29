@@ -1,12 +1,17 @@
 package resource
 
-import level.Level
-import level.LevelObject
-import level.LevelObjectType
-import level.PhysicalLevelObject
+import level.*
+import network.LevelObjectReference
+import network.ResourceNetworkReference
+import serialization.Id
+import serialization.Referencable
 import kotlin.math.absoluteValue
 
-abstract class ResourceNetwork<V : ResourceNetworkVertex<V>>(level: Level, val networkType: ResourceNetworkType) :
+abstract class ResourceNetwork<V : ResourceNetworkVertex<V>>(
+    level: Level,
+    @Id(30)
+    val networkType: ResourceNetworkType
+) :
     LevelObject(LevelObjectType.RESOURCE_NETWORK) {
 
     // make these resource containers? NOPE ??? or yepP?????
@@ -28,17 +33,21 @@ abstract class ResourceNetwork<V : ResourceNetworkVertex<V>>(level: Level, val n
     //
     // this should also be abstract enoguh for node-node connections
 
+    @Id(31)
     val vertices = mutableSetOf<V>()
+
+    @Id(32)
     val market = ResourceMarket(this)
 
     abstract val nodes: MutableList<ResourceNode>
     abstract val containers: MutableList<ResourceContainer>
 
-    init {
-        level.add(this)
-    }
-
     open fun add(obj: PhysicalLevelObject) {
+        if (level == LevelManager.EMPTY_LEVEL) {
+            if (!obj.level.add(this)) {
+                throw Exception("Resource network was in the empty level and could not join ${obj.level}")
+            }
+        }
         if (obj.level != level) {
             throw Exception("Tried to add a vertex in level ${obj.level} to ResourceNetwork in level $level")
         }
@@ -65,9 +74,12 @@ abstract class ResourceNetwork<V : ResourceNetworkVertex<V>>(level: Level, val n
         vertices.remove(vert)
         if (vert.obj is ResourceNode) {
             nodes.remove(vert.obj)
-            if(nodes.none { it.container == vert.obj.container }) {
+            if (nodes.none { it.container == vert.obj.container }) {
                 containers.remove(vert.obj.container)
             }
+        }
+        if (vertices.isEmpty()) {
+            level.remove(this)
         }
     }
 
@@ -101,11 +113,11 @@ abstract class ResourceNetwork<V : ResourceNetworkVertex<V>>(level: Level, val n
     fun getNecessaryFlow(container: ResourceContainer, order: ResourceOrder): ResourceFlow {
         var currentAmount = container.getQuantity(order.stack.type)
 
-        for(currentFlow in getFlowInProgress(container)) {
-            if(currentFlow.stack.type != order.stack.type) {
+        for (currentFlow in getFlowInProgress(container)) {
+            if (currentFlow.stack.type != order.stack.type) {
                 continue
             }
-            if(currentFlow.direction == ResourceFlowDirection.IN) {
+            if (currentFlow.direction == ResourceFlowDirection.IN) {
                 currentAmount += currentFlow.stack.quantity
             } else {
                 currentAmount -= currentFlow.stack.quantity
@@ -182,6 +194,10 @@ abstract class ResourceNetwork<V : ResourceNetworkVertex<V>>(level: Level, val n
             }
         }
         return newNetwork
+    }
+
+    override fun toReference(): LevelObjectReference<out LevelObject> {
+        return ResourceNetworkReference(this)
     }
 
     companion object {

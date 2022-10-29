@@ -22,7 +22,7 @@ class LevelObjectAdd(
      */
     @Id(2)
     val obj: LevelObject,
-    level: Level = obj.level
+    level: Level
 ) : LevelUpdate(LevelUpdateType.LEVEL_OBJECT_ADD, level) {
 
     private constructor() : this(DefaultBlock(BlockType.ERROR, 0, 0), LevelManager.EMPTY_LEVEL)

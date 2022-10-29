@@ -1,5 +1,8 @@
 package resource
 
+import item.ItemType
+import level.LevelManager
+import serialization.Id
 import java.lang.Integer.min
 import kotlin.math.ceil
 
@@ -28,17 +31,29 @@ enum class ResourceOrderType {
 }
 
 data class ResourceOrder(
+    @Id(1)
     val stack: ResourceStack,
+    @Id(2)
     val type: ResourceOrderType = ResourceOrderType.NO_MORE_THAN,
+    @Id(3)
     val priority: ResourceOrderPriority
-)
+) {
+    private constructor() : this(stackOf(ItemType.ERROR, 1), ResourceOrderType.EXACTLY, ResourceOrderPriority.REQUEST)
+}
 
 data class ResourceFlow(
+    @Id(1)
     val stack: ResourceStack,
+    @Id(2)
     val direction: ResourceFlowDirection
-)
+) {
+    private constructor() : this(stackOf(ItemType.ERROR, 1), ResourceFlowDirection.IN)
+}
 
-sealed class ResourceDistributor(val network: ResourceNetwork<*>) {
+sealed class ResourceDistributor(
+    @Id(1)
+    val network: ResourceNetwork<*>
+) {
 
     abstract fun distribute(
         quantity: Int,
@@ -49,6 +64,9 @@ sealed class ResourceDistributor(val network: ResourceNetwork<*>) {
 
 class EqualizeContainers(network: ResourceNetwork<*>) : ResourceDistributor(network) {
 
+    private constructor() : this(PipeNetwork(LevelManager.EMPTY_LEVEL))
+
+    @Id(2)
     val lastTimeSentTo = mutableMapOf<ResourceContainer, Int>()
 
     override fun distribute(
@@ -78,15 +96,21 @@ class EqualizeContainers(network: ResourceNetwork<*>) : ResourceDistributor(netw
                 }
             }
         }
-        for(container in results.keys) {
+        for (container in results.keys) {
             lastTimeSentTo[container] = network.level.updatesCount
         }
         return results
     }
 }
 
-class ResourceMarket(val network: ResourceNetwork<*>) {
+class ResourceMarket(
+    @Id(1)
+    val network: ResourceNetwork<*>
+) {
 
+    private constructor() : this(PipeNetwork(LevelManager.EMPTY_LEVEL))
+
+    @Id(2)
     val distributor: ResourceDistributor = EqualizeContainers(network)
 
     fun getTransactions(): List<ResourceTransaction> {

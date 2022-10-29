@@ -173,7 +173,7 @@ object Registration {
 
     fun registerAll() {
 
-        // max 228
+        // max 238
         /* PRIMITIVES */
         setDefaultSerializer(Serializer::class)
         register(Nothing::class, 0)
@@ -478,7 +478,20 @@ object Registration {
         register(ResourceType::class, 174)
             .setSerializer(AutoIDSerializer::class)
         register(PipeNetworkVertex::class, 176)
-
+        register(PipeNetwork::class, 229)
+        register(PipeNetworkConnection::class, 230)
+        register(ResourceNetworkType::class, 231)
+            .setSerializer(EnumSerializer::class)
+        register(ResourceMarket::class, 232)
+        register(EqualizeContainers::class, 233)
+        register(ResourceOrder::class, 234)
+        register(ResourceFlow::class, 235)
+        register(ResourceOrderType::class, 236)
+            .setSerializer(EnumSerializer::class)
+        register(ResourceFlowDirection::class, 237)
+            .setSerializer(EnumSerializer::class)
+        register(ResourceOrderPriority::class, 238)
+            .setSerializer(EnumSerializer::class)
         /* ROUTING */
         register(RoutingLanguageStatement::class, 178)
             .setSerializer(RoutingLanguageStatementSerializer::class)

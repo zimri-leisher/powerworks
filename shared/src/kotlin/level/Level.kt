@@ -63,16 +63,19 @@ abstract class Level(
 
     @Id(3)
     val widthChunks = info.levelType.widthChunks
+
     @Id(4)
     val heightChunks = info.levelType.heightChunks
 
     @Id(5)
     val widthTiles = widthChunks shl CHUNK_TILE_EXP
+
     @Id(6)
     val heightTiles = widthChunks shl CHUNK_TILE_EXP
 
     @Id(7)
     val height = heightChunks shl CHUNK_EXP
+
     @Id(8)
     val width = widthChunks shl CHUNK_EXP
 
@@ -148,7 +151,7 @@ abstract class Level(
      * [Level], it will remove it from that level first.
      * @return true if the object was not already present and the object was added successfully
      */
-    open fun add(l: LevelObject) = modify(LevelObjectAdd(l))
+    open fun add(l: LevelObject) = modify(LevelObjectAdd(l, this))
 
     /**
      * Does everything necessary to remove [l] from this level
@@ -189,8 +192,8 @@ abstract class Level(
     open fun remove(projectile: Projectile) = data.projectiles.remove(projectile)
 
     open fun update() {
-        data.resourceContainers.forEach { if(it.type.requiresUpdate) it.update() }
-        data.resourceNetworks.forEach { if(it.type.requiresUpdate) it.update() }
+        data.resourceContainers.forEach { if (it.type.requiresUpdate) it.update() }
+        data.resourceNetworks.forEach { if (it.type.requiresUpdate) it.update() }
         data.projectiles.forEach { it.update() }
         data.chunks.forEach { it.update() }
         data.particles.forEach { it.update() }
@@ -282,7 +285,9 @@ abstract class Level(
 
     // well here I am at 22 listening to лд проснулся in sevy. a lot of this is getting simplified
 
-    override fun toString() = "${javaClass.simpleName}-id: $id, info: $info"
+    override fun toString() =
+        if (this == LevelManager.EMPTY_LEVEL) "EMPTY_LEVEL(id=$id)" else "${javaClass.simpleName}(id: $id, info: $info)"
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
@@ -311,7 +316,8 @@ class NonexistentLevelException(message: String) : Exception(message)
 
 class LevelReference(
     @Id(1)
-    val id: UUID) : Reference<Level>() {
+    val id: UUID
+) : Reference<Level>() {
 
     constructor(level: Level) : this(level.id) {
         value = level

@@ -10,23 +10,26 @@ import kotlin.math.PI
 abstract class PipeBlock(override val type: PipeBlockType<out PipeBlock>, xTile: Int, yTile: Int) :
     Block(type, xTile, yTile), PotentialPipeNetworkVertex {
 
+    @Id(20)
     override var vertex: PipeNetworkVertex? = null
 
+    @Id(21)
     var state = PipeState.NONE
 
     val closedEnds: Array<Boolean>
         get() = state.closedEnds
 
-    override val networks = mutableListOf<ResourceNetwork<*>>()
+    @Id(22)
+    override val networks = mutableSetOf<ResourceNetwork<*>>()
     override fun getNetwork(type: ResourceNetworkType): ResourceNetwork<*>? {
-        if(type == ResourceNetworkType.PIPE) {
-            return networks[0]
+        if (type == ResourceNetworkType.PIPE) {
+            return networks.first()
         }
         return null
     }
 
     override fun onAddToNetwork(network: ResourceNetwork<*>) {
-        if(network.networkType != ResourceNetworkType.PIPE) {
+        if (network.networkType == ResourceNetworkType.PIPE) {
             networks.add(network)
         } else {
             throw Exception("Unable to add $this to $network, it is not a pipe network")
@@ -34,8 +37,8 @@ abstract class PipeBlock(override val type: PipeBlockType<out PipeBlock>, xTile:
     }
 
     override fun onRemoveFromNetwork(network: ResourceNetwork<*>) {
-        if(network.networkType == ResourceNetworkType.PIPE) {
-            if(!networks.remove(network)) {
+        if (network.networkType == ResourceNetworkType.PIPE) {
+            if (!networks.remove(network)) {
                 throw Exception("Can't remove $this from $network because it is not in that network")
             }
         } else {
@@ -52,7 +55,7 @@ abstract class PipeBlock(override val type: PipeBlockType<out PipeBlock>, xTile:
     }
 
     override fun afterRemoveFromLevel(oldLevel: Level) {
-        networks.getOrNull(0)?.remove(this)
+        networks.firstOrNull()?.remove(this)
         super.afterRemoveFromLevel(oldLevel)
     }
 

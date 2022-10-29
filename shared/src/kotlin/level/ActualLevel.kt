@@ -65,6 +65,7 @@ class ActualLevel(id: UUID, info: LevelInfo) : Level(id, info), PacketHandler {
     override fun handleClientPacket(packet: Packet) {
         if (packet is RequestLevelDataPacket) {
             if (packet.levelId == id) {
+                println("sending ${data.brainRobots} brain robots to client")
                 ServerNetworkManager.sendToClient(LevelDataPacket(id, data, updatesCount), packet.connectionId)
             }
         } else if (packet is LevelLoadedSuccessPacket) {
@@ -82,11 +83,13 @@ class ActualLevel(id: UUID, info: LevelInfo) : Level(id, info), PacketHandler {
     }
 
     override fun add(l: LevelObject): Boolean {
+        println("adding $l to $this")
         val copy = Serialization.copy(l) // TODO add preadding references
-        val success = super.modify(LevelObjectAdd(l), false)
+        val success = super.modify(LevelObjectAdd(l, this), false)
         if (success) {
-            currentLobby?.sendPacket(LevelUpdatePacket(LevelObjectAdd(copy), this))
+            currentLobby?.sendPacket(LevelUpdatePacket(LevelObjectAdd(copy, this), this))
         }
+        println("success: $success")
         return success
     }
 

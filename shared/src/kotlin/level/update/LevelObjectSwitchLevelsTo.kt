@@ -49,7 +49,7 @@ class LevelObjectSwitchLevelsTo(
             }
         }
         println("acting on level switch, moving object from ${obj.level} to $level")
-        level.modify(LevelObjectAdd(obj), true)
+        level.modify(LevelObjectAdd(obj, level), true)
     }
 
     override fun actGhost() {

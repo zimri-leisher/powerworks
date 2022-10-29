@@ -44,7 +44,7 @@ class RemoteLevel(id: UUID, info: LevelInfo) : Level(id, info), PacketHandler {
     }
 
     override fun add(l: LevelObject): Boolean {
-        return modify(LevelObjectAdd(l), l is GhostLevelObject) // transient if l is ghost object
+        return modify(LevelObjectAdd(l, this), l is GhostLevelObject) // transient if l is ghost object
     }
 
     override fun remove(l: LevelObject): Boolean {
@@ -131,13 +131,14 @@ class RemoteLevel(id: UUID, info: LevelInfo) : Level(id, info), PacketHandler {
             }
         } else if (packet is LevelDataPacket) {
             if (packet.levelId == id) {
+                println("received level data with brain robots ${packet.data.brainRobots}")
                 data = packet.data
                 for (chunk in data.chunks) {
                     // regenerate tiles because they don't get sent to save space
                     chunk.data.tiles = generator.generateTiles(chunk.xChunk, chunk.yChunk)
                 }
                 updatesCount = packet.updatesCount
-                println("loaded level AAAAAAAAAAAAAAAAAAAA")
+                loaded = true
                 ClientNetworkManager.sendToServer(LevelLoadedSuccessPacket(id))
             }
         } else if (packet is UpdateBlockPacket) {

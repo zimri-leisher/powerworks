@@ -170,6 +170,7 @@ class ActionLevelObjectPlace(
     @Id(4)
     val y: Int,
     @Id(6)
+    @AsReference
     val level: Level
 ) : PlayerAction(owner) {
 
@@ -208,7 +209,7 @@ class ActionLevelObjectPlace(
         val itemForm = (levelObjType as? EntityType<*>)?.itemForm ?: (levelObjType as BlockType<*>).itemForm
         val newInstance =
             (levelObjType as? EntityType<*>)?.spawn(x, y) ?: (levelObjType as BlockType<*>).place(x / 16, y / 16)
-        val add = LevelObjectAdd(newInstance)
+        val add = LevelObjectAdd(newInstance, level)
         return listOf(
             ResourceTransactionExecute(
                 ResourceTransaction(

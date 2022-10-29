@@ -1,12 +1,22 @@
 package resource
 
+import level.LevelManager
 import misc.Coord
 import misc.Geometry
+import serialization.AsReference
+import serialization.Id
 
 class PipeNetworkConnection(
+    @Id(1)
+    @AsReference
     val network: PipeNetwork,
+    @Id(2)
     val steps: List<PipeNetworkVertex>
 ) : ResourceNodeConnection(steps.first().obj as ResourceNode, steps.last().obj as ResourceNode) {
+
+    private constructor() : this(PipeNetwork(LevelManager.EMPTY_LEVEL), listOf())
+
+    @Id(3)
     val currentPackets = mutableListOf<PipeNetworkPacket>()
 
     override val cost: Int

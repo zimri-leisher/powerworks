@@ -11,6 +11,7 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, x: Int, y:
     override val type = type
     /* Only allow setting of non tile/chunk values because otherwise it would cause infinite loop (unless I added a lot of boilerplate private values) */
 
+    @Id(555)
     final override var x = x
         set(value) {
             val old = field
@@ -23,6 +24,7 @@ abstract class MovingObject(type: MovingObjectType<out MovingObject>, x: Int, y:
     @Id(100)
     private var xRemainder = 0.0
 
+    @Id(556)
     final override var y = y
         set(value) {
             val old = field

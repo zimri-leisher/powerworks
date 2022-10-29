@@ -35,10 +35,9 @@ object GuiLevelLoadingScreen : Gui(ScreenLayer.MENU_0) {
             connectingScreen.open = false
             loadingScreen.open = true
         }
-//        println("tick level loading screen")
         if (PlayerManager.isLocalPlayerLoaded()) {
-            println("home level loaded: ${PlayerManager.localPlayer.homeLevel.loaded}")
-//            println("${LevelManager.allLevels.any { it.loaded && it.data.brainRobots.any { brainRobot -> brainRobot.id == PlayerManager.localPlayer.brainRobotId }}} found brain robot")
+            println("${LevelManager.allLevels.any { it.loaded && it.data.brainRobots.any { brainRobot -> brainRobot.id == PlayerManager.localPlayer.brainRobotId }}} found brain robot")
+            println("${LevelManager.allLevels.flatMap { if(it.loaded) it.data.brainRobots else listOf() }}")
             if (((PlayerManager.localPlayer.homeLevel is RemoteLevel && (PlayerManager.localPlayer.homeLevel as RemoteLevel).loaded)
                         || PlayerManager.localPlayer.homeLevel !is RemoteLevel)
                 && LevelManager.allLevels.any { it.data.brainRobots.any { brainRobot -> brainRobot.id == PlayerManager.localPlayer.brainRobotId } }

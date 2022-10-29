@@ -27,9 +27,10 @@ object GuiIngame : Gui(ScreenLayer.LEVEL_VIEW), ControlEventHandler {
 
     fun initializeFor(brainRobot: BrainRobot) {
         InputManager.register(this, Control.TOGGLE_INVENTORY, Control.SWITCH_LEVEL_VIEW)
+        println("init for brainrobot ${brainRobot.x}, ${brainRobot.y}")
         cameras = arrayOf(Camera(brainRobot.x, brainRobot.y),
                 Camera(brainRobot.x, brainRobot.y))
-        cameras.forEach { brainRobot.level.modify(LevelObjectAdd(it), true) }
+        cameras.forEach { brainRobot.level.modify(LevelObjectAdd(it, brainRobot.level), true) }
         open = false
         define {
             onOpen {

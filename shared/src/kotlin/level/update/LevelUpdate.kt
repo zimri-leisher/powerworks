@@ -3,6 +3,7 @@ package level.update
 import level.Level
 import level.LevelManager
 import player.Player
+import serialization.AsReference
 import serialization.Id
 
 enum class LevelUpdateType {
@@ -36,6 +37,7 @@ enum class LevelUpdateType {
 abstract class LevelUpdate(
     @Id(1)
     val type: LevelUpdateType,
+    @AsReference
     @Id(-1)
     val level: Level
 ) {
