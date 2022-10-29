@@ -17,7 +17,7 @@ class ResourceTransactionExecute(
 
     private constructor() : this(
         ResourceTransaction(SourceContainer(), SourceContainer(), stackOf(ItemType.ERROR, 0)),
-        ResourceTransactionExecutor.Source,
+        SourceTransactionExecutor(),
         LevelManager.EMPTY_LEVEL
     )
 

@@ -12,6 +12,7 @@ import network.ServerNetworkManager
 import network.User
 import player.lobby.Lobby
 import player.team.Team
+import resource.PlayerTransactionExecutor
 import resource.ResourceTransactionExecutor
 import serialization.*
 import java.util.*
@@ -54,7 +55,7 @@ class Player(
     private val brainRobotDelegate = PowerworksDelegates.lateinitVal<BrainRobot>()
     var brainRobot: BrainRobot by brainRobotDelegate
 
-    val resourceTransactionExecutor = ResourceTransactionExecutor.Player(this)
+    val resourceTransactionExecutor = PlayerTransactionExecutor(this)
 
     var lobby = Lobby()
     var team = Team(this)

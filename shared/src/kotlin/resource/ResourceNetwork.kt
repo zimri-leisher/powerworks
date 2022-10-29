@@ -48,6 +48,9 @@ abstract class ResourceNetwork<V : ResourceNetworkVertex<V>>(
                 throw Exception("Resource network was in the empty level and could not join ${obj.level}")
             }
         }
+        if(obj !is PotentialResourceNetworkVertex) {
+            throw Exception("Tried to add $obj to ResourceNetwork but it is not a LevelObject")
+        }
         if (obj.level != level) {
             throw Exception("Tried to add a vertex in level ${obj.level} to ResourceNetwork in level $level")
         }
@@ -62,6 +65,7 @@ abstract class ResourceNetwork<V : ResourceNetworkVertex<V>>(
                 containers.add(obj.container)
             }
         }
+        obj.onAddToNetwork(this)
         updateEdges(vert)
         tryMerge(vert)
     }
@@ -78,6 +82,7 @@ abstract class ResourceNetwork<V : ResourceNetworkVertex<V>>(
                 containers.remove(vert.obj.container)
             }
         }
+        (obj as PotentialResourceNetworkVertex).onRemoveFromNetwork(this)
         if (vertices.isEmpty()) {
             level.remove(this)
         }

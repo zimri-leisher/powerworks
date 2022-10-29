@@ -2,6 +2,7 @@ package level
 
 import misc.Coord
 import misc.TileCoord
+import serialization.AsReference
 import serialization.Id
 
 data class LevelPosition(
@@ -10,6 +11,7 @@ data class LevelPosition(
         @Id(2)
         val y: Int,
         @Id(3)
+        @AsReference
         val level: Level) {
     private constructor() : this(0, 0, LevelManager.EMPTY_LEVEL)
 

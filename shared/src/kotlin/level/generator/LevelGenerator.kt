@@ -8,6 +8,7 @@ import level.LevelData
 import level.LevelManager
 import level.block.Block
 import level.tile.Tile
+import serialization.AsReference
 import serialization.Id
 
 /**
@@ -20,6 +21,7 @@ import serialization.Id
  */
 abstract class LevelGenerator(
     @Id(1)
+    @AsReference
     val level: Level
 ) {
 

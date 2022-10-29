@@ -1,6 +1,10 @@
 package resource
 
 import misc.Geometry
+import network.User
+import player.Player
+import serialization.Id
+import java.util.UUID
 
 // resource network should handle expected resources
 // pathfinding can be handled by connection
@@ -19,55 +23,59 @@ import misc.Geometry
 abstract class ResourceTransactionExecutor {
     abstract fun canExecute(transaction: ResourceTransaction): Boolean
     abstract fun execute(transaction: ResourceTransaction)
-
     abstract val cost: Int
+}
 
-    class Player(val player: player.Player) : ResourceTransactionExecutor() {
+class SourceTransactionExecutor : ResourceTransactionExecutor() {
 
-        override val cost get() = 0
-
-        override fun canExecute(transaction: ResourceTransaction): Boolean {
-            if (!transaction.isValid()) {
-                return false
-            }
-            val fromNodes = transaction.src.nodes
-            val toNodes = transaction.dest.nodes
-
-            var minDist = (MAX_RESOURCE_TRANSFER_DIST + 1).toDouble()
-            for (fromNode in fromNodes) {
-                for (toNode in toNodes) {
-                    val dist = Geometry.distance(fromNode.x, fromNode.y, toNode.x, toNode.y)
-                    if (dist < minDist) {
-                        minDist = dist
-                    }
-                }
-            }
-            return minDist < MAX_RESOURCE_TRANSFER_DIST
+    override val cost get() = 0
+    override fun canExecute(transaction: ResourceTransaction): Boolean {
+        if (transaction.src !is SourceContainer && transaction.dest !is SourceContainer) {
+            return false
         }
-
-        override fun execute(transaction: ResourceTransaction) {
-            transaction.start()
-            transaction.finish()
-        }
-
-        companion object {
-            const val MAX_RESOURCE_TRANSFER_DIST = 16 * 16 // 16 tiles
-        }
+        return transaction.isValid()
     }
 
-    object Source : ResourceTransactionExecutor() {
+    override fun execute(transaction: ResourceTransaction) {
+        transaction.start()
+        transaction.finish()
+    }
+}
 
-        override val cost get() = 0
-        override fun canExecute(transaction: ResourceTransaction): Boolean {
-            if (transaction.src !is SourceContainer && transaction.dest !is SourceContainer) {
-                return false
+class PlayerTransactionExecutor(
+    @Id(1)
+    val player: Player
+) : ResourceTransactionExecutor() {
+
+    private constructor() : this(Player(User(UUID.randomUUID(), ""), UUID.randomUUID(), UUID.randomUUID()))
+
+    override val cost get() = 0
+
+    override fun canExecute(transaction: ResourceTransaction): Boolean {
+        if (!transaction.isValid()) {
+            return false
+        }
+        val fromNodes = transaction.src.nodes
+        val toNodes = transaction.dest.nodes
+
+        var minDist = (MAX_RESOURCE_TRANSFER_DIST + 1).toDouble()
+        for (fromNode in fromNodes) {
+            for (toNode in toNodes) {
+                val dist = Geometry.distance(fromNode.x, fromNode.y, toNode.x, toNode.y)
+                if (dist < minDist) {
+                    minDist = dist
+                }
             }
-            return transaction.isValid()
         }
+        return minDist < MAX_RESOURCE_TRANSFER_DIST
+    }
 
-        override fun execute(transaction: ResourceTransaction) {
-            transaction.start()
-            transaction.finish()
-        }
+    override fun execute(transaction: ResourceTransaction) {
+        transaction.start()
+        transaction.finish()
+    }
+
+    companion object {
+        const val MAX_RESOURCE_TRANSFER_DIST = 16 * 16 // 16 tiles
     }
 }

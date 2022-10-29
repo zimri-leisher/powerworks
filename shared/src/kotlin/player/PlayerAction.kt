@@ -135,6 +135,7 @@ class ActionFarseekerBlockSetLevel(
     @AsReference
     val block: FarseekerBlock,
     @Id(3)
+    @AsReference
     val level: Level
 ) : PlayerAction(owner) {
 
@@ -216,7 +217,7 @@ class ActionLevelObjectPlace(
                     owner.brainRobot.inventory,
                     SourceContainer(),
                     stackOf(itemForm, 1)
-                ), ResourceTransactionExecutor.Source, level
+                ), SourceTransactionExecutor(), level
             ),
             add
         )
@@ -256,7 +257,7 @@ class ActionLevelObjectRemove(
                         SourceContainer(),
                         owner.brainRobot.inventory,
                         stackOf(itemForm, 1)
-                    ), ResourceTransactionExecutor.Source, obj.level
+                    ), SourceTransactionExecutor(), obj.level
                 )
             )
         }

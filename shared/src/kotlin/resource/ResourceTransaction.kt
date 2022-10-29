@@ -1,5 +1,9 @@
 package resource
 
+import item.ItemType
+import serialization.AsReference
+import serialization.Id
+
 // resource nodes should be simple
 //      they should not interact with the network
 // transactions should be simple
@@ -12,7 +16,21 @@ enum class TransactionState {
     NEW, PENDING, FINISHED
 }
 
-data class ResourceTransaction(val src: ResourceContainer, val dest: ResourceContainer, val resources: ResourceStack) {
+data class ResourceTransaction(
+    @Id(1)
+    @AsReference
+    val src: ResourceContainer,
+    @Id(2)
+    @AsReference
+    val dest: ResourceContainer,
+    @Id(3)
+    @AsReference
+    val resources: ResourceStack
+) {
+
+    private constructor() : this(SourceContainer(), SourceContainer(), stackOf(ItemType.ERROR, 1))
+
+    @Id(4)
     var state = TransactionState.NEW
 
     fun isValid(): Boolean {

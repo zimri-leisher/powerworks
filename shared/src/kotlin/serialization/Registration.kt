@@ -173,7 +173,7 @@ object Registration {
 
     fun registerAll() {
 
-        // max 238
+        // max 242
         /* PRIMITIVES */
         setDefaultSerializer(Serializer::class)
         register(Nothing::class, 0)
@@ -335,6 +335,7 @@ object Registration {
         register(FarseekerBlockSetAvailableLevels::class, 81)
         register(FarseekerBlockSetDestinationLevel::class, 82)
         register(LevelObjectSwitchLevelsTo::class, 84)
+        register(ResourceTransactionExecute::class, 239)
         register(LevelPosition::class, 85)
 
         /* /BLOCK */
@@ -454,6 +455,8 @@ object Registration {
         register(ResourceNodeReference::class, 153)
         register(BrainRobotReference::class, 154)
         register(LevelReference::class, 228)
+        register(ResourceContainerReference::class, 244)
+        register(ResourceNetworkReference::class, 245)
         register(LevelUpdatePacket::class, 155)
         register(LevelLoadedSuccessPacket::class, 156)
 
@@ -492,6 +495,12 @@ object Registration {
             .setSerializer(EnumSerializer::class)
         register(ResourceOrderPriority::class, 238)
             .setSerializer(EnumSerializer::class)
+        register(ResourceTransaction::class, 240)
+        register(TransactionState::class, 241)
+            .setSerializer(EnumSerializer::class)
+        register(SourceTransactionExecutor::class, 242)
+        register(PlayerTransactionExecutor::class, 243)
+
         /* ROUTING */
         register(RoutingLanguageStatement::class, 178)
             .setSerializer(RoutingLanguageStatementSerializer::class)

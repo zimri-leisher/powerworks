@@ -7,12 +7,14 @@ import level.moving.MovingObject
 import resource.ResourceContainer
 import resource.ResourceNetwork
 import resource.ResourceNode
+import serialization.AsReference
 import serialization.Id
 import serialization.Reference
 import java.util.*
 
 abstract class LevelObjectReference<T : LevelObject>(
     @Id(1)
+    @AsReference
     val level: Level,
     @Id(2)
     val objectId: UUID

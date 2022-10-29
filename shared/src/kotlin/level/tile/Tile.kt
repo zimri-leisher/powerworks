@@ -5,6 +5,7 @@ import graphics.TextureRenderParams
 import level.CHUNK_TILE_EXP
 import level.Level
 import level.LevelManager
+import serialization.AsReference
 import serialization.Id
 import kotlin.random.Random.Default.nextInt
 
@@ -17,6 +18,7 @@ open class Tile(
     @Id(2)
     val yTile: Int,
     @Id(3)
+    @AsReference
     val level: Level
 ) {
 
