@@ -27,8 +27,8 @@ abstract class Entity(type: EntityType<out Entity>, x: Int, y: Int, rotation: In
     }
 
     override fun render() {
-        weapon?.render()
         super.render()
+        weapon?.render()
         group?.render()
     }
 }
