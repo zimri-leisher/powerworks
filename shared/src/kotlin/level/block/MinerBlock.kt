@@ -27,7 +27,7 @@ class MinerBlock(xTile: Int, yTile: Int) : MachineBlock(MachineBlockType.MINER, 
             for (y in 0 until type.heightTiles) {
                 val tile = level.getTileAtTile(xTile + x, yTile + y)
                 if (tile is OreTile) {
-                    val transaction = ResourceTransaction(SourceContainer(), output, stackOf(tile.type.minedItem, 1))
+//                    val transaction = ResourceTransaction(SourceContainer(), output, stackOf(tile.type.minedItem, 1))
                     // fill up the internal inventory
                     if (output.add(tile.type.minedItem, 1)) {
                         tile.amount -= 1

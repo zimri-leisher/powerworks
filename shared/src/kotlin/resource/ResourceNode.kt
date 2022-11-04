@@ -13,7 +13,7 @@ class ResourceNode(
     yTile: Int
 ) : PhysicalLevelObject(PhysicalLevelObjectType.RESOURCE_NODE, xTile * 16, yTile * 16), PotentialPipeNetworkVertex {
 
-    private constructor() : this(SourceContainer(), 0, 0)
+    private constructor() : this(LevelManager.EMPTY_LEVEL.sourceContainer, 0, 0)
 
     override val networks = mutableSetOf<ResourceNetwork<*>>()
     override val validFarVertex get() = true

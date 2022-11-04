@@ -3,10 +3,12 @@ package level.entity.robot
 import graphics.Renderer
 import graphics.text.TextRenderParams
 import item.Inventory
+import level.Level
 import network.BrainRobotReference
 import network.LevelObjectReference
 import network.MovingObjectReference
 import network.User
+import serialization.AsReference
 import serialization.Id
 import java.util.*
 
@@ -20,6 +22,14 @@ class BrainRobot(
 
     @Id(29)
     val inventory = Inventory(8, 3)
+
+    override fun afterAddToLevel(oldLevel: Level) {
+        super.afterAddToLevel(oldLevel)
+        if(inventory.inLevel) {
+            inventory.level.remove(inventory)
+        }
+        level.add(inventory)
+    }
 
     override fun render() {
         super.render()

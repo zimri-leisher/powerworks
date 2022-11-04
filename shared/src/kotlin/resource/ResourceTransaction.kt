@@ -1,6 +1,7 @@
 package resource
 
 import item.ItemType
+import level.LevelManager
 import serialization.AsReference
 import serialization.Id
 
@@ -24,11 +25,14 @@ data class ResourceTransaction(
     @AsReference
     val dest: ResourceContainer,
     @Id(3)
-    @AsReference
     val resources: ResourceStack
 ) {
 
-    private constructor() : this(SourceContainer(), SourceContainer(), stackOf(ItemType.ERROR, 1))
+    private constructor() : this(
+        LevelManager.EMPTY_LEVEL.sourceContainer,
+        LevelManager.EMPTY_LEVEL.sourceContainer,
+        stackOf(ItemType.ERROR, 1)
+    )
 
     @Id(4)
     var state = TransactionState.NEW

@@ -17,6 +17,7 @@ import main.DebugCode
 import main.Game
 import network.ClientNetworkManager
 import network.ServerNetworkManager
+import resource.SourceContainer
 import screen.element.ElementLevelView
 import screen.mouse.tool.Tool
 import serialization.*
@@ -119,6 +120,9 @@ abstract class Level(
     @Id(12)
     var updatesCount = 0
 
+    @Id(50)
+    val sourceContainer = SourceContainer()
+
     open fun initialize() {
         if (generator !is EmptyLevelGenerator) {
             LevelManager.allLevels.forEach {
@@ -132,6 +136,7 @@ abstract class Level(
     }
 
     open fun load() {
+        add(sourceContainer)
         loaded = true
     }
 

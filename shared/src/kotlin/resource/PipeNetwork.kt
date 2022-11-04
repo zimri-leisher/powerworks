@@ -27,7 +27,7 @@ class PipeNetworkVertex(
 ) :
     ResourceNetworkVertex<PipeNetworkVertex>(obj, edges, ResourceNetworkType.PIPE) {
 
-    private constructor() : this(ResourceNode(SourceContainer(), 0, 0), mutableListOf(), arrayOf())
+    private constructor() : this(ResourceNode(LevelManager.EMPTY_LEVEL.sourceContainer, 0, 0), mutableListOf(), arrayOf())
 
     private val pipeObj get() = obj as PotentialPipeNetworkVertex
 

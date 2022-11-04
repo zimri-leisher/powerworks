@@ -1,6 +1,6 @@
 package resource
 
-import serialization.Id
+import serialization.*
 import java.lang.Integer.min
 
 typealias ResourceStack = Map.Entry<ResourceType, Int>
@@ -132,3 +132,28 @@ open class ResourceList(
 }
 
 object EmptyResourceList : ResourceList()
+
+class ResourceStackCreateStrategy(type: Class<Any>, settings: Set<SerializerSetting<*>>) :
+    CreateStrategy<Any>(type, settings) {
+    override fun create(input: Input): Any {
+        val type = input.read(ResourceType::class.java)
+        val quantity = input.readInt()
+        return stackOf(type, quantity)
+    }
+}
+
+class ResourceStackWriteStrategy(type: Class<Any>, settings: Set<SerializerSetting<*>>) :
+    WriteStrategy<Any>(type, settings) {
+    override fun write(obj: Any, output: Output) {
+        obj as ResourceStack
+        output.write(obj.type)
+        output.write(obj.quantity)
+    }
+}
+
+class ResourceStackSerializer(type: Class<Any>, settings: Set<SerializerSetting<*>>) : Serializer<Any>(type, settings) {
+
+    override val createStrategy = ResourceStackCreateStrategy(type, settings)
+
+    override val writeStrategy = ResourceStackWriteStrategy(type, settings)
+}

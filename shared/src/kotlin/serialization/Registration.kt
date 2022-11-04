@@ -173,7 +173,7 @@ object Registration {
 
     fun registerAll() {
 
-        // max 242
+        // max 247
         /* PRIMITIVES */
         setDefaultSerializer(Serializer::class)
         register(Nothing::class, 0)
@@ -475,6 +475,9 @@ object Registration {
         register(ResourceCategory::class, 167)
             .setSerializer(EnumSerializer::class)
         register(ResourceContainer::class, 168)
+        register(SourceContainer::class, 246)
+        register(stackOf(ItemType.ERROR, 1)::class, 247)
+            .setSerializer(ResourceStackSerializer::class)
         register(ResourceList::class, 169)
         register(MutableResourceList::class, 170)
         register(ResourceNode::class, 171)

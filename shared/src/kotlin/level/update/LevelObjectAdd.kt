@@ -33,6 +33,10 @@ class LevelObjectAdd(
     private var ghostLevelObject: GhostLevelObject? = null
 
     override fun canAct(): Boolean {
+        if(obj.inLevel && obj.level == level) {
+            // if it's already in this level, can't add it again
+            return false
+        }
         if (obj is PhysicalLevelObject) {
             return obj.hitbox == Hitbox.NONE
                     || obj is GhostLevelObject

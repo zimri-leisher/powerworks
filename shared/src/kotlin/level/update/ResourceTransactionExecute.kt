@@ -16,7 +16,7 @@ class ResourceTransactionExecute(
 ) : LevelUpdate(LevelUpdateType.RESOURCE_TRANSACTION_EXECUTE, level) {
 
     private constructor() : this(
-        ResourceTransaction(SourceContainer(), SourceContainer(), stackOf(ItemType.ERROR, 0)),
+        ResourceTransaction(LevelManager.EMPTY_LEVEL.sourceContainer, LevelManager.EMPTY_LEVEL.sourceContainer, stackOf(ItemType.ERROR, 0)),
         SourceTransactionExecutor(),
         LevelManager.EMPTY_LEVEL
     )

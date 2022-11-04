@@ -76,7 +76,7 @@ class ActionDoResourceTransaction(
 
     private constructor() : this(
         Player(User(UUID.randomUUID(), ""), UUID.randomUUID(), UUID.randomUUID()),
-        ResourceTransaction(SourceContainer(), SourceContainer(), stackOf(ItemType.ERROR, 1))
+        ResourceTransaction(LevelManager.EMPTY_LEVEL.sourceContainer, LevelManager.EMPTY_LEVEL.sourceContainer, stackOf(ItemType.ERROR, 1))
     )
 
     override fun verify(): Boolean {
@@ -215,7 +215,7 @@ class ActionLevelObjectPlace(
             ResourceTransactionExecute(
                 ResourceTransaction(
                     owner.brainRobot.inventory,
-                    SourceContainer(),
+                    level.sourceContainer,
                     stackOf(itemForm, 1)
                 ), SourceTransactionExecutor(), level
             ),
@@ -254,7 +254,7 @@ class ActionLevelObjectRemove(
             updates.add(
                 ResourceTransactionExecute(
                     ResourceTransaction(
-                        SourceContainer(),
+                        obj.level.sourceContainer,
                         owner.brainRobot.inventory,
                         stackOf(itemForm, 1)
                     ), SourceTransactionExecutor(), obj.level
