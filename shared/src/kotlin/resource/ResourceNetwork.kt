@@ -44,8 +44,11 @@ abstract class ResourceNetwork<V : ResourceNetworkVertex<V>>(
 
     open fun add(obj: PhysicalLevelObject) {
         if (level == LevelManager.EMPTY_LEVEL) {
+            println("resource network is in empty level")
             if (!obj.level.add(this)) {
                 throw Exception("Resource network was in the empty level and could not join ${obj.level}")
+            } else {
+                println("successfully added to level: this level: ${level}, obj level: ${obj.level}")
             }
         }
         if(obj !is PotentialResourceNetworkVertex) {

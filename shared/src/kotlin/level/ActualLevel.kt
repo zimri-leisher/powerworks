@@ -54,12 +54,19 @@ class ActualLevel(id: UUID, info: LevelInfo) : Level(id, info), PacketHandler {
     }
 
     override fun modify(update: LevelUpdate, transient: Boolean): Boolean {
-        val success = super.modify(update, transient)
-        if (success && !transient) {
-            val playersToSendTo = update.playersToSendTo
-            currentLobby?.sendPacket(LevelUpdatePacket(update, this), playersToSendTo ?: currentLobby!!.players)
+        if (!transient) {
+            val copy = Serialization.copy(update)
+            val success = super.modify(update, false)
+            if (success) {
+                val playersToSendTo = update.playersToSendTo
+                currentLobby?.sendPacket(LevelUpdatePacket(copy, this), playersToSendTo ?: currentLobby!!.players)
+                return true
+            } else {
+                return false
+            }
+        } else {
+            return super.modify(update, true)
         }
-        return true
     }
 
     override fun handleClientPacket(packet: Packet) {
@@ -83,13 +90,11 @@ class ActualLevel(id: UUID, info: LevelInfo) : Level(id, info), PacketHandler {
     }
 
     override fun add(l: LevelObject): Boolean {
-        println("adding $l to $this")
         val copy = Serialization.copy(l) // TODO add preadding references
         val success = super.modify(LevelObjectAdd(l, this), false)
         if (success) {
             currentLobby?.sendPacket(LevelUpdatePacket(LevelObjectAdd(copy, this), this))
         }
-        println("success: $success")
         return success
     }
 

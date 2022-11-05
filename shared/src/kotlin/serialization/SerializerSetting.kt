@@ -44,6 +44,9 @@ sealed class SerializerSetting<T>(
                     AsReference::class.java -> {
                         ReferenceSetting(annotation as AsReference)
                     }
+                    AsReferenceRecursive::class.java -> {
+                        RecursiveReferenceSetting(annotation as AsReferenceRecursive)
+                    }
 
                     else -> {
                         null

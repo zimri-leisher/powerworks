@@ -136,8 +136,8 @@ abstract class Level(
     }
 
     open fun load() {
-        add(sourceContainer)
         loaded = true
+        add(sourceContainer)
     }
 
     open fun canModify(update: LevelUpdate) = loaded && update.level == this && update.canAct()

@@ -97,6 +97,7 @@ open class TaggedSerializer<R : Any>(type: Class<R>, settings: Set<SerializerSet
             if (supposedSize > taggedFields.size) {
                 // there were more but now there are less, that is ok, no cause for crashing, we just need to make sure that
                 // the stream ends up reading them all so that the next call to read doesn't read one of the parameters
+                SerializerDebugger.writeln("There are apparently $supposedSize fields in the file, but we only have records of ${taggedFields.size}")
             } else if (supposedSize < taggedFields.size) {
                 // we don't want this because that means there will be a tagged field in the class that won't get assigned a value
                 // i suppose this could be better handled by trying to create an instance of it with default constructor but that's just not a great idea

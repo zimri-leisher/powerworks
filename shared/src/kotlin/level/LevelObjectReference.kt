@@ -31,6 +31,10 @@ class ResourceNetworkReference(
     override fun resolve(): ResourceNetwork<*>? {
         return level.data.resourceNetworks.firstOrNull { it.id == objectId }
     }
+
+    override fun toString(): String {
+        return "ResourceNetworkReference($level, $objectId)"
+    }
 }
 
 class ResourceContainerReference(
@@ -44,6 +48,10 @@ class ResourceContainerReference(
 
     override fun resolve(): ResourceContainer? {
         return level.data.resourceContainers.firstOrNull { it.id == objectId }
+    }
+
+    override fun toString(): String {
+        return "ResourceContainerReference($level, $objectId)"
     }
 }
 
@@ -68,6 +76,10 @@ class ResourceNodeReference(
 
     override fun resolve(): ResourceNode? {
         return level.getResourceNodeAt(xTile, yTile)
+    }
+
+    override fun toString(): String {
+        return "ResourceNodeReference($level, $objectId, $xTile, $yTile)"
     }
 }
 
@@ -132,7 +144,7 @@ open class MovingObjectReference<T : MovingObject>(
     }
 
     override fun toString(): String {
-        return "MovingObjectReference: $level, $objectId, $x, $y"
+        return "MovingObjectReference($level, $objectId, $x, $y)"
     }
 }
 
@@ -153,7 +165,7 @@ class BrainRobotReference(
     }
 
     override fun toString(): String {
-        return "BrainRobotReference: $level, $brainRobotId"
+        return "BrainRobotReference($level, $brainRobotId)"
     }
 }
 
@@ -186,6 +198,6 @@ class BlockReference(
     }
 
     override fun toString(): String {
-        return "Reference to block at $xTile, $yTile: $value"
+        return "BlockReference($level, $objectId, $xTile, $yTile)"
     }
 }

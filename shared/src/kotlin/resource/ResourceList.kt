@@ -147,7 +147,7 @@ class ResourceStackWriteStrategy(type: Class<Any>, settings: Set<SerializerSetti
     override fun write(obj: Any, output: Output) {
         obj as ResourceStack
         output.write(obj.type)
-        output.write(obj.quantity)
+        output.writeInt(obj.quantity)
     }
 }
 

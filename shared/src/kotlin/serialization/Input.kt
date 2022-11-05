@@ -63,7 +63,7 @@ class Input(inputStream: InputStream) : DataInputStream(inputStream) {
             throw ReadException("A reference with id $referenceId was read, but none exists in the graph (at this point in reading)")
         }
         SerializerDebugger.decreaseDepth()
-        SerializerDebugger.writeln("-- End read of reference id $referenceId")
+        SerializerDebugger.writeln("-- End read of reference id $referenceId = $value")
         return value
     }
 

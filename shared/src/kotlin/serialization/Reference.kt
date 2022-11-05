@@ -4,8 +4,6 @@ abstract class Reference<T : Any> {
     var value: T? = null
 
     abstract fun resolve(): T?
-
-    override fun toString() = "${this::class.java.simpleName}($value)"
 }
 
 interface Referencable<T : Any> {
