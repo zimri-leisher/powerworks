@@ -49,7 +49,7 @@ abstract class PipeBlock(override val type: PipeBlockType<out PipeBlock>, xTile:
     override val validFarVertex get() = state in PipeState.Group.INTERSECTION
 
     override fun afterAddToLevel(oldLevel: Level) {
-        val network = PipeNetwork(oldLevel)
+        val network = PipeNetwork()
         network.add(this)
         super.afterAddToLevel(oldLevel)
     }

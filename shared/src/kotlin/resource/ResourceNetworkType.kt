@@ -2,6 +2,6 @@ package resource
 
 import level.Level
 
-enum class ResourceNetworkType(val makeNew: (level: Level) -> ResourceNetwork<*>) {
-    PIPE({ PipeNetwork(it) })
+enum class ResourceNetworkType(val makeNew: () -> ResourceNetwork<*>) {
+    PIPE({ PipeNetwork() })
 }

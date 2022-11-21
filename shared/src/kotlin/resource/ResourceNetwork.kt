@@ -8,7 +8,6 @@ import serialization.Referencable
 import kotlin.math.absoluteValue
 
 abstract class ResourceNetwork<V : ResourceNetworkVertex<V>>(
-    level: Level,
     @Id(30)
     val networkType: ResourceNetworkType
 ) :
@@ -32,6 +31,8 @@ abstract class ResourceNetwork<V : ResourceNetworkVertex<V>>(
     // nope. hmm.... give each block in a large block a resource node. default behavior accepts energy
     //
     // this should also be abstract enoguh for node-node connections
+
+    // to do list: audio feedback for code
 
     @Id(31)
     val vertices = mutableSetOf<V>()
@@ -191,7 +192,7 @@ abstract class ResourceNetwork<V : ResourceNetworkVertex<V>>(
     protected abstract fun trySplit(around: V)
 
     protected fun splitOff(vertices: Collection<V>): ResourceNetwork<V> {
-        val newNetwork = vertices.first().type.makeNew(level) as ResourceNetwork<V>
+        val newNetwork = vertices.first().type.makeNew() as ResourceNetwork<V>
         newNetwork.vertices.addAll(vertices)
         for (vert in vertices) {
             vert.obj.onRemoveFromNetwork(this)

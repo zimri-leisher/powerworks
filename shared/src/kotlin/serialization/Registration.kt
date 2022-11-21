@@ -599,11 +599,17 @@ object Registration {
     }
 
     fun getSerializer(maybeNotNiceType: Class<*>, settings: Set<SerializerSetting<*>> = setOf()): Serializer<out Any> {
-        SerializerDebugger.writeln("Getting serializer for $maybeNotNiceType with settings $settings")
+        // some settings go to the strategies
+        // some settings determine the strategies
+        // some settings should be passed on to the strategies
+        // some should not
         val type = Serialization.makeTypeNice(maybeNotNiceType)
+        SerializerDebugger.writeln("Getting serializer for $type with settings $settings")
         // some of these settings determine which serializer/strategy we want, some of them should just be passed on
-        val strategySettings = settings.filter { SerializerSettingTarget.STRATEGY in it.targets }.toSet()
-        var cachedSerializer = cachedSerializers.getOrPut(type, { mutableMapOf() }).get(strategySettings)
+        val strategySettings =
+            settings.filter { SerializerSettingTarget.USED_BY_STRATEGY in it.targets || SerializerSettingTarget.DETERMINES_STRATEGY in it.targets }
+                .toSet()
+        var cachedSerializer = cachedSerializers.getOrPut(type, { mutableMapOf() })[strategySettings]
         if (cachedSerializer == null) {
             // need to make a new serializer
             // so we will get the default for this type with no settings (which should exist)
@@ -618,18 +624,17 @@ object Registration {
         var newWriteStrategy: WriteStrategy<Any>? = null
         val inheritedSettings = mutableSetOf<SerializerSetting<*>>()
         for (setting in settings) {
-            when (setting) {
-                is InternalRecurseSetting -> {
+            when {
+                setting is InternalRecurseSetting -> {
                     inheritedSettings.add(RecursiveReferenceSetting(AsReferenceRecursive()))
                 }
 
-                is IdSetting, is ReferenceSetting, is WriteStrategySetting, is ReadStrategySetting, is CreateStrategySetting, is SparseSetting -> {}
-                else -> {
+                SerializerSettingTarget.USED_BY_STRATEGY in setting.targets -> {
                     inheritedSettings.add(setting)
                 }
             }
         }
-        for (setting in strategySettings) {
+        for (setting in settings.filter { SerializerSettingTarget.DETERMINES_STRATEGY in it.targets }) {
             when (setting) {
                 is ReferenceSetting -> {
                     if (!Referencable::class.java.isAssignableFrom(type)) {
@@ -675,49 +680,36 @@ object Registration {
                 }
             }
         }
-        if (inheritedSettings.isNotEmpty()) {
-            // if there is a change in settings then we have to re instantiate the strategies
-            if (newReadStrategy == null) {
-                val readConstructor = cachedSerializer.readStrategy::class.primaryConstructor
-                if (readConstructor == null) {
-                    throw RegistrationException("Read strategy of serializer $cachedSerializer does not have a primary constructor")
-                }
-                newReadStrategy = readConstructor.call(
-                    type,
-                    inheritedSettings
-                ) as ReadStrategy<Any>
+        // if there is a change in settings then we have to re instantiate the strategies
+        if (newReadStrategy == null) {
+            val readConstructor = cachedSerializer.readStrategy::class.primaryConstructor
+            if (readConstructor == null) {
+                throw RegistrationException("Read strategy of serializer $cachedSerializer does not have a primary constructor")
             }
-            if (newWriteStrategy == null) {
-                val writeConstructor = cachedSerializer.writeStrategy::class.primaryConstructor
-                if (writeConstructor == null) {
-                    throw RegistrationException("Write strategy of serializer $cachedSerializer does not have a primary constructor")
-                }
-                newWriteStrategy = writeConstructor.call(
-                    type,
-                    inheritedSettings
-                ) as WriteStrategy<Any>
+            newReadStrategy = readConstructor.call(
+                type,
+                inheritedSettings
+            ) as ReadStrategy<Any>
+        }
+        if (newWriteStrategy == null) {
+            val writeConstructor = cachedSerializer.writeStrategy::class.primaryConstructor
+            if (writeConstructor == null) {
+                throw RegistrationException("Write strategy of serializer $cachedSerializer does not have a primary constructor")
             }
-            if (newCreateStrategy == null) {
-                val createConstructor = cachedSerializer.createStrategy::class.primaryConstructor
-                if (createConstructor == null) {
-                    throw RegistrationException("Create strategy of serializer $cachedSerializer does not have a primary constructor")
-                }
-                newCreateStrategy = createConstructor.call(
-                    type,
-                    inheritedSettings
-                )
+            newWriteStrategy = writeConstructor.call(
+                type,
+                inheritedSettings
+            ) as WriteStrategy<Any>
+        }
+        if (newCreateStrategy == null) {
+            val createConstructor = cachedSerializer.createStrategy::class.primaryConstructor
+            if (createConstructor == null) {
+                throw RegistrationException("Create strategy of serializer $cachedSerializer does not have a primary constructor")
             }
-        } else {
-            // if there was no change in settings, use the defaults
-            if (newReadStrategy == null) {
-                newReadStrategy = cachedSerializer.readStrategy as ReadStrategy<Any>
-            }
-            if (newWriteStrategy == null) {
-                newWriteStrategy = cachedSerializer.writeStrategy as WriteStrategy<Any>
-            }
-            if (newCreateStrategy == null) {
-                newCreateStrategy = cachedSerializer.createStrategy
-            }
+            newCreateStrategy = createConstructor.call(
+                type,
+                inheritedSettings
+            )
         }
         val serializer = Serializer(type, inheritedSettings, newCreateStrategy, newWriteStrategy, newReadStrategy)
         SerializerDebugger.writeln("Serializer got: $serializer")

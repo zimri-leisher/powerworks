@@ -27,7 +27,11 @@ class PipeNetworkVertex(
 ) :
     ResourceNetworkVertex<PipeNetworkVertex>(obj, edges, ResourceNetworkType.PIPE) {
 
-    private constructor() : this(ResourceNode(LevelManager.EMPTY_LEVEL.sourceContainer, 0, 0), mutableListOf(), arrayOf())
+    private constructor() : this(
+        ResourceNode(LevelManager.EMPTY_LEVEL.sourceContainer, 0, 0),
+        mutableListOf(),
+        arrayOf()
+    )
 
     private val pipeObj get() = obj as PotentialPipeNetworkVertex
 
@@ -41,9 +45,7 @@ class PipeNetworkVertex(
     val validFarVertex get() = pipeObj.validFarVertex
 }
 
-class PipeNetwork(level: Level) : ResourceNetwork<PipeNetworkVertex>(level, ResourceNetworkType.PIPE) {
-
-    private constructor() : this(LevelManager.EMPTY_LEVEL)
+class PipeNetwork : ResourceNetwork<PipeNetworkVertex>(ResourceNetworkType.PIPE) {
 
     @Id(34)
     val connections = mutableListOf<PipeNetworkConnection>()
@@ -74,7 +76,11 @@ class PipeNetwork(level: Level) : ResourceNetwork<PipeNetworkVertex>(level, Reso
     }
 
     override fun makeVertex(obj: PhysicalLevelObject): PipeNetworkVertex {
-        return PipeNetworkVertex(obj as PotentialPipeNetworkVertex, mutableListOf(null, null, null, null), arrayOfNulls(4))
+        return PipeNetworkVertex(
+            obj as PotentialPipeNetworkVertex,
+            mutableListOf(null, null, null, null),
+            arrayOfNulls(4)
+        )
     }
 
     override fun getConnection(

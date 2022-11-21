@@ -3,6 +3,7 @@ package level
 import network.LevelObjectReference
 import player.team.Team
 import serialization.AsReference
+import serialization.AsReferenceRecursive
 import serialization.Id
 import java.util.*
 
@@ -61,6 +62,13 @@ abstract class LevelObject protected constructor(
                 afterAddToLevel(level)
             }
         }
+
+    // list of objects that this depends on
+    // resource containers that this uses, resource networks that this uses
+    // they all have to be added first and removed first with this
+    @Id(993)
+    @AsReferenceRecursive
+    val children = mutableListOf<LevelObject>()
 
     open fun beforeAddToLevel(newLevel: Level) {
     }
