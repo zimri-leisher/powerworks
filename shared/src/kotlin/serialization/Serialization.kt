@@ -1,14 +1,7 @@
 package serialization
 
-import serialization.Registration.REFERENCE_ID
-import serialization.Registration.getId
-import serialization.Registration.getSerializer
-import serialization.SerializerDebugger.alreadyPrinted
-import serialization.SerializerDebugger.lastLinesBuffer
-import serialization.SerializerDebugger.safe
 import java.io.*
 import java.lang.reflect.Field
-import java.lang.reflect.Modifier
 import java.util.*
 
 // TODO sanity checks on what gets read/written for security
@@ -41,6 +34,40 @@ object Serialization {
 
     val copyBuffer = ByteArrayOutputStream(512)
     val copyOutputStream = Output(copyBuffer)
+
+    private val unresolvedReferences = mutableMapOf<Any, MutableMap<Field, Reference<*>>>()
+
+    fun saveUnresolvedReference(obj: Any, field: Field, reference: Reference<*>) {
+        unresolvedReferences.getOrPut(obj, { mutableMapOf() })[field] = reference
+    }
+
+    fun isResolved(obj: Any) = obj !in unresolvedReferences
+
+    fun resolveReferences(obj: Any) {
+        val failed = unresolvedReferences[obj]
+        if (failed != null) {
+            var remainingUnresolved = false
+            val iter = failed.iterator()
+            for ((field, reference) in iter) {
+                try {
+                    println("resolving unresolved field $field with reference $reference")
+                    val value = reference.resolve()
+                    reference.setValue(value)
+                    val wasAccessible = field.canAccess(obj)
+                    field.isAccessible = true
+                    field.set(obj, value)
+                    field.isAccessible = wasAccessible
+                    iter.remove()
+                } catch (exception: UnresolvedReferenceException) {
+                    remainingUnresolved = true
+                    continue
+                }
+            }
+            if(!remainingUnresolved) {
+                unresolvedReferences.remove(obj)
+            }
+        }
+    }
 
     fun <T> copy(obj: T): T {
         SerializerDebugger.writeln("Copying object $obj")

@@ -12,7 +12,7 @@ import serialization.Id
 import serialization.Reference
 import java.util.*
 
-abstract class LevelObjectReference<T : LevelObject>(
+abstract class LevelObjectReference<out T : LevelObject>(
     @Id(1)
     @AsReference
     val level: Level,
@@ -55,7 +55,7 @@ class ResourceContainerReference(
     }
 }
 
-abstract class PhysicalLevelObjectReference<T : PhysicalLevelObject>(level: Level, objectId: UUID) :
+abstract class PhysicalLevelObjectReference<out T : PhysicalLevelObject>(level: Level, objectId: UUID) :
     LevelObjectReference<T>(level, objectId) {
     constructor(obj: PhysicalLevelObject) : this(obj.level, obj.id)
 }
@@ -69,7 +69,7 @@ class ResourceNodeReference(
 ) : PhysicalLevelObjectReference<ResourceNode>(level, objectId) {
 
     constructor(node: ResourceNode) : this(node.level, node.id, node.xTile, node.yTile) {
-        value = node
+        setValue(node)
     }
 
     private constructor() : this(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0)
@@ -87,7 +87,7 @@ class GhostLevelObjectReference(val obj: GhostLevelObject) :
     PhysicalLevelObjectReference<GhostLevelObject>(obj.level, obj.id) {
 
     init {
-        value = obj
+        setValue(obj)
     }
 
     override fun resolve() = obj
@@ -107,7 +107,7 @@ open class MovingObjectReference<T : MovingObject>(
         movingObject.x,
         movingObject.y
     ) {
-        value = movingObject
+        setValue(movingObject)
     }
 
     private constructor() : this(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0)
@@ -157,7 +157,7 @@ class BrainRobotReference(
     private constructor() : this(UUID.randomUUID())
 
     constructor(brainRobot: BrainRobot) : this(brainRobot.id) {
-        value = brainRobot
+        setValue(brainRobot)
     }
 
     override fun resolve(): BrainRobot? {
@@ -178,7 +178,7 @@ class BlockReference(
 ) : PhysicalLevelObjectReference<Block>(level, objectId) {
 
     constructor(block: Block) : this(block.level, block.id, block.xTile, block.yTile) {
-        value = block
+        setValue(block)
     }
 
     private constructor() : this(LevelManager.EMPTY_LEVEL, UUID.randomUUID(), 0, 0)

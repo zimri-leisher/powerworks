@@ -53,6 +53,7 @@ object ServerNetworkManager : PacketHandler {
                 kryoServer.addListener(object : Listener() {
                     override fun received(connection: Connection, data: Any) {
                         if (data is Packet) {
+                            println("received packet $data")
                             data.connectionId = connection.id
                             receivedPackets.add(data)
                         }
@@ -186,6 +187,7 @@ object ServerNetworkManager : PacketHandler {
                     for (accepted in clientInfos.map { it.key }) {
                         packets.forEach {
                             try {
+                                println("sending packet $it")
                                 kryoServer.sendToTCP(accepted, it)
                             } catch (e: Exception) {
                                 System.err.println("Exception while sending packet $it:")
@@ -201,6 +203,7 @@ object ServerNetworkManager : PacketHandler {
                         // send to client
                         packets.forEach {
                             try {
+                                println("sending packet $it")
                                 kryoServer.sendToTCP(connectionId, it)
                             } catch (e: Exception) {
                                 System.err.println("Exception while sending packet $it:")
@@ -214,6 +217,7 @@ object ServerNetworkManager : PacketHandler {
                         val handshakeDenialPacket = packets.filterIsInstance<ServerHandshakePacket>()
                         for(denialPacket in handshakeDenialPacket) {
                             try {
+                                println("sending packet $denialPacket")
                                 kryoServer.sendToTCP(connectionId, denialPacket)
                             } catch (e: Exception) {
                                 System.err.println("Exception while sending packet $denialPacket:")

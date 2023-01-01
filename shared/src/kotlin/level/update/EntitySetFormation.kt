@@ -17,7 +17,7 @@ class EntitySetFormation(
      * A map of references to entities and their positions in the formation.
      */
     @Id(2)
-    @AsReferenceRecursive
+    @AsReference(true)
     val positions: Map<Entity, LevelPosition>,
     /**
      * The center of the formation.

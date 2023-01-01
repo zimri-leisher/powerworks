@@ -14,7 +14,7 @@ class PipeNetworkConnection(
     val steps: List<PipeNetworkVertex>
 ) : ResourceNodeConnection(steps.first().obj as ResourceNode, steps.last().obj as ResourceNode) {
 
-    private constructor() : this(PipeNetwork(LevelManager.EMPTY_LEVEL), listOf())
+    private constructor() : this(PipeNetwork(), listOf())
 
     @Id(3)
     val currentPackets = mutableListOf<PipeNetworkPacket>()

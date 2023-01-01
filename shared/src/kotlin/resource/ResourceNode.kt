@@ -33,7 +33,7 @@ class ResourceNode(
     }
 
     override fun afterAddToLevel(oldLevel: Level) {
-        val network = PipeNetwork(level)
+        val network = PipeNetwork()
         network.add(this)
         super.afterAddToLevel(oldLevel)
     }

@@ -5,6 +5,7 @@ import level.LevelManager
 import player.Player
 import serialization.AsReference
 import serialization.Id
+import serialization.TryToResolveReferences
 
 enum class LevelUpdateType {
     DEFAULT,
@@ -25,7 +26,9 @@ enum class LevelUpdateType {
     LEVEL_OBJECT_SWITCH_LEVELS,
     ENTITY_RUN_BEHAVIOR,
     LEVEL_OBJECT_RESOURCE_CONTAINER_MODIFY,
-    RESOURCE_TRANSACTION_EXECUTE
+    RESOURCE_TRANSACTION_EXECUTE,
+    RESOURCE_NETWORK_ADD_VERTICES,
+    RESOURCE_NETWORK_REMOVE_VERTICES
 }
 
 /**
@@ -47,6 +50,11 @@ abstract class LevelUpdate(
      * is the intersection of this set and the players in the level's [Lobby].
      */
     abstract val playersToSendTo: Set<Player>?
+
+    /**
+     * @return a list of [LevelUpdate]s that have to happen in order for this one to work
+     */
+    open fun getChildren(): List<LevelUpdate> = listOf()
 
     /**
      * @return whether or not this [LevelUpdate] can act on the given [level].

@@ -4,11 +4,8 @@ import level.Level
 import level.LevelManager
 import level.entity.Entity
 import level.entity.EntityGroup
-import level.moving.MovingObject
-import network.MovingObjectReference
 import player.Player
 import serialization.AsReference
-import serialization.AsReferenceRecursive
 import serialization.Id
 
 /**
@@ -19,7 +16,7 @@ class EntityAddToGroup(
      * A list of references to entities to add to the group.
      */
     @Id(2)
-    @AsReferenceRecursive
+    @AsReference(true)
     val entitiesInGroup: List<Entity>,
     level: Level
 ) : LevelUpdate(LevelUpdateType.ENTITY_ADD_TO_GROUP, level) {

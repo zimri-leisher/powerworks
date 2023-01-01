@@ -187,9 +187,10 @@ object PlayerManager : PacketHandler, PlayerEventListener {
         if (!packet.action.verify()) {
             ServerNetworkManager.sendToClient(AcknowledgePlayerActionPacket(packet.id, false), packet.connectionId)
         } else {
-            ServerNetworkManager.sendToClient(AcknowledgePlayerActionPacket(packet.id, true), packet.connectionId)
             if (!packet.action.act()) {
                 println("Incongruity between verify and act requirements")
+            } else {
+                ServerNetworkManager.sendToClient(AcknowledgePlayerActionPacket(packet.id, true), packet.connectionId)
             }
         }
     }

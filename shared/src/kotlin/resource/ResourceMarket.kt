@@ -64,7 +64,7 @@ sealed class ResourceDistributor(
 
 class EqualizeContainers(network: ResourceNetwork<*>) : ResourceDistributor(network) {
 
-    private constructor() : this(PipeNetwork(LevelManager.EMPTY_LEVEL))
+    private constructor() : this(PipeNetwork())
 
     @Id(2)
     val lastTimeSentTo = mutableMapOf<ResourceContainer, Int>()
@@ -108,7 +108,7 @@ class ResourceMarket(
     val network: ResourceNetwork<*>
 ) {
 
-    private constructor() : this(PipeNetwork(LevelManager.EMPTY_LEVEL))
+    private constructor() : this(PipeNetwork())
 
     @Id(2)
     val distributor: ResourceDistributor = EqualizeContainers(network)

@@ -121,7 +121,7 @@ abstract class Block(type: BlockType<out Block>, xTile: Int, yTile: Int) :
                     .filter { it !== this }
     }
 
-    override fun toReference(): LevelObjectReference<out Block> {
+    override fun toReference(): BlockReference {
         return BlockReference(this)
     }
 

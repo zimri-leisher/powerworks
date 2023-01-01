@@ -49,11 +49,13 @@ object ClientNetworkManager : PacketHandler {
                         if (data is Packet) {
                             data.connectionId = connection.id
                             receivedPackets.add(data)
+                            println("received packet $data")
                         } else if (data is List<*>) {
                             try {
                                 data as Collection<Packet>
                                 data.forEach { it.connectionId = connection.id }
                                 receivedPackets.addAll(data)
+                                println("received packets $data")
                             } catch (e: ClassCastException) {
                                 println("Data is not a packet!")
                             }
@@ -120,6 +122,7 @@ object ClientNetworkManager : PacketHandler {
         if (hasConnected()) {
             synchronized(outwardPackets) {
                 for (packet in outwardPackets) {
+                    println("sending packet $packet")
                     kryoClient.sendTCP(packet)
                 }
                 outwardPackets.clear()

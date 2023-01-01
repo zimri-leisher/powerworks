@@ -8,7 +8,7 @@ import serialization.Referencable
 import java.util.*
 import kotlin.math.absoluteValue
 
-abstract class ResourceContainer : LevelObject(LevelObjectType.RESOURCE_CONTAINER), Referencable<ResourceContainer>,
+abstract class ResourceContainer : LevelObject(LevelObjectType.RESOURCE_CONTAINER),
     ResourceConduit {
 
     // todo we want a "constrain" function

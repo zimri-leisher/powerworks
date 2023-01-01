@@ -31,6 +31,12 @@ open class TaggedSerializer<R : Any>(type: Class<R>, settings: Set<SerializerSet
     FieldSerializer<R>(type, settings) {
 
     val taggedFields: Array<CachedField>
+    val tryToResolveReferences: Set<SerializerSetting<*>> =
+        if (type.isAnnotationPresent(TryToResolveReferences::class.java)) setOf(
+            TryToResolveReferencesSetting(
+                TryToResolveReferences()
+            )
+        ) else setOf()
 
     init {
         taggedFields = fields.filter { it.settings.any { setting -> setting is IdSetting } }
@@ -117,29 +123,44 @@ open class TaggedSerializer<R : Any>(type: Class<R>, settings: Set<SerializerSet
                     continue
                 }
                 synchronized(field) {
-                    SerializerDebugger.writeln("Reading tagged field $field ")
-
-                    // set the value of the tagged field by recursively deserializing it
-                    val nullable = field.field.kotlinProperty?.returnType?.isMarkedNullable
-                    val newValue: Any?
-                    if (nullable == true) {
-                        newValue = input.readNullable(field.field.type, field.settings + settings)
-                    } else {
-                        newValue = input.read(field.field.type, field.settings + settings)
-                    }
-                    /*
+                    SerializerDebugger.writeln("Reading tagged field $field")
+                    try {
+                        // set the value of the tagged field by recursively deserializing it
+                        val nullable = field.field.kotlinProperty?.returnType?.isMarkedNullable
+                        val newValue: Any?
+                        if (nullable == true) {
+                            newValue =
+                                input.readNullable(field.field.type, field.settings + settings + tryToResolveReferences)
+                        } else {
+                            newValue = input.read(field.field.type, field.settings + settings + tryToResolveReferences)
+                        }
+                        /*
                     if (!field.trySetAccessible()) {
                         throw ReadException("Unable to set accessible of field $field from class ${newInstance::class}")
                     }
                      */
-                    field.field.isAccessible = true
-                    try {
-                        field.field.set(obj, newValue)
-                    } catch (e: IllegalAccessException) {
-                        println("Error while setting field $field in ${obj::class} to $newValue: (accessible: ${field.field.isAccessible})")
-                        throw e
+                        field.field.isAccessible = true
+                        try {
+                            field.field.set(obj, newValue)
+                        } catch (e: IllegalAccessException) {
+                            println(
+                                "Error while setting field $field in ${obj::class} to $newValue: (accessible: ${
+                                    field.field.canAccess(
+                                        obj
+                                    )
+                                })"
+                            )
+                            throw e
+                        }
+                        field.field.isAccessible = false
+                    } catch (exception: UnresolvedReferenceException) {
+                        println("encountered unresolved reference")
+                        if(tryToResolveReferences.isNotEmpty()) {
+                            Serialization.saveUnresolvedReference(obj, field.field, exception.reference)
+                        } else {
+                            throw exception
+                        }
                     }
-                    field.field.isAccessible = false
                 }
 
                 // this is commented out because i think there are issues in regards to multi-threading that happen when

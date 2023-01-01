@@ -146,24 +146,29 @@ abstract class Level(
         if (!canModify(update)) {
             return false
         }
+        val children = update.getChildren()
+        for(child in children) {
+            println("ACT $child")
+            child.act()
+        }
+        println("ACT $update")
         update.act()
         return true
     }
 
-    // TODO these should definitely not need to be separate functions probably??
     /**
      * Does everything necessary to put the object to the level, if possible. If this is already in another
      * [Level], it will remove it from that level first.
      * @return true if the object was not already present and the object was added successfully
      */
-    open fun add(l: LevelObject) = modify(LevelObjectAdd(l, this))
+    fun add(l: LevelObject, transient: Boolean = false) = modify(LevelObjectAdd(l, this), transient)
 
     /**
      * Does everything necessary to remove [l] from this level
      *
      * @return true if [l] was in this level before calling this method, and now is no longer
      */
-    open fun remove(l: LevelObject) = modify(LevelObjectRemove(l))
+    fun remove(l: LevelObject, transient: Boolean = false) = modify(LevelObjectRemove(l), transient)
 
     /**
      * Adds a particle to the level. Particles are temporary and purely decorative, they do not get saved
@@ -317,15 +322,13 @@ abstract class Level(
 
 }
 
-class NonexistentLevelException(message: String) : Exception(message)
-
 class LevelReference(
     @Id(1)
     val id: UUID
 ) : Reference<Level>() {
 
     constructor(level: Level) : this(level.id) {
-        value = level
+        setValue(level)
     }
 
     constructor() : this(UUID.randomUUID())

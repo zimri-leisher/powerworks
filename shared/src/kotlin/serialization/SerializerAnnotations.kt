@@ -10,10 +10,7 @@ import kotlin.reflect.KClass
 annotation class Id(val id: Int)
 
 @Target(AnnotationTarget.FIELD)
-annotation class AsReference()
-
-@Target(AnnotationTarget.FIELD)
-annotation class AsReferenceRecursive()
+annotation class AsReference(val recursive: Boolean = false)
 
 @Target(AnnotationTarget.FIELD)
 annotation class Sparse
@@ -32,3 +29,6 @@ annotation class UseReadStrategy(val readStrategyClass: KClass<ReadStrategy<*>>)
 
 @Target(AnnotationTarget.FIELD)
 annotation class UseCreateStrategy(val createStrategyClass: KClass<CreateStrategy<*>>)
+
+@Target(AnnotationTarget.CLASS)
+annotation class TryToResolveReferences

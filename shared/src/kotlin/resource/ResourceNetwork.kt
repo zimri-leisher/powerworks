@@ -5,6 +5,7 @@ import network.LevelObjectReference
 import network.ResourceNetworkReference
 import serialization.Id
 import serialization.Referencable
+import serialization.Reference
 import kotlin.math.absoluteValue
 
 abstract class ResourceNetwork<V : ResourceNetworkVertex<V>>(
@@ -44,15 +45,7 @@ abstract class ResourceNetwork<V : ResourceNetworkVertex<V>>(
     abstract val containers: MutableList<ResourceContainer>
 
     open fun add(obj: PhysicalLevelObject) {
-        if (level == LevelManager.EMPTY_LEVEL) {
-            println("resource network is in empty level")
-            if (!obj.level.add(this)) {
-                throw Exception("Resource network was in the empty level and could not join ${obj.level}")
-            } else {
-                println("successfully added to level: this level: ${level}, obj level: ${obj.level}")
-            }
-        }
-        if(obj !is PotentialResourceNetworkVertex) {
+        if (obj !is PotentialResourceNetworkVertex<*>) {
             throw Exception("Tried to add $obj to ResourceNetwork but it is not a LevelObject")
         }
         if (obj.level != level) {
@@ -62,14 +55,7 @@ abstract class ResourceNetwork<V : ResourceNetworkVertex<V>>(
             throw Exception("$obj cannot be a vertex for $this")
         }
         val vert = makeVertex(obj)
-        vertices.add(vert)
-        if (obj is ResourceNode) {
-            nodes.add(obj)
-            if (obj.container !in containers) {
-                containers.add(obj.container)
-            }
-        }
-        obj.onAddToNetwork(this)
+        addVertex(obj, vert)
         updateEdges(vert)
         tryMerge(vert)
     }
@@ -79,6 +65,21 @@ abstract class ResourceNetwork<V : ResourceNetworkVertex<V>>(
             ?: throw Exception("Tried to remove $obj which is not in network $this")
         updateEdges(vert)
         trySplit(vert)
+        removeVertex(vert)
+    }
+
+    protected open fun addVertex(obj: PhysicalLevelObject, vert: V) {
+        vertices.add(vert)
+        if (obj is ResourceNode) {
+            nodes.add(obj)
+            if (obj.container !in containers) {
+                containers.add(obj.container)
+            }
+        }
+        (obj as PotentialResourceNetworkVertex<*>).onAddToNetwork(this)
+    }
+
+    protected open fun removeVertex(vert: V) {
         vertices.remove(vert)
         if (vert.obj is ResourceNode) {
             nodes.remove(vert.obj)
@@ -86,8 +87,10 @@ abstract class ResourceNetwork<V : ResourceNetworkVertex<V>>(
                 containers.remove(vert.obj.container)
             }
         }
-        (obj as PotentialResourceNetworkVertex).onRemoveFromNetwork(this)
+        (vert.obj as PotentialResourceNetworkVertex<*>).onRemoveFromNetwork(this)
+        vert.obj.vertex = null
         if (vertices.isEmpty()) {
+            println("removing network with empty vertices")
             level.remove(this)
         }
     }
@@ -116,6 +119,7 @@ abstract class ResourceNetwork<V : ResourceNetworkVertex<V>>(
     abstract fun canBeVertex(obj: PhysicalLevelObject): Boolean
 
     abstract fun makeVertex(obj: PhysicalLevelObject): V
+
 
     abstract fun getFlowInProgress(container: ResourceContainer): List<ResourceFlow>
 
@@ -179,33 +183,26 @@ abstract class ResourceNetwork<V : ResourceNetworkVertex<V>>(
     protected abstract fun tryMerge(around: ResourceNetworkVertex<V>)
 
     fun mergeFrom(network: ResourceNetwork<V>) {
-        for (vertex in network.vertices) {
-            vertex.obj.onRemoveFromNetwork(network)
-            vertex.obj.onAddToNetwork(this)
+        val vertices = network.vertices.map { it }
+        for (vertex in vertices) {
+            network.removeVertex(vertex)
+            addVertex(vertex.obj as PhysicalLevelObject, vertex)
         }
-        vertices.addAll(network.vertices)
-        nodes.addAll(network.nodes)
-        network.vertices.clear()
-        network.nodes.clear()
     }
 
     protected abstract fun trySplit(around: V)
 
     protected fun splitOff(vertices: Collection<V>): ResourceNetwork<V> {
         val newNetwork = vertices.first().type.makeNew() as ResourceNetwork<V>
-        newNetwork.vertices.addAll(vertices)
-        for (vert in vertices) {
-            vert.obj.onRemoveFromNetwork(this)
-            vert.obj.onAddToNetwork(newNetwork)
-            this.vertices.remove(vert)
-            if (vert.obj is ResourceNode) {
-                this.nodes.remove(vert.obj)
-            }
+        for(vertex in vertices) {
+            removeVertex(vertex)
+            newNetwork.addVertex(vertex.obj as PhysicalLevelObject, vertex)
         }
+        level.add(newNetwork)
         return newNetwork
     }
 
-    override fun toReference(): LevelObjectReference<out LevelObject> {
+    override fun toReference(): ResourceNetworkReference {
         return ResourceNetworkReference(this)
     }
 

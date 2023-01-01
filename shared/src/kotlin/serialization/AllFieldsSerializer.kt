@@ -11,6 +11,13 @@ import kotlin.reflect.jvm.kotlinProperty
 open class AllFieldsSerializer<T : Any>(type: Class<T>, settings: Set<SerializerSetting<*>>) :
     FieldSerializer<T>(type, settings) {
 
+    val tryToResolveReferences: Set<SerializerSetting<*>> =
+        if (type.isAnnotationPresent(TryToResolveReferences::class.java)) setOf(
+            TryToResolveReferencesSetting(
+                TryToResolveReferences()
+            )
+        ) else setOf()
+
     init {
         if (fields.isNotEmpty()) {
             SerializerDebugger.writeln("Fields:")
@@ -67,8 +74,17 @@ open class AllFieldsSerializer<T : Any>(type: Class<T>, settings: Set<Serializer
                         break
                     }
                 }
-                val fieldValue = input.readUnknownNullable(existingField?.settings ?: setOf())
-                nameToValue.put(fieldName, fieldValue)
+                try {
+                    val fieldValue = input.readUnknownNullable(existingField?.settings ?: setOf())
+                    nameToValue.put(fieldName, fieldValue)
+                } catch (exception: UnresolvedReferenceException) {
+                    println("encountered unresolved reference")
+                    if (existingField != null && tryToResolveReferences.isNotEmpty()) {
+                        Serialization.saveUnresolvedReference(obj, existingField.field, exception.reference)
+                    } else {
+                        throw exception
+                    }
+                }
             }
 
             for ((name, value) in nameToValue) {

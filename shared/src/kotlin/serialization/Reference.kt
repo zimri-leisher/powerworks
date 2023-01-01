@@ -1,22 +1,38 @@
 package serialization
 
-abstract class Reference<T : Any> {
-    var value: T? = null
+abstract class Reference<out T : Any> {
+    private var _value: Any? = null
+    val value: T?
+        get() = _value as T?
+
+    fun setValue(value: Any?) {
+        _value = value
+    }
 
     abstract fun resolve(): T?
 }
 
-interface Referencable<T : Any> {
+interface Referencable<out T : Any> {
     fun toReference(): Reference<T>
 }
+
+class UnresolvedReferenceException(val reference: Reference<*>) : java.lang.Exception()
 
 class ReferencableCreateStrategy(type: Class<out Referencable<Any>>, settings: Set<SerializerSetting<*>>) :
     CreateStrategy<Referencable<Any>>(type, settings) {
     override fun create(input: Input): Referencable<Any> {
         val reference = input.read(Reference::class.java) as Reference<Any>
-        reference.value = reference.resolve()
+        reference.setValue(reference.resolve())
         if (reference.value == null) {
-            throw Exception("Reference $reference resolved to null")
+            // unable to resolve reference. what if we could pause resolution of references until we needed them?
+            // we'd have to set up some system to store the reference class itself, because it basically gets discarded
+            // after it is read here...
+            // would have to associate the reference with the specific field
+            // maybe we'd have a Serialization.resolveReferences()
+            // it would check a hashmap of objects for which reference resolution failed
+            // the map would have a list of failed references and fields to put them in
+            // for each
+            throw UnresolvedReferenceException(reference)
         }
         return reference.value as Referencable<Any>
     }
@@ -27,39 +43,5 @@ class ReferencableWriteStrategy(type: Class<out Referencable<Any>>, settings: Se
     override fun write(obj: Referencable<Any>, output: Output) {
         val reference = obj.toReference()
         output.write(reference)
-    }
-}
-
-class RecursiveReferencableWriteStrategy(type: Class<out Any>, settings: Set<SerializerSetting<*>>) :
-    WriteStrategy<Any>(type, settings) {
-
-    private val recursiveSettings = settings.filter { it !is RecursiveReferenceSetting }.toSet()
-
-    override fun write(obj: Any, output: Output) {
-        // we want to write the object normally except if it is referencable
-        if (Referencable::class.java.isAssignableFrom(obj::class.java)) {
-            // write the reference
-            // this should end the recursion
-            output.write(obj, recursiveSettings + ReferenceSetting(AsReference()))
-        } else {
-            // call output.write with internalrecursive setting
-            // this will call the normal serializer, but will include the @asreferencerecursive setting, so its own calls
-            // to serializers will call this first
-            output.write(obj, recursiveSettings + InternalRecurseSetting(AsReferenceRecursive()))
-        }
-    }
-}
-
-class RecursiveReferencableCreateStrategy(type: Class<out Any>, settings: Set<SerializerSetting<*>>) :
-    CreateStrategy<Any>(type, settings) {
-
-    private val recursiveSettings = settings.filter { it !is RecursiveReferenceSetting }.toSet()
-
-    override fun create(input: Input): Any {
-        if (Referencable::class.java.isAssignableFrom(type)) {
-            return input.read(type, recursiveSettings + ReferenceSetting(AsReference()))
-        } else {
-            return input.read(type, recursiveSettings + InternalRecurseSetting(AsReferenceRecursive()))
-        }
     }
 }

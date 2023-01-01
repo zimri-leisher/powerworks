@@ -45,9 +45,6 @@ sealed class SerializerSetting<T>(
                     AsReference::class.java -> {
                         ReferenceSetting(annotation as AsReference)
                     }
-                    AsReferenceRecursive::class.java -> {
-                        RecursiveReferenceSetting(annotation as AsReferenceRecursive)
-                    }
 
                     else -> {
                         null
@@ -68,9 +65,17 @@ sealed class SerializerSetting<T>(
 
 class SparseSetting(value: Sparse) : SerializerSetting<Sparse>(value, SerializerSettingTarget.USED_BY_STRATEGY)
 class IdSetting(value: Id) : SerializerSetting<Id>(value, SerializerSettingTarget.USED_BY_FIELD)
-class WriteStrategySetting(value: UseWriteStrategy) : SerializerSetting<UseWriteStrategy>(value, SerializerSettingTarget.DETERMINES_STRATEGY)
-class ReadStrategySetting(value: UseReadStrategy) : SerializerSetting<UseReadStrategy>(value, SerializerSettingTarget.DETERMINES_STRATEGY)
-class CreateStrategySetting(value: UseCreateStrategy) : SerializerSetting<UseCreateStrategy>(value, SerializerSettingTarget.DETERMINES_STRATEGY)
-class ReferenceSetting(value: AsReference) : SerializerSetting<AsReference>(value, SerializerSettingTarget.DETERMINES_STRATEGY)
-class RecursiveReferenceSetting(value: AsReferenceRecursive) : SerializerSetting<AsReferenceRecursive>(value, SerializerSettingTarget.DETERMINES_STRATEGY)
-class InternalRecurseSetting(value: AsReferenceRecursive) : SerializerSetting<AsReferenceRecursive>(value, SerializerSettingTarget.USED_BY_STRATEGY)
+class WriteStrategySetting(value: UseWriteStrategy) :
+    SerializerSetting<UseWriteStrategy>(value, SerializerSettingTarget.DETERMINES_STRATEGY)
+
+class ReadStrategySetting(value: UseReadStrategy) :
+    SerializerSetting<UseReadStrategy>(value, SerializerSettingTarget.DETERMINES_STRATEGY)
+
+class CreateStrategySetting(value: UseCreateStrategy) :
+    SerializerSetting<UseCreateStrategy>(value, SerializerSettingTarget.DETERMINES_STRATEGY)
+
+class ReferenceSetting(value: AsReference) :
+    SerializerSetting<AsReference>(value, SerializerSettingTarget.DETERMINES_STRATEGY)
+
+class TryToResolveReferencesSetting(value: TryToResolveReferences) :
+    SerializerSetting<TryToResolveReferences>(value, SerializerSettingTarget.USED_BY_STRATEGY)

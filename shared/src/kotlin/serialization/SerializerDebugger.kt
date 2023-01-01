@@ -5,9 +5,9 @@ import java.util.*
 object SerializerDebugger {
 
     var alreadyPrinted = false
-    const val safe = true
+    const val safe = false
     const val bufferCount = 100
-    const val on = true
+    const val on = false
     var debugDepth = 0
     val debugSpaces get() = (0 until (debugDepth % 16)).joinToString { "   " }
 

@@ -32,6 +32,10 @@ class LevelObjectAdd(
 
     private var ghostLevelObject: GhostLevelObject? = null
 
+    override fun getChildren(): List<LevelUpdate> {
+        return obj.children.map { LevelObjectAdd(it, level) }
+    }
+
     override fun canAct(): Boolean {
         if(obj.inLevel && obj.level == level) {
             // if it's already in this level, can't add it again
@@ -97,19 +101,42 @@ class LevelObjectAdd(
 
     override fun actGhost() {
         if (obj is GhostLevelObject) {
+            println("ACT $this")
+            // it's removing the network added with this block
+            // the removal is getting sent before the addition of the block
+            // solution:
+            // we cant depend on the order that packets are sent in,
+            // but like we still have to just assume that they will get approximately on time
+            // maybe each packet has an id that linearly increments? if the client misses one, then it just waits
+            // till it gets it and runs them in order...
+            // yeah let's do that.. ensure order.
+            // ok turns out TCP ensures order. we're good, we just have to make sure that they're sent in the right order
+            // the order should be...
+            // take resources, add the new network, add the new pipe, remove the new network
+            // the order is: take resources, add network, add pipe, remove network... good.
+            // the order sent is:
+            // but on the client: take resources, remove network
+            // ok, the real problem is that the level object add generates a level object remove, which finishes before
+            // the add so it gets added to the network first. what we want is if the object is acted on, it should be
+            //
+            // ok the REAL real problem is that we are receiving the packet and deserializing it before the add update
+            // takes place. how should we prevent this...
+            // wait to deserialize? allow missed references and just rerun them occasionally?
+            // let's wait to deserialize.. hmmmmm but we don't want to delay non level update packets
+            //
             act()
             return
         }
         if (obj is PhysicalLevelObject) {
             ghostLevelObject = GhostLevelObject(obj.type, obj.x, obj.y)
             ghostLevelObject!!.rotation = obj.rotation
-            level.add(ghostLevelObject!!)
+            level.add(ghostLevelObject!!, true)
         }
     }
 
     override fun cancelActGhost() {
         if (ghostLevelObject != null) {
-            level.remove(ghostLevelObject!!)
+            level.remove(ghostLevelObject!!, true)
         }
     }
 

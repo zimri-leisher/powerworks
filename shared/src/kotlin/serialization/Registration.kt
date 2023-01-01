@@ -173,7 +173,7 @@ object Registration {
 
     fun registerAll() {
 
-        // max 247
+        // max 249
         /* PRIMITIVES */
         setDefaultSerializer(Serializer::class)
         register(Nothing::class, 0)
@@ -336,6 +336,8 @@ object Registration {
         register(FarseekerBlockSetDestinationLevel::class, 82)
         register(LevelObjectSwitchLevelsTo::class, 84)
         register(ResourceTransactionExecute::class, 239)
+        register(ResourceNetworkAddVertices::class, 248)
+        register(ResourceNetworkRemoveVertices::class, 249)
         register(LevelPosition::class, 85)
 
         /* /BLOCK */
@@ -622,33 +624,33 @@ object Registration {
         var newCreateStrategy: CreateStrategy<Any>? = null
         var newReadStrategy: ReadStrategy<Any>? = null
         var newWriteStrategy: WriteStrategy<Any>? = null
-        val inheritedSettings = mutableSetOf<SerializerSetting<*>>()
-        for (setting in settings) {
-            when {
-                setting is InternalRecurseSetting -> {
-                    inheritedSettings.add(RecursiveReferenceSetting(AsReferenceRecursive()))
+        val inheritedSettings = settings.filter { SerializerSettingTarget.USED_BY_STRATEGY in it.targets }.toMutableSet()
+        val referenceSetting = settings.firstOrNull { it is ReferenceSetting }
+        if (referenceSetting != null) {
+            if (!Referencable::class.java.isAssignableFrom(type)) {
+                // if we have a reference setting but this class is not referencable...
+                if (!(referenceSetting as ReferenceSetting).value.recursive) {
+                    // if the reference setting is not recursive..
+                    throw Exception("@AsReference was enabled, but $type does not implement Referencable")
+                } else {
+                    // pass the setting on to new strats
+                    inheritedSettings.add(referenceSetting)
                 }
-
-                SerializerSettingTarget.USED_BY_STRATEGY in setting.targets -> {
-                    inheritedSettings.add(setting)
-                }
+            } else {
+                newReadStrategy = ReadStrategy.None(type, settings)
+                newWriteStrategy =
+                    ReferencableWriteStrategy(
+                        type as Class<Referencable<Any>>,
+                        inheritedSettings
+                    ) as WriteStrategy<Any>
+                newCreateStrategy =
+                    ReferencableCreateStrategy(type, inheritedSettings)
             }
         }
         for (setting in settings.filter { SerializerSettingTarget.DETERMINES_STRATEGY in it.targets }) {
             when (setting) {
                 is ReferenceSetting -> {
-                    if (!Referencable::class.java.isAssignableFrom(type)) {
-                        // if its not itself a referencable, check if recursive is true
-                        throw Exception("ReferenceSetting was enabled, but $type does not implement Referencable")
-                    }
-                    newReadStrategy = ReadStrategy.None(type, settings)
-                    newWriteStrategy =
-                        ReferencableWriteStrategy(
-                            type as Class<Referencable<Any>>,
-                            inheritedSettings
-                        ) as WriteStrategy<Any>
-                    newCreateStrategy =
-                        ReferencableCreateStrategy(type, inheritedSettings)
+                    // already handled above, we did it there because we wanted to make sure it happens first
                 }
 
                 is WriteStrategySetting -> {
@@ -667,12 +669,6 @@ object Registration {
                     val createStrategyClass = setting.value.createStrategyClass
                     val ctor = createStrategyClass.primaryConstructor
                     newCreateStrategy = ctor!!.call(type, inheritedSettings)
-                }
-
-                is RecursiveReferenceSetting -> {
-                    newReadStrategy = ReadStrategy.None(type, settings)
-                    newWriteStrategy = RecursiveReferencableWriteStrategy(type, inheritedSettings)
-                    newCreateStrategy = RecursiveReferencableCreateStrategy(type, inheritedSettings)
                 }
 
                 else -> {

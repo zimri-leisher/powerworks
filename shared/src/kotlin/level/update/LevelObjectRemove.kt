@@ -14,11 +14,13 @@ import resource.ResourceNetwork
 import resource.ResourceNode
 import serialization.AsReference
 import serialization.Id
+import serialization.TryToResolveReferences
 import java.util.*
 
 /**
  * A level update for removing a [LevelObject] from a level.
  */
+@TryToResolveReferences
 class LevelObjectRemove(
     /**
      * A reference to the [LevelObject] to remove.
@@ -100,5 +102,9 @@ class LevelObjectRemove(
         }
 
         return true
+    }
+
+    override fun toString(): String {
+        return "LevelObjectRemove(obj=$obj, level=$level)"
     }
 }

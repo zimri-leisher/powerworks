@@ -66,6 +66,7 @@ object FileManager {
     fun <T> tryLoadObject(path: Path, objectType: Class<T>): T? {
         val file = tryGetFile(path) ?: return null
         val input = Input(FileInputStream(file))
+        println(file.absolutePath)
         val obj = input.read(objectType)
         input.close()
         return obj
